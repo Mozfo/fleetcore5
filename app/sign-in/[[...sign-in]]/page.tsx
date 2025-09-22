@@ -8,12 +8,12 @@ export default function Page() {
           <h1 className="text-4xl font-bold text-slate-900">FleetCore</h1>
           <p className="mt-2 text-slate-600">Fleet Management System</p>
         </div>
-        <SignIn 
+        <SignIn
           appearance={{
             elements: {
               rootBox: "mx-auto",
-              card: "shadow-xl"
-            }
+              card: "shadow-xl",
+            },
           }}
         />
       </div>
