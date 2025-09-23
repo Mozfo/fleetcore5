@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Multi-tenant base models
 model Tenant {
   id           String   @id @default(uuid())
   name         String
@@ -15,7 +14,7 @@ model Tenant {
   country_code String
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
-  
+  clerk_org_id String?  @unique @db.VarChar(255)
   users        User[]
 }
 
@@ -27,8 +26,7 @@ model User {
   role       String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-  
   tenant     Tenant   @relation(fields: [tenant_id], references: [id])
-  
+
   @@unique([tenant_id, email])
 }
