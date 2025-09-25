@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
   if (evt.type === "organization.created") {
     try {
-      await prisma.tenant.create({
+      await prisma.organization.create({
         data: {
           clerk_org_id: evt.data.id,
           name: evt.data.name,
