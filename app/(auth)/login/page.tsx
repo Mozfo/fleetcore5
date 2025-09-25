@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,12 +18,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
+
 type FormData = z.infer<typeof formSchema>;
-export default function LoginPage() {
+
+function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -48,19 +51,23 @@ export default function LoginPage() {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
+
   const watchEmail = watch("email");
   const watchPassword = watch("password");
+
   const onSubmit = async (data: FormData) => {
     if (!isLoaded) return;
 
     setIsLoading(true);
     setError("");
     await new Promise((resolve) => setTimeout(resolve, 1500));
+
     try {
       const result = await signIn.create({
         identifier: data.email,
         password: data.password,
       });
+
       if (result.status === "complete") {
         setShowSuccess(true);
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -78,6 +85,7 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -85,9 +93,7 @@ export default function LoginPage() {
       transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
       className="mx-auto w-full max-w-md"
     >
-      {/* Main Card */}
       <div className="rounded-3xl bg-white p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] dark:bg-gray-900">
-        {/* Logo */}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -98,7 +104,7 @@ export default function LoginPage() {
             <span className="text-2xl font-bold text-white">F</span>
           </div>
         </motion.div>
-        {/* Title */}
+
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-2xl font-semibold text-gray-900 dark:text-white">
             Sign in to FleetCore
@@ -107,7 +113,7 @@ export default function LoginPage() {
             Enterprise Fleet Management Platform
           </p>
         </div>
-        {/* Reset success message */}
+
         <AnimatePresence>
           {showResetSuccess && (
             <motion.div
@@ -122,7 +128,7 @@ export default function LoginPage() {
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Form */}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
             <Label
@@ -152,6 +158,7 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
           </div>
+
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <Label
@@ -207,6 +214,7 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
           </div>
+
           <AnimatePresence>
             {error && (
               <motion.div
@@ -219,7 +227,7 @@ export default function LoginPage() {
               </motion.div>
             )}
           </AnimatePresence>
-          {/* Sign in button */}
+
           <Button
             type="submit"
             disabled={isLoading}
@@ -259,7 +267,7 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
           </Button>
-          {/* Biometric button - simplified */}
+
           <button
             type="button"
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#E8DFD3] font-medium text-blue-600 transition-all duration-300 hover:border-blue-600 hover:bg-[#FAF7F2] dark:text-blue-400"
@@ -269,14 +277,14 @@ export default function LoginPage() {
             <span className="text-sm">Use biometric authentication</span>
           </button>
         </form>
-        {/* Footer message */}
+
         <div className="mt-8 border-t border-[#E8DFD3] pt-6">
           <p className="text-center text-xs text-blue-600 dark:text-blue-400/60">
             Contact your administrator if you need assistance
           </p>
         </div>
       </div>
-      {/* Security badge */}
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -288,5 +296,19 @@ export default function LoginPage() {
         </p>
       </motion.div>
     </motion.div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
