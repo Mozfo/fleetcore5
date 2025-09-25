@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 const formSchema = z
   .object({
     password: z
@@ -23,8 +24,10 @@ const formSchema = z
     message: "Passwords don't match",
     path: ["confirmPassword"],
   });
+
 type FormData = z.infer<typeof formSchema>;
-export default function ResetPasswordPage() {
+
+function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -37,6 +40,7 @@ export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const email = searchParams.get("email");
+
   const {
     register,
     handleSubmit,
@@ -45,9 +49,10 @@ export default function ResetPasswordPage() {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
+
   const watchPassword = watch("password");
+
   useEffect(() => {
-    // Verify token validity
     if (!token) {
       setTokenValid(false);
       setError("Invalid or expired link");
@@ -55,20 +60,22 @@ export default function ResetPasswordPage() {
       setTokenValid(true);
     }
   }, [token]);
+
   const onSubmit = async (data: FormData) => {
     if (!isLoaded || !token) return;
 
     setIsLoading(true);
     setError("");
+
     try {
       const result = await signIn.attemptFirstFactor({
         strategy: "reset_password_email_code",
         code: token,
         password: data.password,
       });
+
       if (result.status === "complete") {
         setSuccess(true);
-        // Redirect to login after 2 seconds
         setTimeout(() => {
           router.push("/login?reset=success");
         }, 2000);
@@ -87,7 +94,7 @@ export default function ResetPasswordPage() {
       setIsLoading(false);
     }
   };
-  // Success state
+
   if (success) {
     return (
       <motion.div
@@ -105,7 +112,7 @@ export default function ResetPasswordPage() {
       </motion.div>
     );
   }
-  // Invalid token state
+
   if (tokenValid === false) {
     return (
       <motion.div
@@ -133,7 +140,7 @@ export default function ResetPasswordPage() {
       </motion.div>
     );
   }
-  // Main form
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -146,6 +153,7 @@ export default function ResetPasswordPage() {
       <p className="mb-6 text-sm text-blue-600">
         {email ? `for ${email}` : "Enter your new password below"}
       </p>
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <div className="relative">
@@ -176,7 +184,6 @@ export default function ResetPasswordPage() {
             </p>
           )}
 
-          {/* Password requirements */}
           {watchPassword && (
             <div className="mt-2 space-y-1">
               <div className="flex items-center gap-2">
@@ -206,6 +213,7 @@ export default function ResetPasswordPage() {
             </div>
           )}
         </div>
+
         <div>
           <div className="relative">
             <Input
@@ -234,11 +242,13 @@ export default function ResetPasswordPage() {
             </p>
           )}
         </div>
+
         {error && (
           <div className="rounded-lg bg-purple-700/10 p-2 text-xs text-purple-700">
             {error}
           </div>
         )}
+
         <Button
           type="submit"
           disabled={isLoading}
@@ -247,9 +257,24 @@ export default function ResetPasswordPage() {
           {isLoading ? "Resetting..." : "Reset password"}
         </Button>
       </form>
+
       <p className="mt-6 text-center text-xs text-blue-600/60">
         This link expires 30 minutes after it was sent
       </p>
     </motion.div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
