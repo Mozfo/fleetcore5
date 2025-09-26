@@ -44,5 +44,27 @@ export async function POST(req: Request) {
     }
   }
 
+  if (evt.type === "organizationMembership.created") {
+    try {
+      const org = await prisma.organization.findUnique({
+        where: { clerk_org_id: evt.data.organization.id },
+      });
+
+      if (org) {
+        await prisma.member.create({
+          data: {
+            tenant_id: org.id,
+            clerk_id: evt.data.public_user_data.user_id,
+            email: evt.data.public_user_data.identifier,
+            role: evt.data.role === "org:admin" ? "admin" : "member",
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error creating member:", error);
+      return new Response("Error creating member", { status: 500 });
+    }
+  }
+
   return new Response("", { status: 200 });
 }
