@@ -37,7 +37,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [verificationPending, setVerificationPending] = useState(false);
-  const { isLoaded, signUp } = useSignUp();
+  const [verificationCode, setVerificationCode] = useState("");
+  const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
 
   const formSchema = z
@@ -67,6 +68,40 @@ export default function RegisterPage() {
   });
   const watchEmail = watch("email");
   const watchCompany = watch("companyName");
+
+  const handleVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code: verificationCode,
+      });
+
+      if (completeSignUp.status === "complete") {
+        await setActive({ session: completeSignUp.createdSessionId });
+        router.push(localizedPath("onboarding"));
+      } else {
+        setError("Unable to verify email. Please try again.");
+      }
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "errors" in err) {
+        const clerkError = err as { errors?: Array<{ message: string }> };
+        setError(
+          clerkError.errors?.[0]?.message ||
+            "Verification failed. Please try again."
+        );
+      } else {
+        setError("Verification failed. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const onSubmit = async (data: FormData) => {
     if (!isLoaded) return;
 
@@ -102,16 +137,70 @@ export default function RegisterPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mx-auto w-full max-w-md"
       >
-        <div className="rounded-3xl bg-white p-10 text-center shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+        <div className="rounded-3xl bg-white p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-700">
             <Mail className="h-8 w-8 text-white" />
           </div>
           <h2 className="mb-2 text-2xl font-semibold text-[#1C1917]">
             {t("register.checkEmail")}
           </h2>
-          <p className="text-sm text-blue-600">
+          <p className="mb-6 text-sm text-blue-600">
             {t("register.emailSent")} {watchEmail}
           </p>
+
+          <form onSubmit={handleVerification} className="space-y-4">
+            <div>
+              <Label
+                htmlFor="verificationCode"
+                className="mb-1.5 block text-sm font-medium text-[#1C1917]"
+              >
+                Verification Code
+              </Label>
+              <Input
+                id="verificationCode"
+                type="text"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                placeholder="Enter 6-digit code"
+                className="h-11 border-[#E8DFD3] bg-[#FAF7F2]/50 text-center text-lg font-semibold tracking-widest text-[#1C1917] placeholder:text-blue-600/50 focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600/20"
+                maxLength={6}
+                disabled={isLoading}
+                autoComplete="one-time-code"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-xl border border-purple-700/20 bg-purple-700/10 p-3 text-sm text-purple-700">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isLoading || verificationCode.length !== 6}
+              className="h-12 w-full transform rounded-xl bg-gray-900 font-medium text-white transition-all duration-300 hover:scale-[1.02] hover:bg-[#2D4739] active:scale-[0.98] dark:bg-gray-700"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  Verify Email
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setVerificationPending(false)}
+              className="w-full text-sm text-blue-600 transition-colors hover:text-[#1C1917]"
+            >
+              Back to registration
+            </button>
+          </form>
         </div>
       </motion.div>
     );
