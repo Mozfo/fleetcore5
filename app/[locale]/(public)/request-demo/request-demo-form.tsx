@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   User,
   Mail,
@@ -25,6 +26,7 @@ interface FormData {
 }
 
 export default function RequestDemoForm() {
+  const { t } = useTranslation("public");
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     email: "",
@@ -39,53 +41,21 @@ export default function RequestDemoForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Traductions simplifiées
-  const t = {
-    title: "Transform Your Fleet Operations",
-    subtitle: "Car Rental & VTC Management Platform",
-    intro:
-      "FleetCore is the leading solution for car rental companies and VTC operators managing multi-platform operations. Streamline your fleet, automate workflows, and boost profitability by up to 40%.",
-    formTitle: "Get Your Personalized Demo",
-    formSubtitle: "Our fleet experts will contact you within 24 hours",
-    fullName: "Full Name",
-    email: "Business Email",
-    company: "Company Name",
-    fleetSize: "Fleet Size",
-    phone: "Phone Number (Optional)",
-    message: "Tell us about your needs (Optional)",
-    fleetOptions: [
-      "1-10 vehicles",
-      "11-50 vehicles",
-      "51-100 vehicles",
-      "100-500 vehicles",
-      "500+ vehicles",
-    ],
-    selectOption: "Select fleet size",
-    submit: "Request Demo",
-    terms: "I agree to the",
-    termsLink: "Terms of Service",
-    privacyLink: "Privacy Policy",
-    disclaimer:
-      "By submitting this form, you consent to be contacted by our sales team to discuss FleetCore solutions tailored to your business needs.",
-    successTitle: "Thank You!",
-    successMessage: "Your request has been received.",
-    successSubMessage:
-      "A fleet specialist will contact you within 24 hours to schedule your personalized demo.",
-    required: "Required",
-    invalidEmail: "Please enter a valid email",
-    agreeRequired: "You must accept the terms to continue",
-  };
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.fullName.trim()) newErrors.fullName = t.required;
-    if (!formData.email.trim()) newErrors.email = t.required;
+    if (!formData.fullName.trim())
+      newErrors.fullName = t("requestDemo.form.errors.required");
+    if (!formData.email.trim())
+      newErrors.email = t("requestDemo.form.errors.required");
     else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = t.invalidEmail;
-    if (!formData.company.trim()) newErrors.company = t.required;
-    if (!formData.fleetSize) newErrors.fleetSize = t.required;
-    if (!formData.agreeToTerms) newErrors.agreeToTerms = t.agreeRequired;
+      newErrors.email = t("requestDemo.form.errors.invalidEmail");
+    if (!formData.company.trim())
+      newErrors.company = t("requestDemo.form.errors.required");
+    if (!formData.fleetSize)
+      newErrors.fleetSize = t("requestDemo.form.errors.required");
+    if (!formData.agreeToTerms)
+      newErrors.agreeToTerms = t("requestDemo.form.errors.agreeRequired");
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -136,13 +106,13 @@ export default function RequestDemoForm() {
         >
           <CheckCircle className="mx-auto mb-6 h-20 w-20 text-green-500" />
           <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
-            {t.successTitle}
+            {t("requestDemo.form.success.title")}
           </h2>
           <p className="mb-2 text-gray-600 dark:text-gray-400">
-            {t.successMessage}
+            {t("requestDemo.form.success.message")}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {t.successSubMessage}
+            {t("requestDemo.form.success.subMessage")}
           </p>
         </motion.div>
       </div>
@@ -164,15 +134,15 @@ export default function RequestDemoForm() {
             </div>
 
             <h1 className="mb-4 text-4xl font-bold text-gray-900 lg:text-5xl dark:text-white">
-              {t.title}
+              {t("requestDemo.title")}
             </h1>
 
             <p className="mb-6 text-xl text-blue-600 dark:text-blue-400">
-              {t.subtitle}
+              {t("requestDemo.subtitle")}
             </p>
 
             <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-              {t.intro}
+              {t("requestDemo.intro")}
             </p>
 
             <div className="mt-8 space-y-4">
@@ -243,17 +213,17 @@ export default function RequestDemoForm() {
               className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800"
             >
               <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
-                {t.formTitle}
+                {t("requestDemo.form.title")}
               </h2>
               <p className="mb-6 text-gray-600 dark:text-gray-400">
-                {t.formSubtitle}
+                {t("requestDemo.form.subtitle")}
               </p>
 
               <div className="space-y-4">
                 {/* Full Name */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.fullName} *
+                    {t("requestDemo.form.fullName")} *
                   </label>
                   <div className="relative">
                     <User className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
@@ -280,7 +250,7 @@ export default function RequestDemoForm() {
                 {/* Email */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.email} *
+                    {t("requestDemo.form.email")} *
                   </label>
                   <div className="relative">
                     <Mail className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
@@ -305,7 +275,7 @@ export default function RequestDemoForm() {
                 {/* Company */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.company} *
+                    {t("requestDemo.form.company")} *
                   </label>
                   <div className="relative">
                     <Building className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
@@ -332,7 +302,7 @@ export default function RequestDemoForm() {
                 {/* Fleet Size */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.fleetSize} *
+                    {t("requestDemo.form.fleetSize")} *
                   </label>
                   <select
                     value={formData.fleetSize}
@@ -345,8 +315,12 @@ export default function RequestDemoForm() {
                         : "border-gray-300 dark:border-gray-600"
                     } bg-white text-gray-900 focus:border-blue-600 focus:outline-none dark:bg-gray-700 dark:text-white`}
                   >
-                    <option value="">{t.selectOption}</option>
-                    {t.fleetOptions.map((option) => (
+                    <option value="">
+                      {t("requestDemo.form.selectOption")}
+                    </option>
+                    {t("requestDemo.form.fleetOptions", {
+                      returnObjects: true,
+                    }).map((option: string) => (
                       <option key={option} value={option}>
                         {option}
                       </option>
@@ -362,7 +336,7 @@ export default function RequestDemoForm() {
                 {/* Phone (Optional) */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.phone}
+                    {t("requestDemo.form.phone")}
                   </label>
                   <div className="relative">
                     <Phone className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
@@ -380,7 +354,7 @@ export default function RequestDemoForm() {
                 {/* Message (Optional) */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.message}
+                    {t("requestDemo.form.message")}
                   </label>
                   <textarea
                     value={formData.message}
@@ -407,19 +381,19 @@ export default function RequestDemoForm() {
                       className="mt-1 mr-2"
                     />
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {t.terms}{" "}
+                      {t("requestDemo.form.terms")}{" "}
                       <a
                         href="#"
                         className="text-blue-600 hover:underline dark:text-blue-400"
                       >
-                        {t.termsLink}
+                        {t("requestDemo.form.termsLink")}
                       </a>{" "}
                       and{" "}
                       <a
                         href="#"
                         className="text-blue-600 hover:underline dark:text-blue-400"
                       >
-                        {t.privacyLink}
+                        {t("requestDemo.form.privacyLink")}
                       </a>
                     </span>
                   </label>
@@ -441,13 +415,13 @@ export default function RequestDemoForm() {
                   ) : (
                     <>
                       <Send className="mr-2 h-5 w-5" />
-                      {t.submit}
+                      {t("requestDemo.form.submit")}
                     </>
                   )}
                 </button>
 
                 <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
-                  {t.disclaimer}
+                  {t("requestDemo.form.disclaimer")}
                 </p>
               </div>
             </form>

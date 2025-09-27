@@ -6,28 +6,20 @@ import * as z from "zod";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import { Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const formSchema = z
-  .object({
-    password: z
-      .string()
-      .min(8, "At least 8 characters")
-      .regex(/[A-Z]/, "One uppercase letter")
-      .regex(/[a-z]/, "One lowercase letter")
-      .regex(/[0-9]/, "One number"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type FormData = z.infer<typeof formSchema>;
+type FormData = {
+  password: string;
+  confirmPassword: string;
+};
 
 function ResetPasswordForm() {
+  const { t } = useTranslation("auth");
+  const { localizedPath } = useLocalizedPath();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -40,6 +32,21 @@ function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const email = searchParams.get("email");
+
+  const formSchema = z
+    .object({
+      password: z
+        .string()
+        .min(8, t("resetPassword.errors.atLeast8"))
+        .regex(/[A-Z]/, t("resetPassword.errors.oneUppercase"))
+        .regex(/[a-z]/, t("resetPassword.errors.oneLowercase"))
+        .regex(/[0-9]/, t("resetPassword.errors.oneNumber")),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("resetPassword.errors.passwordMismatch"),
+      path: ["confirmPassword"],
+    });
 
   const {
     register,
@@ -55,11 +62,11 @@ function ResetPasswordForm() {
   useEffect(() => {
     if (!token) {
       setTokenValid(false);
-      setError("Invalid or expired link");
+      setError(t("resetPassword.errors.invalidLink"));
     } else {
       setTokenValid(true);
     }
-  }, [token]);
+  }, [token, t]);
 
   const onSubmit = async (data: FormData) => {
     if (!isLoaded || !token) return;
@@ -77,15 +84,15 @@ function ResetPasswordForm() {
       if (result.status === "complete") {
         setSuccess(true);
         setTimeout(() => {
-          router.push("/login?reset=success");
+          router.push(localizedPath("login") + "?reset=success");
         }, 2000);
       }
     } catch (err: unknown) {
-      let errorMessage = "Invalid or expired link. Please request a new one.";
+      let errorMessage = t("resetPassword.invalidOrExpired");
       if (err && typeof err === "object" && "errors" in err) {
         const clerkError = err as { errors?: Array<{ message: string }> };
         if (clerkError.errors?.[0]?.message?.includes("expired")) {
-          errorMessage = "This link has expired. Please request a new one.";
+          errorMessage = t("resetPassword.linkExpired");
         }
       }
       setError(errorMessage);
@@ -106,9 +113,11 @@ function ResetPasswordForm() {
           <CheckCircle2 className="h-6 w-6 text-green-600" />
         </div>
         <h2 className="mb-2 text-lg font-medium text-[#1C1917]">
-          Password reset successful
+          {t("resetPassword.successTitle")}
         </h2>
-        <p className="text-sm text-blue-600">Redirecting to login...</p>
+        <p className="text-sm text-blue-600">
+          {t("resetPassword.successRedirect")}
+        </p>
       </motion.div>
     );
   }
@@ -124,18 +133,17 @@ function ResetPasswordForm() {
           <XCircle className="h-6 w-6 text-red-600" />
         </div>
         <h2 className="mb-2 text-lg font-medium text-[#1C1917]">
-          Invalid or expired link
+          {t("resetPassword.invalidLinkTitle")}
         </h2>
         <p className="mb-6 text-sm text-blue-600">
-          This password reset link is invalid or has expired. Links are valid
-          for 30 minutes.
+          {t("resetPassword.invalidLinkMessage")}
         </p>
         <Button
-          onClick={() => router.push("/forgot-password")}
+          onClick={() => router.push(localizedPath("forgot-password"))}
           variant="outline"
           className="border-[#E8DFD3] text-[#1C1917] hover:bg-[#FAF7F2]"
         >
-          Request new link
+          {t("resetPassword.requestNewLink")}
         </Button>
       </motion.div>
     );
@@ -148,10 +156,12 @@ function ResetPasswordForm() {
       className="mx-auto w-full max-w-sm"
     >
       <h1 className="mb-2 text-xl font-medium text-[#1C1917]">
-        Set new password
+        {t("resetPassword.title")}
       </h1>
       <p className="mb-6 text-sm text-blue-600">
-        {email ? `for ${email}` : "Enter your new password below"}
+        {email
+          ? t("resetPassword.subtitleWithEmail", { email })
+          : t("resetPassword.subtitle")}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -159,7 +169,7 @@ function ResetPasswordForm() {
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
-              placeholder="New password"
+              placeholder={t("resetPassword.newPasswordPlaceholder")}
               className="h-10 border-[#E8DFD3] pr-10 focus:border-blue-600 focus:ring-0"
               {...register("password")}
               disabled={isLoading}
@@ -190,25 +200,33 @@ function ResetPasswordForm() {
                 <div
                   className={`h-1 w-1 rounded-full ${watchPassword.length >= 8 ? "bg-green-500" : "bg-gray-300"}`}
                 />
-                <span className="text-xs text-blue-600">8+ characters</span>
+                <span className="text-xs text-blue-600">
+                  {t("resetPassword.requirements.chars")}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <div
                   className={`h-1 w-1 rounded-full ${/[A-Z]/.test(watchPassword) ? "bg-green-500" : "bg-gray-300"}`}
                 />
-                <span className="text-xs text-blue-600">1 uppercase</span>
+                <span className="text-xs text-blue-600">
+                  {t("resetPassword.requirements.uppercase")}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <div
                   className={`h-1 w-1 rounded-full ${/[a-z]/.test(watchPassword) ? "bg-green-500" : "bg-gray-300"}`}
                 />
-                <span className="text-xs text-blue-600">1 lowercase</span>
+                <span className="text-xs text-blue-600">
+                  {t("resetPassword.requirements.lowercase")}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <div
                   className={`h-1 w-1 rounded-full ${/[0-9]/.test(watchPassword) ? "bg-green-500" : "bg-gray-300"}`}
                 />
-                <span className="text-xs text-blue-600">1 number</span>
+                <span className="text-xs text-blue-600">
+                  {t("resetPassword.requirements.number")}
+                </span>
               </div>
             </div>
           )}
@@ -218,7 +236,7 @@ function ResetPasswordForm() {
           <div className="relative">
             <Input
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm new password"
+              placeholder={t("resetPassword.confirmPasswordPlaceholder")}
               className="h-10 border-[#E8DFD3] pr-10 focus:border-blue-600 focus:ring-0"
               {...register("confirmPassword")}
               disabled={isLoading}
@@ -254,12 +272,14 @@ function ResetPasswordForm() {
           disabled={isLoading}
           className="h-10 w-full rounded-lg bg-gray-900 text-white hover:bg-[#2D4739] dark:bg-gray-700"
         >
-          {isLoading ? "Resetting..." : "Reset password"}
+          {isLoading
+            ? `${t("resetPassword.resetting")}...`
+            : t("resetPassword.resetPassword")}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-xs text-blue-600/60">
-        This link expires 30 minutes after it was sent
+        {t("resetPassword.linkExpires")}
       </p>
     </motion.div>
   );

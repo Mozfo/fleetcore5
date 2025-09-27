@@ -6,17 +6,26 @@ import * as z from "zod";
 import { useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-const formSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-});
-type FormData = z.infer<typeof formSchema>;
+
+type FormData = {
+  email: string;
+};
+
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation("auth");
+  const { localizedPath } = useLocalizedPath();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { isLoaded, signIn } = useSignIn();
+
+  const formSchema = z.object({
+    email: z.string().email(t("forgotPassword.errors.invalidEmail")),
+  });
 
   const {
     register,
@@ -52,16 +61,16 @@ export default function ForgotPasswordPage() {
         className="mx-auto w-full max-w-sm text-center"
       >
         <h2 className="mb-2 text-lg font-medium text-[#1C1917]">
-          Check your email
+          {t("forgotPassword.checkEmail")}
         </h2>
         <p className="mb-6 text-sm text-blue-600">
-          We sent instructions to {getValues("email")}
+          {t("forgotPassword.emailSent")} {getValues("email")}
         </p>
         <Link
-          href="/login"
+          href={localizedPath("login")}
           className="text-sm text-blue-600 hover:text-[#1C1917]"
         >
-          Return to login
+          {t("forgotPassword.returnToLogin")}
         </Link>
       </motion.div>
     );
@@ -73,24 +82,24 @@ export default function ForgotPasswordPage() {
       className="mx-auto w-full max-w-sm"
     >
       <Link
-        href="/login"
+        href={localizedPath("login")}
         className="mb-8 inline-flex items-center text-sm text-blue-600 hover:text-[#1C1917]"
       >
         <ArrowLeft className="mr-2 h-3 w-3" />
-        Back
+        {t("forgotPassword.back")}
       </Link>
 
       <h1 className="mb-2 text-xl font-medium text-[#1C1917]">
-        Reset password
+        {t("forgotPassword.title")}
       </h1>
       <p className="mb-6 text-sm text-blue-600">
-        Enter your email to receive reset instructions
+        {t("forgotPassword.subtitle")}
       </p>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <Input
             type="email"
-            placeholder="you@company.com"
+            placeholder={t("forgotPassword.emailPlaceholder")}
             className="h-10 border-[#E8DFD3] focus:border-blue-600 focus:ring-0"
             {...register("email")}
             disabled={isLoading}
@@ -107,7 +116,9 @@ export default function ForgotPasswordPage() {
           disabled={isLoading}
           className="h-10 w-full rounded-lg bg-gray-900 text-white hover:bg-[#2D4739] dark:bg-gray-700"
         >
-          {isLoading ? "Sending..." : "Send instructions"}
+          {isLoading
+            ? `${t("forgotPassword.sending")}...`
+            : t("forgotPassword.sendInstructions")}
         </Button>
       </form>
     </motion.div>

@@ -1,0 +1,50 @@
+{
+  "homepage": {
+    "title": "FleetCore",
+    "subtitle": "Plateforme de gestion de flotte d'entreprise",
+    "hero": {
+      "title": "Optimisez vos opérations de flotte",
+      "subtitle": "Solution complète de gestion de flotte pour les entreprises modernes",
+      "cta": "Commencer"
+    }
+  },
+  "requestDemo": {
+    "title": "Transformez vos opérations de flotte",
+    "subtitle": "Plateforme de gestion de location de voitures et VTC",
+    "intro": "FleetCore est la solution leader pour les entreprises de location de voitures et les opérateurs VTC gérant des opérations multi-plateformes. Rationalisez votre flotte, automatisez les flux de travail et augmentez la rentabilité jusqu'à 40%.",
+    "form": {
+      "title": "Obtenez votre démo personnalisée",
+      "subtitle": "Nos experts flotte vous contacteront dans les 24 heures",
+      "fullName": "Nom complet",
+      "email": "Email professionnel",
+      "company": "Nom de l'entreprise",
+      "phone": "Numéro de téléphone (Optionnel)",
+      "fleetSize": "Taille de la flotte",
+      "message": "Parlez-nous de vos besoins (Optionnel)",
+      "fleetOptions": [
+        "1-10 véhicules",
+        "11-50 véhicules",
+        "51-100 véhicules",
+        "100-500 véhicules",
+        "500+ véhicules"
+      ],
+      "selectOption": "Sélectionnez la taille de la flotte",
+      "submit": "Demander une démo",
+      "submitting": "Envoi...",
+      "terms": "J'accepte les",
+      "termsLink": "Conditions d'utilisation",
+      "privacyLink": "Politique de confidentialité",
+      "disclaimer": "En soumettant ce formulaire, vous consentez à être contacté par notre équipe commerciale pour discuter des solutions FleetCore adaptées aux besoins de votre entreprise.",
+      "success": {
+        "title": "Merci !",
+        "message": "Votre demande a été reçue.",
+        "subMessage": "Un spécialiste flotte vous contactera dans les 24 heures pour planifier votre démo personnalisée."
+      },
+      "errors": {
+        "required": "Requis",
+        "invalidEmail": "Veuillez saisir un email valide",
+        "agreeRequired": "Vous devez accepter les conditions pour continuer"
+      }
+    }
+  }
+}

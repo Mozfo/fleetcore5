@@ -1,0 +1,15 @@
+{
+  "welcome": "Welcome to FleetCore",
+  "title": "Fleet Management",
+  "description": "Complete fleet management solution",
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "test": {
+    "title": "Test Page",
+    "message": "This is a test page with react-i18next functionality."
+  }
+}

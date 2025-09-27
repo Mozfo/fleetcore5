@@ -7,6 +7,8 @@ import { useSignIn } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import {
   ArrowRight,
   Loader2,
@@ -19,14 +21,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const formSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
-
-type FormData = z.infer<typeof formSchema>;
+type FormData = {
+  email: string;
+  password: string;
+};
 
 function LoginForm() {
+  const { t } = useTranslation("auth");
+  const { localizedPath } = useLocalizedPath();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -35,6 +37,11 @@ function LoginForm() {
   const { isLoaded, signIn, setActive } = useSignIn();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const formSchema = z.object({
+    email: z.string().email(t("login.errors.invalidEmail")),
+    password: z.string().min(8, t("login.errors.passwordLength")),
+  });
 
   useEffect(() => {
     if (searchParams.get("reset") === "success") {
@@ -72,14 +79,17 @@ function LoginForm() {
         setShowSuccess(true);
         await new Promise((resolve) => setTimeout(resolve, 1000));
         await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
+        router.push(localizedPath("dashboard"));
       }
     } catch (err: unknown) {
       if (err && typeof err === "object" && "errors" in err) {
         const clerkError = err as { errors?: Array<{ message: string }> };
-        setError(clerkError.errors?.[0]?.message || "Invalid credentials");
+        setError(
+          clerkError.errors?.[0]?.message ||
+            t("login.errors.invalidCredentials")
+        );
       } else {
-        setError("Invalid credentials");
+        setError(t("login.errors.invalidCredentials"));
       }
     } finally {
       setIsLoading(false);
@@ -107,10 +117,10 @@ function LoginForm() {
 
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-2xl font-semibold text-gray-900 dark:text-white">
-            Sign in to FleetCore
+            {t("login.title")}
           </h1>
           <p className="text-sm text-blue-600 dark:text-blue-400">
-            Enterprise Fleet Management Platform
+            {t("login.subtitle")}
           </p>
         </div>
 
@@ -123,7 +133,7 @@ function LoginForm() {
               className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 dark:bg-green-900/20"
             >
               <p className="text-sm text-green-700">
-                Password reset successful. You can now sign in.
+                {t("login.resetSuccess")}
               </p>
             </motion.div>
           )}
@@ -135,12 +145,12 @@ function LoginForm() {
               htmlFor="email"
               className="text-sm font-medium text-gray-900 dark:text-white"
             >
-              Email
+              {t("login.email")}
             </Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@company.com"
+              placeholder={t("login.emailPlaceholder")}
               className={`mt-1.5 h-11 border-[#E8DFD3] bg-gray-50 text-gray-900 placeholder:text-blue-600 focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600/20 dark:bg-gray-800 dark:text-blue-400/50 dark:text-white ${watchEmail ? "border-blue-600 bg-white" : ""}`}
               {...register("email")}
               disabled={isLoading}
@@ -165,13 +175,13 @@ function LoginForm() {
                 htmlFor="password"
                 className="text-sm font-medium text-gray-900 dark:text-white"
               >
-                Password
+                {t("login.password")}
               </Label>
               <Link
-                href="/forgot-password"
+                href={localizedPath("forgot-password")}
                 className="text-sm text-blue-600 transition-colors hover:text-purple-700 dark:text-blue-400"
               >
-                Forgot?
+                {t("login.passwordForgot")}
               </Link>
             </div>
             <div className="relative">
@@ -242,7 +252,7 @@ function LoginForm() {
                   className="flex items-center"
                 >
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Authenticating...
+                  {t("login.signIn")}...
                 </motion.div>
               ) : showSuccess ? (
                 <motion.div
@@ -252,7 +262,7 @@ function LoginForm() {
                   className="flex items-center"
                 >
                   <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Welcome back
+                  {t("login.welcomeBack")}
                 </motion.div>
               ) : (
                 <motion.div
@@ -261,7 +271,7 @@ function LoginForm() {
                   animate={{ opacity: 1 }}
                   className="flex items-center"
                 >
-                  Sign in
+                  {t("login.signIn")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </motion.div>
               )}
@@ -274,13 +284,13 @@ function LoginForm() {
             disabled={isLoading}
           >
             <Scan className="h-4 w-4" />
-            <span className="text-sm">Use biometric authentication</span>
+            <span className="text-sm">{t("login.biometric")}</span>
           </button>
         </form>
 
         <div className="mt-8 border-t border-[#E8DFD3] pt-6">
           <p className="text-center text-xs text-blue-600 dark:text-blue-400/60">
-            Contact your administrator if you need assistance
+            {t("login.adminContact")}
           </p>
         </div>
       </div>
@@ -292,7 +302,7 @@ function LoginForm() {
         className="mt-6 text-center"
       >
         <p className="text-xs text-blue-600 dark:text-blue-400/60">
-          SOC 2 Type II Certified • ISO 27001 • GDPR Compliant
+          {t("login.compliance")}
         </p>
       </motion.div>
     </motion.div>

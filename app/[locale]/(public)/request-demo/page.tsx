@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
+import { useRouter } from "next/navigation";
 import {
   // Navigation & UI
   Car,
@@ -42,7 +44,8 @@ import {
 } from "lucide-react";
 
 export default function FleetCoreUltimatePremium() {
-  const [language, setLanguage] = useState<"en" | "fr">("en");
+  const { locale, localizedPath } = useLocalizedPath();
+  const router = useRouter();
   const [dashboardView, setDashboardView] = useState<
     "operations" | "financial" | "maintenance"
   >("operations");
@@ -896,7 +899,7 @@ export default function FleetCoreUltimatePremium() {
     },
   };
 
-  const t = content[language];
+  const t = content[locale as "en" | "fr"];
 
   // Calculator icon fix
 
@@ -1512,7 +1515,10 @@ export default function FleetCoreUltimatePremium() {
             <div className="flex h-16 items-center justify-between">
               {/* Logo */}
               <div className="flex items-center">
-                <Link href="/" className="flex items-center gap-3">
+                <Link
+                  href={localizedPath("")}
+                  className="flex items-center gap-3"
+                >
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-700">
                     <Car className="h-6 w-6 text-white" />
                   </div>
@@ -2116,22 +2122,26 @@ export default function FleetCoreUltimatePremium() {
                 </button>
 
                 <button
-                  onClick={() => setLanguage(language === "en" ? "fr" : "en")}
+                  onClick={() =>
+                    router.push(
+                      locale === "en" ? "/fr/request-demo" : "/en/request-demo"
+                    )
+                  }
                   className="hidden items-center gap-2 text-gray-600 hover:text-gray-900 lg:flex dark:text-gray-400 dark:hover:text-white"
                 >
                   <Globe className="h-4 w-4" />
-                  {language === "en" ? "FR" : "EN"}
+                  {locale === "en" ? "FR" : "EN"}
                 </button>
 
                 <Link
-                  href="/login"
+                  href={localizedPath("login")}
                   className="hidden font-medium text-gray-700 hover:text-gray-900 lg:inline-block dark:text-gray-300 dark:hover:text-white"
                 >
                   {t.nav.login}
                 </Link>
 
                 <Link
-                  href="/request-demo/form"
+                  href={localizedPath("request-demo/form")}
                   className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 px-5 py-2.5 font-semibold text-white transition-all hover:shadow-lg"
                 >
                   {t.nav.demo}
@@ -2237,7 +2247,7 @@ export default function FleetCoreUltimatePremium() {
               className="flex flex-col justify-center gap-4 sm:flex-row"
             >
               <Link
-                href="/request-demo/form"
+                href={localizedPath("request-demo/form")}
                 className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-700 px-8 py-4 text-lg font-bold text-white transition-all hover:shadow-2xl"
               >
                 {t.cta.button}
@@ -2592,7 +2602,7 @@ export default function FleetCoreUltimatePremium() {
             </h2>
             <p className="mb-8 text-xl text-white/90">{t.cta.subtitle}</p>
             <Link
-              href="/request-demo/form"
+              href={localizedPath("request-demo/form")}
               className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-lg font-bold text-gray-900 transition-all hover:shadow-2xl"
             >
               {t.cta.button}

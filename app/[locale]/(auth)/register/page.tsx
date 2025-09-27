@@ -7,6 +7,8 @@ import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import {
   ArrowRight,
   Loader2,
@@ -19,24 +21,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-const formSchema = z
-  .object({
-    companyName: z.string().min(2, "Company name is required"),
-    email: z.string().email("Invalid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Must contain uppercase letter")
-      .regex(/[a-z]/, "Must contain lowercase letter")
-      .regex(/[0-9]/, "Must contain number"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-type FormData = z.infer<typeof formSchema>;
+
+type FormData = {
+  companyName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
 export default function RegisterPage() {
+  const { t } = useTranslation("auth");
+  const { localizedPath } = useLocalizedPath();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -44,6 +39,23 @@ export default function RegisterPage() {
   const [verificationPending, setVerificationPending] = useState(false);
   const { isLoaded, signUp } = useSignUp();
   const router = useRouter();
+
+  const formSchema = z
+    .object({
+      companyName: z.string().min(2, t("register.errors.companyRequired")),
+      email: z.string().email(t("register.errors.invalidEmail")),
+      password: z
+        .string()
+        .min(8, t("register.errors.passwordLength"))
+        .regex(/[A-Z]/, "Must contain uppercase letter")
+        .regex(/[a-z]/, "Must contain lowercase letter")
+        .regex(/[0-9]/, "Must contain number"),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("register.errors.passwordMismatch"),
+      path: ["confirmPassword"],
+    });
 
   const {
     register,
@@ -73,9 +85,11 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       if (err && typeof err === "object" && "errors" in err) {
         const clerkError = err as { errors?: Array<{ message: string }> };
-        setError(clerkError.errors?.[0]?.message || "Something went wrong");
+        setError(
+          clerkError.errors?.[0]?.message || t("register.somethingWentWrong")
+        );
       } else {
-        setError("Something went wrong");
+        setError(t("register.somethingWentWrong"));
       }
     } finally {
       setIsLoading(false);
@@ -93,10 +107,10 @@ export default function RegisterPage() {
             <Mail className="h-8 w-8 text-white" />
           </div>
           <h2 className="mb-2 text-2xl font-semibold text-[#1C1917]">
-            Check your email
+            {t("register.checkEmail")}
           </h2>
           <p className="text-sm text-blue-600">
-            We&apos;ve sent a verification code to {watchEmail}
+            {t("register.emailSent")} {watchEmail}
           </p>
         </div>
       </motion.div>
@@ -124,11 +138,9 @@ export default function RegisterPage() {
         {/* Title */}
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-2xl font-semibold text-[#1C1917]">
-            Create your account
+            {t("register.title")}
           </h1>
-          <p className="text-sm text-blue-600">
-            Join FleetCore Enterprise Platform
-          </p>
+          <p className="text-sm text-blue-600">{t("register.subtitle")}</p>
         </div>
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -137,12 +149,12 @@ export default function RegisterPage() {
               htmlFor="company"
               className="text-sm font-medium text-[#1C1917]"
             >
-              Company Name
+              {t("register.companyName")}
             </Label>
             <div className="relative">
               <Input
                 id="company"
-                placeholder="Acme Corp"
+                placeholder={t("register.companyPlaceholder")}
                 className={`mt-1.5 h-11 border-[#E8DFD3] bg-[#FAF7F2]/50 pl-10 text-[#1C1917] placeholder:text-blue-600/50 focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600/20 ${watchCompany ? "border-blue-600 bg-white" : ""}`}
                 {...register("companyName")}
                 disabled={isLoading}
@@ -162,13 +174,13 @@ export default function RegisterPage() {
               htmlFor="email"
               className="text-sm font-medium text-[#1C1917]"
             >
-              Work Email
+              {t("register.email")}
             </Label>
             <div className="relative">
               <Input
                 id="email"
                 type="email"
-                placeholder="you@company.com"
+                placeholder={t("register.emailPlaceholder")}
                 className={`mt-1.5 h-11 border-[#E8DFD3] bg-[#FAF7F2]/50 pl-10 text-[#1C1917] placeholder:text-blue-600/50 focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600/20 ${watchEmail ? "border-blue-600 bg-white" : ""}`}
                 {...register("email")}
                 disabled={isLoading}
@@ -188,7 +200,7 @@ export default function RegisterPage() {
               htmlFor="password"
               className="text-sm font-medium text-[#1C1917]"
             >
-              Password
+              {t("register.password")}
             </Label>
             <div className="relative">
               <Input
@@ -222,7 +234,7 @@ export default function RegisterPage() {
               htmlFor="confirmPassword"
               className="text-sm font-medium text-[#1C1917]"
             >
-              Confirm Password
+              {t("register.confirmPassword")}
             </Label>
             <div className="relative">
               <Input
@@ -264,11 +276,11 @@ export default function RegisterPage() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
+                {t("register.creatingAccount")}...
               </>
             ) : (
               <>
-                Create account
+                {t("register.signUp")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
@@ -276,12 +288,12 @@ export default function RegisterPage() {
         </form>
         <div className="mt-6 border-t border-[#E8DFD3] pt-6">
           <p className="text-center text-sm text-blue-600">
-            Already have an account?{" "}
+            {t("register.alreadyHaveAccount")}{" "}
             <Link
-              href="/login"
+              href={localizedPath("login")}
               className="font-medium text-[#1C1917] hover:text-purple-700"
             >
-              Sign in
+              {t("register.signIn")}
             </Link>
           </p>
         </div>

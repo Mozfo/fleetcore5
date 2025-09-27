@@ -1,0 +1,50 @@
+{
+  "homepage": {
+    "title": "FleetCore",
+    "subtitle": "Enterprise Fleet Management Platform",
+    "hero": {
+      "title": "Optimize Your Fleet Operations",
+      "subtitle": "Complete fleet management solution for modern businesses",
+      "cta": "Get Started"
+    }
+  },
+  "requestDemo": {
+    "title": "Transform Your Fleet Operations",
+    "subtitle": "Car Rental & Ride-Hailing Management Platform",
+    "intro": "FleetCore is the leading solution for car rental companies and ride-hailing operators managing multi-platform operations. Streamline your fleet, automate workflows, and boost profitability by up to 40%.",
+    "form": {
+      "title": "Get Your Personalized Demo",
+      "subtitle": "Our fleet experts will contact you within 24 hours",
+      "fullName": "Full Name",
+      "email": "Business Email",
+      "company": "Company Name",
+      "phone": "Phone Number (Optional)",
+      "fleetSize": "Fleet Size",
+      "message": "Tell us about your needs (Optional)",
+      "fleetOptions": [
+        "1-10 vehicles",
+        "11-50 vehicles",
+        "51-100 vehicles",
+        "100-500 vehicles",
+        "500+ vehicles"
+      ],
+      "selectOption": "Select fleet size",
+      "submit": "Request Demo",
+      "submitting": "Submitting...",
+      "terms": "I agree to the",
+      "termsLink": "Terms of Service",
+      "privacyLink": "Privacy Policy",
+      "disclaimer": "By submitting this form, you consent to be contacted by our sales team to discuss FleetCore solutions tailored to your business needs.",
+      "success": {
+        "title": "Thank You!",
+        "message": "Your request has been received.",
+        "subMessage": "A fleet specialist will contact you within 24 hours to schedule your personalized demo."
+      },
+      "errors": {
+        "required": "Required",
+        "invalidEmail": "Please enter a valid email",
+        "agreeRequired": "You must accept the terms to continue"
+      }
+    }
+  }
+}

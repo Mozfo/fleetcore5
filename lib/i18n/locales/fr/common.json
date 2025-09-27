@@ -1,0 +1,15 @@
+{
+  "welcome": "Bienvenue sur FleetCore",
+  "title": "Gestion de Flotte",
+  "description": "Solution complète de gestion de flotte",
+  "navigation": {
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "about": "À propos",
+    "contact": "Contact"
+  },
+  "test": {
+    "title": "Page de test",
+    "message": "Ceci est une page de test avec la fonctionnalité react-i18next."
+  }
+}

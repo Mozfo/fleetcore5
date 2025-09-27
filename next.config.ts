@@ -2,7 +2,9 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    turbo: {}, // Support pour Turbopack dans Next.js 15
+  },
 };
 
 export default withSentryConfig(nextConfig, {
