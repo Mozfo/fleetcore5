@@ -318,9 +318,11 @@ export default function RequestDemoForm() {
                     <option value="">
                       {t("requestDemo.form.selectOption")}
                     </option>
-                    {t("requestDemo.form.fleetOptions", {
-                      returnObjects: true,
-                    }).map((option: string) => (
+                    {(
+                      t("requestDemo.form.fleetOptions", {
+                        returnObjects: true,
+                      }) as string[]
+                    ).map((option: string) => (
                       <option key={option} value={option}>
                         {option}
                       </option>

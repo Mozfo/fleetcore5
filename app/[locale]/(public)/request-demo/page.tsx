@@ -11,7 +11,6 @@ import {
   Car,
   Users,
   Globe,
-  X,
   ChevronRight,
   ArrowRight,
   // Features
@@ -32,8 +31,6 @@ import {
   Wifi,
   // Status
   Circle,
-  CircleCheck,
-  Gauge,
   Zap,
   // Process
   Phone,
@@ -49,9 +46,6 @@ export default function FleetCoreUltimatePremium() {
   const [dashboardView, setDashboardView] = useState<
     "operations" | "financial" | "maintenance"
   >("operations");
-  const [fleetType, setFleetType] = useState<"rental" | "ridehailing">(
-    "rental"
-  );
   const { theme, setTheme } = useTheme();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("rental");
@@ -443,6 +437,7 @@ export default function FleetCoreUltimatePremium() {
         title: "Ready to Transform Your Fleet Operations?",
         subtitle: "Join hundreds of successful fleet operators",
         button: "Get Started Today",
+        watchDemoVideo: "Watch Demo Video",
       },
       dashboard: {
         title: "Your Future Fleet Command Center",
@@ -879,6 +874,7 @@ export default function FleetCoreUltimatePremium() {
         title: "Prêt à Transformer Vos Opérations?",
         subtitle: "Rejoignez des centaines d'opérateurs à succès",
         button: "Commencer Aujourd'hui",
+        watchDemoVideo: "Voir la Vidéo de Démo",
       },
       dashboard: {
         title: "Votre Futur Centre de Commande de Flotte",
@@ -2254,9 +2250,7 @@ export default function FleetCoreUltimatePremium() {
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <button className="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-semibold text-white backdrop-blur-md transition-all hover:bg-white/20">
-                {language === "en"
-                  ? "Watch Demo Video"
-                  : "Voir la Vidéo de Démo"}
+                {t.cta.watchDemoVideo}
               </button>
             </motion.div>
           </div>
