@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       data: {
         full_name: body.full_name,
         email: body.email,
-        company_name: body.company_name,
+        demo_company_name: body.demo_company_name,
         fleet_size: body.fleet_size,
         phone: body.phone,
         message: body.message,

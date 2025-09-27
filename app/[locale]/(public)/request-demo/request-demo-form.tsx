@@ -76,7 +76,7 @@ export default function RequestDemoForm() {
         body: JSON.stringify({
           full_name: formData.fullName,
           email: formData.email,
-          company_name: formData.company,
+          demo_company_name: formData.company,
           fleet_size: formData.fleetSize,
           phone: formData.phone,
           message: formData.message,
