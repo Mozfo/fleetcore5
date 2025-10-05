@@ -428,8 +428,708 @@ async function main() {
 
   log.success("Created 2 French employers");
 
-  log.section("✅ Seed Phase 1 completed successfully!");
-  log.info("Next: Run seed again to add vehicles, drivers, and revenue data");
+  // ===================================
+  // FLT - Vehicles
+  // ===================================
+
+  log.section("🚗 Step 6: Creating vehicles...");
+
+  const dubaiVehicles = [
+    {
+      code: "VEH-001",
+      make: "Toyota",
+      model: "Camry",
+      year: 2022,
+      license: "D-12345",
+      vin: "JTD2222222222222",
+      fuel: "petrol",
+      color: "White",
+    },
+    {
+      code: "VEH-002",
+      make: "Tesla",
+      model: "Model 3",
+      year: 2023,
+      license: "D-67890",
+      vin: "5YJ3E1EA1KF111111",
+      fuel: "electric",
+      color: "Black",
+    },
+    {
+      code: "VEH-003",
+      make: "Honda",
+      model: "Accord",
+      year: 2021,
+      license: "D-11111",
+      vin: "1HGBH41JXMN222222",
+      fuel: "petrol",
+      color: "Silver",
+    },
+  ];
+
+  const parisVehicles = [
+    {
+      code: "VEH-001",
+      make: "Peugeot",
+      model: "508",
+      year: 2022,
+      license: "AB-123-CD",
+      vin: "VF3LCYHZPHS333333",
+      fuel: "diesel",
+      color: "Blue",
+    },
+    {
+      code: "VEH-002",
+      make: "Renault",
+      model: "Zoe",
+      year: 2023,
+      license: "EF-456-GH",
+      vin: "VF1AG000162444444",
+      fuel: "electric",
+      color: "White",
+    },
+  ];
+
+  const createdDubaiVehicles = [];
+  for (const v of dubaiVehicles) {
+    const vehicle = await prisma.flt_vehicles.upsert({
+      where: {
+        tenant_id_vehicle_code: {
+          tenant_id: dubaiOrg.id,
+          vehicle_code: v.code,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: dubaiOrg.id,
+        vehicle_code: v.code,
+        make: v.make,
+        model: v.model,
+        year: v.year,
+        license_plate: v.license,
+        vin: v.vin,
+        vehicle_type: "sedan",
+        fuel_type: v.fuel,
+        color: v.color,
+        ownership_type: "owned",
+        current_odometer: Math.floor(Math.random() * 50000) + 10000,
+        status: "active",
+      },
+    });
+    createdDubaiVehicles.push(vehicle);
+  }
+
+  const createdParisVehicles = [];
+  for (const v of parisVehicles) {
+    const vehicle = await prisma.flt_vehicles.upsert({
+      where: {
+        tenant_id_vehicle_code: {
+          tenant_id: parisOrg.id,
+          vehicle_code: v.code,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: parisOrg.id,
+        vehicle_code: v.code,
+        make: v.make,
+        model: v.model,
+        year: v.year,
+        license_plate: v.license,
+        vin: v.vin,
+        vehicle_type: "sedan",
+        fuel_type: v.fuel,
+        color: v.color,
+        ownership_type: "owned",
+        current_odometer: Math.floor(Math.random() * 50000) + 10000,
+        status: "active",
+      },
+    });
+    createdParisVehicles.push(vehicle);
+  }
+
+  log.success(
+    `Created ${dubaiVehicles.length} Dubai + ${parisVehicles.length} Paris vehicles`
+  );
+
+  // ===================================
+  // RID - Drivers
+  // ===================================
+
+  log.section("👤 Step 7: Creating drivers...");
+
+  const dubaiDrivers = [
+    {
+      code: "DRV-001",
+      firstName: "Ahmed",
+      lastName: "Al Mansoori",
+      phone: "+971501234567",
+      email: "ahmed.mansoori@test.com",
+    },
+    {
+      code: "DRV-002",
+      firstName: "Mohammed",
+      lastName: "Al Hashimi",
+      phone: "+971507654321",
+      email: "mohammed.hashimi@test.com",
+    },
+    {
+      code: "DRV-003",
+      firstName: "Fatima",
+      lastName: "Al Zaabi",
+      phone: "+971509876543",
+      email: "fatima.zaabi@test.com",
+    },
+  ];
+
+  const parisDrivers = [
+    {
+      code: "DRV-001",
+      firstName: "Pierre",
+      lastName: "Dupont",
+      phone: "+33612345678",
+      email: "pierre.dupont@test.fr",
+    },
+    {
+      code: "DRV-002",
+      firstName: "Marie",
+      lastName: "Martin",
+      phone: "+33687654321",
+      email: "marie.martin@test.fr",
+    },
+  ];
+
+  const createdDubaiDrivers = [];
+  for (const d of dubaiDrivers) {
+    const driver = await prisma.rid_drivers.upsert({
+      where: {
+        tenant_id_driver_code: {
+          tenant_id: dubaiOrg.id,
+          driver_code: d.code,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: dubaiOrg.id,
+        driver_code: d.code,
+        first_name: d.firstName,
+        last_name: d.lastName,
+        email: d.email,
+        phone: d.phone,
+        employment_type: "contractor",
+        employment_status: "active",
+        country_code: "AE",
+        hire_date: new Date("2024-01-01"),
+      },
+    });
+    createdDubaiDrivers.push(driver);
+  }
+
+  const employers = await prisma.adm_employers.findMany({
+    where: { tenant_id: parisOrg.id },
+  });
+
+  const createdParisDrivers = [];
+  for (let i = 0; i < parisDrivers.length; i++) {
+    const d = parisDrivers[i];
+    const driver = await prisma.rid_drivers.upsert({
+      where: {
+        tenant_id_driver_code: {
+          tenant_id: parisOrg.id,
+          driver_code: d.code,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: parisOrg.id,
+        driver_code: d.code,
+        first_name: d.firstName,
+        last_name: d.lastName,
+        email: d.email,
+        phone: d.phone,
+        employment_type: "employee",
+        employment_status: "active",
+        country_code: "FR",
+        hire_date: new Date("2024-01-01"),
+        employer_id: employers[i % employers.length]?.id,
+      },
+    });
+    createdParisDrivers.push(driver);
+  }
+
+  log.success(
+    `Created ${dubaiDrivers.length} Dubai + ${parisDrivers.length} Paris drivers`
+  );
+
+  // ===================================
+  // RID - Driver Platforms
+  // ===================================
+
+  log.section("🔗 Step 8: Creating driver platform links...");
+
+  let platformLinkCount = 0;
+
+  for (const driver of createdDubaiDrivers) {
+    await prisma.rid_driver_platforms.upsert({
+      where: {
+        tenant_id_platform_name_platform_driver_id: {
+          tenant_id: dubaiOrg.id,
+          platform_name: "Uber",
+          platform_driver_id: `uber_${driver.driver_code}`,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: dubaiOrg.id,
+        driver_id: driver.id,
+        platform_name: "Uber",
+        platform_driver_id: `uber_${driver.driver_code}`,
+        is_active: true,
+        activation_date: new Date("2024-01-01"),
+      },
+    });
+    platformLinkCount++;
+
+    await prisma.rid_driver_platforms.upsert({
+      where: {
+        tenant_id_platform_name_platform_driver_id: {
+          tenant_id: dubaiOrg.id,
+          platform_name: "Careem",
+          platform_driver_id: `careem_${driver.driver_code}`,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: dubaiOrg.id,
+        driver_id: driver.id,
+        platform_name: "Careem",
+        platform_driver_id: `careem_${driver.driver_code}`,
+        is_active: true,
+        activation_date: new Date("2024-02-01"),
+      },
+    });
+    platformLinkCount++;
+  }
+
+  for (const driver of createdParisDrivers) {
+    await prisma.rid_driver_platforms.upsert({
+      where: {
+        tenant_id_platform_name_platform_driver_id: {
+          tenant_id: parisOrg.id,
+          platform_name: "Uber",
+          platform_driver_id: `uber_${driver.driver_code}`,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: parisOrg.id,
+        driver_id: driver.id,
+        platform_name: "Uber",
+        platform_driver_id: `uber_${driver.driver_code}`,
+        is_active: true,
+        activation_date: new Date("2024-01-01"),
+      },
+    });
+    platformLinkCount++;
+
+    await prisma.rid_driver_platforms.upsert({
+      where: {
+        tenant_id_platform_name_platform_driver_id: {
+          tenant_id: parisOrg.id,
+          platform_name: "Bolt",
+          platform_driver_id: `bolt_${driver.driver_code}`,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: parisOrg.id,
+        driver_id: driver.id,
+        platform_name: "Bolt",
+        platform_driver_id: `bolt_${driver.driver_code}`,
+        is_active: true,
+        activation_date: new Date("2024-02-01"),
+      },
+    });
+    platformLinkCount++;
+  }
+
+  log.success(`Created ${platformLinkCount} driver-platform links`);
+
+  // ===================================
+  // RID - Driver Documents
+  // ===================================
+
+  log.section("📄 Step 9: Creating driver documents...");
+
+  let documentCount = 0;
+
+  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
+    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+
+    await prisma.rid_driver_documents.create({
+      data: {
+        tenant_id: tenantId,
+        driver_id: driver.id,
+        document_type: "driver_license",
+        document_number: `DL${Math.floor(Math.random() * 1000000)}`,
+        issue_date: new Date("2020-01-01"),
+        expiry_date: new Date("2030-01-01"),
+        issuing_country: driver.country_code,
+        is_verified: true,
+        verified_at: new Date(),
+        status: "active",
+      },
+    });
+    documentCount++;
+
+    if (driver.country_code === "FR") {
+      await prisma.rid_driver_documents.create({
+        data: {
+          tenant_id: tenantId,
+          driver_id: driver.id,
+          document_type: "vtc_card",
+          document_number: `VTC${Math.floor(Math.random() * 1000000)}`,
+          issue_date: new Date("2023-01-01"),
+          expiry_date: new Date("2028-01-01"),
+          issuing_country: "FR",
+          is_verified: true,
+          verified_at: new Date(),
+          status: "active",
+        },
+      });
+      documentCount++;
+    }
+  }
+
+  log.success(`Created ${documentCount} driver documents`);
+
+  // ===================================
+  // FLT - Vehicle Assignments
+  // ===================================
+
+  log.section("🔄 Step 10: Creating vehicle assignments...");
+
+  let assignmentCount = 0;
+
+  for (let i = 0; i < createdDubaiVehicles.length; i++) {
+    if (i < createdDubaiDrivers.length) {
+      await prisma.flt_vehicle_assignments.create({
+        data: {
+          tenant_id: dubaiOrg.id,
+          vehicle_id: createdDubaiVehicles[i].id,
+          driver_id: createdDubaiDrivers[i].id,
+          start_date: new Date("2024-01-01"),
+          assignment_type: "long_term",
+          status: "active",
+        },
+      });
+      assignmentCount++;
+    }
+  }
+
+  for (let i = 0; i < createdParisVehicles.length; i++) {
+    if (i < createdParisDrivers.length) {
+      await prisma.flt_vehicle_assignments.create({
+        data: {
+          tenant_id: parisOrg.id,
+          vehicle_id: createdParisVehicles[i].id,
+          driver_id: createdParisDrivers[i].id,
+          start_date: new Date("2024-01-01"),
+          assignment_type: "long_term",
+          status: "active",
+        },
+      });
+      assignmentCount++;
+    }
+  }
+
+  log.success(`Created ${assignmentCount} vehicle assignments`);
+
+  // ===================================
+  // FLT - Vehicle Maintenance
+  // ===================================
+
+  log.section("🔧 Step 11: Creating vehicle maintenance records...");
+
+  let maintenanceCount = 0;
+
+  for (const vehicle of [...createdDubaiVehicles, ...createdParisVehicles]) {
+    const tenantId = vehicle.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+
+    await prisma.flt_vehicle_maintenance.create({
+      data: {
+        tenant_id: tenantId,
+        vehicle_id: vehicle.id,
+        maintenance_type: "preventive",
+        service_class: "A",
+        trigger_type: "mileage",
+        trigger_value: "10000",
+        scheduled_date: new Date("2024-06-01"),
+        completed_date: new Date("2024-06-03"),
+        odometer_reading: 10000,
+        work_performed: "Oil change, filter replacement, tire rotation",
+        labor_cost: 150,
+        parts_cost: 200,
+        total_cost: 350,
+        service_provider: "Official Service Center",
+        status: "completed",
+        next_service_date: new Date("2024-12-01"),
+        next_service_mileage: 20000,
+      },
+    });
+    maintenanceCount++;
+  }
+
+  log.success(`Created ${maintenanceCount} maintenance records`);
+
+  // ===================================
+  // FLT - Vehicle Inspections
+  // ===================================
+
+  log.section("🔍 Step 12: Creating vehicle inspections...");
+
+  let inspectionCount = 0;
+
+  for (const vehicle of [...createdDubaiVehicles, ...createdParisVehicles]) {
+    const tenantId = vehicle.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+
+    await prisma.flt_vehicle_inspections.create({
+      data: {
+        tenant_id: tenantId,
+        vehicle_id: vehicle.id,
+        inspection_type: "DVIR",
+        inspection_date: new Date("2024-09-01"),
+        inspection_time: new Date("2024-09-01T08:00:00Z"),
+        odometer_reading: vehicle.current_odometer,
+        inspection_items: {
+          brakes: "pass",
+          tires: "pass",
+          lights: "pass",
+          fluids: "pass",
+          exterior: "pass",
+        },
+        overall_status: "pass",
+        defects_found: false,
+        critical_defects: false,
+        corrective_action_required: false,
+      },
+    });
+    inspectionCount++;
+  }
+
+  log.success(`Created ${inspectionCount} vehicle inspections`);
+
+  // ===================================
+  // REV - Revenue Imports & Driver Revenues
+  // ===================================
+
+  log.section("💰 Step 13: Creating revenue data...");
+
+  const weekStart = new Date("2024-09-23");
+  const weekEnd = new Date("2024-09-29");
+
+  let revenueImportCount = 0;
+  let driverRevenueCount = 0;
+
+  const members = await prisma.member.findMany({ take: 1 });
+  const systemUserId = members[0]?.id || dubaiOrg.id;
+
+  for (const driver of createdDubaiDrivers) {
+    const revenueImport = await prisma.rev_revenue_imports.create({
+      data: {
+        tenant_id: dubaiOrg.id,
+        platform_name: "Uber",
+        import_date: new Date(),
+        period_start: weekStart,
+        period_end: weekEnd,
+        file_name: `uber_${driver.driver_code}_w39.csv`,
+        total_records: 50,
+        imported_records: 50,
+        failed_records: 0,
+        status: "completed",
+        imported_by: systemUserId,
+      },
+    });
+    revenueImportCount++;
+
+    for (let day = 0; day < 7; day++) {
+      const tripDate = new Date(weekStart);
+      tripDate.setDate(tripDate.getDate() + day);
+
+      const trips = Math.floor(Math.random() * 10) + 5;
+      for (let trip = 0; trip < trips; trip++) {
+        const fareAmount = Math.floor(Math.random() * 50) + 20;
+        const commissionAmount = fareAmount * 0.25;
+        const driverEarnings = fareAmount - commissionAmount;
+
+        await prisma.rev_driver_revenues.create({
+          data: {
+            tenant_id: dubaiOrg.id,
+            import_id: revenueImport.id,
+            driver_id: driver.id,
+            platform_name: "Uber",
+            trip_date: new Date(tripDate),
+            trip_id: `trip_${Math.random().toString(36).substr(2, 9)}`,
+            fare_amount: fareAmount,
+            commission_amount: commissionAmount,
+            commission_rate: 25,
+            driver_earnings: driverEarnings,
+            currency: "AED",
+            distance_km: Math.floor(Math.random() * 30) + 5,
+            duration_minutes: Math.floor(Math.random() * 60) + 10,
+          },
+        });
+        driverRevenueCount++;
+      }
+    }
+  }
+
+  for (const driver of createdParisDrivers) {
+    const revenueImport = await prisma.rev_revenue_imports.create({
+      data: {
+        tenant_id: parisOrg.id,
+        platform_name: "Uber",
+        import_date: new Date(),
+        period_start: weekStart,
+        period_end: weekEnd,
+        file_name: `uber_${driver.driver_code}_w39.csv`,
+        total_records: 40,
+        imported_records: 40,
+        failed_records: 0,
+        status: "completed",
+        imported_by: systemUserId,
+      },
+    });
+    revenueImportCount++;
+
+    for (let day = 0; day < 7; day++) {
+      const tripDate = new Date(weekStart);
+      tripDate.setDate(tripDate.getDate() + day);
+
+      const trips = Math.floor(Math.random() * 8) + 4;
+      for (let trip = 0; trip < trips; trip++) {
+        const fareAmount = Math.floor(Math.random() * 40) + 15;
+        const commissionAmount = fareAmount * 0.25;
+        const driverEarnings = fareAmount - commissionAmount;
+
+        await prisma.rev_driver_revenues.create({
+          data: {
+            tenant_id: parisOrg.id,
+            import_id: revenueImport.id,
+            driver_id: driver.id,
+            platform_name: "Uber",
+            trip_date: new Date(tripDate),
+            trip_id: `trip_${Math.random().toString(36).substr(2, 9)}`,
+            fare_amount: fareAmount,
+            commission_amount: commissionAmount,
+            commission_rate: 25,
+            driver_earnings: driverEarnings,
+            currency: "EUR",
+            distance_km: Math.floor(Math.random() * 25) + 5,
+            duration_minutes: Math.floor(Math.random() * 50) + 10,
+          },
+        });
+        driverRevenueCount++;
+      }
+    }
+  }
+
+  log.success(
+    `Created ${revenueImportCount} revenue imports with ${driverRevenueCount} driver revenues`
+  );
+
+  // ===================================
+  // BIL - Driver Balances
+  // ===================================
+
+  log.section("📊 Step 14: Creating driver balances...");
+
+  let balanceCount = 0;
+
+  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
+    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+
+    const revenues = await prisma.rev_driver_revenues.findMany({
+      where: { driver_id: driver.id },
+    });
+
+    const grossRevenue = revenues.reduce(
+      (sum, r) => sum + Number(r.fare_amount),
+      0
+    );
+    const platformFees = revenues.reduce(
+      (sum, r) => sum + Number(r.commission_amount || 0),
+      0
+    );
+    const netRevenue = revenues.reduce(
+      (sum, r) => sum + Number(r.driver_earnings),
+      0
+    );
+
+    await prisma.bil_driver_balances.create({
+      data: {
+        tenant_id: tenantId,
+        driver_id: driver.id,
+        period_start: weekStart,
+        period_end: weekEnd,
+        gross_revenue: grossRevenue,
+        platform_fees: platformFees,
+        net_revenue: netRevenue,
+        vehicle_rental: 800,
+        total_deductions: 800,
+        balance: netRevenue - 800,
+        status: "calculated",
+      },
+    });
+    balanceCount++;
+  }
+
+  log.success(`Created ${balanceCount} driver balances`);
+
+  // ===================================
+  // BIL - Driver Deductions
+  // ===================================
+
+  log.section("💸 Step 15: Creating driver deductions...");
+
+  let deductionCount = 0;
+
+  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
+    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+    const currency = driver.country_code === "AE" ? "AED" : "EUR";
+
+    const balance = await prisma.bil_driver_balances.findFirst({
+      where: {
+        driver_id: driver.id,
+        period_start: weekStart,
+      },
+    });
+
+    if (balance) {
+      await prisma.bil_driver_deductions.create({
+        data: {
+          tenant_id: tenantId,
+          driver_id: driver.id,
+          deduction_date: weekStart,
+          deduction_type: "vehicle_rental",
+          amount: 800,
+          currency: currency,
+          description: "Weekly vehicle rental",
+          applied_to_balance: true,
+          balance_id: balance.id,
+          created_by: systemUserId,
+        },
+      });
+      deductionCount++;
+    }
+  }
+
+  log.success(`Created ${deductionCount} driver deductions`);
+
+  log.section("✅ Seed completed successfully!");
+  log.info(
+    `📊 Summary: ${dubaiVehicles.length + parisVehicles.length} vehicles, ${dubaiDrivers.length + parisDrivers.length} drivers, ${driverRevenueCount} revenues, ${balanceCount} balances`
+  );
 }
 
 main()
