@@ -13,8 +13,12 @@
     "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "prisma:studio": "dotenv -e .env.local -- prisma studio",
     "prisma:push": "dotenv -e .env.local -- prisma db push",
+    "prisma:seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
     "postinstall": "prisma generate",
     "prisma:pull": "dotenv -e .env.local -- prisma db pull"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.32.2",
@@ -63,6 +67,7 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "prisma": "^6.16.2",
     "tailwindcss": "^4.1.13",
+    "tsx": "^4.20.6",
     "tw-animate-css": "^1.3.8",
     "typescript": "^5.9.2"
   }
