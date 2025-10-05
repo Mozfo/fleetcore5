@@ -9,12 +9,17 @@ const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 // Allowed admin roles
 const ADMIN_ROLES = ["org:adm_admin", "org:adm_commercial", "org:adm_support"];
 
-// Update protected routes to include locale prefix
-const isProtectedRoute = createRouteMatcher([
-  "/:locale/dashboard(.*)",
-  "/dashboard(.*)",
-  // Note: /adm routes are NOT in this list - they're protected in app/adm/layout.tsx
-  "/api/v1(.*)",
+// Define public routes (accessible without authentication)
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/:locale",
+  "/:locale/login(.*)",
+  "/:locale/register(.*)",
+  "/:locale/forgot-password(.*)",
+  "/:locale/reset-password(.*)",
+  "/:locale/request-demo(.*)",
+  "/api/demo-leads",
+  "/api/webhooks(.*)",
 ]);
 
 // Locale handling with react-i18next
@@ -66,10 +71,9 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   // Extract locale from pathname using centralized helper
   const locale = getLocaleFromPathname(pathname);
 
-  // Check if this is a protected route
-  if (isProtectedRoute(req)) {
+  // Protect all routes except public ones (Clerk best practice)
+  if (!isPublicRoute(req)) {
     await auth.protect();
-    // Clerk handles redirection automatically using NEXT_PUBLIC_CLERK_SIGN_IN_URL
   }
 
   // Check if locale is in path
