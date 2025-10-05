@@ -19,6 +19,12 @@
       "email": "Email professionnel",
       "company": "Nom de l'entreprise",
       "phone": "Numéro de téléphone (Optionnel)",
+      "country": "Pays",
+      "selectCountry": "Sélectionner le pays",
+      "countries": {
+        "uae": "Émirats Arabes Unis",
+        "france": "France"
+      },
       "fleetSize": "Taille de la flotte",
       "message": "Parlez-nous de vos besoins (Optionnel)",
       "fleetOptions": [

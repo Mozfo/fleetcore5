@@ -1,10 +1,9 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import resourcesToBackend from "i18next-resources-to-backend";
+import { locales, defaultLocale } from "./locales";
 
-export const locales = ["en", "fr"] as const;
-export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = "en";
+export { locales, defaultLocale, type Locale } from "./locales";
 
 // Import des fichiers de traduction de manière dynamique
 i18n
@@ -19,7 +18,7 @@ i18n
     fallbackLng: defaultLocale,
     supportedLngs: locales,
     defaultNS: "common",
-    ns: ["common", "auth", "public"],
+    ns: ["common", "auth", "public", "admin"],
     interpolation: {
       escapeValue: false,
     },

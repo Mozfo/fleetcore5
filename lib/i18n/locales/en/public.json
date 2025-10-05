@@ -19,6 +19,12 @@
       "email": "Business Email",
       "company": "Company Name",
       "phone": "Phone Number (Optional)",
+      "country": "Country",
+      "selectCountry": "Select country",
+      "countries": {
+        "uae": "United Arab Emirates",
+        "france": "France"
+      },
       "fleetSize": "Fleet Size",
       "message": "Tell us about your needs (Optional)",
       "fleetOptions": [

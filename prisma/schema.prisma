@@ -40,11 +40,44 @@ model sys_demo_lead {
   phone             String?   @db.VarChar(50)
   message           String?
   status            String?   @default("pending") @db.VarChar(50)
+  country_code      String    @default("AE") @db.VarChar(2)
+  assigned_to       String?   @db.Uuid
+  qualified_date    DateTime? @db.Timestamptz(6)
   created_at        DateTime? @default(now()) @db.Timestamptz(6)
   updated_at        DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+
+  activities        sys_demo_lead_activity[]
 
   @@index([created_at(sort: Desc)], map: "idx_demo_lead_created")
   @@index([email], map: "idx_demo_lead_email")
   @@index([status], map: "idx_demo_lead_status")
   @@index([demo_company_name], map: "idx_demo_lead_demo_company")
+  @@index([country_code], map: "idx_demo_lead_country")
+  @@index([assigned_to], map: "idx_demo_lead_assigned")
+
+}
+
+model sys_demo_lead_activity {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id           String    @db.Uuid
+  activity_type     String    @db.VarChar(50)
+  activity_date     DateTime  @default(now()) @db.Timestamptz(6)
+  notes             String?
+  outcome           String?   @db.VarChar(50)        
+  duration          Int?                               
+  priority          String    @default("medium") @db.VarChar(20)  
+  status            String    @default("completed") @db.VarChar(20) 
+  performed_by      String    @db.Uuid
+  next_action       String?   @db.VarChar(255)
+  next_action_date  DateTime? @db.Timestamptz(6)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  
+
+  // Relations
+  lead              sys_demo_lead @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+
+  @@index([lead_id], map: "idx_demo_lead_activity_lead")
+  @@index([activity_date(sort: Desc)], map: "idx_demo_lead_activity_date")
+  @@index([performed_by], map: "idx_demo_lead_activity_performed_by")
+  @@index([status], map: "idx_demo_lead_activity_status")  
 }

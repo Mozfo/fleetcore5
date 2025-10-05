@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import type { FeatureItem, ProcessStep, ProofMetric } from "@/lib/i18n/types";
 import {
   // Navigation & UI
   Car,
@@ -84,7 +83,829 @@ export default function FleetCoreUltimatePremium() {
     return () => clearInterval(interval);
   }, []);
 
-  const { t } = useTranslation("common");
+  const content = {
+    en: {
+      nav: {
+        product: "Product",
+        solutions: "Solutions",
+        resources: "Resources",
+        company: "Company",
+        login: "Login",
+        demo: "Schedule Demo",
+      },
+      productMenu: {
+        tabs: {
+          rental: "Car Rental Management",
+          fleet: "Fleet Operations",
+          platform: "Platform Integrations",
+          analytics: "Analytics & Reports",
+        },
+        rental: {
+          items: [
+            {
+              title: "Booking System",
+              desc: "Online reservations with real-time availability",
+            },
+            {
+              title: "Contract Management",
+              desc: "Digital agreements and e-signatures",
+            },
+            {
+              title: "Pricing Engine",
+              desc: "Dynamic rates and seasonal pricing",
+            },
+            {
+              title: "Billing & Invoicing",
+              desc: "Automated invoices and payment processing",
+            },
+            {
+              title: "Customer CRM",
+              desc: "Customer profiles and rental history",
+            },
+            {
+              title: "Document Verification",
+              desc: "License and ID verification system",
+            },
+          ],
+        },
+        fleet: {
+          items: [
+            { title: "Vehicle Tracking", desc: "Real-time GPS and geofencing" },
+            {
+              title: "Maintenance",
+              desc: "Service schedules and repair tracking",
+            },
+            {
+              title: "Driver Management",
+              desc: "Performance and shift scheduling",
+            },
+            {
+              title: "Document Control",
+              desc: "Insurance and registration tracking",
+            },
+            {
+              title: "Fuel Management",
+              desc: "Consumption tracking and fuel cards",
+            },
+            { title: "Telematics", desc: "Driver behavior analysis" },
+          ],
+        },
+        platform: {
+          items: [
+            { title: "Uber Fleet API", desc: "Direct integration with Uber" },
+            { title: "Bolt Business", desc: "Connect with Bolt platform" },
+            { title: "Careem Plus", desc: "Careem fleet integration" },
+            { title: "Yango Fleet", desc: "Yango platform connection" },
+            { title: "Revenue Import", desc: "Automatic daily sync" },
+            { title: "Commission Tracking", desc: "Platform fees and margins" },
+          ],
+        },
+        analytics: {
+          items: [
+            {
+              title: "Business Intelligence",
+              desc: "KPI dashboards and metrics",
+            },
+            { title: "Financial Reports", desc: "P&L and cash flow analysis" },
+            { title: "Fleet Performance", desc: "Utilization and ROI" },
+            { title: "Driver Analytics", desc: "Performance metrics" },
+            { title: "Custom Reports", desc: "Report builder tool" },
+            { title: "Data Export", desc: "CSV and Excel exports" },
+          ],
+        },
+      },
+      solutionsMenu: {
+        tabs: {
+          industry: "By Industry",
+          size: "By Fleet Size",
+          usecase: "By Use Case",
+          compliance: "Compliance & Safety",
+        },
+        industry: {
+          items: [
+            { title: "Car Rental", desc: "Traditional rental companies" },
+            { title: "Ride-Hailing", desc: "Uber, Bolt, Careem fleets" },
+            { title: "Taxi Companies", desc: "Traditional taxi operations" },
+            { title: "Delivery Services", desc: "Last-mile delivery fleets" },
+            { title: "Corporate Fleets", desc: "Company vehicle management" },
+            {
+              title: "Leasing Companies",
+              desc: "Long-term leasing operations",
+            },
+          ],
+        },
+        size: {
+          items: [
+            {
+              title: "Small Fleet (1-20)",
+              desc: "Starter package with essentials",
+            },
+            {
+              title: "Medium Fleet (20-100)",
+              desc: "Full features with automation",
+            },
+            {
+              title: "Large Fleet (100-500)",
+              desc: "Advanced analytics and API",
+            },
+            {
+              title: "Enterprise (500+)",
+              desc: "Custom solutions and support",
+            },
+            { title: "Multi-Location", desc: "Branch management tools" },
+            { title: "Franchise Support", desc: "Multi-tenant architecture" },
+          ],
+        },
+        usecase: {
+          items: [
+            { title: "Fleet Finance", desc: "Revenue and commission tracking" },
+            { title: "GPS Monitoring", desc: "Real-time tracking and alerts" },
+            {
+              title: "Driver Onboarding",
+              desc: "Digital recruitment workflow",
+            },
+            {
+              title: "Maintenance Planning",
+              desc: "Predictive maintenance system",
+            },
+            { title: "Customer Portal", desc: "Self-service booking system" },
+            { title: "Communication Hub", desc: "WhatsApp and SMS automation" },
+          ],
+        },
+        compliance: {
+          items: [
+            {
+              title: "Document Management",
+              desc: "License and insurance tracking",
+            },
+            { title: "Safety Monitoring", desc: "Driver behavior scoring" },
+            {
+              title: "Regulatory Compliance",
+              desc: "Local regulation adherence",
+            },
+            { title: "Audit Trail", desc: "Complete activity logging" },
+            {
+              title: "Incident Management",
+              desc: "Accident reporting workflow",
+            },
+            { title: "Insurance Claims", desc: "Digital claims processing" },
+          ],
+        },
+      },
+      hero: {
+        badge: "All-in-One Fleet & Driver Management Platform",
+        title:
+          "Manage Your Rental and Ride-Hailing Activities Like Never Before",
+        subtitle:
+          "Complete SaaS solution for managing drivers, vehicles, finances, and operations. From single driver assignments to multi-platform revenue tracking.",
+        metrics: {
+          vehicles: "Vehicles Tracked",
+          revenue: "Daily Revenue",
+          utilization: "Fleet Usage",
+          bookings: "Active Trips",
+        },
+      },
+      features: {
+        carRental: {
+          title: "Car Rental Management",
+          items: [
+            {
+              name: "Reservation & Booking",
+              desc: "Create and manage bookings with real-time availability and instant confirmation.",
+            },
+            {
+              name: "Contracts & Handover",
+              desc: "Auto-generate rental agreements, capture digital signatures, and log vehicle condition with photos.",
+            },
+            {
+              name: "Pricing, Billing & Insurance",
+              desc: "Set dynamic rates and extras, automate invoices, manage deposits, and handle insurance policies and claims.",
+            },
+            {
+              name: "Customer CRM & Verification",
+              desc: "Store verified profiles, rental history, communication records, and document validation.",
+            },
+            {
+              name: "Sales & Opportunity Management",
+              desc: "Track leads, corporate deals, pipeline stages, and rental conversions.",
+            },
+            {
+              name: "Fleet Utilization & Operations",
+              desc: "Monitor availability, usage, damage, maintenance, and optimize asset performance.",
+            },
+          ],
+        },
+        rental: {
+          title: "Complete Fleet Management",
+          items: [
+            {
+              name: "Driver & Vehicle Assignment",
+              desc: "Schedule drivers, manage shifts, track vehicle handovers with digital signatures and photos",
+              icon: Users,
+            },
+            {
+              name: "Multi-Platform Revenue Import",
+              desc: "Import & reconcile data from Uber, Bolt, Careem, Yango - automatic duplicate detection",
+              icon: DollarSign,
+            },
+            {
+              name: "Financial Cashbox System",
+              desc: "Track all driver debits/credits, automatic balance calculation, commission management",
+              icon: CreditCard,
+            },
+            {
+              name: "Maintenance Scheduling",
+              desc: "Service reminders, cost tracking, vendor management, vehicle downtime optimization",
+              icon: Wrench,
+            },
+            {
+              name: "Document Management",
+              desc: "Store licenses, insurance, contracts - automatic expiry alerts and renewal tracking",
+              icon: FileSignature,
+            },
+            {
+              name: "Real-Time Analytics",
+              desc: "Live dashboards, custom reports, KPI tracking, profit/loss per vehicle and driver",
+              icon: BarChart3,
+            },
+          ],
+        },
+        ridehailing: {
+          title: "Platform Integration Hub",
+          items: [
+            {
+              name: "Unified Platform Management",
+              desc: "Connect Uber Fleet, Bolt Business, Careem Plus, Yango Fleet from one dashboard",
+              icon: Wifi,
+            },
+            {
+              name: "Automated Data Import",
+              desc: "Daily automatic import of trips, earnings, bonuses - no manual CSV uploads needed",
+              icon: Database,
+            },
+            {
+              name: "Driver Performance Tracking",
+              desc: "Monitor online hours, acceptance rates, cancellations, ratings across all platforms",
+              icon: Activity,
+            },
+            {
+              name: "Commission Reconciliation",
+              desc: "Automatic calculation of platform fees, driver payouts, company margins per trip",
+              icon: DollarSign,
+            },
+            {
+              name: "Office Trips Module",
+              desc: "Your own booking system for corporate clients - bypass platform commissions",
+              icon: Briefcase,
+            },
+            {
+              name: "GPS & Telematics",
+              desc: "Real-time vehicle tracking, fuel monitoring, driver behavior analysis",
+              icon: MapPin,
+            },
+          ],
+        },
+      },
+      process: {
+        title: "Start Managing Your Fleet in 48 Hours",
+        subtitle: "Quick setup, immediate results",
+        steps: [
+          {
+            icon: Phone,
+            title: "1. Book Demo",
+            desc: "30-min call",
+            detail: "See the platform in action with your use cases",
+          },
+          {
+            icon: UserCheck,
+            title: "2. Get Proposal",
+            desc: "Same day quote",
+            detail: "Transparent pricing based on fleet size",
+          },
+          {
+            icon: FileCheck,
+            title: "3. Sign Agreement",
+            desc: "Simple contract",
+            detail: "No hidden fees, monthly billing",
+          },
+          {
+            icon: Briefcase,
+            title: "4. Data Import",
+            desc: "We handle setup",
+            detail: "Import your vehicles, drivers, existing data",
+          },
+          {
+            icon: Rocket,
+            title: "5. Go Live",
+            desc: "Start using",
+            detail: "Full training and support included",
+          },
+        ],
+      },
+      integrations: {
+        title: "Works With Everything You Use",
+        categoryLabels: {
+          platforms: "Platforms",
+          payments: "Payments",
+          accounting: "Accounting",
+          hardware: "Hardware",
+        },
+        categories: {
+          platforms: [
+            "Uber Fleet",
+            "Bolt Business",
+            "Careem Plus",
+            "Yango Fleet",
+            "FreeNow",
+            "InDriver",
+          ],
+          payments: ["Stripe", "PayPal", "Square", "Local Banks"],
+          accounting: ["QuickBooks", "Xero", "Zoho Books", "Excel Export"],
+          hardware: ["GPS Trackers", "Fuel Cards", "Dashcams", "OBD Devices"],
+        },
+      },
+      proof: {
+        title: "Trusted by 500+ Fleet Operators",
+        metrics: [
+          {
+            value: "3 hrs",
+            label: "Saved Daily",
+            desc: "On administrative tasks",
+          },
+          {
+            value: "100%",
+            label: "Revenue Tracked",
+            desc: "No more revenue leakage",
+          },
+          {
+            value: "25%",
+            label: "Cost Reduction",
+            desc: "Through better utilization",
+          },
+          { value: "24/7", label: "Support", desc: "Always here to help" },
+        ],
+      },
+      cta: {
+        title: "Ready to Transform Your Fleet Operations?",
+        subtitle: "Join hundreds of successful fleet operators",
+        button: "Get Started Today",
+      },
+      dashboard: {
+        title: "Your Future Fleet Command Center",
+        subtitle: "Real-time insights, automated workflows, complete control",
+      },
+      featuresSection: {
+        title: "Everything You Need to Manage Your Fleet",
+        subtitle: "From driver onboarding to revenue reconciliation",
+      },
+      footer: {
+        product: "Product",
+        company: "Company",
+        legal: "Legal",
+        copyright: "© 2025 FleetCore. All rights reserved.",
+      },
+    },
+    fr: {
+      nav: {
+        product: "Produit",
+        solutions: "Solutions",
+        resources: "Ressources",
+        company: "Entreprise",
+        login: "Connexion",
+        demo: "Planifier Démo",
+      },
+      productMenu: {
+        tabs: {
+          rental: "Gestion de Location de Voitures",
+          fleet: "Opérations de Flotte",
+          platform: "Intégrations Plateformes",
+          analytics: "Analytics & Rapports",
+        },
+        rental: {
+          items: [
+            {
+              title: "Système de Réservation",
+              desc: "Réservations en ligne avec disponibilité en temps réel",
+            },
+            {
+              title: "Gestion des Contrats",
+              desc: "Accords numériques et signatures électroniques",
+            },
+            {
+              title: "Moteur de Tarification",
+              desc: "Tarifs dynamiques et prix saisonniers",
+            },
+            {
+              title: "Facturation & Comptabilité",
+              desc: "Factures automatisées et traitement des paiements",
+            },
+            {
+              title: "CRM Client",
+              desc: "Profils clients et historique de location",
+            },
+            {
+              title: "Vérification de Documents",
+              desc: "Système de vérification des permis et pièces d'identité",
+            },
+          ],
+        },
+        fleet: {
+          items: [
+            {
+              title: "Suivi des Véhicules",
+              desc: "GPS en temps réel et géofencing",
+            },
+            {
+              title: "Maintenance",
+              desc: "Planification des services et suivi des réparations",
+            },
+            {
+              title: "Gestion des Chauffeurs",
+              desc: "Performance et planification des shifts",
+            },
+            {
+              title: "Contrôle des Documents",
+              desc: "Suivi des assurances et immatriculations",
+            },
+            {
+              title: "Gestion du Carburant",
+              desc: "Suivi de consommation et cartes carburant",
+            },
+            {
+              title: "Télématique",
+              desc: "Analyse du comportement des conducteurs",
+            },
+          ],
+        },
+        platform: {
+          items: [
+            { title: "API Uber Fleet", desc: "Intégration directe avec Uber" },
+            {
+              title: "Bolt Business",
+              desc: "Connexion avec la plateforme Bolt",
+            },
+            { title: "Careem Plus", desc: "Intégration flotte Careem" },
+            { title: "Yango Fleet", desc: "Connexion plateforme Yango" },
+            {
+              title: "Import de Revenus",
+              desc: "Synchronisation quotidienne automatique",
+            },
+            {
+              title: "Suivi des Commissions",
+              desc: "Frais de plateforme et marges",
+            },
+          ],
+        },
+        analytics: {
+          items: [
+            {
+              title: "Business Intelligence",
+              desc: "Tableaux de bord KPI et métriques",
+            },
+            {
+              title: "Rapports Financiers",
+              desc: "Analyse P&L et flux de trésorerie",
+            },
+            { title: "Performance de Flotte", desc: "Utilisation et ROI" },
+            { title: "Analytics Chauffeurs", desc: "Métriques de performance" },
+            {
+              title: "Rapports Personnalisés",
+              desc: "Outil de création de rapports",
+            },
+            { title: "Export de Données", desc: "Exports CSV et Excel" },
+          ],
+        },
+      },
+      solutionsMenu: {
+        tabs: {
+          industry: "Par Industrie",
+          size: "Par Taille de Flotte",
+          usecase: "Par Cas d'Usage",
+          compliance: "Conformité & Sécurité",
+        },
+        industry: {
+          items: [
+            {
+              title: "Location de Voitures",
+              desc: "Sociétés de location traditionnelles",
+            },
+            { title: "VTC", desc: "Flottes Uber, Bolt, Careem" },
+            {
+              title: "Compagnies de Taxi",
+              desc: "Opérations de taxi traditionnelles",
+            },
+            {
+              title: "Services de Livraison",
+              desc: "Flottes de livraison dernier kilomètre",
+            },
+            {
+              title: "Flottes d'Entreprise",
+              desc: "Gestion de véhicules d'entreprise",
+            },
+            {
+              title: "Sociétés de Leasing",
+              desc: "Opérations de location longue durée",
+            },
+          ],
+        },
+        size: {
+          items: [
+            {
+              title: "Petite Flotte (1-20)",
+              desc: "Pack de démarrage avec l'essentiel",
+            },
+            {
+              title: "Flotte Moyenne (20-100)",
+              desc: "Fonctionnalités complètes avec automatisation",
+            },
+            {
+              title: "Grande Flotte (100-500)",
+              desc: "Analytics avancés et API",
+            },
+            {
+              title: "Entreprise (500+)",
+              desc: "Solutions personnalisées et support",
+            },
+            { title: "Multi-Sites", desc: "Outils de gestion des succursales" },
+            {
+              title: "Support Franchise",
+              desc: "Architecture multi-locataires",
+            },
+          ],
+        },
+        usecase: {
+          items: [
+            {
+              title: "Finance de Flotte",
+              desc: "Suivi des revenus et commissions",
+            },
+            {
+              title: "Surveillance GPS",
+              desc: "Suivi en temps réel et alertes",
+            },
+            {
+              title: "Onboarding Chauffeurs",
+              desc: "Flux de recrutement numérique",
+            },
+            {
+              title: "Planification Maintenance",
+              desc: "Système de maintenance prédictive",
+            },
+            {
+              title: "Portail Client",
+              desc: "Système de réservation en libre-service",
+            },
+            {
+              title: "Hub de Communication",
+              desc: "Automatisation WhatsApp et SMS",
+            },
+          ],
+        },
+        compliance: {
+          items: [
+            {
+              title: "Gestion Documentaire",
+              desc: "Suivi des permis et assurances",
+            },
+            {
+              title: "Surveillance Sécurité",
+              desc: "Notation du comportement conducteur",
+            },
+            {
+              title: "Conformité Réglementaire",
+              desc: "Respect des réglementations locales",
+            },
+            {
+              title: "Piste d'Audit",
+              desc: "Journalisation complète des activités",
+            },
+            {
+              title: "Gestion des Incidents",
+              desc: "Flux de déclaration d'accidents",
+            },
+            {
+              title: "Réclamations d'Assurance",
+              desc: "Traitement numérique des réclamations",
+            },
+          ],
+        },
+      },
+      hero: {
+        badge: "Plateforme Tout-en-Un de Gestion de Flotte",
+        title: "Gérez vos activités de location et VTC comme jamais",
+        subtitle:
+          "Solution SaaS complète pour gérer chauffeurs, véhicules, finances et opérations. De l'affectation simple au suivi multi-plateforme.",
+        metrics: {
+          vehicles: "Véhicules Suivis",
+          revenue: "Revenus du Jour",
+          utilization: "Utilisation",
+          bookings: "Courses Actives",
+        },
+      },
+      features: {
+        carRental: {
+          title: "Gestion de Location de Voitures",
+          items: [
+            {
+              name: "Réservation et Booking",
+              desc: "Créer et gérer les réservations avec disponibilité en temps réel et confirmation instantanée.",
+            },
+            {
+              name: "Contrats et Remise",
+              desc: "Générer automatiquement les contrats de location, capturer les signatures numériques et documenter l'état du véhicule avec photos.",
+            },
+            {
+              name: "Tarification, Facturation et Assurance",
+              desc: "Définir des tarifs dynamiques et extras, automatiser les factures, gérer les dépôts et traiter les polices d'assurance et réclamations.",
+            },
+            {
+              name: "CRM Client et Vérification",
+              desc: "Stocker les profils vérifiés, historique de location, enregistrements de communication et validation de documents.",
+            },
+            {
+              name: "Gestion des Ventes et Opportunités",
+              desc: "Suivre les leads, contrats corporate, étapes du pipeline et conversions de location.",
+            },
+            {
+              name: "Utilisation de Flotte et Opérations",
+              desc: "Surveiller la disponibilité, utilisation, dommages, maintenance et optimiser la performance des actifs.",
+            },
+          ],
+        },
+        rental: {
+          title: "Gestion de Flotte Complète",
+          items: [
+            {
+              name: "Affectation Chauffeurs & Véhicules",
+              desc: "Planning chauffeurs, gestion shifts, remise véhicule avec signatures et photos",
+              icon: Users,
+            },
+            {
+              name: "Import Revenus Multi-Plateformes",
+              desc: "Import & réconciliation Uber, Bolt, Careem, Yango - détection automatique doublons",
+              icon: DollarSign,
+            },
+            {
+              name: "Système Caisse Financière",
+              desc: "Suivi débits/crédits chauffeurs, calcul automatique soldes, gestion commissions",
+              icon: CreditCard,
+            },
+            {
+              name: "Planning Maintenance",
+              desc: "Rappels entretien, suivi coûts, gestion fournisseurs, optimisation immobilisation",
+              icon: Wrench,
+            },
+            {
+              name: "Gestion Documents",
+              desc: "Stockage permis, assurances, contrats - alertes expiration et suivi renouvellement",
+              icon: FileSignature,
+            },
+            {
+              name: "Analytics Temps Réel",
+              desc: "Tableaux de bord live, rapports personnalisés, KPI, P&L par véhicule et chauffeur",
+              icon: BarChart3,
+            },
+          ],
+        },
+        ridehailing: {
+          title: "Hub Intégration Plateformes",
+          items: [
+            {
+              name: "Gestion Unifiée Plateformes",
+              desc: "Connectez Uber Fleet, Bolt Business, Careem Plus, Yango Fleet depuis un tableau de bord",
+              icon: Wifi,
+            },
+            {
+              name: "Import Données Automatique",
+              desc: "Import quotidien courses, revenus, bonus - plus de CSV manuels",
+              icon: Database,
+            },
+            {
+              name: "Suivi Performance Chauffeurs",
+              desc: "Heures en ligne, taux acceptation, annulations, notes sur toutes plateformes",
+              icon: Activity,
+            },
+            {
+              name: "Réconciliation Commissions",
+              desc: "Calcul automatique frais plateforme, paiements chauffeurs, marges par course",
+              icon: DollarSign,
+            },
+            {
+              name: "Module Office Trips",
+              desc: "Votre système réservation pour clients corporate - évitez les commissions",
+              icon: Briefcase,
+            },
+            {
+              name: "GPS & Télématique",
+              desc: "Tracking véhicules temps réel, suivi carburant, analyse comportement conducteur",
+              icon: MapPin,
+            },
+          ],
+        },
+      },
+      process: {
+        title: "Commencez à Gérer Votre Flotte en 48 Heures",
+        subtitle: "Configuration rapide, résultats immédiats",
+        steps: [
+          {
+            icon: Phone,
+            title: "1. Réserver Démo",
+            desc: "Appel 30 min",
+            detail: "Découvrez la plateforme avec vos cas d'usage",
+          },
+          {
+            icon: UserCheck,
+            title: "2. Recevoir Devis",
+            desc: "Devis jour même",
+            detail: "Tarification transparente selon taille flotte",
+          },
+          {
+            icon: FileCheck,
+            title: "3. Signer Contrat",
+            desc: "Contrat simple",
+            detail: "Sans frais cachés, facturation mensuelle",
+          },
+          {
+            icon: Briefcase,
+            title: "4. Import Données",
+            desc: "On s'occupe du setup",
+            detail: "Import véhicules, chauffeurs, données existantes",
+          },
+          {
+            icon: Rocket,
+            title: "5. Démarrer",
+            desc: "Commencer à utiliser",
+            detail: "Formation et support inclus",
+          },
+        ],
+      },
+      integrations: {
+        title: "Compatible Avec Tous Vos Outils",
+        categories: {
+          platforms: [
+            "Uber Fleet",
+            "Bolt Business",
+            "Careem Plus",
+            "Yango Fleet",
+            "FreeNow",
+            "InDriver",
+          ],
+          payments: ["Stripe", "PayPal", "Square", "Banques Locales"],
+          accounting: ["QuickBooks", "Xero", "Zoho Books", "Export Excel"],
+          hardware: [
+            "Trackers GPS",
+            "Cartes Carburant",
+            "Dashcams",
+            "Boîtiers OBD",
+          ],
+        },
+      },
+      proof: {
+        title: "La Confiance de 500+ Opérateurs",
+        metrics: [
+          {
+            value: "3 hrs",
+            label: "Économisées/Jour",
+            desc: "Sur les tâches admin",
+          },
+          {
+            value: "100%",
+            label: "Revenus Trackés",
+            desc: "Plus de fuite de revenus",
+          },
+          {
+            value: "25%",
+            label: "Réduction Coûts",
+            desc: "Par meilleure utilisation",
+          },
+          { value: "24/7", label: "Support", desc: "Toujours disponible" },
+        ],
+      },
+      cta: {
+        title: "Prêt à Transformer Vos Opérations?",
+        subtitle: "Rejoignez des centaines d'opérateurs à succès",
+        button: "Commencer Aujourd'hui",
+      },
+      dashboard: {
+        title: "Votre Futur Centre de Commande de Flotte",
+        subtitle:
+          "Insights en temps réel, workflows automatisés, contrôle complet",
+      },
+      featuresSection: {
+        title: "Tout ce dont vous avez besoin pour gérer votre flotte",
+        subtitle:
+          "De l'intégration des chauffeurs à la réconciliation des revenus",
+      },
+      footer: {
+        product: "Produit",
+        company: "Entreprise",
+        legal: "Légal",
+        copyright: "© 2025 FleetCore. Tous droits réservés.",
+      },
+    },
+  };
+
+  const t = content[locale as "en" | "fr"];
 
   // Calculator icon fix
 
@@ -719,7 +1540,7 @@ export default function FleetCoreUltimatePremium() {
                   onMouseLeave={() => setOpenDropdown(null)}
                 >
                   <button className="flex items-center gap-1 py-4 font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                    {t("homepage.nav.product")}
+                    {t.nav.product}
                     <ChevronRight className="h-4 w-4 rotate-90" />
                   </button>
 
@@ -732,25 +1553,25 @@ export default function FleetCoreUltimatePremium() {
                               onMouseEnter={() => setActiveTab("rental")}
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeTab === "rental" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
-                              {t("homepage.productMenu.tabs.rental")}
+                              {t.productMenu.tabs.rental}
                             </button>
                             <button
                               onMouseEnter={() => setActiveTab("fleet")}
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeTab === "fleet" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
-                              {t("homepage.productMenu.tabs.fleet")}
+                              {t.productMenu.tabs.fleet}
                             </button>
                             <button
                               onMouseEnter={() => setActiveTab("platform")}
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeTab === "platform" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
-                              {t("homepage.productMenu.tabs.platform")}
+                              {t.productMenu.tabs.platform}
                             </button>
                             <button
                               onMouseEnter={() => setActiveTab("analytics")}
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeTab === "analytics" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
-                              {t("homepage.productMenu.tabs.analytics")}
+                              {t.productMenu.tabs.analytics}
                             </button>
                           </div>
                         </div>
@@ -760,78 +1581,54 @@ export default function FleetCoreUltimatePremium() {
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.0.title"
-                                    )}
+                                    {t.productMenu.rental.items[0].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.0.desc"
-                                    )}
+                                    {t.productMenu.rental.items[0].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.1.title"
-                                    )}
+                                    {t.productMenu.rental.items[1].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.1.desc"
-                                    )}
+                                    {t.productMenu.rental.items[1].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.2.title"
-                                    )}
+                                    {t.productMenu.rental.items[2].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.2.desc"
-                                    )}
+                                    {t.productMenu.rental.items[2].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.3.title"
-                                    )}
+                                    {t.productMenu.rental.items[3].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.3.desc"
-                                    )}
+                                    {t.productMenu.rental.items[3].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.4.title"
-                                    )}
+                                    {t.productMenu.rental.items[4].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.4.desc"
-                                    )}
+                                    {t.productMenu.rental.items[4].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.5.title"
-                                    )}
+                                    {t.productMenu.rental.items[5].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.5.desc"
-                                    )}
+                                    {t.productMenu.rental.items[5].desc}
                                   </p>
                                 </div>
                               </div>
@@ -842,78 +1639,54 @@ export default function FleetCoreUltimatePremium() {
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.0.title"
-                                    )}
+                                    {t.productMenu.fleet.items[0].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.0.desc"
-                                    )}
+                                    {t.productMenu.fleet.items[0].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.1.title"
-                                    )}
+                                    {t.productMenu.fleet.items[1].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.1.desc"
-                                    )}
+                                    {t.productMenu.fleet.items[1].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.2.title"
-                                    )}
+                                    {t.productMenu.fleet.items[2].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.2.desc"
-                                    )}
+                                    {t.productMenu.fleet.items[2].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.3.title"
-                                    )}
+                                    {t.productMenu.fleet.items[3].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.3.desc"
-                                    )}
+                                    {t.productMenu.fleet.items[3].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.4.title"
-                                    )}
+                                    {t.productMenu.fleet.items[4].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.4.desc"
-                                    )}
+                                    {t.productMenu.fleet.items[4].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.5.title"
-                                    )}
+                                    {t.productMenu.fleet.items[5].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.fleet.items.5.desc"
-                                    )}
+                                    {t.productMenu.fleet.items[5].desc}
                                   </p>
                                 </div>
                               </div>
@@ -924,78 +1697,54 @@ export default function FleetCoreUltimatePremium() {
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.platform.items.0.title"
-                                    )}
+                                    {t.productMenu.platform.items[0].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.platform.items.0.desc"
-                                    )}
+                                    {t.productMenu.platform.items[0].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.platform.items.1.title"
-                                    )}
+                                    {t.productMenu.platform.items[1].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.platform.items.1.desc"
-                                    )}
+                                    {t.productMenu.platform.items[1].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.platform.items.2.title"
-                                    )}
+                                    {t.productMenu.platform.items[2].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.platform.items.2.desc"
-                                    )}
+                                    {t.productMenu.platform.items[2].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.platform.items.3.title"
-                                    )}
+                                    {t.productMenu.platform.items[3].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.platform.items.3.desc"
-                                    )}
+                                    {t.productMenu.platform.items[3].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.platform.items.4.title"
-                                    )}
+                                    {t.productMenu.platform.items[4].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.platform.items.4.desc"
-                                    )}
+                                    {t.productMenu.platform.items[4].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.platform.items.5.title"
-                                    )}
+                                    {t.productMenu.platform.items[5].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.platform.items.5.desc"
-                                    )}
+                                    {t.productMenu.platform.items[5].desc}
                                   </p>
                                 </div>
                               </div>
@@ -1006,78 +1755,54 @@ export default function FleetCoreUltimatePremium() {
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.0.title"
-                                    )}
+                                    {t.productMenu.analytics.items[0].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.0.desc"
-                                    )}
+                                    {t.productMenu.analytics.items[0].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.1.title"
-                                    )}
+                                    {t.productMenu.analytics.items[1].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.1.desc"
-                                    )}
+                                    {t.productMenu.analytics.items[1].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.2.title"
-                                    )}
+                                    {t.productMenu.analytics.items[2].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.2.desc"
-                                    )}
+                                    {t.productMenu.analytics.items[2].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.3.title"
-                                    )}
+                                    {t.productMenu.analytics.items[3].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.3.desc"
-                                    )}
+                                    {t.productMenu.analytics.items[3].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.4.title"
-                                    )}
+                                    {t.productMenu.analytics.items[4].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.4.desc"
-                                    )}
+                                    {t.productMenu.analytics.items[4].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.5.title"
-                                    )}
+                                    {t.productMenu.analytics.items[5].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.analytics.items.5.desc"
-                                    )}
+                                    {t.productMenu.analytics.items[5].desc}
                                   </p>
                                 </div>
                               </div>
@@ -1096,7 +1821,7 @@ export default function FleetCoreUltimatePremium() {
                   onMouseLeave={() => setOpenDropdown(null)}
                 >
                   <button className="flex items-center gap-1 py-4 font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                    {t("homepage.nav.solutions")}
+                    {t.nav.solutions}
                     <ChevronRight className="h-4 w-4 rotate-90" />
                   </button>
                   {openDropdown === "solutions" && (
@@ -1110,13 +1835,13 @@ export default function FleetCoreUltimatePremium() {
                               }
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeSolutionTab === "industry" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
-                              {t("homepage.solutionsMenu.tabs.industry")}
+                              {t.solutionsMenu.tabs.industry}
                             </button>
                             <button
                               onMouseEnter={() => setActiveSolutionTab("size")}
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeSolutionTab === "size" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
-                              {t("homepage.solutionsMenu.tabs.size")}
+                              {t.solutionsMenu.tabs.size}
                             </button>
                             <button
                               onMouseEnter={() =>
@@ -1124,7 +1849,7 @@ export default function FleetCoreUltimatePremium() {
                               }
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeSolutionTab === "usecase" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
-                              {t("homepage.solutionsMenu.tabs.usecase")}
+                              {t.solutionsMenu.tabs.usecase}
                             </button>
                             <button
                               onMouseEnter={() =>
@@ -1132,7 +1857,7 @@ export default function FleetCoreUltimatePremium() {
                               }
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeSolutionTab === "compliance" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
-                              {t("homepage.solutionsMenu.tabs.compliance")}
+                              {t.solutionsMenu.tabs.compliance}
                             </button>
                           </div>
                         </div>
@@ -1142,78 +1867,54 @@ export default function FleetCoreUltimatePremium() {
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.0.title"
-                                    )}
+                                    {t.solutionsMenu.industry.items[0].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.0.desc"
-                                    )}
+                                    {t.solutionsMenu.industry.items[0].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.1.title"
-                                    )}
+                                    {t.solutionsMenu.industry.items[1].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.1.desc"
-                                    )}
+                                    {t.solutionsMenu.industry.items[1].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.2.title"
-                                    )}
+                                    {t.solutionsMenu.industry.items[2].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.2.desc"
-                                    )}
+                                    {t.solutionsMenu.industry.items[2].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.3.title"
-                                    )}
+                                    {t.solutionsMenu.industry.items[3].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.3.desc"
-                                    )}
+                                    {t.solutionsMenu.industry.items[3].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.4.title"
-                                    )}
+                                    {t.solutionsMenu.industry.items[4].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.4.desc"
-                                    )}
+                                    {t.solutionsMenu.industry.items[4].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.5.title"
-                                    )}
+                                    {t.solutionsMenu.industry.items[5].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.5.desc"
-                                    )}
+                                    {t.solutionsMenu.industry.items[5].desc}
                                   </p>
                                 </div>
                               </div>
@@ -1224,78 +1925,54 @@ export default function FleetCoreUltimatePremium() {
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.0.title"
-                                    )}
+                                    {t.solutionsMenu.size.items[0].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.0.desc"
-                                    )}
+                                    {t.solutionsMenu.size.items[0].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.1.title"
-                                    )}
+                                    {t.solutionsMenu.size.items[1].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.1.desc"
-                                    )}
+                                    {t.solutionsMenu.size.items[1].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.2.title"
-                                    )}
+                                    {t.solutionsMenu.size.items[2].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.2.desc"
-                                    )}
+                                    {t.solutionsMenu.size.items[2].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.3.title"
-                                    )}
+                                    {t.solutionsMenu.size.items[3].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.3.desc"
-                                    )}
+                                    {t.solutionsMenu.size.items[3].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.4.title"
-                                    )}
+                                    {t.solutionsMenu.size.items[4].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.4.desc"
-                                    )}
+                                    {t.solutionsMenu.size.items[4].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.5.title"
-                                    )}
+                                    {t.solutionsMenu.size.items[5].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.size.items.5.desc"
-                                    )}
+                                    {t.solutionsMenu.size.items[5].desc}
                                   </p>
                                 </div>
                               </div>
@@ -1306,78 +1983,54 @@ export default function FleetCoreUltimatePremium() {
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.0.title"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[0].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.0.desc"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[0].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.1.title"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[1].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.1.desc"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[1].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.2.title"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[2].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.2.desc"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[2].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.3.title"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[3].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.3.desc"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[3].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.4.title"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[4].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.4.desc"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[4].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.5.title"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[5].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.usecase.items.5.desc"
-                                    )}
+                                    {t.solutionsMenu.usecase.items[5].desc}
                                   </p>
                                 </div>
                               </div>
@@ -1388,78 +2041,54 @@ export default function FleetCoreUltimatePremium() {
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.0.title"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[0].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.0.desc"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[0].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.1.title"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[1].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.1.desc"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[1].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.2.title"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[2].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.2.desc"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[2].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.3.title"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[3].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.3.desc"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[3].desc}
                                   </p>
                                 </div>
                               </div>
                               <div className="space-y-3">
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.4.title"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[4].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.4.desc"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[4].desc}
                                   </p>
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.5.title"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[5].title}
                                   </h3>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.compliance.items.5.desc"
-                                    )}
+                                    {t.solutionsMenu.compliance.items[5].desc}
                                   </p>
                                 </div>
                               </div>
@@ -1476,13 +2105,13 @@ export default function FleetCoreUltimatePremium() {
                   href="/resources"
                   className="font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
                 >
-                  {t("homepage.nav.resources")}
+                  {t.nav.resources}
                 </Link>
                 <Link
                   href="/company"
                   className="font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
                 >
-                  {t("homepage.nav.company")}
+                  {t.nav.company}
                 </Link>
               </div>
 
@@ -1507,14 +2136,14 @@ export default function FleetCoreUltimatePremium() {
                   href={localizedPath("login")}
                   className="hidden font-medium text-gray-700 hover:text-gray-900 lg:inline-block dark:text-gray-300 dark:hover:text-white"
                 >
-                  {t("homepage.nav.login")}
+                  {t.nav.login}
                 </Link>
 
                 <Link
                   href={localizedPath("request-demo")}
                   className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 px-5 py-2.5 font-semibold text-white transition-all hover:shadow-lg"
                 >
-                  {t("homepage.nav.demo")}
+                  {t.nav.demo}
                 </Link>
               </div>
             </div>
@@ -1546,7 +2175,7 @@ export default function FleetCoreUltimatePremium() {
             >
               <Zap className="h-4 w-4 text-yellow-400" />
               <span className="text-sm font-medium text-white">
-                {t("homepage.hero.badge")}
+                {t.hero.badge}
               </span>
             </motion.div>
 
@@ -1556,7 +2185,7 @@ export default function FleetCoreUltimatePremium() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              {t("homepage.hero.title")}
+              {t.hero.title}
             </motion.h1>
 
             <motion.p
@@ -1565,7 +2194,7 @@ export default function FleetCoreUltimatePremium() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              {t("homepage.hero.subtitle")}
+              {t.hero.subtitle}
             </motion.p>
 
             {/* Live Metrics */}
@@ -1580,7 +2209,7 @@ export default function FleetCoreUltimatePremium() {
                   {metrics.activeVehicles}
                 </p>
                 <p className="text-sm text-gray-400">
-                  {t("homepage.hero.metrics.vehicles")}
+                  {t.hero.metrics.vehicles}
                 </p>
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-xl">
@@ -1588,7 +2217,7 @@ export default function FleetCoreUltimatePremium() {
                   €{metrics.dailyRevenue}
                 </p>
                 <p className="text-sm text-gray-400">
-                  {t("homepage.hero.metrics.revenue")}
+                  {t.hero.metrics.revenue}
                 </p>
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-xl">
@@ -1596,7 +2225,7 @@ export default function FleetCoreUltimatePremium() {
                   {metrics.utilization.toFixed(1)}%
                 </p>
                 <p className="text-sm text-gray-400">
-                  {t("homepage.hero.metrics.utilization")}
+                  {t.hero.metrics.utilization}
                 </p>
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-xl">
@@ -1604,7 +2233,7 @@ export default function FleetCoreUltimatePremium() {
                   {metrics.activeBookings}
                 </p>
                 <p className="text-sm text-gray-400">
-                  {t("homepage.hero.metrics.bookings")}
+                  {t.hero.metrics.bookings}
                 </p>
               </div>
             </motion.div>
@@ -1620,7 +2249,7 @@ export default function FleetCoreUltimatePremium() {
                 href={localizedPath("request-demo")}
                 className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-700 px-8 py-4 text-lg font-bold text-white transition-all hover:shadow-2xl"
               >
-                {t("homepage.cta.button")}
+                {t.cta.button}
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <button className="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-semibold text-white backdrop-blur-md transition-all hover:bg-white/20">
@@ -1635,10 +2264,10 @@ export default function FleetCoreUltimatePremium() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-12 text-center">
               <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
-                {t("homepage.dashboard.title")}
+                {t.dashboard.title}
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-400">
-                {t("homepage.dashboard.subtitle")}
+                {t.dashboard.subtitle}
               </p>
             </div>
 
@@ -1651,10 +2280,10 @@ export default function FleetCoreUltimatePremium() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-12 text-center">
               <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
-                {t("homepage.featuresSection.title")}
+                {t.featuresSection.title}
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-400">
-                {t("homepage.featuresSection.subtitle")}
+                {t.featuresSection.subtitle}
               </p>
             </div>
 
@@ -1662,7 +2291,7 @@ export default function FleetCoreUltimatePremium() {
               {/* Car Rental Management - NEW SECTION */}
               <div className="rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-900">
                 <h3 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-                  {t("homepage.features.carRental.title")}
+                  {t.features.carRental.title}
                 </h3>
                 <div className="space-y-4">
                   <motion.div
@@ -1677,10 +2306,10 @@ export default function FleetCoreUltimatePremium() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.0.name")}
+                        {t.features.carRental.items[0].name}
                       </h4>
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.0.desc")}
+                        {t.features.carRental.items[0].desc}
                       </p>
                     </div>
                   </motion.div>
@@ -1697,10 +2326,10 @@ export default function FleetCoreUltimatePremium() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.1.name")}
+                        {t.features.carRental.items[1].name}
                       </h4>
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.1.desc")}
+                        {t.features.carRental.items[1].desc}
                       </p>
                     </div>
                   </motion.div>
@@ -1717,10 +2346,10 @@ export default function FleetCoreUltimatePremium() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.2.name")}
+                        {t.features.carRental.items[2].name}
                       </h4>
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.2.desc")}
+                        {t.features.carRental.items[2].desc}
                       </p>
                     </div>
                   </motion.div>
@@ -1737,10 +2366,10 @@ export default function FleetCoreUltimatePremium() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.3.name")}
+                        {t.features.carRental.items[3].name}
                       </h4>
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.3.desc")}
+                        {t.features.carRental.items[3].desc}
                       </p>
                     </div>
                   </motion.div>
@@ -1757,10 +2386,10 @@ export default function FleetCoreUltimatePremium() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.4.name")}
+                        {t.features.carRental.items[4].name}
                       </h4>
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.4.desc")}
+                        {t.features.carRental.items[4].desc}
                       </p>
                     </div>
                   </motion.div>
@@ -1777,10 +2406,10 @@ export default function FleetCoreUltimatePremium() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.5.name")}
+                        {t.features.carRental.items[5].name}
                       </h4>
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.5.desc")}
+                        {t.features.carRental.items[5].desc}
                       </p>
                     </div>
                   </motion.div>
@@ -1790,80 +2419,62 @@ export default function FleetCoreUltimatePremium() {
               {/* Fleet Management Features */}
               <div className="rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-900">
                 <h3 className="mb-6 text-2xl font-bold text-gray-900 lg:whitespace-nowrap dark:text-white">
-                  {t("homepage.features.rental.title")}
+                  {t.features.rental.title}
                 </h3>
                 <div className="space-y-4">
-                  {(
-                    t("homepage.features.rental.items", {
-                      returnObjects: true,
-                    }) as FeatureItem[]
-                  ).map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <motion.div
-                        key={index}
-                        className="flex gap-4"
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        viewport={{ once: true }}
-                      >
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                          {Icon && (
-                            <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 dark:text-white">
-                            {feature.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {feature.desc}
-                          </p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                  {t.features.rental.items.map((feature, index) => (
+                    <motion.div
+                      key={index}
+                      className="flex gap-4"
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                    >
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <feature.icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">
+                          {feature.name}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {feature.desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
 
               {/* Platform Integration Features */}
               <div className="rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-900">
                 <h3 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-                  {t("homepage.features.ridehailing.title")}
+                  {t.features.ridehailing.title}
                 </h3>
                 <div className="space-y-4">
-                  {(
-                    t("homepage.features.ridehailing.items", {
-                      returnObjects: true,
-                    }) as FeatureItem[]
-                  ).map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <motion.div
-                        key={index}
-                        className="flex gap-4"
-                        initial={{ opacity: 0, x: 20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        viewport={{ once: true }}
-                      >
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
-                          {Icon && (
-                            <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 dark:text-white">
-                            {feature.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {feature.desc}
-                          </p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                  {t.features.ridehailing.items.map((feature, index) => (
+                    <motion.div
+                      key={index}
+                      className="flex gap-4"
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                    >
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+                        <feature.icon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">
+                          {feature.name}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {feature.desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1875,44 +2486,37 @@ export default function FleetCoreUltimatePremium() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-12 text-center">
               <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
-                {t("homepage.process.title")}
+                {t.process.title}
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-400">
-                {t("homepage.process.subtitle")}
+                {t.process.subtitle}
               </p>
             </div>
 
             <div className="mx-auto flex max-w-5xl items-center justify-between">
-              {(
-                t("homepage.process.steps", {
-                  returnObjects: true,
-                }) as ProcessStep[]
-              ).map((step, index) => {
-                const Icon = step.icon;
-                return (
-                  <motion.div
-                    key={index}
-                    className="flex flex-col items-center text-center"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                  >
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                      {Icon && <Icon className="h-8 w-8 text-white" />}
-                    </div>
-                    <h3 className="mb-1 font-bold text-gray-900 dark:text-white">
-                      {step.title}
-                    </h3>
-                    <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">
-                      {step.desc}
-                    </p>
-                    <p className="max-w-[150px] text-xs text-gray-500">
-                      {step.detail}
-                    </p>
-                  </motion.div>
-                );
-              })}
+              {t.process.steps.map((step, index) => (
+                <motion.div
+                  key={index}
+                  className="flex flex-col items-center text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                    <step.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="mb-1 font-bold text-gray-900 dark:text-white">
+                    {step.title}
+                  </h3>
+                  <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">
+                    {step.desc}
+                  </p>
+                  <p className="max-w-[150px] text-xs text-gray-500">
+                    {step.detail}
+                  </p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
@@ -1922,33 +2526,33 @@ export default function FleetCoreUltimatePremium() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-12 text-center">
               <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
-                {t("homepage.integrations.title")}
+                {t.integrations.title}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-              {Object.entries(
-                t("homepage.integrations.categories", { returnObjects: true })
-              ).map(([category, items]) => (
-                <div key={category}>
-                  <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-500 uppercase">
-                    {category}
-                  </h3>
-                  <div className="space-y-3">
-                    {(items as string[]).map((item) => (
-                      <div
-                        key={item}
-                        className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-800"
-                      >
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-gray-700 dark:text-gray-300">
-                          {item}
-                        </span>
-                      </div>
-                    ))}
+              {Object.entries(t.integrations.categories).map(
+                ([category, items]) => (
+                  <div key={category}>
+                    <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-500 uppercase">
+                      {category}
+                    </h3>
+                    <div className="space-y-3">
+                      {(items as string[]).map((item) => (
+                        <div
+                          key={item}
+                          className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-800"
+                        >
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           </div>
         </section>
@@ -1958,16 +2562,12 @@ export default function FleetCoreUltimatePremium() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-12 text-center">
               <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
-                {t("homepage.proof.title")}
+                {t.proof.title}
               </h2>
             </div>
 
             <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
-              {(
-                t("homepage.proof.metrics", {
-                  returnObjects: true,
-                }) as ProofMetric[]
-              ).map((metric, index) => (
+              {t.proof.metrics.map((metric, index) => (
                 <motion.div
                   key={index}
                   className="text-center"
@@ -1995,16 +2595,14 @@ export default function FleetCoreUltimatePremium() {
         <section className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 py-20">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h2 className="mb-6 text-4xl font-bold text-white">
-              {t("homepage.cta.title")}
+              {t.cta.title}
             </h2>
-            <p className="mb-8 text-xl text-white/90">
-              {t("homepage.cta.subtitle")}
-            </p>
+            <p className="mb-8 text-xl text-white/90">{t.cta.subtitle}</p>
             <Link
               href={localizedPath("request-demo")}
               className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-lg font-bold text-gray-900 transition-all hover:shadow-2xl"
             >
-              {t("homepage.cta.button")}
+              {t.cta.button}
               <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
@@ -2029,9 +2627,7 @@ export default function FleetCoreUltimatePremium() {
 
               {/* Links */}
               <div>
-                <h4 className="mb-4 font-semibold">
-                  {t("homepage.footer.product")}
-                </h4>
+                <h4 className="mb-4 font-semibold">{t.footer.product}</h4>
                 <ul className="space-y-2 text-gray-400">
                   <li>
                     <Link href="/features" className="hover:text-white">
@@ -2047,9 +2643,7 @@ export default function FleetCoreUltimatePremium() {
               </div>
 
               <div>
-                <h4 className="mb-4 font-semibold">
-                  {t("homepage.footer.company")}
-                </h4>
+                <h4 className="mb-4 font-semibold">{t.footer.company}</h4>
                 <ul className="space-y-2 text-gray-400">
                   <li>
                     <Link href="/about" className="hover:text-white">
@@ -2065,9 +2659,7 @@ export default function FleetCoreUltimatePremium() {
               </div>
 
               <div>
-                <h4 className="mb-4 font-semibold">
-                  {t("homepage.footer.legal")}
-                </h4>
+                <h4 className="mb-4 font-semibold">{t.footer.legal}</h4>
                 <ul className="space-y-2 text-gray-400">
                   <li>
                     <Link href="/privacy" className="hover:text-white">
@@ -2084,7 +2676,7 @@ export default function FleetCoreUltimatePremium() {
             </div>
 
             <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-              <p>{t("homepage.footer.copyright")}</p>
+              <p>{t.footer.copyright}</p>
             </div>
           </div>
         </footer>

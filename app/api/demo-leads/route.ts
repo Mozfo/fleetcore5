@@ -1,14 +1,12 @@
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/prisma";
 
 // POST - Créer un nouveau lead
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const lead = await prisma.sys_demo_lead.create({
+    const lead = await db.sys_demo_lead.create({
       data: {
         full_name: body.full_name,
         email: body.email,
@@ -16,6 +14,7 @@ export async function POST(req: Request) {
         fleet_size: body.fleet_size,
         phone: body.phone,
         message: body.message,
+        country_code: body.country_code || "AE",
         status: "pending",
       },
     });
@@ -33,7 +32,7 @@ export async function POST(req: Request) {
 // GET - Lister les leads
 export async function GET() {
   try {
-    const leads = await prisma.sys_demo_lead.findMany({
+    const leads = await db.sys_demo_lead.findMany({
       orderBy: { created_at: "desc" },
     });
 

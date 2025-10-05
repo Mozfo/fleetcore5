@@ -1,0 +1,106 @@
+{
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "leads": "Prospects"
+  },
+  "dashboard": {
+    "welcome": "Bienvenue sur FleetCore",
+    "description": "Gérez vos opérations de flotte efficacement",
+    "stats": {
+      "totalVehicles": "Total de véhicules",
+      "activeDrivers": "Chauffeurs actifs",
+      "revenue": "Revenus (ce mois)",
+      "pendingRequests": "Demandes en attente"
+    }
+  },
+  "leads": {
+    "title": "Gestion des prospects",
+    "description": "Gérez et suivez vos demandes de démonstration",
+    "stats": {
+      "total": "Total",
+      "pending": "En attente",
+      "contacted": "Contacté",
+      "qualified": "Qualifié",
+      "accepted": "Accepté",
+      "refused": "Refusé"
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher par nom, email ou entreprise...",
+      "allStatus": "Tous les statuts",
+      "allCountries": "Tous les pays"
+    },
+    "table": {
+      "name": "Nom",
+      "company": "Entreprise",
+      "country": "Pays",
+      "fleetSize": "Taille de flotte",
+      "status": "Statut",
+      "created": "Créé le",
+      "noLeads": "Aucun prospect trouvé"
+    },
+    "detail": {
+      "title": "Détails du prospect",
+      "description": "Voir et gérer les informations du prospect",
+      "sections": {
+        "information": "Informations du prospect",
+        "updateStatus": "Mettre à jour le statut",
+        "addActivity": "Ajouter une activité",
+        "activityTimeline": "Chronologie des activités"
+      },
+      "fields": {
+        "fullName": "Nom complet",
+        "email": "Email",
+        "phone": "Téléphone",
+        "company": "Entreprise",
+        "country": "Pays",
+        "fleetSize": "Taille de flotte",
+        "status": "Statut",
+        "message": "Message",
+        "created": "Créé le",
+        "qualifiedDate": "Date de qualification"
+      },
+      "activity": {
+        "types": {
+          "call": "Appel",
+          "email": "Email",
+          "meeting": "Réunion",
+          "note": "Note",
+          "statusChange": "Changement de statut"
+        },
+        "priority": {
+          "low": "Basse",
+          "medium": "Moyenne",
+          "high": "Haute"
+        },
+        "form": {
+          "activityType": "Type d'activité",
+          "priority": "Priorité",
+          "notes": "Notes",
+          "notesPlaceholder": "Saisir les notes de l'activité...",
+          "outcome": "Résultat",
+          "outcomePlaceholder": "ex: Démonstration programmée",
+          "duration": "Durée (minutes)",
+          "durationPlaceholder": "30",
+          "nextAction": "Prochaine action",
+          "nextActionPlaceholder": "ex: Faire un suivi sur les retours de la démo",
+          "nextActionDate": "Date de la prochaine action",
+          "addButton": "Ajouter l'activité",
+          "addingButton": "Ajout en cours..."
+        },
+        "timeline": {
+          "noActivities": "Aucune activité pour le moment",
+          "outcome": "Résultat",
+          "duration": "Durée",
+          "minutes": "minutes",
+          "nextAction": "Prochaine action",
+          "due": "Échéance"
+        }
+      },
+      "updateForm": {
+        "status": "Statut",
+        "updateButton": "Mettre à jour le statut",
+        "updatingButton": "Mise à jour..."
+      }
+    }
+  }
+}

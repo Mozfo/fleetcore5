@@ -11,5 +11,438 @@
   "test": {
     "title": "Page de test",
     "message": "Ceci est une page de test avec la fonctionnalité react-i18next."
+  },
+  "homepage": {
+    "nav": {
+      "product": "Produit",
+      "solutions": "Solutions",
+      "resources": "Ressources",
+      "company": "Entreprise",
+      "login": "Connexion",
+      "demo": "Planifier Démo"
+    },
+    "productMenu": {
+      "tabs": {
+        "rental": "Gestion de Location de Voitures",
+        "fleet": "Opérations de Flotte",
+        "platform": "Intégrations Plateformes",
+        "analytics": "Analytics & Rapports"
+      },
+      "rental": {
+        "items": [
+          {
+            "title": "Système de Réservation",
+            "desc": "Réservations en ligne avec disponibilité en temps réel"
+          },
+          {
+            "title": "Gestion des Contrats",
+            "desc": "Accords numériques et signatures électroniques"
+          },
+          {
+            "title": "Moteur de Tarification",
+            "desc": "Tarifs dynamiques et prix saisonniers"
+          },
+          {
+            "title": "Facturation & Comptabilité",
+            "desc": "Factures automatisées et traitement des paiements"
+          },
+          {
+            "title": "CRM Client",
+            "desc": "Profils clients et historique de location"
+          },
+          {
+            "title": "Vérification de Documents",
+            "desc": "Système de vérification des permis et pièces d'identité"
+          }
+        ]
+      },
+      "fleet": {
+        "items": [
+          {
+            "title": "Suivi des Véhicules",
+            "desc": "GPS en temps réel et géofencing"
+          },
+          {
+            "title": "Maintenance",
+            "desc": "Planification des services et suivi des réparations"
+          },
+          {
+            "title": "Gestion des Chauffeurs",
+            "desc": "Performance et planification des shifts"
+          },
+          {
+            "title": "Contrôle des Documents",
+            "desc": "Suivi des assurances et immatriculations"
+          },
+          {
+            "title": "Gestion du Carburant",
+            "desc": "Suivi de consommation et cartes carburant"
+          },
+          {
+            "title": "Télématique",
+            "desc": "Analyse du comportement des conducteurs"
+          }
+        ]
+      },
+      "platform": {
+        "items": [
+          {
+            "title": "API Uber Fleet",
+            "desc": "Intégration directe avec Uber"
+          },
+          {
+            "title": "Bolt Business",
+            "desc": "Connexion avec la plateforme Bolt"
+          },
+          { "title": "Careem Plus", "desc": "Intégration flotte Careem" },
+          { "title": "Yango Fleet", "desc": "Connexion plateforme Yango" },
+          {
+            "title": "Import de Revenus",
+            "desc": "Synchronisation quotidienne automatique"
+          },
+          {
+            "title": "Suivi des Commissions",
+            "desc": "Frais de plateforme et marges"
+          }
+        ]
+      },
+      "analytics": {
+        "items": [
+          {
+            "title": "Business Intelligence",
+            "desc": "Tableaux de bord KPI et métriques"
+          },
+          {
+            "title": "Rapports Financiers",
+            "desc": "Analyse P&L et flux de trésorerie"
+          },
+          { "title": "Performance de Flotte", "desc": "Utilisation et ROI" },
+          {
+            "title": "Analytics Chauffeurs",
+            "desc": "Métriques de performance"
+          },
+          {
+            "title": "Rapports Personnalisés",
+            "desc": "Outil de création de rapports"
+          },
+          { "title": "Export de Données", "desc": "Exports CSV et Excel" }
+        ]
+      }
+    },
+    "solutionsMenu": {
+      "tabs": {
+        "industry": "Par Industrie",
+        "size": "Par Taille de Flotte",
+        "usecase": "Par Cas d'Usage",
+        "compliance": "Conformité & Sécurité"
+      },
+      "industry": {
+        "items": [
+          {
+            "title": "Location de Voitures",
+            "desc": "Sociétés de location traditionnelles"
+          },
+          { "title": "VTC", "desc": "Flottes Uber, Bolt, Careem" },
+          {
+            "title": "Compagnies de Taxi",
+            "desc": "Opérations de taxi traditionnelles"
+          },
+          {
+            "title": "Services de Livraison",
+            "desc": "Flottes de livraison dernier kilomètre"
+          },
+          {
+            "title": "Flottes d'Entreprise",
+            "desc": "Gestion de véhicules d'entreprise"
+          },
+          {
+            "title": "Sociétés de Leasing",
+            "desc": "Opérations de location longue durée"
+          }
+        ]
+      },
+      "size": {
+        "items": [
+          {
+            "title": "Petite Flotte (1-20)",
+            "desc": "Pack de démarrage avec l'essentiel"
+          },
+          {
+            "title": "Flotte Moyenne (20-100)",
+            "desc": "Fonctionnalités complètes avec automatisation"
+          },
+          {
+            "title": "Grande Flotte (100-500)",
+            "desc": "Analytics avancés et API"
+          },
+          {
+            "title": "Entreprise (500+)",
+            "desc": "Solutions personnalisées et support"
+          },
+          {
+            "title": "Multi-Sites",
+            "desc": "Outils de gestion des succursales"
+          },
+          {
+            "title": "Support Franchise",
+            "desc": "Architecture multi-locataires"
+          }
+        ]
+      },
+      "usecase": {
+        "items": [
+          {
+            "title": "Finance de Flotte",
+            "desc": "Suivi des revenus et commissions"
+          },
+          {
+            "title": "Surveillance GPS",
+            "desc": "Suivi en temps réel et alertes"
+          },
+          {
+            "title": "Onboarding Chauffeurs",
+            "desc": "Flux de recrutement numérique"
+          },
+          {
+            "title": "Planification Maintenance",
+            "desc": "Système de maintenance prédictive"
+          },
+          {
+            "title": "Portail Client",
+            "desc": "Système de réservation en libre-service"
+          },
+          {
+            "title": "Hub de Communication",
+            "desc": "Automatisation WhatsApp et SMS"
+          }
+        ]
+      },
+      "compliance": {
+        "items": [
+          {
+            "title": "Gestion Documentaire",
+            "desc": "Suivi des permis et assurances"
+          },
+          {
+            "title": "Surveillance Sécurité",
+            "desc": "Notation du comportement conducteur"
+          },
+          {
+            "title": "Conformité Réglementaire",
+            "desc": "Respect des réglementations locales"
+          },
+          {
+            "title": "Piste d'Audit",
+            "desc": "Journalisation complète des activités"
+          },
+          {
+            "title": "Gestion des Incidents",
+            "desc": "Flux de déclaration d'accidents"
+          },
+          {
+            "title": "Réclamations d'Assurance",
+            "desc": "Traitement numérique des réclamations"
+          }
+        ]
+      }
+    },
+    "hero": {
+      "badge": "Plateforme Tout-en-Un de Gestion de Flotte",
+      "title": "Gérez vos activités de location et VTC comme jamais",
+      "subtitle": "Solution SaaS complète pour gérer chauffeurs, véhicules, finances et opérations. De l'affectation simple au suivi multi-plateforme.",
+      "metrics": {
+        "vehicles": "Véhicules Suivis",
+        "revenue": "Revenus du Jour",
+        "utilization": "Utilisation",
+        "bookings": "Courses Actives"
+      }
+    },
+    "features": {
+      "carRental": {
+        "title": "Gestion de Location de Voitures",
+        "items": [
+          {
+            "name": "Réservation et Booking",
+            "desc": "Créer et gérer les réservations avec disponibilité en temps réel et confirmation instantanée."
+          },
+          {
+            "name": "Contrats et Remise",
+            "desc": "Générer automatiquement les contrats de location, capturer les signatures numériques et documenter l'état du véhicule avec photos."
+          },
+          {
+            "name": "Tarification, Facturation et Assurance",
+            "desc": "Définir des tarifs dynamiques et extras, automatiser les factures, gérer les dépôts et traiter les polices d'assurance et réclamations."
+          },
+          {
+            "name": "CRM Client et Vérification",
+            "desc": "Stocker les profils vérifiés, historique de location, enregistrements de communication et validation de documents."
+          },
+          {
+            "name": "Gestion des Ventes et Opportunités",
+            "desc": "Suivre les leads, contrats corporate, étapes du pipeline et conversions de location."
+          },
+          {
+            "name": "Utilisation de Flotte et Opérations",
+            "desc": "Surveiller la disponibilité, utilisation, dommages, maintenance et optimiser la performance des actifs."
+          }
+        ]
+      },
+      "rental": {
+        "title": "Gestion de Flotte Complète",
+        "items": [
+          {
+            "name": "Affectation Chauffeurs & Véhicules",
+            "desc": "Planning chauffeurs, gestion shifts, remise véhicule avec signatures et photos"
+          },
+          {
+            "name": "Import Revenus Multi-Plateformes",
+            "desc": "Import & réconciliation Uber, Bolt, Careem, Yango - détection automatique doublons"
+          },
+          {
+            "name": "Système Caisse Financière",
+            "desc": "Suivi débits/crédits chauffeurs, calcul automatique soldes, gestion commissions"
+          },
+          {
+            "name": "Planning Maintenance",
+            "desc": "Rappels entretien, suivi coûts, gestion fournisseurs, optimisation immobilisation"
+          },
+          {
+            "name": "Gestion Documents",
+            "desc": "Stockage permis, assurances, contrats - alertes expiration et suivi renouvellement"
+          },
+          {
+            "name": "Analytics Temps Réel",
+            "desc": "Tableaux de bord live, rapports personnalisés, KPI, P&L par véhicule et chauffeur"
+          }
+        ]
+      },
+      "ridehailing": {
+        "title": "Hub Intégration Plateformes",
+        "items": [
+          {
+            "name": "Gestion Unifiée Plateformes",
+            "desc": "Connectez Uber Fleet, Bolt Business, Careem Plus, Yango Fleet depuis un tableau de bord"
+          },
+          {
+            "name": "Import Données Automatique",
+            "desc": "Import quotidien courses, revenus, bonus - plus de CSV manuels"
+          },
+          {
+            "name": "Suivi Performance Chauffeurs",
+            "desc": "Heures en ligne, taux acceptation, annulations, notes sur toutes plateformes"
+          },
+          {
+            "name": "Réconciliation Commissions",
+            "desc": "Calcul automatique frais plateforme, paiements chauffeurs, marges par course"
+          },
+          {
+            "name": "Module Office Trips",
+            "desc": "Votre système réservation pour clients corporate - évitez les commissions"
+          },
+          {
+            "name": "GPS & Télématique",
+            "desc": "Tracking véhicules temps réel, suivi carburant, analyse comportement conducteur"
+          }
+        ]
+      }
+    },
+    "process": {
+      "title": "Commencez à Gérer Votre Flotte en 48 Heures",
+      "subtitle": "Configuration rapide, résultats immédiats",
+      "steps": [
+        {
+          "title": "1. Réserver Démo",
+          "desc": "Appel 30 min",
+          "detail": "Découvrez la plateforme avec vos cas d'usage"
+        },
+        {
+          "title": "2. Recevoir Devis",
+          "desc": "Devis jour même",
+          "detail": "Tarification transparente selon taille flotte"
+        },
+        {
+          "title": "3. Signer Contrat",
+          "desc": "Contrat simple",
+          "detail": "Sans frais cachés, facturation mensuelle"
+        },
+        {
+          "title": "4. Import Données",
+          "desc": "On s'occupe du setup",
+          "detail": "Import véhicules, chauffeurs, données existantes"
+        },
+        {
+          "title": "5. Démarrer",
+          "desc": "Commencer à utiliser",
+          "detail": "Formation et support inclus"
+        }
+      ]
+    },
+    "integrations": {
+      "title": "Compatible Avec Tous Vos Outils",
+      "categoryLabels": {
+        "platforms": "Plateformes",
+        "payments": "Paiements",
+        "accounting": "Comptabilité",
+        "hardware": "Matériel"
+      },
+      "categories": {
+        "platforms": [
+          "Uber Fleet",
+          "Bolt Business",
+          "Careem Plus",
+          "Yango Fleet",
+          "FreeNow",
+          "InDriver"
+        ],
+        "payments": ["Stripe", "PayPal", "Square", "Banques Locales"],
+        "accounting": ["QuickBooks", "Xero", "Zoho Books", "Export Excel"],
+        "hardware": [
+          "Trackers GPS",
+          "Cartes Carburant",
+          "Dashcams",
+          "Boîtiers OBD"
+        ]
+      }
+    },
+    "proof": {
+      "title": "La Confiance de 500+ Opérateurs",
+      "metrics": [
+        {
+          "value": "3 hrs",
+          "label": "Économisées/Jour",
+          "desc": "Sur les tâches admin"
+        },
+        {
+          "value": "100%",
+          "label": "Revenus Trackés",
+          "desc": "Plus de fuite de revenus"
+        },
+        {
+          "value": "25%",
+          "label": "Réduction Coûts",
+          "desc": "Par meilleure utilisation"
+        },
+        { "value": "24/7", "label": "Support", "desc": "Toujours disponible" }
+      ]
+    },
+    "cta": {
+      "title": "Prêt à Transformer Vos Opérations?",
+      "subtitle": "Rejoignez des centaines d'opérateurs à succès",
+      "button": "Commencer Aujourd'hui"
+    },
+    "dashboard": {
+      "title": "Votre Futur Centre de Commande de Flotte",
+      "subtitle": "Insights en temps réel, workflows automatisés, contrôle complet"
+    },
+    "featuresSection": {
+      "title": "Tout ce dont vous avez besoin pour gérer votre flotte",
+      "subtitle": "De l'intégration des chauffeurs à la réconciliation des revenus"
+    },
+    "footer": {
+      "product": "Produit",
+      "company": "Entreprise",
+      "legal": "Légal",
+      "copyright": "© 2025 FleetCore. Tous droits réservés."
+    }
   }
 }

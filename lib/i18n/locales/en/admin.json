@@ -1,0 +1,106 @@
+{
+  "navigation": {
+    "dashboard": "Dashboard",
+    "leads": "Leads"
+  },
+  "dashboard": {
+    "welcome": "Welcome to FleetCore",
+    "description": "Manage your fleet operations efficiently",
+    "stats": {
+      "totalVehicles": "Total Vehicles",
+      "activeDrivers": "Active Drivers",
+      "revenue": "Revenue (This Month)",
+      "pendingRequests": "Pending Requests"
+    }
+  },
+  "leads": {
+    "title": "Leads Management",
+    "description": "Manage and track your demo requests",
+    "stats": {
+      "total": "Total",
+      "pending": "Pending",
+      "contacted": "Contacted",
+      "qualified": "Qualified",
+      "accepted": "Accepted",
+      "refused": "Refused"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name, email, or company...",
+      "allStatus": "All Status",
+      "allCountries": "All Countries"
+    },
+    "table": {
+      "name": "Name",
+      "company": "Company",
+      "country": "Country",
+      "fleetSize": "Fleet Size",
+      "status": "Status",
+      "created": "Created",
+      "noLeads": "No leads found"
+    },
+    "detail": {
+      "title": "Lead Details",
+      "description": "View and manage lead information",
+      "sections": {
+        "information": "Lead Information",
+        "updateStatus": "Update Lead Status",
+        "addActivity": "Add Activity",
+        "activityTimeline": "Activity Timeline"
+      },
+      "fields": {
+        "fullName": "Full Name",
+        "email": "Email",
+        "phone": "Phone",
+        "company": "Company",
+        "country": "Country",
+        "fleetSize": "Fleet Size",
+        "status": "Status",
+        "message": "Message",
+        "created": "Created",
+        "qualifiedDate": "Qualified Date"
+      },
+      "activity": {
+        "types": {
+          "call": "Call",
+          "email": "Email",
+          "meeting": "Meeting",
+          "note": "Note",
+          "statusChange": "Status Change"
+        },
+        "priority": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        },
+        "form": {
+          "activityType": "Activity Type",
+          "priority": "Priority",
+          "notes": "Notes",
+          "notesPlaceholder": "Enter activity notes...",
+          "outcome": "Outcome",
+          "outcomePlaceholder": "e.g., Scheduled demo",
+          "duration": "Duration (minutes)",
+          "durationPlaceholder": "30",
+          "nextAction": "Next Action",
+          "nextActionPlaceholder": "e.g., Follow up on demo feedback",
+          "nextActionDate": "Next Action Date",
+          "addButton": "Add Activity",
+          "addingButton": "Adding..."
+        },
+        "timeline": {
+          "noActivities": "No activities yet",
+          "outcome": "Outcome",
+          "duration": "Duration",
+          "minutes": "minutes",
+          "nextAction": "Next Action",
+          "due": "Due"
+        }
+      },
+      "updateForm": {
+        "status": "Status",
+        "updateButton": "Update Status",
+        "updatingButton": "Updating..."
+      }
+    }
+  }
+}

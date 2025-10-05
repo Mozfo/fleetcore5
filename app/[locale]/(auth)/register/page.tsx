@@ -17,6 +17,7 @@ import {
   EyeOff,
   Building2,
   Mail,
+  LockKeyhole,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,8 @@ type FormData = {
 export default function RegisterPage() {
   const { t } = useTranslation("auth");
   const { localizedPath } = useLocalizedPath();
+
+  // All hooks must be called before any conditional returns
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -68,6 +71,71 @@ export default function RegisterPage() {
   });
   const watchEmail = watch("email");
   const watchCompany = watch("companyName");
+
+  // Feature flag check
+  const isRegistrationEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_PUBLIC_REGISTRATION === "true";
+
+  // If registration is disabled, show blocked message
+  if (!isRegistrationEnabled) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mx-auto w-full max-w-md"
+      >
+        <div className="rounded-3xl bg-white p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+          {/* Icon */}
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100">
+            <LockKeyhole className="h-8 w-8 text-orange-600" />
+          </div>
+
+          {/* Title */}
+          <div className="mb-6 text-center">
+            <h1 className="mb-2 text-2xl font-semibold text-[#1C1917]">
+              Registration Temporarily Closed
+            </h1>
+            <p className="text-sm text-gray-600">
+              We&apos;re currently using an invitation-only system to onboard
+              new customers.
+            </p>
+          </div>
+
+          {/* Content */}
+          <div className="space-y-4 rounded-xl bg-gray-50 p-6">
+            <p className="text-sm text-gray-700">
+              To get started with FleetCore:
+            </p>
+            <ol className="list-decimal space-y-2 pl-5 text-sm text-gray-700">
+              <li>Request a demo using our contact form</li>
+              <li>Our team will review your request</li>
+              <li>
+                You&apos;ll receive an invitation email to create your account
+              </li>
+            </ol>
+          </div>
+
+          {/* CTA */}
+          <div className="mt-6 space-y-3">
+            <Link href={localizedPath("request-demo")}>
+              <Button className="h-12 w-full rounded-xl bg-gray-900 font-medium text-white hover:bg-[#2D4739]">
+                Request a Demo
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+
+            <Link
+              href={localizedPath("login")}
+              className="block text-center text-sm text-gray-600 hover:text-[#1C1917]"
+            >
+              Already have an account? Sign in
+            </Link>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   const handleVerification = async (e: React.FormEvent) => {
     e.preventDefault();

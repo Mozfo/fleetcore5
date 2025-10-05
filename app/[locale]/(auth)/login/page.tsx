@@ -78,7 +78,11 @@ function LoginForm() {
       if (result.status === "complete") {
         setShowSuccess(true);
         await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Set the session
         await setActive({ session: result.createdSessionId });
+
+        // Simple redirect - middleware handles admin detection
         router.push(localizedPath("dashboard"));
       }
     } catch (err: unknown) {

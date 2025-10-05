@@ -19,6 +19,7 @@ interface FormData {
   fullName: string;
   email: string;
   company: string;
+  country: string;
   fleetSize: string;
   phone: string;
   message: string;
@@ -31,6 +32,7 @@ export default function RequestDemoForm() {
     fullName: "",
     email: "",
     company: "",
+    country: "",
     fleetSize: "",
     phone: "",
     message: "",
@@ -52,6 +54,8 @@ export default function RequestDemoForm() {
       newErrors.email = t("requestDemo.form.errors.invalidEmail");
     if (!formData.company.trim())
       newErrors.company = t("requestDemo.form.errors.required");
+    if (!formData.country)
+      newErrors.country = t("requestDemo.form.errors.required");
     if (!formData.fleetSize)
       newErrors.fleetSize = t("requestDemo.form.errors.required");
     if (!formData.agreeToTerms)
@@ -80,6 +84,7 @@ export default function RequestDemoForm() {
           fleet_size: formData.fleetSize,
           phone: formData.phone,
           message: formData.message,
+          country_code: formData.country,
         }),
       });
 
@@ -295,6 +300,42 @@ export default function RequestDemoForm() {
                   {errors.company && (
                     <p className="mt-1 text-xs text-red-500">
                       {errors.company}
+                    </p>
+                  )}
+                </div>
+
+                {/* Country */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t("requestDemo.form.country")} *
+                  </label>
+                  <div className="relative">
+                    <Building className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                    <select
+                      value={formData.country}
+                      onChange={(e) =>
+                        setFormData({ ...formData, country: e.target.value })
+                      }
+                      className={`w-full rounded-lg border py-2.5 pr-3 pl-10 ${
+                        errors.country
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } bg-white text-gray-900 focus:border-blue-600 focus:outline-none dark:bg-gray-700 dark:text-white`}
+                    >
+                      <option value="">
+                        {t("requestDemo.form.selectCountry")}
+                      </option>
+                      <option value="AE">
+                        🇦🇪 {t("requestDemo.form.countries.uae")}
+                      </option>
+                      <option value="FR">
+                        🇫🇷 {t("requestDemo.form.countries.france")}
+                      </option>
+                    </select>
+                  </div>
+                  {errors.country && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.country}
                     </p>
                   )}
                 </div>

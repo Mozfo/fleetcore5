@@ -11,5 +11,385 @@
   "test": {
     "title": "Test Page",
     "message": "This is a test page with react-i18next functionality."
+  },
+  "homepage": {
+    "nav": {
+      "product": "Product",
+      "solutions": "Solutions",
+      "resources": "Resources",
+      "company": "Company",
+      "login": "Login",
+      "demo": "Schedule Demo"
+    },
+    "productMenu": {
+      "tabs": {
+        "rental": "Car Rental Management",
+        "fleet": "Fleet Operations",
+        "platform": "Platform Integrations",
+        "analytics": "Analytics & Reports"
+      },
+      "rental": {
+        "items": [
+          {
+            "title": "Booking System",
+            "desc": "Online reservations with real-time availability"
+          },
+          {
+            "title": "Contract Management",
+            "desc": "Digital agreements and e-signatures"
+          },
+          {
+            "title": "Pricing Engine",
+            "desc": "Dynamic rates and seasonal pricing"
+          },
+          {
+            "title": "Billing & Invoicing",
+            "desc": "Automated invoices and payment processing"
+          },
+          {
+            "title": "Customer CRM",
+            "desc": "Customer profiles and rental history"
+          },
+          {
+            "title": "Document Verification",
+            "desc": "License and ID verification system"
+          }
+        ]
+      },
+      "fleet": {
+        "items": [
+          {
+            "title": "Vehicle Tracking",
+            "desc": "Real-time GPS and geofencing"
+          },
+          {
+            "title": "Maintenance",
+            "desc": "Service schedules and repair tracking"
+          },
+          {
+            "title": "Driver Management",
+            "desc": "Performance and shift scheduling"
+          },
+          {
+            "title": "Document Control",
+            "desc": "Insurance and registration tracking"
+          },
+          {
+            "title": "Fuel Management",
+            "desc": "Consumption tracking and fuel cards"
+          },
+          { "title": "Telematics", "desc": "Driver behavior analysis" }
+        ]
+      },
+      "platform": {
+        "items": [
+          { "title": "Uber Fleet API", "desc": "Direct integration with Uber" },
+          { "title": "Bolt Business", "desc": "Connect with Bolt platform" },
+          { "title": "Careem Plus", "desc": "Careem fleet integration" },
+          { "title": "Yango Fleet", "desc": "Yango platform connection" },
+          { "title": "Revenue Import", "desc": "Automatic daily sync" },
+          {
+            "title": "Commission Tracking",
+            "desc": "Platform fees and margins"
+          }
+        ]
+      },
+      "analytics": {
+        "items": [
+          {
+            "title": "Business Intelligence",
+            "desc": "KPI dashboards and metrics"
+          },
+          {
+            "title": "Financial Reports",
+            "desc": "P&L and cash flow analysis"
+          },
+          { "title": "Fleet Performance", "desc": "Utilization and ROI" },
+          { "title": "Driver Analytics", "desc": "Performance metrics" },
+          { "title": "Custom Reports", "desc": "Report builder tool" },
+          { "title": "Data Export", "desc": "CSV and Excel exports" }
+        ]
+      }
+    },
+    "solutionsMenu": {
+      "tabs": {
+        "industry": "By Industry",
+        "size": "By Fleet Size",
+        "usecase": "By Use Case",
+        "compliance": "Compliance & Safety"
+      },
+      "industry": {
+        "items": [
+          { "title": "Car Rental", "desc": "Traditional rental companies" },
+          { "title": "Ride-Hailing", "desc": "Uber, Bolt, Careem fleets" },
+          { "title": "Taxi Companies", "desc": "Traditional taxi operations" },
+          { "title": "Delivery Services", "desc": "Last-mile delivery fleets" },
+          { "title": "Corporate Fleets", "desc": "Company vehicle management" },
+          {
+            "title": "Leasing Companies",
+            "desc": "Long-term leasing operations"
+          }
+        ]
+      },
+      "size": {
+        "items": [
+          {
+            "title": "Small Fleet (1-20)",
+            "desc": "Starter package with essentials"
+          },
+          {
+            "title": "Medium Fleet (20-100)",
+            "desc": "Full features with automation"
+          },
+          {
+            "title": "Large Fleet (100-500)",
+            "desc": "Advanced analytics and API"
+          },
+          {
+            "title": "Enterprise (500+)",
+            "desc": "Custom solutions and support"
+          },
+          { "title": "Multi-Location", "desc": "Branch management tools" },
+          { "title": "Franchise Support", "desc": "Multi-tenant architecture" }
+        ]
+      },
+      "usecase": {
+        "items": [
+          {
+            "title": "Fleet Finance",
+            "desc": "Revenue and commission tracking"
+          },
+          {
+            "title": "GPS Monitoring",
+            "desc": "Real-time tracking and alerts"
+          },
+          {
+            "title": "Driver Onboarding",
+            "desc": "Digital recruitment workflow"
+          },
+          {
+            "title": "Maintenance Planning",
+            "desc": "Predictive maintenance system"
+          },
+          { "title": "Customer Portal", "desc": "Self-service booking system" },
+          {
+            "title": "Communication Hub",
+            "desc": "WhatsApp and SMS automation"
+          }
+        ]
+      },
+      "compliance": {
+        "items": [
+          {
+            "title": "Document Management",
+            "desc": "License and insurance tracking"
+          },
+          { "title": "Safety Monitoring", "desc": "Driver behavior scoring" },
+          {
+            "title": "Regulatory Compliance",
+            "desc": "Local regulation adherence"
+          },
+          { "title": "Audit Trail", "desc": "Complete activity logging" },
+          {
+            "title": "Incident Management",
+            "desc": "Accident reporting workflow"
+          },
+          { "title": "Insurance Claims", "desc": "Digital claims processing" }
+        ]
+      }
+    },
+    "hero": {
+      "badge": "All-in-One Fleet & Driver Management Platform",
+      "title": "Manage Your Rental and Ride-Hailing Activities Like Never Before",
+      "subtitle": "Complete SaaS solution for managing drivers, vehicles, finances, and operations. From single driver assignments to multi-platform revenue tracking.",
+      "metrics": {
+        "vehicles": "Vehicles Tracked",
+        "revenue": "Daily Revenue",
+        "utilization": "Fleet Usage",
+        "bookings": "Active Trips"
+      }
+    },
+    "features": {
+      "carRental": {
+        "title": "Car Rental Management",
+        "items": [
+          {
+            "name": "Reservation & Booking",
+            "desc": "Create and manage bookings with real-time availability and instant confirmation."
+          },
+          {
+            "name": "Contracts & Handover",
+            "desc": "Auto-generate rental agreements, capture digital signatures, and log vehicle condition with photos."
+          },
+          {
+            "name": "Pricing, Billing & Insurance",
+            "desc": "Set dynamic rates and extras, automate invoices, manage deposits, and handle insurance policies and claims."
+          },
+          {
+            "name": "Customer CRM & Verification",
+            "desc": "Store verified profiles, rental history, communication records, and document validation."
+          },
+          {
+            "name": "Sales & Opportunity Management",
+            "desc": "Track leads, corporate deals, pipeline stages, and rental conversions."
+          },
+          {
+            "name": "Fleet Utilization & Operations",
+            "desc": "Monitor availability, usage, damage, maintenance, and optimize asset performance."
+          }
+        ]
+      },
+      "rental": {
+        "title": "Complete Fleet Management",
+        "items": [
+          {
+            "name": "Driver & Vehicle Assignment",
+            "desc": "Schedule drivers, manage shifts, track vehicle handovers with digital signatures and photos"
+          },
+          {
+            "name": "Multi-Platform Revenue Import",
+            "desc": "Import & reconcile data from Uber, Bolt, Careem, Yango - automatic duplicate detection"
+          },
+          {
+            "name": "Financial Cashbox System",
+            "desc": "Track all driver debits/credits, automatic balance calculation, commission management"
+          },
+          {
+            "name": "Maintenance Scheduling",
+            "desc": "Service reminders, cost tracking, vendor management, vehicle downtime optimization"
+          },
+          {
+            "name": "Document Management",
+            "desc": "Store licenses, insurance, contracts - automatic expiry alerts and renewal tracking"
+          },
+          {
+            "name": "Real-Time Analytics",
+            "desc": "Live dashboards, custom reports, KPI tracking, profit/loss per vehicle and driver"
+          }
+        ]
+      },
+      "ridehailing": {
+        "title": "Platform Integration Hub",
+        "items": [
+          {
+            "name": "Unified Platform Management",
+            "desc": "Connect Uber Fleet, Bolt Business, Careem Plus, Yango Fleet from one dashboard"
+          },
+          {
+            "name": "Automated Data Import",
+            "desc": "Daily automatic import of trips, earnings, bonuses - no manual CSV uploads needed"
+          },
+          {
+            "name": "Driver Performance Tracking",
+            "desc": "Monitor online hours, acceptance rates, cancellations, ratings across all platforms"
+          },
+          {
+            "name": "Commission Reconciliation",
+            "desc": "Automatic calculation of platform fees, driver payouts, company margins per trip"
+          },
+          {
+            "name": "Office Trips Module",
+            "desc": "Your own booking system for corporate clients - bypass platform commissions"
+          },
+          {
+            "name": "GPS & Telematics",
+            "desc": "Real-time vehicle tracking, fuel monitoring, driver behavior analysis"
+          }
+        ]
+      }
+    },
+    "process": {
+      "title": "Start Managing Your Fleet in 48 Hours",
+      "subtitle": "Quick setup, immediate results",
+      "steps": [
+        {
+          "title": "1. Book Demo",
+          "desc": "30-min call",
+          "detail": "See the platform in action with your use cases"
+        },
+        {
+          "title": "2. Get Proposal",
+          "desc": "Same day quote",
+          "detail": "Transparent pricing based on fleet size"
+        },
+        {
+          "title": "3. Sign Agreement",
+          "desc": "Simple contract",
+          "detail": "No hidden fees, monthly billing"
+        },
+        {
+          "title": "4. Data Import",
+          "desc": "We handle setup",
+          "detail": "Import your vehicles, drivers, existing data"
+        },
+        {
+          "title": "5. Go Live",
+          "desc": "Start using",
+          "detail": "Full training and support included"
+        }
+      ]
+    },
+    "integrations": {
+      "title": "Works With Everything You Use",
+      "categoryLabels": {
+        "platforms": "Platforms",
+        "payments": "Payments",
+        "accounting": "Accounting",
+        "hardware": "Hardware"
+      },
+      "categories": {
+        "platforms": [
+          "Uber Fleet",
+          "Bolt Business",
+          "Careem Plus",
+          "Yango Fleet",
+          "FreeNow",
+          "InDriver"
+        ],
+        "payments": ["Stripe", "PayPal", "Square", "Local Banks"],
+        "accounting": ["QuickBooks", "Xero", "Zoho Books", "Excel Export"],
+        "hardware": ["GPS Trackers", "Fuel Cards", "Dashcams", "OBD Devices"]
+      }
+    },
+    "proof": {
+      "title": "Trusted by 500+ Fleet Operators",
+      "metrics": [
+        {
+          "value": "3 hrs",
+          "label": "Saved Daily",
+          "desc": "On administrative tasks"
+        },
+        {
+          "value": "100%",
+          "label": "Revenue Tracked",
+          "desc": "No more revenue leakage"
+        },
+        {
+          "value": "25%",
+          "label": "Cost Reduction",
+          "desc": "Through better utilization"
+        },
+        { "value": "24/7", "label": "Support", "desc": "Always here to help" }
+      ]
+    },
+    "cta": {
+      "title": "Ready to Transform Your Fleet Operations?",
+      "subtitle": "Join hundreds of successful fleet operators",
+      "button": "Get Started Today"
+    },
+    "dashboard": {
+      "title": "Your Future Fleet Command Center",
+      "subtitle": "Real-time insights, automated workflows, complete control"
+    },
+    "featuresSection": {
+      "title": "Everything You Need to Manage Your Fleet",
+      "subtitle": "From driver onboarding to revenue reconciliation"
+    },
+    "footer": {
+      "product": "Product",
+      "company": "Company",
+      "legal": "Legal",
+      "copyright": "© 2025 FleetCore. All rights reserved."
+    }
   }
 }

@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import { Providers } from "./providers";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
-
-const locales = ["en", "fr"] as const;
-type Locale = (typeof locales)[number];
+import { locales, type Locale } from "@/lib/i18n/locales";
 
 // Pour le static rendering (optimisation)
 export function generateStaticParams() {
