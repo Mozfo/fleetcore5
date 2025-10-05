@@ -111,6 +111,14 @@ Composants majeurs:
 - ✅ Utiliser `prisma db push` pour Supabase (évite shadow database)
 - ✅ Valider données intactes après modifications
 
+**RLS Policies:**
+
+- ✅ 32 tables avec Row Level Security activé
+- ✅ 39 policies créées (tenant-scoped via auth.jwt())
+- ✅ Pattern: `tenant_id IN (SELECT tenant_id FROM member WHERE clerk_id = auth.jwt() ->> 'sub')`
+- ✅ Tables ADM: policies SELECT/INSERT/UPDATE séparées selon logique métier
+- ✅ Tables FLT/RID/REV/BIL: policy ALL pour simplifier
+
 ---
 
 ### ÉTAPE 1.2: Seed Data (PROCHAINE - 2h)
