@@ -57,6 +57,19 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     return NextResponse.next();
   }
 
+  // Handle locale redirection FIRST (before auth checks)
+  // This ensures all routes have a locale prefix before auth.protect() is called
+  const locales = ["en", "fr"];
+  const pathnameHasLocale = locales.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  );
+
+  if (!pathnameHasLocale) {
+    // Redirect to default locale (en)
+    const newUrl = new URL(`/en${pathname}`, req.url);
+    return NextResponse.redirect(newUrl);
+  }
+
   // Auto-redirect FleetCore Admin users from client dashboard to admin dashboard
   const isDashboardRoute = pathname.match(/^\/(en|fr)\/dashboard$/);
 
@@ -72,20 +85,9 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   const locale = getLocaleFromPathname(pathname);
 
   // Protect all routes except public ones (Clerk best practice)
+  // Now all routes have locale prefix, so auth.protect() works correctly
   if (!isPublicRoute(req)) {
     await auth.protect();
-  }
-
-  // Check if locale is in path
-  const locales = ["en", "fr"];
-  const pathnameHasLocale = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
-
-  if (!pathnameHasLocale) {
-    // Redirect to default locale (en)
-    const newUrl = new URL(`/en${pathname}`, req.url);
-    return NextResponse.redirect(newUrl);
   }
 
   return NextResponse.next();
