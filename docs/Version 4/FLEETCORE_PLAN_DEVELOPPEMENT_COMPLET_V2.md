@@ -1,29 +1,34 @@
 # FLEETCORE VTC - PLAN V3 CORRIGÉ
 
-**Date de création:** 04/10/2025  
-**Version:** 3.0 - Plan corrigé avec architecture backoffice + soft delete + webhooks  
-**Basé sur:** FLEETCORE_PLAN_DEVELOPPEMENT_COMPLET V2 + Décisions architecturales validées  
-**Statut:** PRÊT POUR EXÉCUTION
+**Date de création:** 04/10/2025
+**Dernière mise à jour:** 05/10/2025 23h50
+**Version:** 3.1 - Plan corrigé avec `/adm` + workflow invitation validé
+**Basé sur:** STATUS v1 + Décisions architecturales validées
+**Statut:** EN COURS - Phase 0 terminée, Phase 1 Jour 3 à démarrer
 
 ---
 
-## 📋 CORRECTIONS MAJEURES V3
+## 📋 CORRECTIONS MAJEURES V3.1 (05/10/2025)
 
-### Ce qui a changé par rapport à V2
+### Ce qui a changé par rapport à V3.0
 
 **1. Architecture Multi-tenant Corrigée**
 
-- ✅ Organisation dédiée "FleetCore Platform" pour super admins
-- ✅ Séparation `/platform` (backoffice SaaS) vs `/dashboard` (clients)
-- ✅ Rôles platform: `platform:super_admin`, `platform:commercial`, `platform:support`
+- ✅ Organisation dédiée "FleetCore Admin" (pas Platform - éviter confusion Uber/Bolt)
+- ✅ Séparation `/adm` (backoffice SaaS) vs `/dashboard` (clients)
+- ✅ Rôles: `org:adm_admin`, `org:adm_commercial`, `org:adm_support`
 - ✅ Pas d'accès cross-tenant direct (sauf impersonate avec audit)
+- ✅ **AUCUN accès direct Clerk ni Supabase** - Tout via interfaces FleetCore
 
-**2. Workflow Invitation Client**
+**2. Workflow Invitation Client (VALIDÉ 05/10)**
 
-- ✅ Suppression `/en/register` public (devient route platform uniquement)
-- ✅ Création `/en/accept-invitation` pour admins clients invités
+- ✅ Suppression `/en/register` public
+- ✅ Création `/accept-invitation` pour admins clients invités
 - ✅ Company name PRÉ-REMPLI et GRISÉ (non modifiable)
-- ✅ Process: Lead → Validation → Super admin crée org → Invitation email
+- ✅ Process: Demo → Qualification → Onboarding form → Validation → Org creation → Invitation
+- ✅ Formulaire onboarding `/onboarding/complete?token=xxx` (collecte documents AVANT création compte)
+- ✅ Admin client peut UNIQUEMENT inviter `org:member` (pas org:admin)
+- ✅ 2ème admin = Demande canal externe au super admin
 
 **3. Soft Delete + Audit**
 
@@ -55,85 +60,88 @@
 
 ## 1. ÉTAT ACTUEL ET AUDIT
 
-### 1.1 Ce Qui Fonctionne ✅
+### 1.1 Ce Qui Fonctionne ✅ (Mise à jour 05/10/2025)
 
-**Infrastructure (Jour 1 - 100% Complété)**
+**Infrastructure (100% Complété)**
 
 - ✅ Next.js 15.5.3 configuré avec Turbopack
 - ✅ Clerk Auth installé (@clerk/nextjs 6.32.2)
-- ✅ Supabase connecté
+- ✅ Supabase connecté (Mumbai - migration Zurich reportée)
 - ✅ Prisma configuré (6.16.2)
-- ✅ Vercel déployé (https://fleetcore5.vercel.app)
+- ✅ Vercel déployé
 - ✅ Sentry monitoring configuré
-- ✅ Git/GitHub configuré
+- ✅ i18n: react-i18next (EN/FR complet)
 
-**Pages Authentification (Jour 2 - Complété)**
+**Pages Authentification (Complété)**
 
-- ✅ `/login` - Design premium, validations, animations
-- ✅ `/register` - Formulaire inscription custom (À MODIFIER - voir V3)
-- ✅ `/forgot-password` - Reset password flow
-- ✅ `/reset-password` - Avec token validation
+- ✅ `/[locale]/login` - Design premium, validations, animations
+- ✅ `/[locale]/forgot-password` - Reset password flow
+- ✅ `/[locale]/reset-password` - Avec token validation
+- ❌ `/en/register` - **SUPPRIMÉ** (workflow invitation uniquement)
 
-**Pages Marketing (Jour 2 - Complété)**
+**Pages Marketing (Complété)**
 
-- ✅ `/request-demo` - Landing avec vidéo, métriques animées
-- ✅ `/request-demo/form` - Formulaire multi-étapes
+- ✅ `/[locale]/request-demo` - Formulaire leads complet
+- ✅ Homepage i18n avec switcher langue
 
-**Base de Données (Jour 2 - Partiellement Complété)**
+**Architecture Backoffice (Complété)**
 
-- ✅ Table `organization` (4 records)
-- ✅ Table `member` (MANQUE colonnes soft delete - À AJOUTER)
-- ✅ Table `sys_demo_lead`
-- ✅ Table `sys_demo_lead_activity`
+- ✅ `/adm` - Backoffice FleetCore admin
+- ✅ `/adm/leads` - Gestion leads (OPTIMISÉ: -60% queries)
+- ✅ `/adm/organizations` - Gestion organisations
+- ✅ Middleware auto-redirect admin
 
-**API Créées (Jour 2 - Partiellement Complété)**
+**Base de Données (4 tables)**
 
-- ✅ `/api/demo-leads` POST/GET - FONCTIONNE
+- ✅ Table `organization` (7 records)
+- ✅ Table `member` (4 records) - **MANQUE colonnes soft delete**
+- ✅ Table `sys_demo_lead` (4 records)
+- ✅ Table `sys_demo_lead_activity` (0 records)
+
+**API Créées (Partiellement Complété)**
+
+- ✅ `/api/demo-leads` POST/GET/PUT/DELETE - FONCTIONNE
+- ✅ Performance optimisée (groupBy + Promise.all)
 
 ---
 
 ### 1.2 Ce Qui Est BLOQUÉ ❌
 
-**CRITIQUE - Build Ne Compile Pas**
+**Mise à jour 05/10:** Phase 0 terminée - Build compile maintenant
 
-| Fichier                                  | Problème                          | Impact                            |
-| ---------------------------------------- | --------------------------------- | --------------------------------- |
-| `/api/demo-leads/[id]/route.ts`          | **MANQUANT**                      | ❌ Impossible GET/PUT/DELETE lead |
-| `/api/demo-leads/[id]/activity/route.ts` | **Syntaxe incorrecte** Next.js 15 | ❌ Transaction cassée             |
-| `/api/demo-leads/[id]/accept/route.ts`   | **Syntaxe incorrecte** Clerk v6   | ❌ Conversion lead impossible     |
-
-**Conséquence:** `pnpm build` ÉCHOUE - Aucun déploiement possible
+**Aucun bloqueur critique** - Build production stable
 
 ---
 
-### 1.3 Ce Qui Manque Complètement ⏳
+### 1.3 Ce Qui Manque (PROCHAINES ÉTAPES)
 
-**Architecture Multi-tenant (CRITIQUE)**
+**Workflow Invitation Client (PRIORITÉ HAUTE)**
 
-- ❌ Organisation "FleetCore Platform" non créée
-- ❌ Rôles platform non définis
-- ❌ Clerk Organizations activé mais mal configuré
-- ❌ Pas de séparation `/platform` vs `/dashboard`
-- ❌ Workflow invitation client non implémenté
+- ❌ Page `/onboarding/complete?token=xxx` - Formulaire complet client avec documents
+- ❌ Page `/accept-invitation` - Inscription admin client
+- ❌ API `/api/demo-leads/[id]/convert` - Conversion lead → org
+- ❌ Page `/dashboard/team/invite` - Invitation membres par admin client
+- ❌ Page `/adm/organizations/[id]/invite-admin` - Invitation 2ème admin
 
-**Soft Delete & Audit**
+**Soft Delete & Audit (PRIORITÉ HAUTE)**
 
-- ❌ Colonnes `status`, `deleted_at` manquantes sur `member`
+- ❌ Colonnes `status`, `deleted_at`, `deleted_by`, `deletion_reason` sur table `member`
 - ❌ Table `audit_logs` non créée
 - ❌ Webhooks Clerk → Supabase non configurés
 - ❌ API `/api/webhooks/clerk` manquante
+- ❌ Helper `lib/auth/permissions.ts` (canManageLeads, canConvertLeads, canImpersonateClients)
 
-**UI/UX**
+**Database Expansion (PRIORITÉ MOYENNE)**
 
-- ❌ Page `/platform/leads` (backoffice SaaS)
-- ❌ Page `/en/accept-invitation` (pour clients invités)
-- ❌ Formulaire register public à modifier
+- ❌ 31 tables VTC manquantes (total: 35 tables prévues)
+- ❌ Système paramétrage (`system_parameters`, `parameter_audit`)
 
-**Jour 3+ (Pas Commencé)**
+**Features Core (PRIORITÉ MOYENNE)**
 
-- ❌ 35 tables VTC Spec V2
-- ❌ Système paramétrage
-- ❌ Tout le reste...
+- ❌ CRUD Véhicules
+- ❌ CRUD Chauffeurs
+- ❌ Module Assignments
+- ❌ Import revenus (Uber/Bolt/Careem)
 
 ---
 
