@@ -84,7 +84,7 @@ export default function FleetCoreUltimatePremium() {
     return () => clearInterval(interval);
   }, []);
 
-  const { t } = useTranslation("common");
+  const { t, ready } = useTranslation("common");
 
   // Calculator icon fix
 
@@ -1793,37 +1793,38 @@ export default function FleetCoreUltimatePremium() {
                   {t("homepage.features.rental.title")}
                 </h3>
                 <div className="space-y-4">
-                  {(
-                    t("homepage.features.rental.items", {
-                      returnObjects: true,
-                    }) as FeatureItem[]
-                  ).map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <motion.div
-                        key={index}
-                        className="flex gap-4"
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        viewport={{ once: true }}
-                      >
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                          {Icon && (
-                            <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 dark:text-white">
-                            {feature.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {feature.desc}
-                          </p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                  {ready &&
+                    (
+                      t("homepage.features.rental.items", {
+                        returnObjects: true,
+                      }) as FeatureItem[]
+                    ).map((feature, index) => {
+                      const Icon = feature.icon;
+                      return (
+                        <motion.div
+                          key={index}
+                          className="flex gap-4"
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          viewport={{ once: true }}
+                        >
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                            {Icon && (
+                              <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                              {feature.name}
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {feature.desc}
+                            </p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -1833,37 +1834,38 @@ export default function FleetCoreUltimatePremium() {
                   {t("homepage.features.ridehailing.title")}
                 </h3>
                 <div className="space-y-4">
-                  {(
-                    t("homepage.features.ridehailing.items", {
-                      returnObjects: true,
-                    }) as FeatureItem[]
-                  ).map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <motion.div
-                        key={index}
-                        className="flex gap-4"
-                        initial={{ opacity: 0, x: 20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        viewport={{ once: true }}
-                      >
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
-                          {Icon && (
-                            <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 dark:text-white">
-                            {feature.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {feature.desc}
-                          </p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                  {ready &&
+                    (
+                      t("homepage.features.ridehailing.items", {
+                        returnObjects: true,
+                      }) as FeatureItem[]
+                    ).map((feature, index) => {
+                      const Icon = feature.icon;
+                      return (
+                        <motion.div
+                          key={index}
+                          className="flex gap-4"
+                          initial={{ opacity: 0, x: 20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          viewport={{ once: true }}
+                        >
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+                            {Icon && (
+                              <Icon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                              {feature.name}
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {feature.desc}
+                            </p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                 </div>
               </div>
             </div>
@@ -1883,36 +1885,37 @@ export default function FleetCoreUltimatePremium() {
             </div>
 
             <div className="mx-auto flex max-w-5xl items-center justify-between">
-              {(
-                t("homepage.process.steps", {
-                  returnObjects: true,
-                }) as ProcessStep[]
-              ).map((step, index) => {
-                const Icon = step.icon;
-                return (
-                  <motion.div
-                    key={index}
-                    className="flex flex-col items-center text-center"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                  >
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                      {Icon && <Icon className="h-8 w-8 text-white" />}
-                    </div>
-                    <h3 className="mb-1 font-bold text-gray-900 dark:text-white">
-                      {step.title}
-                    </h3>
-                    <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">
-                      {step.desc}
-                    </p>
-                    <p className="max-w-[150px] text-xs text-gray-500">
-                      {step.detail}
-                    </p>
-                  </motion.div>
-                );
-              })}
+              {ready &&
+                (
+                  t("homepage.process.steps", {
+                    returnObjects: true,
+                  }) as ProcessStep[]
+                ).map((step, index) => {
+                  const Icon = step.icon;
+                  return (
+                    <motion.div
+                      key={index}
+                      className="flex flex-col items-center text-center"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                    >
+                      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                        {Icon && <Icon className="h-8 w-8 text-white" />}
+                      </div>
+                      <h3 className="mb-1 font-bold text-gray-900 dark:text-white">
+                        {step.title}
+                      </h3>
+                      <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">
+                        {step.desc}
+                      </p>
+                      <p className="max-w-[150px] text-xs text-gray-500">
+                        {step.detail}
+                      </p>
+                    </motion.div>
+                  );
+                })}
             </div>
           </div>
         </section>
@@ -1927,28 +1930,30 @@ export default function FleetCoreUltimatePremium() {
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-              {Object.entries(
-                t("homepage.integrations.categories", { returnObjects: true })
-              ).map(([category, items]) => (
-                <div key={category}>
-                  <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-500 uppercase">
-                    {category}
-                  </h3>
-                  <div className="space-y-3">
-                    {(items as string[]).map((item) => (
-                      <div
-                        key={item}
-                        className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-800"
-                      >
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-gray-700 dark:text-gray-300">
-                          {item}
-                        </span>
-                      </div>
-                    ))}
+              {ready &&
+                Object.entries(
+                  t("homepage.integrations.categories", { returnObjects: true })
+                ).map(([category, items]) => (
+                  <div key={category}>
+                    <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-500 uppercase">
+                      {category}
+                    </h3>
+                    <div className="space-y-3">
+                      {ready &&
+                        (items as string[]).map((item) => (
+                          <div
+                            key={item}
+                            className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-800"
+                          >
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {item}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </section>
@@ -1963,30 +1968,31 @@ export default function FleetCoreUltimatePremium() {
             </div>
 
             <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
-              {(
-                t("homepage.proof.metrics", {
-                  returnObjects: true,
-                }) as ProofMetric[]
-              ).map((metric, index) => (
-                <motion.div
-                  key={index}
-                  className="text-center"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <div className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-5xl font-bold text-transparent">
-                    {metric.value}
-                  </div>
-                  <div className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
-                    {metric.label}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {metric.desc}
-                  </div>
-                </motion.div>
-              ))}
+              {ready &&
+                (
+                  t("homepage.proof.metrics", {
+                    returnObjects: true,
+                  }) as ProofMetric[]
+                ).map((metric, index) => (
+                  <motion.div
+                    key={index}
+                    className="text-center"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                  >
+                    <div className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-5xl font-bold text-transparent">
+                      {metric.value}
+                    </div>
+                    <div className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+                      {metric.label}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {metric.desc}
+                    </div>
+                  </motion.div>
+                ))}
             </div>
           </div>
         </section>
