@@ -17,10 +17,10 @@ model organization {
   clerk_org_id    String?   @unique(map: "Tenant_clerk_org_id_key") @db.VarChar(255)
 
   // Soft delete columns
-  status          String    @default("active") @db.VarChar(50)
   deleted_at      DateTime? @db.Timestamptz(6)
   deleted_by      String?   @db.Uuid
   deletion_reason String?
+  status          String    @default("active") @db.VarChar(50)
 
   members         member[]
 
@@ -37,10 +37,10 @@ model member {
   updated_at      DateTime     @updatedAt
 
   // Soft delete columns
-  status          String       @default("active") @db.VarChar(50)
   deleted_at      DateTime?    @db.Timestamptz(6)
   deleted_by      String?      @db.Uuid
   deletion_reason String?
+  status          String       @default("active") @db.VarChar(50)
 
   organization    organization @relation(fields: [tenant_id], references: [id], map: "User_tenant_id_fkey")
 
@@ -58,11 +58,11 @@ model sys_demo_lead {
   phone             String?   @db.VarChar(50)
   message           String?
   status            String?   @default("pending") @db.VarChar(50)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
   country_code      String    @default("AE") @db.VarChar(2)
   assigned_to       String?   @db.Uuid
   qualified_date    DateTime? @db.Timestamptz(6)
-  created_at        DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
 
   // Soft delete columns
   deleted_at        DateTime? @db.Timestamptz(6)
@@ -86,15 +86,15 @@ model sys_demo_lead_activity {
   activity_type     String    @db.VarChar(50)
   activity_date     DateTime  @default(now()) @db.Timestamptz(6)
   notes             String?
-  outcome           String?   @db.VarChar(50)
-  duration          Int?
-  priority          String    @default("medium") @db.VarChar(20)
-  status            String    @default("completed") @db.VarChar(20)
+  outcome           String?   @db.VarChar(50)        
+  duration          Int?                               
+  priority          String    @default("medium") @db.VarChar(20)  
+  status            String    @default("completed") @db.VarChar(20) 
   performed_by      String    @db.Uuid
   next_action       String?   @db.VarChar(255)
   next_action_date  DateTime? @db.Timestamptz(6)
   created_at        DateTime? @default(now()) @db.Timestamptz(6)
-
+  
 
   // Relations
   lead              sys_demo_lead @relation(fields: [lead_id], references: [id], onDelete: Cascade)
@@ -105,7 +105,11 @@ model sys_demo_lead_activity {
   @@index([status], map: "idx_demo_lead_activity_status")
 }
 
-model audit_logs {
+// ============================================================================
+// TABLES ADMINISTRATION (adm_)
+// ============================================================================
+
+model adm_audit_logs {
   id                    String    @id @default(uuid())
   tenant_id             String?   @db.Uuid
 
@@ -136,511 +140,904 @@ model audit_logs {
   @@index([performed_by], map: "idx_audit_performed_by")
 }
 
-// ============================================
-// SYSTEM TABLES (3)
-// ============================================
+model adm_system_parameters {
+  id            String   @id @default(uuid())
+  tenant_id     String?  @db.Uuid
+  country_code  String   @db.VarChar(2)
 
-model system_parameters {
-  id               String    @id @default(uuid())
-  tenant_id        String?   @db.Uuid
-  param_key        String    @db.VarChar(100)
-  param_value      String
-  data_type        String    @db.VarChar(20)
-  country_code     String?   @db.VarChar(2)
-  scope            String    @db.VarChar(20)
-  description      String?
-  validation_rules Json?
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime  @updatedAt @db.Timestamptz(6)
+  parameter_key String   @db.VarChar(100)
+  value         String
+  data_type     String   @db.VarChar(20)
 
-  @@unique([tenant_id, param_key, country_code], map: "unique_param_per_tenant_country")
-  @@index([tenant_id, scope], map: "idx_params_tenant_scope")
-  @@index([param_key], map: "idx_params_key")
+  description   String?
+  is_editable   Boolean  @default(true)
+
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([tenant_id, country_code, parameter_key], map: "unique_param_per_tenant_country")
+  @@index([tenant_id, country_code], map: "idx_params_tenant_country")
 }
 
-model parameter_audit {
-  id           String   @id @default(uuid())
-  parameter_id String   @db.Uuid
-  old_value    String?
-  new_value    String
-  changed_by   String   @db.Uuid
-  reason       String?
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
+model adm_parameter_audit {
+  id            String   @id @default(uuid())
+  tenant_id     String?  @db.Uuid
+  parameter_id  String   @db.Uuid
 
-  @@index([parameter_id, created_at(sort: Desc)], map: "idx_param_audit_param_date")
+  old_value     String?
+  new_value     String
+  changed_by    String   @db.Uuid
+  change_reason String?
+
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([parameter_id, created_at(sort: Desc)], map: "idx_param_audit_history")
 }
 
-model sequences {
+model adm_sequences {
   id            String   @id @default(uuid())
   tenant_id     String   @db.Uuid
+
   sequence_name String   @db.VarChar(50)
   prefix        String   @db.VarChar(10)
-  current_value Int      @default(1)
+  current_value Int      @default(0)
+
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
   updated_at    DateTime @updatedAt @db.Timestamptz(6)
 
   @@unique([tenant_id, sequence_name], map: "unique_sequence_per_tenant")
 }
 
-// ============================================
-// SUPPORT TABLES (4)
-// ============================================
+model adm_documents {
+  id            String   @id @default(uuid())
+  tenant_id     String   @db.Uuid
 
-model documents {
-  id            String    @id @default(uuid())
-  tenant_id     String    @db.Uuid
-  entity_type   String    @db.VarChar(50)
-  entity_id     String    @db.Uuid
-  document_type String    @db.VarChar(50)
-  file_name     String    @db.VarChar(255)
-  file_path     String    @db.VarChar(500)
-  file_size     Int
-  mime_type     String    @db.VarChar(100)
-  uploaded_by   String    @db.Uuid
+  entity_type   String   @db.VarChar(50)
+  entity_id     String   @db.Uuid
+
+  document_type String   @db.VarChar(100)
+  file_name     String   @db.VarChar(255)
+  file_url      String   @db.VarChar(500)
+  file_size     Int?
+  mime_type     String?  @db.VarChar(100)
+
+  uploaded_by   String   @db.Uuid
+  uploaded_at   DateTime @default(now()) @db.Timestamptz(6)
+
   expires_at    DateTime? @db.Timestamptz(6)
-  status        String    @default("active") @db.VarChar(50)
-  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  is_verified   Boolean  @default(false)
+  verified_by   String?  @db.Uuid
+  verified_at   DateTime? @db.Timestamptz(6)
+
+  metadata      Json?
 
   @@index([tenant_id, entity_type, entity_id], map: "idx_docs_entity")
   @@index([expires_at], map: "idx_docs_expiry")
 }
 
-model notifications {
-  id         String    @id @default(uuid())
-  tenant_id  String    @db.Uuid
-  user_id    String    @db.Uuid
-  type       String    @db.VarChar(50)
-  title      String    @db.VarChar(255)
-  message    String
-  data       Json?
-  read_at    DateTime? @db.Timestamptz(6)
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-
-  @@index([tenant_id, user_id, read_at], map: "idx_notifs_user_unread")
-}
-
-model custom_fields {
-  id          String   @id @default(uuid())
-  tenant_id   String   @db.Uuid
-  entity_type String   @db.VarChar(50)
-  field_name  String   @db.VarChar(100)
-  field_type  String   @db.VarChar(50)
-  options     Json?
-  required    Boolean  @default(false)
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  @@unique([tenant_id, entity_type, field_name], map: "unique_custom_field")
-}
-
-model custom_field_values {
-  id        String @id @default(uuid())
-  tenant_id String @db.Uuid
-  field_id  String @db.Uuid
-  entity_id String @db.Uuid
-  value     String
-
-  @@index([entity_id], map: "idx_custom_values_entity")
-}
-
-// ============================================
-// FLEET TABLES (8)
-// ============================================
-
-model vehicles {
-  id             String    @id @default(uuid())
-  tenant_id      String    @db.Uuid
-  vehicle_code   String    @db.VarChar(50)
-  make           String    @db.VarChar(100)
-  model          String    @db.VarChar(100)
-  year           Int
-  license_plate  String    @db.VarChar(50)
-  vin            String?   @db.VarChar(50)
-  vehicle_type   String    @db.VarChar(50)
-  ownership      String    @db.VarChar(50)
-  purchase_date  DateTime? @db.Date
-  purchase_price Decimal?  @db.Decimal(12, 2)
-  lease_start    DateTime? @db.Date
-  lease_end      DateTime? @db.Date
-  lease_monthly  Decimal?  @db.Decimal(10, 2)
-  rental_daily   Decimal?  @db.Decimal(10, 2)
-  fuel_type      String    @db.VarChar(50)
-  status         String    @default("available") @db.VarChar(50)
-  deleted_at     DateTime? @db.Timestamptz(6)
-  created_at     DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime  @updatedAt @db.Timestamptz(6)
-
-  @@unique([tenant_id, vehicle_code], map: "unique_vehicle_code_per_tenant")
-  @@index([tenant_id, status], map: "idx_vehicles_tenant_status")
-  @@index([license_plate], map: "idx_vehicles_plate")
-}
-
-model vehicle_assignments {
-  id         String    @id @default(uuid())
-  tenant_id  String    @db.Uuid
-  vehicle_id String    @db.Uuid
-  driver_id  String    @db.Uuid
-  start_date DateTime  @db.Date
-  end_date   DateTime? @db.Date
-  status     String    @default("active") @db.VarChar(50)
-  notes      String?
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-
-  @@index([tenant_id, vehicle_id, status], map: "idx_assignments_vehicle_status")
-  @@index([driver_id, status], map: "idx_assignments_driver_status")
-}
-
-model vehicle_maintenance {
-  id               String    @id @default(uuid())
-  tenant_id        String    @db.Uuid
-  vehicle_id       String    @db.Uuid
-  maintenance_type String    @db.VarChar(50)
-  scheduled_date   DateTime  @db.Date
-  completed_date   DateTime? @db.Date
-  odometer         Int?
-  cost             Decimal?  @db.Decimal(10, 2)
-  provider         String?   @db.VarChar(255)
-  description      String
-  status           String    @default("scheduled") @db.VarChar(50)
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-
-  @@index([vehicle_id, scheduled_date], map: "idx_maintenance_vehicle_date")
-  @@index([tenant_id, status], map: "idx_maintenance_tenant_status")
-}
-
-model vehicle_inspections {
-  id              String   @id @default(uuid())
-  tenant_id       String   @db.Uuid
-  vehicle_id      String   @db.Uuid
-  inspection_date DateTime @db.Date
-  inspector       String   @db.VarChar(255)
-  odometer        Int
-  passed          Boolean
-  issues          Json?
-  next_due        DateTime? @db.Date
-  created_at      DateTime  @default(now()) @db.Timestamptz(6)
-
-  @@index([vehicle_id, inspection_date(sort: Desc)], map: "idx_inspections_vehicle_date")
-}
-
-model vehicle_insurance {
-  id             String   @id @default(uuid())
-  tenant_id      String   @db.Uuid
-  vehicle_id     String   @db.Uuid
-  provider       String   @db.VarChar(255)
-  policy_number  String   @db.VarChar(100)
-  start_date     DateTime @db.Date
-  end_date       DateTime @db.Date
-  premium        Decimal  @db.Decimal(10, 2)
-  coverage       Json
-  status         String   @default("active") @db.VarChar(50)
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
-
-  @@index([vehicle_id], map: "idx_insurance_vehicle")
-  @@index([tenant_id, end_date], map: "idx_insurance_expiry")
-}
-
-model vehicle_expenses {
-  id           String    @id @default(uuid())
-  tenant_id    String    @db.Uuid
-  vehicle_id   String    @db.Uuid
-  expense_type String    @db.VarChar(50)
-  amount       Decimal   @db.Decimal(10, 2)
-  date         DateTime  @db.Date
-  odometer     Int?
-  description  String?
-  receipt_url  String?   @db.VarChar(500)
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-
-  @@index([vehicle_id, date(sort: Desc)], map: "idx_expenses_vehicle_date")
-  @@index([tenant_id, expense_type], map: "idx_expenses_type")
-}
-
-model vehicle_accidents {
-  id             String    @id @default(uuid())
-  tenant_id      String    @db.Uuid
-  vehicle_id     String    @db.Uuid
-  driver_id      String?   @db.Uuid
-  date           DateTime  @db.Timestamptz(6)
-  location       String    @db.VarChar(255)
-  description    String
-  damage         String
-  at_fault       Boolean?
-  claim_number   String?   @db.VarChar(100)
-  claim_status   String?   @db.VarChar(50)
-  estimated_cost Decimal?  @db.Decimal(10, 2)
-  created_at     DateTime  @default(now()) @db.Timestamptz(6)
-
-  @@index([vehicle_id, date(sort: Desc)], map: "idx_accidents_vehicle_date")
-}
-
-model vehicle_telemetry {
-  id          String   @id @default(uuid())
-  tenant_id   String   @db.Uuid
-  vehicle_id  String   @db.Uuid
-  timestamp   DateTime @db.Timestamptz(6)
-  odometer    Int
-  fuel_level  Decimal? @db.Decimal(5, 2)
-  battery     Decimal? @db.Decimal(5, 2)
-  location    Json
-  speed       Decimal? @db.Decimal(5, 2)
-  data        Json?
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  @@index([vehicle_id, timestamp(sort: Desc)], map: "idx_telemetry_vehicle_time")
-}
-
-// ============================================
-// DRIVER TABLES (7)
-// ============================================
-
-model drivers {
-  id               String    @id @default(uuid())
-  tenant_id        String    @db.Uuid
-  driver_code      String    @db.VarChar(50)
-  first_name       String    @db.VarChar(100)
-  last_name        String    @db.VarChar(100)
-  email            String    @db.VarChar(255)
-  phone            String    @db.VarChar(50)
-  license_number   String    @db.VarChar(100)
-  license_expiry   DateTime  @db.Date
-  status           String    @default("active") @db.VarChar(50)
-  employment_type  String    @db.VarChar(50)
-  hire_date        DateTime  @db.Date
-  termination_date DateTime? @db.Date
-  emergency_contact Json?
-  deleted_at       DateTime? @db.Timestamptz(6)
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime  @updatedAt @db.Timestamptz(6)
-
-  @@unique([tenant_id, driver_code], map: "unique_driver_code_per_tenant")
-  @@index([tenant_id, status], map: "idx_drivers_tenant_status")
-  @@index([email], map: "idx_drivers_email")
-}
-
-model driver_platforms {
-  id          String   @id @default(uuid())
-  tenant_id   String   @db.Uuid
-  driver_id   String   @db.Uuid
-  platform    String   @db.VarChar(50)
-  platform_id String   @db.VarChar(100)
-  active      Boolean  @default(true)
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  @@unique([driver_id, platform], map: "unique_driver_platform")
-  @@index([tenant_id, platform], map: "idx_driver_platforms_tenant_platform")
-}
-
-model driver_documents {
+model adm_notifications {
   id            String    @id @default(uuid())
   tenant_id     String    @db.Uuid
-  driver_id     String    @db.Uuid
-  document_type String    @db.VarChar(50)
-  document_url  String    @db.VarChar(500)
-  issue_date    DateTime  @db.Date
-  expiry_date   DateTime? @db.Date
-  status        String    @default("valid") @db.VarChar(50)
+  user_id       String    @db.Uuid
+
+  type          String    @db.VarChar(50)
+  title         String    @db.VarChar(255)
+  message       String
+
+  priority      String    @default("normal") @db.VarChar(20)
+
+  is_read       Boolean   @default(false)
+  read_at       DateTime? @db.Timestamptz(6)
+
+  action_url    String?   @db.VarChar(500)
+  metadata      Json?
+
   created_at    DateTime  @default(now()) @db.Timestamptz(6)
 
-  @@index([driver_id, document_type], map: "idx_driver_docs_driver_type")
-  @@index([expiry_date], map: "idx_driver_docs_expiry")
+  @@index([tenant_id, user_id, is_read], map: "idx_notif_user_unread")
+  @@index([created_at(sort: Desc)], map: "idx_notif_date")
 }
 
-model driver_performance {
-  id              String  @id @default(uuid())
-  tenant_id       String  @db.Uuid
-  driver_id       String  @db.Uuid
-  period          String  @db.VarChar(20)
-  trips           Int
-  revenue         Decimal @db.Decimal(10, 2)
-  rating          Decimal? @db.Decimal(3, 2)
-  cancellations   Int
-  acceptance_rate Decimal? @db.Decimal(5, 2)
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
+model adm_custom_fields {
+  id            String   @id @default(uuid())
+  tenant_id     String   @db.Uuid
 
-  @@unique([driver_id, period], map: "unique_driver_performance_period")
-  @@index([tenant_id, period], map: "idx_driver_perf_tenant_period")
+  entity_type   String   @db.VarChar(50)
+  field_name    String   @db.VarChar(100)
+  field_label   String   @db.VarChar(255)
+  field_type    String   @db.VarChar(50)
+
+  options       Json?
+  is_required   Boolean  @default(false)
+  default_value String?
+
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([tenant_id, entity_type, field_name], map: "unique_field_per_entity")
+  @@index([tenant_id, entity_type, is_active], map: "idx_custom_fields_active")
 }
 
-model driver_scores {
-  id         String  @id @default(uuid())
-  tenant_id  String  @db.Uuid
-  driver_id  String  @db.Uuid
-  score      Decimal @db.Decimal(5, 2)
-  rank       Int?
-  period     String  @db.VarChar(20)
-  breakdown  Json
-  created_at DateTime @default(now()) @db.Timestamptz(6)
+model adm_custom_field_values {
+  id            String   @id @default(uuid())
+  tenant_id     String   @db.Uuid
 
-  @@unique([driver_id, period], map: "unique_driver_score_period")
+  field_id      String   @db.Uuid
+  entity_id     String   @db.Uuid
+
+  value         String
+
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([field_id, entity_id], map: "unique_value_per_entity")
+  @@index([tenant_id, entity_id], map: "idx_field_values_entity")
 }
 
-model driver_training {
+model adm_platform_configurations {
+  id                String   @id @default(uuid())
+  tenant_id         String   @db.Uuid
+
+  platform_name     String   @db.VarChar(50)
+  is_active         Boolean  @default(true)
+
+  api_key           String?  @db.VarChar(500)
+  api_secret        String?  @db.VarChar(500)
+  webhook_url       String?  @db.VarChar(500)
+
+  configuration     Json?
+
+  last_sync_at      DateTime? @db.Timestamptz(6)
+  sync_status       String?   @db.VarChar(50)
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([tenant_id, platform_name], map: "unique_platform_per_tenant")
+}
+
+model adm_employers {
+  id            String   @id @default(uuid())
+  tenant_id     String   @db.Uuid
+
+  company_name  String   @db.VarChar(255)
+  siret         String   @db.VarChar(14)
+  address       String
+  city          String   @db.VarChar(100)
+  postal_code   String   @db.VarChar(10)
+  country_code  String   @default("FR") @db.VarChar(2)
+
+  contact_name  String?  @db.VarChar(255)
+  contact_email String?  @db.VarChar(255)
+  contact_phone String?  @db.VarChar(50)
+
+  is_active     Boolean  @default(true)
+
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([siret], map: "unique_siret")
+  @@index([tenant_id, is_active], map: "idx_employers_active")
+}
+
+// ============================================================================
+// TABLES FLEET (flt_)
+// ============================================================================
+
+model flt_vehicles {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
+
+  vehicle_code      String    @db.VarChar(50)
+  vin               String?   @db.VarChar(17)
+  license_plate     String    @db.VarChar(20)
+
+  make              String    @db.VarChar(100)
+  model             String    @db.VarChar(100)
+  year              Int
+  color             String?   @db.VarChar(50)
+
+  vehicle_type      String    @db.VarChar(50)
+  fuel_type         String    @db.VarChar(50)
+  transmission      String?   @db.VarChar(50)
+
+  ownership_type    String    @db.VarChar(50)
+  purchase_date     DateTime? @db.Date
+  purchase_price    Decimal?  @db.Decimal(10, 2)
+
+  current_odometer  Int?
+  last_odometer_update DateTime? @db.Timestamptz(6)
+
+  status            String    @default("active") @db.VarChar(50)
+
+  metadata          Json?
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([tenant_id, vehicle_code], map: "unique_vehicle_code_per_tenant")
+  @@unique([tenant_id, license_plate], map: "unique_license_plate_per_tenant")
+  @@index([tenant_id, status], map: "idx_vehicles_status")
+  @@index([vin], map: "idx_vehicles_vin")
+}
+
+model flt_vehicle_assignments {
+  id              String    @id @default(uuid())
+  tenant_id       String    @db.Uuid
+
+  vehicle_id      String    @db.Uuid
+  driver_id       String    @db.Uuid
+
+  start_date      DateTime  @db.Date
+  end_date        DateTime? @db.Date
+
+  assignment_type String    @db.VarChar(50)
+  status          String    @default("active") @db.VarChar(50)
+
+  notes           String?
+
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, vehicle_id, status], map: "idx_assignments_vehicle")
+  @@index([tenant_id, driver_id, status], map: "idx_assignments_driver")
+  @@index([start_date, end_date], map: "idx_assignments_period")
+}
+
+model flt_vehicle_maintenance {
+  id                    String    @id @default(uuid())
+  tenant_id             String    @db.Uuid
+  vehicle_id            String    @db.Uuid
+
+  maintenance_type      String    @db.VarChar(50)
+  service_class         String?   @db.VarChar(10)
+
+  trigger_type          String?   @db.VarChar(50)
+  trigger_value         String?   @db.VarChar(100)
+
+  scheduled_date        DateTime? @db.Date
+  completed_date        DateTime? @db.Date
+  odometer_reading      Int?
+
+  work_performed        String?
+  parts_replaced        Json?
+
+  labor_cost            Decimal?  @db.Decimal(10, 2)
+  parts_cost            Decimal?  @db.Decimal(10, 2)
+  total_cost            Decimal?  @db.Decimal(10, 2)
+
+  service_provider      String?   @db.VarChar(255)
+  invoice_number        String?   @db.VarChar(100)
+  invoice_url           String?   @db.VarChar(500)
+
+  status                String    @default("scheduled") @db.VarChar(50)
+
+  notes                 String?
+  next_service_date     DateTime? @db.Date
+  next_service_mileage  Int?
+
+  performed_by          String?   @db.Uuid
+
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, vehicle_id, scheduled_date], map: "idx_maintenance_vehicle")
+  @@index([tenant_id, status], map: "idx_maintenance_status")
+  @@index([next_service_date], map: "idx_maintenance_next")
+}
+
+model flt_vehicle_inspections {
+  id                           String    @id @default(uuid())
+  tenant_id                    String    @db.Uuid
+  vehicle_id                   String    @db.Uuid
+  driver_id                    String?   @db.Uuid
+
+  inspection_type              String    @db.VarChar(50)
+
+  inspection_date              DateTime  @db.Date
+  inspection_time              DateTime  @db.Time
+  odometer_reading             Int?
+
+  inspection_items             Json
+
+  overall_status               String    @db.VarChar(50)
+  defects_found                Boolean   @default(false)
+  critical_defects             Boolean   @default(false)
+
+  defects_description          String?
+  corrective_action_required   Boolean   @default(false)
+  corrective_action_taken      String?
+  corrective_action_date       DateTime? @db.Date
+
+  inspector_signature          String?   @db.VarChar(500)
+
+  created_at                   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, vehicle_id, inspection_date], map: "idx_inspections_vehicle")
+  @@index([tenant_id, defects_found, overall_status], map: "idx_inspections_defects")
+}
+
+model flt_vehicle_insurance {
+  id                 String    @id @default(uuid())
+  tenant_id          String    @db.Uuid
+  vehicle_id         String    @db.Uuid
+
+  insurance_company  String    @db.VarChar(255)
+  policy_number      String    @db.VarChar(100)
+  policy_type        String?   @db.VarChar(50)
+
+  start_date         DateTime  @db.Date
+  end_date           DateTime  @db.Date
+
+  premium_amount     Decimal   @db.Decimal(10, 2)
+  premium_frequency  String?   @db.VarChar(50)
+  deductible         Decimal?  @db.Decimal(10, 2)
+
+  coverage_details   Json?
+
+  policy_document_url String?  @db.VarChar(500)
+  certificate_url    String?   @db.VarChar(500)
+
+  status             String    @default("active") @db.VarChar(50)
+
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, vehicle_id], map: "idx_insurance_vehicle")
+  @@index([end_date], map: "idx_insurance_expiry")
+  @@index([status], map: "idx_insurance_status")
+}
+
+model flt_vehicle_expenses {
+  id              String    @id @default(uuid())
+  tenant_id       String    @db.Uuid
+  vehicle_id      String    @db.Uuid
+  driver_id       String?   @db.Uuid
+
+  expense_type    String    @db.VarChar(50)
+  expense_date    DateTime  @db.Date
+
+  amount          Decimal   @db.Decimal(10, 2)
+  currency        String    @default("AED") @db.VarChar(3)
+
+  quantity        Decimal?  @db.Decimal(10, 2)
+  unit_price      Decimal?  @db.Decimal(10, 2)
+
+  odometer        Int?
+  location        String?   @db.VarChar(255)
+
+  receipt_url     String?   @db.VarChar(500)
+  notes           String?
+
+  metadata        Json?
+
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, vehicle_id, expense_date], map: "idx_expenses_vehicle")
+  @@index([tenant_id, expense_type, expense_date], map: "idx_expenses_type")
+  @@index([driver_id, expense_date], map: "idx_expenses_driver")
+}
+
+model flt_vehicle_accidents {
+  id                   String    @id @default(uuid())
+  tenant_id            String    @db.Uuid
+  vehicle_id           String    @db.Uuid
+  driver_id            String?   @db.Uuid
+
+  accident_date        DateTime  @db.Timestamptz(6)
+  location             String    @db.VarChar(255)
+  location_coords      String?   @db.VarChar(100)
+
+  severity             String    @db.VarChar(50)
+  fault_party          String?   @db.VarChar(50)
+
+  description          String
+
+  police_report_number String?   @db.VarChar(100)
+  police_report_url    String?   @db.VarChar(500)
+
+  third_party_info     Json?
+
+  damages_description  String?
+  estimated_cost       Decimal?  @db.Decimal(10, 2)
+  actual_cost          Decimal?  @db.Decimal(10, 2)
+
+  insurance_claim_number String? @db.VarChar(100)
+  claim_status         String?   @db.VarChar(50)
+  claim_amount         Decimal?  @db.Decimal(10, 2)
+
+  photos               Json?
+
+  status               String    @default("reported") @db.VarChar(50)
+
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, vehicle_id, accident_date], map: "idx_accidents_vehicle")
+  @@index([tenant_id, driver_id, accident_date], map: "idx_accidents_driver")
+  @@index([status], map: "idx_accidents_status")
+}
+
+model flt_vehicle_telemetry {
+  id              String    @id @default(uuid())
+  tenant_id       String    @db.Uuid
+  vehicle_id      String    @db.Uuid
+
+  timestamp       DateTime  @db.Timestamptz(6)
+
+  latitude        Decimal?  @db.Decimal(10, 8)
+  longitude       Decimal?  @db.Decimal(11, 8)
+  speed           Decimal?  @db.Decimal(5, 2)
+  heading         Decimal?  @db.Decimal(5, 2)
+
+  odometer        Int?
+  fuel_level      Decimal?  @db.Decimal(5, 2)
+  battery_level   Decimal?  @db.Decimal(5, 2)
+
+  engine_status   String?   @db.VarChar(20)
+
+  telemetry_data  Json?
+
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([tenant_id, vehicle_id, timestamp], map: "idx_telemetry_vehicle")
+  @@index([timestamp], map: "idx_telemetry_time")
+}
+
+// ============================================================================
+// TABLES RIDE-HAILING / DRIVERS (rid_)
+// ============================================================================
+
+model rid_drivers {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
+
+  driver_code       String    @db.VarChar(50)
+
+  first_name        String    @db.VarChar(100)
+  last_name         String    @db.VarChar(100)
+  email             String?   @db.VarChar(255)
+  phone             String    @db.VarChar(50)
+
+  date_of_birth     DateTime? @db.Date
+  nationality       String?   @db.VarChar(100)
+
+  employment_type   String    @db.VarChar(50)
+  employment_status String    @default("active") @db.VarChar(50)
+  hire_date         DateTime? @db.Date
+  termination_date  DateTime? @db.Date
+
+  employer_id       String?   @db.Uuid
+
+  address           String?
+  city              String?   @db.VarChar(100)
+  country_code      String    @db.VarChar(2)
+
+  emergency_contact_name  String? @db.VarChar(255)
+  emergency_contact_phone String? @db.VarChar(50)
+
+  metadata          Json?
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([tenant_id, driver_code], map: "unique_driver_code_per_tenant")
+  @@index([tenant_id, employment_status], map: "idx_drivers_status")
+  @@index([email], map: "idx_drivers_email")
+  @@index([phone], map: "idx_drivers_phone")
+}
+
+model rid_driver_platforms {
   id              String    @id @default(uuid())
   tenant_id       String    @db.Uuid
   driver_id       String    @db.Uuid
-  course          String    @db.VarChar(255)
-  completed_date  DateTime  @db.Date
-  instructor      String?   @db.VarChar(255)
-  certificate_url String?   @db.VarChar(500)
+
+  platform_name   String    @db.VarChar(50)
+  platform_driver_id String @db.VarChar(255)
+
+  is_active       Boolean   @default(true)
+  activation_date DateTime? @db.Date
+
+  status          String?   @db.VarChar(50)
+
+  metadata        Json?
+
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([tenant_id, platform_name, platform_driver_id], map: "unique_platform_driver")
+  @@index([tenant_id, driver_id], map: "idx_platforms_driver")
+}
+
+model rid_driver_documents {
+  id              String    @id @default(uuid())
+  tenant_id       String    @db.Uuid
+  driver_id       String    @db.Uuid
+
+  document_type   String    @db.VarChar(100)
+  document_number String?   @db.VarChar(100)
+
+  issue_date      DateTime? @db.Date
   expiry_date     DateTime? @db.Date
+
+  issuing_authority String? @db.VarChar(255)
+  issuing_country   String? @db.VarChar(2)
+
+  file_url        String?   @db.VarChar(500)
+
+  is_verified     Boolean   @default(false)
+  verified_by     String?   @db.Uuid
+  verified_at     DateTime? @db.Timestamptz(6)
+
+  status          String    @default("pending") @db.VarChar(50)
+
+  notes           String?
+
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, driver_id], map: "idx_driver_docs_driver")
+  @@index([expiry_date], map: "idx_driver_docs_expiry")
+  @@index([status], map: "idx_driver_docs_status")
+}
+
+model rid_driver_performance {
+  id              String    @id @default(uuid())
+  tenant_id       String    @db.Uuid
+  driver_id       String    @db.Uuid
+
+  period_start    DateTime  @db.Date
+  period_end      DateTime  @db.Date
+
+  total_trips     Int       @default(0)
+  completed_trips Int       @default(0)
+  cancelled_trips Int       @default(0)
+
+  total_distance  Decimal?  @db.Decimal(10, 2)
+  total_hours     Decimal?  @db.Decimal(10, 2)
+
+  total_revenue   Decimal   @default(0) @db.Decimal(10, 2)
+  platform_fees   Decimal?  @db.Decimal(10, 2)
+  net_revenue     Decimal?  @db.Decimal(10, 2)
+
+  average_rating  Decimal?  @db.Decimal(3, 2)
+  total_ratings   Int?
+
+  acceptance_rate Decimal?  @db.Decimal(5, 2)
+  cancellation_rate Decimal? @db.Decimal(5, 2)
+
+  performance_data Json?
+
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([tenant_id, driver_id, period_start, period_end], map: "unique_driver_period")
+  @@index([tenant_id, driver_id, period_start], map: "idx_performance_driver_period")
+}
+
+model rid_driver_scores {
+  id              String    @id @default(uuid())
+  tenant_id       String    @db.Uuid
+  driver_id       String    @db.Uuid
+
+  score_date      DateTime  @db.Date
+
+  overall_score   Decimal   @db.Decimal(5, 2)
+
+  safety_score    Decimal?  @db.Decimal(5, 2)
+  efficiency_score Decimal? @db.Decimal(5, 2)
+  customer_score  Decimal?  @db.Decimal(5, 2)
+  compliance_score Decimal? @db.Decimal(5, 2)
+
+  score_breakdown Json?
+
+  rank_in_fleet   Int?
+  total_in_fleet  Int?
+
   created_at      DateTime  @default(now()) @db.Timestamptz(6)
 
-  @@index([driver_id], map: "idx_driver_training_driver")
+  @@index([tenant_id, driver_id, score_date], map: "idx_scores_driver")
+  @@index([tenant_id, score_date, overall_score], map: "idx_scores_ranking")
 }
 
-model driver_violations {
-  id             String   @id @default(uuid())
-  tenant_id      String   @db.Uuid
-  driver_id      String   @db.Uuid
-  violation_type String   @db.VarChar(100)
-  date           DateTime @db.Date
-  description    String
-  fine_amount    Decimal? @db.Decimal(10, 2)
-  points         Int?
-  status         String   @default("pending") @db.VarChar(50)
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
+model rid_driver_training {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
+  driver_id         String    @db.Uuid
 
-  @@index([driver_id, date(sort: Desc)], map: "idx_driver_violations_driver_date")
+  training_type     String    @db.VarChar(100)
+  training_name     String    @db.VarChar(255)
+
+  provider          String?   @db.VarChar(255)
+
+  scheduled_date    DateTime? @db.Date
+  completion_date   DateTime? @db.Date
+
+  duration_hours    Decimal?  @db.Decimal(5, 2)
+
+  status            String    @default("scheduled") @db.VarChar(50)
+  result            String?   @db.VarChar(50)
+
+  certificate_url   String?   @db.VarChar(500)
+  certificate_number String?  @db.VarChar(100)
+
+  expiry_date       DateTime? @db.Date
+
+  notes             String?
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, driver_id], map: "idx_training_driver")
+  @@index([status], map: "idx_training_status")
+  @@index([expiry_date], map: "idx_training_expiry")
 }
 
-// ============================================
-// EMPLOYER TABLE (1) - France only
-// ============================================
+model rid_driver_violations {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
+  driver_id         String    @db.Uuid
+  vehicle_id        String?   @db.Uuid
 
-model employers {
-  id           String   @id @default(uuid())
-  tenant_id    String   @db.Uuid
-  name         String   @db.VarChar(255)
-  siret        String   @db.VarChar(50)
-  address      String
-  country_code String   @default("FR") @db.VarChar(2)
-  contact      Json?
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  violation_date    DateTime  @db.Timestamptz(6)
+  violation_type    String    @db.VarChar(100)
 
-  @@unique([tenant_id, siret], map: "unique_employer_siret_per_tenant")
+  location          String?   @db.VarChar(255)
+
+  fine_amount       Decimal?  @db.Decimal(10, 2)
+  currency          String    @default("AED") @db.VarChar(3)
+
+  ticket_number     String?   @db.VarChar(100)
+
+  paid_by           String?   @db.VarChar(50)
+  payment_date      DateTime? @db.Date
+  payment_status    String    @default("unpaid") @db.VarChar(50)
+
+  points_deducted   Int?
+
+  description       String?
+
+  dispute_status    String?   @db.VarChar(50)
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, driver_id, violation_date], map: "idx_violations_driver")
+  @@index([payment_status], map: "idx_violations_payment")
 }
 
-// ============================================
-// REVENUE TABLES (8)
-// ============================================
+// ============================================================================
+// TABLES REVENUE (rev_)
+// ============================================================================
 
-model platform_configurations {
-  id          String   @id @default(uuid())
-  tenant_id   String   @db.Uuid
-  platform    String   @db.VarChar(50)
-  api_key     String?  @db.VarChar(255)
-  webhook_url String?  @db.VarChar(500)
-  active      Boolean  @default(true)
-  config      Json?
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
+model rev_revenue_imports {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
 
-  @@unique([tenant_id, platform], map: "unique_platform_config_per_tenant")
+  platform_name     String    @db.VarChar(50)
+
+  import_date       DateTime  @db.Timestamptz(6)
+  period_start      DateTime  @db.Date
+  period_end        DateTime  @db.Date
+
+  file_name         String?   @db.VarChar(255)
+  file_url          String?   @db.VarChar(500)
+
+  total_records     Int       @default(0)
+  imported_records  Int       @default(0)
+  failed_records    Int       @default(0)
+
+  total_amount      Decimal?  @db.Decimal(12, 2)
+
+  status            String    @default("pending") @db.VarChar(50)
+
+  import_errors     Json?
+
+  imported_by       String    @db.Uuid
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, platform_name, import_date], map: "idx_imports_platform")
+  @@index([status], map: "idx_imports_status")
 }
 
-model revenue_imports {
-  id            String   @id @default(uuid())
-  tenant_id     String   @db.Uuid
-  platform      String   @db.VarChar(50)
-  import_date   DateTime @default(now()) @db.Timestamptz(6)
-  file_name     String?  @db.VarChar(255)
-  period_start  DateTime @db.Date
-  period_end    DateTime @db.Date
-  total_trips   Int
-  total_revenue Decimal  @db.Decimal(12, 2)
-  status        String   @default("pending") @db.VarChar(50)
-  errors        Json?
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
+model rev_driver_revenues {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
+  driver_id         String    @db.Uuid
 
-  @@index([tenant_id, platform, period_start], map: "idx_revenue_imports_tenant_platform_period")
+  import_id         String?   @db.Uuid
+
+  platform_name     String    @db.VarChar(50)
+  trip_id           String?   @db.VarChar(255)
+
+  trip_date         DateTime  @db.Timestamptz(6)
+
+  pickup_location   String?   @db.VarChar(255)
+  dropoff_location  String?   @db.VarChar(255)
+
+  distance_km       Decimal?  @db.Decimal(8, 2)
+  duration_minutes  Int?
+
+  fare_amount       Decimal   @db.Decimal(10, 2)
+  commission_amount Decimal?  @db.Decimal(10, 2)
+  commission_rate   Decimal?  @db.Decimal(5, 2)
+
+  tips              Decimal?  @db.Decimal(10, 2)
+  bonuses           Decimal?  @db.Decimal(10, 2)
+  tolls             Decimal?  @db.Decimal(10, 2)
+
+  driver_earnings   Decimal   @db.Decimal(10, 2)
+
+  currency          String    @default("AED") @db.VarChar(3)
+
+  payment_method    String?   @db.VarChar(50)
+
+  trip_metadata     Json?
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([tenant_id, driver_id, trip_date], map: "idx_revenues_driver_date")
+  @@index([platform_name, trip_id], map: "idx_revenues_trip")
+  @@index([import_id], map: "idx_revenues_import")
 }
 
-model driver_revenues {
-  id         String   @id @default(uuid())
-  tenant_id  String   @db.Uuid
-  driver_id  String   @db.Uuid
-  import_id  String?  @db.Uuid
-  platform   String   @db.VarChar(50)
-  trip_date  DateTime @db.Date
-  trip_id    String?  @db.VarChar(100)
-  gross      Decimal  @db.Decimal(10, 2)
-  commission Decimal  @db.Decimal(10, 2)
-  net        Decimal  @db.Decimal(10, 2)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
+model rev_reconciliations {
+  id                    String    @id @default(uuid())
+  tenant_id             String    @db.Uuid
+  driver_id             String    @db.Uuid
 
-  @@index([driver_id, trip_date(sort: Desc)], map: "idx_driver_revenues_driver_date")
-  @@index([tenant_id, platform], map: "idx_driver_revenues_tenant_platform")
+  period_start          DateTime  @db.Date
+  period_end            DateTime  @db.Date
+
+  declared_revenue      Decimal   @db.Decimal(12, 2)
+  calculated_revenue    Decimal   @db.Decimal(12, 2)
+  difference            Decimal   @db.Decimal(12, 2)
+
+  status                String    @default("pending") @db.VarChar(50)
+
+  notes                 String?
+
+  reviewed_by           String?   @db.Uuid
+  reviewed_at           DateTime? @db.Timestamptz(6)
+
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, driver_id, period_start], map: "idx_reconciliations_driver")
+  @@index([status], map: "idx_reconciliations_status")
 }
 
-model driver_balances {
-  id         String    @id @default(uuid())
-  tenant_id  String    @db.Uuid
-  driver_id  String    @db.Uuid
-  period     String    @db.VarChar(20)
-  gross      Decimal   @db.Decimal(10, 2)
-  commission Decimal   @db.Decimal(10, 2)
-  deductions Decimal   @db.Decimal(10, 2)
-  net        Decimal   @db.Decimal(10, 2)
-  paid       Boolean   @default(false)
-  paid_date  DateTime? @db.Date
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
+// ============================================================================
+// TABLES BILLING (bil_)
+// ============================================================================
 
-  @@unique([driver_id, period], map: "unique_driver_balance_period")
-  @@index([tenant_id, period, paid], map: "idx_driver_balances_tenant_period_paid")
+model bil_driver_balances {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
+  driver_id         String    @db.Uuid
+
+  period_start      DateTime  @db.Date
+  period_end        DateTime  @db.Date
+
+  gross_revenue     Decimal   @default(0) @db.Decimal(12, 2)
+  platform_fees     Decimal   @default(0) @db.Decimal(12, 2)
+  net_revenue       Decimal   @default(0) @db.Decimal(12, 2)
+
+  vehicle_rental    Decimal   @default(0) @db.Decimal(10, 2)
+  fuel_advances     Decimal   @default(0) @db.Decimal(10, 2)
+  fines             Decimal   @default(0) @db.Decimal(10, 2)
+  other_deductions  Decimal   @default(0) @db.Decimal(10, 2)
+
+  total_deductions  Decimal   @default(0) @db.Decimal(12, 2)
+
+  balance           Decimal   @default(0) @db.Decimal(12, 2)
+
+  status            String    @default("draft") @db.VarChar(50)
+
+  calculation_metadata Json?
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([tenant_id, driver_id, period_start, period_end], map: "unique_balance_period")
+  @@index([tenant_id, period_start], map: "idx_balances_period")
+  @@index([status], map: "idx_balances_status")
 }
 
-model driver_deductions {
-  id             String   @id @default(uuid())
-  tenant_id      String   @db.Uuid
-  driver_id      String   @db.Uuid
-  deduction_type String   @db.VarChar(50)
-  amount         Decimal  @db.Decimal(10, 2)
-  date           DateTime @db.Date
-  description    String?
-  status         String   @default("pending") @db.VarChar(50)
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
+model bil_driver_deductions {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
+  driver_id         String    @db.Uuid
 
-  @@index([driver_id, date(sort: Desc)], map: "idx_driver_deductions_driver_date")
+  deduction_date    DateTime  @db.Date
+  deduction_type    String    @db.VarChar(50)
+
+  amount            Decimal   @db.Decimal(10, 2)
+  currency          String    @default("AED") @db.VarChar(3)
+
+  description       String?
+
+  reference_id      String?   @db.Uuid
+  reference_type    String?   @db.VarChar(50)
+
+  applied_to_balance Boolean  @default(false)
+  balance_id        String?   @db.Uuid
+
+  created_by        String    @db.Uuid
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([tenant_id, driver_id, deduction_date], map: "idx_deductions_driver")
+  @@index([deduction_type], map: "idx_deductions_type")
+  @@index([balance_id], map: "idx_deductions_balance")
 }
 
-model driver_payments {
-  id             String   @id @default(uuid())
-  tenant_id      String   @db.Uuid
-  driver_id      String   @db.Uuid
-  balance_id     String   @db.Uuid
-  amount         Decimal  @db.Decimal(10, 2)
-  payment_date   DateTime @db.Date
-  payment_method String   @db.VarChar(50)
-  reference      String?  @db.VarChar(100)
-  status         String   @default("pending") @db.VarChar(50)
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
+model bil_driver_payments {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
+  driver_id         String    @db.Uuid
 
-  @@index([driver_id, payment_date(sort: Desc)], map: "idx_driver_payments_driver_date")
+  balance_id        String?   @db.Uuid
+  batch_id          String?   @db.Uuid
+
+  payment_date      DateTime  @db.Date
+  payment_method    String    @db.VarChar(50)
+
+  amount            Decimal   @db.Decimal(12, 2)
+  currency          String    @default("AED") @db.VarChar(3)
+
+  reference_number  String?   @db.VarChar(255)
+
+  bank_account      String?   @db.VarChar(255)
+
+  status            String    @default("pending") @db.VarChar(50)
+
+  notes             String?
+
+  processed_by      String?   @db.Uuid
+  processed_at      DateTime? @db.Timestamptz(6)
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([tenant_id, driver_id, payment_date], map: "idx_payments_driver")
+  @@index([batch_id], map: "idx_payments_batch")
+  @@index([status], map: "idx_payments_status")
 }
 
-model payment_batches {
-  id            String    @id @default(uuid())
-  tenant_id     String    @db.Uuid
-  batch_number  String    @db.VarChar(50)
-  period        String    @db.VarChar(20)
-  total_amount  Decimal   @db.Decimal(12, 2)
-  total_drivers Int
-  status        String    @default("draft") @db.VarChar(50)
-  created_date  DateTime  @default(now()) @db.Timestamptz(6)
-  exported_date DateTime? @db.Timestamptz(6)
+model bil_payment_batches {
+  id                String    @id @default(uuid())
+  tenant_id         String    @db.Uuid
 
-  @@unique([tenant_id, batch_number], map: "unique_payment_batch_number_per_tenant")
-}
+  batch_number      String    @db.VarChar(50)
+  batch_date        DateTime  @db.Date
 
-model reconciliations {
-  id         String   @id @default(uuid())
-  tenant_id  String   @db.Uuid
-  driver_id  String   @db.Uuid
-  period     String   @db.VarChar(20)
-  declared   Decimal  @db.Decimal(10, 2)
-  calculated Decimal  @db.Decimal(10, 2)
-  difference Decimal  @db.Decimal(10, 2)
-  status     String   @default("pending") @db.VarChar(50)
-  notes      String?
-  created_at DateTime @default(now()) @db.Timestamptz(6)
+  period_start      DateTime  @db.Date
+  period_end        DateTime  @db.Date
 
-  @@unique([driver_id, period], map: "unique_reconciliation_driver_period")
+  total_drivers     Int       @default(0)
+  total_amount      Decimal   @default(0) @db.Decimal(12, 2)
+
+  payment_method    String    @db.VarChar(50)
+
+  export_file_url   String?   @db.VarChar(500)
+
+  status            String    @default("draft") @db.VarChar(50)
+
+  created_by        String    @db.Uuid
+  processed_by      String?   @db.Uuid
+  processed_at      DateTime? @db.Timestamptz(6)
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@unique([tenant_id, batch_number], map: "unique_batch_number")
+  @@index([tenant_id, batch_date], map: "idx_batches_date")
+  @@index([status], map: "idx_batches_status")
 }
