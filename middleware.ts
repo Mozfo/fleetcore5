@@ -9,17 +9,12 @@ const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 // Allowed admin roles
 const ADMIN_ROLES = ["org:adm_admin", "org:adm_commercial", "org:adm_support"];
 
-// Define public routes (accessible without authentication)
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/:locale",
-  "/:locale/login(.*)",
-  "/:locale/register(.*)",
-  "/:locale/forgot-password(.*)",
-  "/:locale/reset-password(.*)",
-  "/:locale/request-demo(.*)",
-  "/api/demo-leads",
-  "/api/webhooks(.*)",
+// Update protected routes to include locale prefix
+const isProtectedRoute = createRouteMatcher([
+  "/:locale/dashboard(.*)",
+  "/dashboard(.*)",
+  // Note: /adm routes are NOT in this list - they're protected in app/adm/layout.tsx
+  "/api/v1(.*)",
 ]);
 
 // Locale handling with react-i18next
@@ -57,19 +52,6 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     return NextResponse.next();
   }
 
-  // Handle locale redirection FIRST (before auth checks)
-  // This ensures all routes have a locale prefix before auth.protect() is called
-  const locales = ["en", "fr"];
-  const pathnameHasLocale = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
-
-  if (!pathnameHasLocale) {
-    // Redirect to default locale (en)
-    const newUrl = new URL(`/en${pathname}`, req.url);
-    return NextResponse.redirect(newUrl);
-  }
-
   // Auto-redirect FleetCore Admin users from client dashboard to admin dashboard
   const isDashboardRoute = pathname.match(/^\/(en|fr)\/dashboard$/);
 
@@ -84,10 +66,22 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   // Extract locale from pathname using centralized helper
   const locale = getLocaleFromPathname(pathname);
 
-  // Protect all routes except public ones (Clerk best practice)
-  // Now all routes have locale prefix, so auth.protect() works correctly
-  if (!isPublicRoute(req)) {
+  // Check if this is a protected route
+  if (isProtectedRoute(req)) {
     await auth.protect();
+    // Clerk handles redirection automatically using NEXT_PUBLIC_CLERK_SIGN_IN_URL
+  }
+
+  // Check if locale is in path
+  const locales = ["en", "fr"];
+  const pathnameHasLocale = locales.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  );
+
+  if (!pathnameHasLocale) {
+    // Redirect to default locale (en)
+    const newUrl = new URL(`/en${pathname}`, req.url);
+    return NextResponse.redirect(newUrl);
   }
 
   return NextResponse.next();
