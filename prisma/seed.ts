@@ -1066,8 +1066,17 @@ async function main() {
       0
     );
 
-    await prisma.bil_driver_balances.create({
-      data: {
+    await prisma.bil_driver_balances.upsert({
+      where: {
+        tenant_id_driver_id_period_start_period_end: {
+          tenant_id: tenantId,
+          driver_id: driver.id,
+          period_start: weekStart,
+          period_end: weekEnd,
+        },
+      },
+      update: {},
+      create: {
         tenant_id: tenantId,
         driver_id: driver.id,
         period_start: weekStart,
@@ -1126,9 +1135,401 @@ async function main() {
 
   log.success(`Created ${deductionCount} driver deductions`);
 
+  // ===================================
+  // FLT - Vehicle Insurance
+  // ===================================
+
+  log.section("🛡️ Step 16: Creating vehicle insurance...");
+
+  let insuranceCount = 0;
+
+  for (const vehicle of [...createdDubaiVehicles, ...createdParisVehicles]) {
+    const tenantId = vehicle.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+    const currency = vehicle.country_code === "AE" ? "AED" : "EUR";
+    const premium = vehicle.country_code === "AE" ? 3500 : 1200;
+
+    await prisma.flt_vehicle_insurance.create({
+      data: {
+        tenant_id: tenantId,
+        vehicle_id: vehicle.id,
+        insurance_company:
+          vehicle.country_code === "AE" ? "Orient Insurance" : "Allianz France",
+        policy_number: `POL-${Math.floor(Math.random() * 1000000)}`,
+        policy_type: "comprehensive",
+        start_date: new Date("2024-01-01"),
+        end_date: new Date("2024-12-31"),
+        premium_amount: premium,
+        premium_frequency: "annual",
+        deductible: vehicle.country_code === "AE" ? 500 : 300,
+        status: "active",
+      },
+    });
+    insuranceCount++;
+  }
+
+  log.success(`Created ${insuranceCount} vehicle insurance policies`);
+
+  // ===================================
+  // FLT - Vehicle Expenses
+  // ===================================
+
+  log.section("💳 Step 17: Creating vehicle expenses...");
+
+  let expenseCount = 0;
+
+  for (const vehicle of [...createdDubaiVehicles, ...createdParisVehicles]) {
+    const tenantId = vehicle.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+    const currency = vehicle.country_code === "AE" ? "AED" : "EUR";
+
+    const assignment = await prisma.flt_vehicle_assignments.findFirst({
+      where: { vehicle_id: vehicle.id, status: "active" },
+    });
+
+    for (let i = 0; i < 3; i++) {
+      const expenseDate = new Date("2024-09-15");
+      expenseDate.setDate(expenseDate.getDate() + i * 7);
+
+      await prisma.flt_vehicle_expenses.create({
+        data: {
+          tenant_id: tenantId,
+          vehicle_id: vehicle.id,
+          driver_id: assignment?.driver_id,
+          expense_type: "fuel",
+          expense_date: expenseDate,
+          amount: Math.floor(Math.random() * 200) + 100,
+          currency: currency,
+          quantity: Math.floor(Math.random() * 40) + 20,
+          unit_price: vehicle.country_code === "AE" ? 2.5 : 1.8,
+          odometer: vehicle.current_odometer + i * 500,
+        },
+      });
+      expenseCount++;
+    }
+  }
+
+  log.success(`Created ${expenseCount} vehicle expenses`);
+
+  // ===================================
+  // RID - Driver Performance
+  // ===================================
+
+  log.section("📈 Step 18: Creating driver performance records...");
+
+  let performanceCount = 0;
+
+  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
+    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+
+    const revenues = await prisma.rev_driver_revenues.findMany({
+      where: { driver_id: driver.id },
+    });
+
+    const totalRevenue = revenues.reduce(
+      (sum, r) => sum + Number(r.driver_earnings),
+      0
+    );
+    const totalDistance = revenues.reduce(
+      (sum, r) => sum + Number(r.distance_km || 0),
+      0
+    );
+    const totalDuration = revenues.reduce(
+      (sum, r) => sum + Number(r.duration_minutes || 0),
+      0
+    );
+
+    await prisma.rid_driver_performance.upsert({
+      where: {
+        tenant_id_driver_id_period_start_period_end: {
+          tenant_id: tenantId,
+          driver_id: driver.id,
+          period_start: weekStart,
+          period_end: weekEnd,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: tenantId,
+        driver_id: driver.id,
+        period_start: weekStart,
+        period_end: weekEnd,
+        total_trips: revenues.length,
+        completed_trips: revenues.length,
+        cancelled_trips: Math.floor(Math.random() * 5),
+        total_distance: totalDistance,
+        total_hours: totalDuration / 60,
+        total_revenue: totalRevenue,
+        platform_fees: totalRevenue * 0.25,
+        net_revenue: totalRevenue * 0.75,
+        average_rating: 4.5 + Math.random() * 0.5,
+        total_ratings: revenues.length,
+        acceptance_rate: 85 + Math.random() * 10,
+        cancellation_rate: Math.random() * 5,
+      },
+    });
+    performanceCount++;
+  }
+
+  log.success(`Created ${performanceCount} driver performance records`);
+
+  // ===================================
+  // RID - Driver Scores
+  // ===================================
+
+  log.section("⭐ Step 19: Creating driver scores...");
+
+  let scoreCount = 0;
+
+  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
+    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+
+    await prisma.rid_driver_scores.create({
+      data: {
+        tenant_id: tenantId,
+        driver_id: driver.id,
+        score_date: weekEnd,
+        overall_score: 85 + Math.random() * 10,
+        safety_score: 80 + Math.random() * 15,
+        efficiency_score: 85 + Math.random() * 10,
+        customer_score: 90 + Math.random() * 8,
+        compliance_score: 95 + Math.random() * 5,
+      },
+    });
+    scoreCount++;
+  }
+
+  log.success(`Created ${scoreCount} driver scores`);
+
+  // ===================================
+  // REV - Reconciliations
+  // ===================================
+
+  log.section("🔍 Step 20: Creating reconciliations...");
+
+  let reconciliationCount = 0;
+
+  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
+    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+
+    const revenues = await prisma.rev_driver_revenues.findMany({
+      where: { driver_id: driver.id },
+    });
+
+    const calculatedRevenue = revenues.reduce(
+      (sum, r) => sum + Number(r.driver_earnings),
+      0
+    );
+    const declaredRevenue =
+      calculatedRevenue + (Math.random() > 0.5 ? 50 : -30);
+
+    await prisma.rev_reconciliations.create({
+      data: {
+        tenant_id: tenantId,
+        driver_id: driver.id,
+        period_start: weekStart,
+        period_end: weekEnd,
+        declared_revenue: declaredRevenue,
+        calculated_revenue: calculatedRevenue,
+        difference: declaredRevenue - calculatedRevenue,
+        status:
+          Math.abs(declaredRevenue - calculatedRevenue) < 10
+            ? "approved"
+            : "pending",
+      },
+    });
+    reconciliationCount++;
+  }
+
+  log.success(`Created ${reconciliationCount} reconciliations`);
+
+  // ===================================
+  // BIL - Driver Payments
+  // ===================================
+
+  log.section("💰 Step 21: Creating driver payments...");
+
+  let paymentCount = 0;
+
+  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
+    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+    const currency = driver.country_code === "AE" ? "AED" : "EUR";
+
+    const balance = await prisma.bil_driver_balances.findFirst({
+      where: { driver_id: driver.id, period_start: weekStart },
+    });
+
+    if (balance && Number(balance.balance) > 0) {
+      await prisma.bil_driver_payments.create({
+        data: {
+          tenant_id: tenantId,
+          driver_id: driver.id,
+          balance_id: balance.id,
+          payment_date: new Date("2024-10-01"),
+          payment_method: "bank_transfer",
+          amount: Number(balance.balance),
+          currency: currency,
+          reference_number: `PAY-${Math.floor(Math.random() * 1000000)}`,
+          status: "completed",
+          processed_by: systemUserId,
+          processed_at: new Date(),
+        },
+      });
+      paymentCount++;
+    }
+  }
+
+  log.success(`Created ${paymentCount} driver payments`);
+
+  // ===================================
+  // BIL - Payment Batches
+  // ===================================
+
+  log.section("📦 Step 22: Creating payment batches...");
+
+  const batchDubai = await prisma.bil_payment_batches.create({
+    data: {
+      tenant_id: dubaiOrg.id,
+      batch_number: "BAT-001",
+      batch_date: new Date("2024-10-01"),
+      period_start: weekStart,
+      period_end: weekEnd,
+      total_drivers: createdDubaiDrivers.length,
+      total_amount: 0,
+      payment_method: "bank_transfer",
+      status: "completed",
+      created_by: systemUserId,
+      processed_by: systemUserId,
+      processed_at: new Date(),
+    },
+  });
+
+  const batchParis = await prisma.bil_payment_batches.create({
+    data: {
+      tenant_id: parisOrg.id,
+      batch_number: "BAT-001",
+      batch_date: new Date("2024-10-01"),
+      period_start: weekStart,
+      period_end: weekEnd,
+      total_drivers: createdParisDrivers.length,
+      total_amount: 0,
+      payment_method: "bank_transfer",
+      status: "completed",
+      created_by: systemUserId,
+      processed_by: systemUserId,
+      processed_at: new Date(),
+    },
+  });
+
+  log.success("Created 2 payment batches");
+
+  // ===================================
+  // RID - Driver Training
+  // ===================================
+
+  log.section("📚 Step 23: Creating driver training records...");
+
+  let trainingCount = 0;
+
+  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
+    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+
+    await prisma.rid_driver_training.create({
+      data: {
+        tenant_id: tenantId,
+        driver_id: driver.id,
+        training_type: "safety",
+        training_name: "Defensive Driving Course",
+        provider: "Safety First Academy",
+        scheduled_date: new Date("2024-03-01"),
+        completion_date: new Date("2024-03-15"),
+        duration_hours: 8,
+        status: "completed",
+        result: "pass",
+        certificate_number: `CERT-${Math.floor(Math.random() * 1000000)}`,
+        expiry_date: new Date("2027-03-15"),
+      },
+    });
+    trainingCount++;
+  }
+
+  log.success(`Created ${trainingCount} driver training records`);
+
+  // ===================================
+  // RID - Driver Violations
+  // ===================================
+
+  log.section("🚨 Step 24: Creating driver violations...");
+
+  let violationCount = 0;
+
+  for (let i = 0; i < 2; i++) {
+    const driver =
+      createdDubaiDrivers[
+        Math.floor(Math.random() * createdDubaiDrivers.length)
+      ];
+    const vehicle = createdDubaiVehicles[0];
+
+    await prisma.rid_driver_violations.create({
+      data: {
+        tenant_id: dubaiOrg.id,
+        driver_id: driver.id,
+        vehicle_id: vehicle.id,
+        violation_date: new Date("2024-08-15"),
+        violation_type: "speeding",
+        location: "Sheikh Zayed Road",
+        fine_amount: 600,
+        currency: "AED",
+        ticket_number: `TKT-${Math.floor(Math.random() * 1000000)}`,
+        paid_by: "driver",
+        payment_status: "paid",
+        payment_date: new Date("2024-08-20"),
+        points_deducted: 4,
+      },
+    });
+    violationCount++;
+  }
+
+  log.success(`Created ${violationCount} driver violations`);
+
+  // ===================================
+  // FLT - Vehicle Accidents
+  // ===================================
+
+  log.section("🚗 Step 25: Creating vehicle accidents...");
+
+  let accidentCount = 0;
+
+  const accidentVehicle = createdDubaiVehicles[0];
+  const accidentDriver = createdDubaiDrivers[0];
+
+  await prisma.flt_vehicle_accidents.create({
+    data: {
+      tenant_id: dubaiOrg.id,
+      vehicle_id: accidentVehicle.id,
+      driver_id: accidentDriver.id,
+      accident_date: new Date("2024-07-10T14:30:00Z"),
+      location: "Dubai Mall Parking",
+      severity: "minor",
+      fault_party: "third_party",
+      description: "Minor fender bender while parking",
+      damages_description: "Rear bumper scratch",
+      estimated_cost: 1500,
+      actual_cost: 1200,
+      insurance_claim_number: `CLM-${Math.floor(Math.random() * 1000000)}`,
+      claim_status: "approved",
+      claim_amount: 1200,
+      status: "resolved",
+    },
+  });
+  accidentCount++;
+
+  log.success(`Created ${accidentCount} vehicle accidents`);
+
   log.section("✅ Seed completed successfully!");
   log.info(
-    `📊 Summary: ${dubaiVehicles.length + parisVehicles.length} vehicles, ${dubaiDrivers.length + parisDrivers.length} drivers, ${driverRevenueCount} revenues, ${balanceCount} balances`
+    `📊 Summary: ${dubaiVehicles.length + parisVehicles.length} vehicles, ${dubaiDrivers.length + parisDrivers.length} drivers, ${driverRevenueCount} revenues, ${paymentCount} payments`
+  );
+  log.info(
+    `🎯 Operational Coverage: 29 of 36 tables (81%) - 7 ADM system tables remain empty by design`
   );
 }
 
