@@ -11,7 +11,7 @@ export default async function DashboardPage() {
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           Welcome back,{" "}
-          {user?.firstName || user?.emailAddresses[0].emailAddress}
+          {user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User"}
         </p>
       </div>
 

@@ -2,11 +2,7 @@ import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
-import {
-  localizedRedirect,
-  getLocalizedPath,
-  getAbsoluteLocalizedPath,
-} from "@/lib/navigation";
+import { localizedRedirect, getLocalizedPath } from "@/lib/navigation";
 
 export default async function DashboardLayout({
   children,
@@ -49,13 +45,12 @@ export default async function DashboardLayout({
         <header className="sticky top-0 z-40 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
           <div className="flex h-16 items-center justify-between px-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {user.emailAddresses[0].emailAddress}
+              {user?.emailAddresses?.[0]?.emailAddress ||
+                user?.firstName ||
+                "User"}
             </h2>
             <UserButton
-              afterSignOutUrl={getAbsoluteLocalizedPath(
-                "/",
-                locale as "en" | "fr"
-              )}
+              afterSignOutUrl={getLocalizedPath("/", locale as "en" | "fr")}
             />
           </div>
         </header>
