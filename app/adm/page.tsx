@@ -1,6 +1,8 @@
 import { db } from "@/lib/prisma";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboardPage() {
   // Fetch global stats for admin backoffice
   const [totalLeads, qualifiedLeads, totalOrgs, convertedLeads] =

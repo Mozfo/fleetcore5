@@ -1,6 +1,8 @@
 import { db } from "@/lib/prisma";
 import { format } from "date-fns";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrganizationsPage() {
   // Fetch all organizations (excluding FleetCore Admin internal org)
   const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;

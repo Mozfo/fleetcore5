@@ -5,6 +5,8 @@ import { Prisma } from "@prisma/client";
 import LeadsList from "./components/LeadsList";
 import LeadStats from "./components/LeadStats";
 
+export const dynamic = "force-dynamic";
+
 export default async function LeadsPage({
   searchParams,
 }: {
