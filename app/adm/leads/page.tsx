@@ -52,18 +52,24 @@ export default async function LeadsPage({
     },
   });
 
-  // Calculate stats
+  // Calculate stats in parallel
+  const [total, pending, contacted, qualified, accepted, refused] =
+    await Promise.all([
+      db.sys_demo_lead.count(),
+      db.sys_demo_lead.count({ where: { status: "pending" } }),
+      db.sys_demo_lead.count({ where: { status: "contacted" } }),
+      db.sys_demo_lead.count({ where: { status: "qualified" } }),
+      db.sys_demo_lead.count({ where: { status: "accepted" } }),
+      db.sys_demo_lead.count({ where: { status: "refused" } }),
+    ]);
+
   const stats = {
-    total: await db.sys_demo_lead.count(),
-    pending: await db.sys_demo_lead.count({ where: { status: "pending" } }),
-    contacted: await db.sys_demo_lead.count({
-      where: { status: "contacted" },
-    }),
-    qualified: await db.sys_demo_lead.count({
-      where: { status: "qualified" },
-    }),
-    accepted: await db.sys_demo_lead.count({ where: { status: "accepted" } }),
-    refused: await db.sys_demo_lead.count({ where: { status: "refused" } }),
+    total,
+    pending,
+    contacted,
+    qualified,
+    accepted,
+    refused,
   };
 
   return (
