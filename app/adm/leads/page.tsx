@@ -52,24 +52,26 @@ export default async function LeadsPage({
     },
   });
 
-  // Calculate stats in parallel
-  const [total, pending, contacted, qualified, accepted, refused] =
-    await Promise.all([
-      db.sys_demo_lead.count(),
-      db.sys_demo_lead.count({ where: { status: "pending" } }),
-      db.sys_demo_lead.count({ where: { status: "contacted" } }),
-      db.sys_demo_lead.count({ where: { status: "qualified" } }),
-      db.sys_demo_lead.count({ where: { status: "accepted" } }),
-      db.sys_demo_lead.count({ where: { status: "refused" } }),
-    ]);
+  // Calculate stats using groupBy for better performance (1 query instead of 6)
+  const [statusGroups, total] = await Promise.all([
+    db.sys_demo_lead.groupBy({
+      by: ["status"],
+      _count: { _all: true },
+    }),
+    db.sys_demo_lead.count(),
+  ]);
 
+  // Transform groupBy results into stats object
   const stats = {
     total,
-    pending,
-    contacted,
-    qualified,
-    accepted,
-    refused,
+    pending: statusGroups.find((g) => g.status === "pending")?._count._all || 0,
+    contacted:
+      statusGroups.find((g) => g.status === "contacted")?._count._all || 0,
+    qualified:
+      statusGroups.find((g) => g.status === "qualified")?._count._all || 0,
+    accepted:
+      statusGroups.find((g) => g.status === "accepted")?._count._all || 0,
+    refused: statusGroups.find((g) => g.status === "refused")?._count._all || 0,
   };
 
   return (
