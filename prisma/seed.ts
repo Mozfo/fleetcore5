@@ -26,7 +26,7 @@ async function main() {
   // Récupérer les organisations existantes
   log.section("📊 Step 1: Fetching organizations...");
 
-  const organizations = await prisma.organization.findMany({
+  const organizations = await prisma.adm_tenants.findMany({
     where: {
       OR: [{ name: { contains: "Dubai" } }, { name: { contains: "Paris" } }],
     },
@@ -42,7 +42,7 @@ async function main() {
 
   // Utiliser les orgs existantes ou en créer
   if (!dubaiOrg) {
-    const existingOrgs = await prisma.organization.findMany({
+    const existingOrgs = await prisma.adm_tenants.findMany({
       where: { country_code: "AE" },
       take: 1,
     });
@@ -53,7 +53,7 @@ async function main() {
   }
 
   if (!parisOrg) {
-    const existingOrgs = await prisma.organization.findMany({
+    const existingOrgs = await prisma.adm_tenants.findMany({
       where: { country_code: "FR" },
       take: 1,
     });
@@ -618,7 +618,6 @@ async function main() {
         phone: d.phone,
         employment_type: "contractor",
         employment_status: "active",
-        country_code: "AE",
         hire_date: new Date("2024-01-01"),
       },
     });
@@ -649,7 +648,6 @@ async function main() {
         phone: d.phone,
         employment_type: "employee",
         employment_status: "active",
-        country_code: "FR",
         hire_date: new Date("2024-01-01"),
         employer_id: employers[i % employers.length]?.id,
       },
@@ -763,18 +761,36 @@ async function main() {
 
   let documentCount = 0;
 
-  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
-    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-
+  // Dubai drivers
+  for (const driver of createdDubaiDrivers) {
     await prisma.rid_driver_documents.create({
       data: {
-        tenant_id: tenantId,
+        tenant_id: dubaiOrg.id,
         driver_id: driver.id,
         document_type: "driver_license",
         document_number: `DL${Math.floor(Math.random() * 1000000)}`,
         issue_date: new Date("2020-01-01"),
         expiry_date: new Date("2030-01-01"),
-        issuing_country: driver.country_code,
+        issuing_country: "AE",
+        is_verified: true,
+        verified_at: new Date(),
+        status: "active",
+      },
+    });
+    documentCount++;
+  }
+
+  // Paris drivers
+  for (const driver of createdParisDrivers) {
+    await prisma.rid_driver_documents.create({
+      data: {
+        tenant_id: parisOrg.id,
+        driver_id: driver.id,
+        document_type: "driver_license",
+        document_number: `DL${Math.floor(Math.random() * 1000000)}`,
+        issue_date: new Date("2020-01-01"),
+        expiry_date: new Date("2030-01-01"),
+        issuing_country: "FR",
         is_verified: true,
         verified_at: new Date(),
         status: "active",
@@ -782,23 +798,22 @@ async function main() {
     });
     documentCount++;
 
-    if (driver.country_code === "FR") {
-      await prisma.rid_driver_documents.create({
-        data: {
-          tenant_id: tenantId,
-          driver_id: driver.id,
-          document_type: "vtc_card",
-          document_number: `VTC${Math.floor(Math.random() * 1000000)}`,
-          issue_date: new Date("2023-01-01"),
-          expiry_date: new Date("2028-01-01"),
-          issuing_country: "FR",
-          is_verified: true,
-          verified_at: new Date(),
-          status: "active",
-        },
-      });
-      documentCount++;
-    }
+    // VTC card specific to France
+    await prisma.rid_driver_documents.create({
+      data: {
+        tenant_id: parisOrg.id,
+        driver_id: driver.id,
+        document_type: "vtc_card",
+        document_number: `VTC${Math.floor(Math.random() * 1000000)}`,
+        issue_date: new Date("2023-01-01"),
+        expiry_date: new Date("2028-01-01"),
+        issuing_country: "FR",
+        is_verified: true,
+        verified_at: new Date(),
+        status: "active",
+      },
+    });
+    documentCount++;
   }
 
   log.success(`Created ${documentCount} driver documents`);
@@ -854,7 +869,7 @@ async function main() {
   let maintenanceCount = 0;
 
   for (const vehicle of [...createdDubaiVehicles, ...createdParisVehicles]) {
-    const tenantId = vehicle.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+    const tenantId = vehicle.tenant_id;
 
     await prisma.flt_vehicle_maintenance.create({
       data: {
@@ -891,7 +906,7 @@ async function main() {
   let inspectionCount = 0;
 
   for (const vehicle of [...createdDubaiVehicles, ...createdParisVehicles]) {
-    const tenantId = vehicle.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
+    const tenantId = vehicle.tenant_id;
 
     await prisma.flt_vehicle_inspections.create({
       data: {
@@ -931,7 +946,7 @@ async function main() {
   let revenueImportCount = 0;
   let driverRevenueCount = 0;
 
-  const members = await prisma.member.findMany({ take: 1 });
+  const members = await prisma.adm_members.findMany({ take: 1 });
   const systemUserId = members[0]?.id || dubaiOrg.id;
 
   for (const driver of createdDubaiDrivers) {
@@ -1046,9 +1061,8 @@ async function main() {
 
   let balanceCount = 0;
 
-  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
-    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-
+  // Dubai drivers
+  for (const driver of createdDubaiDrivers) {
     const revenues = await prisma.rev_driver_revenues.findMany({
       where: { driver_id: driver.id },
     });
@@ -1069,7 +1083,7 @@ async function main() {
     await prisma.bil_driver_balances.upsert({
       where: {
         tenant_id_driver_id_period_start_period_end: {
-          tenant_id: tenantId,
+          tenant_id: dubaiOrg.id,
           driver_id: driver.id,
           period_start: weekStart,
           period_end: weekEnd,
@@ -1077,7 +1091,53 @@ async function main() {
       },
       update: {},
       create: {
-        tenant_id: tenantId,
+        tenant_id: dubaiOrg.id,
+        driver_id: driver.id,
+        period_start: weekStart,
+        period_end: weekEnd,
+        gross_revenue: grossRevenue,
+        platform_fees: platformFees,
+        net_revenue: netRevenue,
+        vehicle_rental: 800,
+        total_deductions: 800,
+        balance: netRevenue - 800,
+        status: "calculated",
+      },
+    });
+    balanceCount++;
+  }
+
+  // Paris drivers
+  for (const driver of createdParisDrivers) {
+    const revenues = await prisma.rev_driver_revenues.findMany({
+      where: { driver_id: driver.id },
+    });
+
+    const grossRevenue = revenues.reduce(
+      (sum, r) => sum + Number(r.fare_amount),
+      0
+    );
+    const platformFees = revenues.reduce(
+      (sum, r) => sum + Number(r.commission_amount || 0),
+      0
+    );
+    const netRevenue = revenues.reduce(
+      (sum, r) => sum + Number(r.driver_earnings),
+      0
+    );
+
+    await prisma.bil_driver_balances.upsert({
+      where: {
+        tenant_id_driver_id_period_start_period_end: {
+          tenant_id: parisOrg.id,
+          driver_id: driver.id,
+          period_start: weekStart,
+          period_end: weekEnd,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: parisOrg.id,
         driver_id: driver.id,
         period_start: weekStart,
         period_end: weekEnd,
@@ -1103,10 +1163,8 @@ async function main() {
 
   let deductionCount = 0;
 
-  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
-    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-    const currency = driver.country_code === "AE" ? "AED" : "EUR";
-
+  // Dubai drivers
+  for (const driver of createdDubaiDrivers) {
     const balance = await prisma.bil_driver_balances.findFirst({
       where: {
         driver_id: driver.id,
@@ -1117,12 +1175,40 @@ async function main() {
     if (balance) {
       await prisma.bil_driver_deductions.create({
         data: {
-          tenant_id: tenantId,
+          tenant_id: dubaiOrg.id,
           driver_id: driver.id,
           deduction_date: weekStart,
           deduction_type: "vehicle_rental",
           amount: 800,
-          currency: currency,
+          currency: "AED",
+          description: "Weekly vehicle rental",
+          applied_to_balance: true,
+          balance_id: balance.id,
+          created_by: systemUserId,
+        },
+      });
+      deductionCount++;
+    }
+  }
+
+  // Paris drivers
+  for (const driver of createdParisDrivers) {
+    const balance = await prisma.bil_driver_balances.findFirst({
+      where: {
+        driver_id: driver.id,
+        period_start: weekStart,
+      },
+    });
+
+    if (balance) {
+      await prisma.bil_driver_deductions.create({
+        data: {
+          tenant_id: parisOrg.id,
+          driver_id: driver.id,
+          deduction_date: weekStart,
+          deduction_type: "vehicle_rental",
+          amount: 800,
+          currency: "EUR",
           description: "Weekly vehicle rental",
           applied_to_balance: true,
           balance_id: balance.id,
@@ -1143,24 +1229,38 @@ async function main() {
 
   let insuranceCount = 0;
 
-  for (const vehicle of [...createdDubaiVehicles, ...createdParisVehicles]) {
-    const tenantId = vehicle.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-    const currency = vehicle.country_code === "AE" ? "AED" : "EUR";
-    const premium = vehicle.country_code === "AE" ? 3500 : 1200;
-
+  for (const vehicle of createdDubaiVehicles) {
     await prisma.flt_vehicle_insurance.create({
       data: {
-        tenant_id: tenantId,
+        tenant_id: vehicle.tenant_id,
         vehicle_id: vehicle.id,
-        insurance_company:
-          vehicle.country_code === "AE" ? "Orient Insurance" : "Allianz France",
+        insurance_company: "Orient Insurance",
         policy_number: `POL-${Math.floor(Math.random() * 1000000)}`,
         policy_type: "comprehensive",
         start_date: new Date("2024-01-01"),
         end_date: new Date("2024-12-31"),
-        premium_amount: premium,
+        premium_amount: 3500,
         premium_frequency: "annual",
-        deductible: vehicle.country_code === "AE" ? 500 : 300,
+        deductible: 500,
+        status: "active",
+      },
+    });
+    insuranceCount++;
+  }
+
+  for (const vehicle of createdParisVehicles) {
+    await prisma.flt_vehicle_insurance.create({
+      data: {
+        tenant_id: vehicle.tenant_id,
+        vehicle_id: vehicle.id,
+        insurance_company: "Allianz France",
+        policy_number: `POL-${Math.floor(Math.random() * 1000000)}`,
+        policy_type: "comprehensive",
+        start_date: new Date("2024-01-01"),
+        end_date: new Date("2024-12-31"),
+        premium_amount: 1200,
+        premium_frequency: "annual",
+        deductible: 300,
         status: "active",
       },
     });
@@ -1177,10 +1277,7 @@ async function main() {
 
   let expenseCount = 0;
 
-  for (const vehicle of [...createdDubaiVehicles, ...createdParisVehicles]) {
-    const tenantId = vehicle.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-    const currency = vehicle.country_code === "AE" ? "AED" : "EUR";
-
+  for (const vehicle of createdDubaiVehicles) {
     const assignment = await prisma.flt_vehicle_assignments.findFirst({
       where: { vehicle_id: vehicle.id, status: "active" },
     });
@@ -1191,16 +1288,43 @@ async function main() {
 
       await prisma.flt_vehicle_expenses.create({
         data: {
-          tenant_id: tenantId,
+          tenant_id: vehicle.tenant_id,
           vehicle_id: vehicle.id,
           driver_id: assignment?.driver_id,
           expense_type: "fuel",
           expense_date: expenseDate,
           amount: Math.floor(Math.random() * 200) + 100,
-          currency: currency,
+          currency: "AED",
           quantity: Math.floor(Math.random() * 40) + 20,
-          unit_price: vehicle.country_code === "AE" ? 2.5 : 1.8,
-          odometer: vehicle.current_odometer + i * 500,
+          unit_price: 2.5,
+          odometer: (vehicle.current_odometer ?? 0) + i * 500,
+        },
+      });
+      expenseCount++;
+    }
+  }
+
+  for (const vehicle of createdParisVehicles) {
+    const assignment = await prisma.flt_vehicle_assignments.findFirst({
+      where: { vehicle_id: vehicle.id, status: "active" },
+    });
+
+    for (let i = 0; i < 3; i++) {
+      const expenseDate = new Date("2024-09-15");
+      expenseDate.setDate(expenseDate.getDate() + i * 7);
+
+      await prisma.flt_vehicle_expenses.create({
+        data: {
+          tenant_id: vehicle.tenant_id,
+          vehicle_id: vehicle.id,
+          driver_id: assignment?.driver_id,
+          expense_type: "fuel",
+          expense_date: expenseDate,
+          amount: Math.floor(Math.random() * 200) + 100,
+          currency: "EUR",
+          quantity: Math.floor(Math.random() * 40) + 20,
+          unit_price: 1.8,
+          odometer: (vehicle.current_odometer ?? 0) + i * 500,
         },
       });
       expenseCount++;
@@ -1217,9 +1341,8 @@ async function main() {
 
   let performanceCount = 0;
 
-  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
-    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-
+  // Dubai drivers
+  for (const driver of createdDubaiDrivers) {
     const revenues = await prisma.rev_driver_revenues.findMany({
       where: { driver_id: driver.id },
     });
@@ -1240,7 +1363,7 @@ async function main() {
     await prisma.rid_driver_performance.upsert({
       where: {
         tenant_id_driver_id_period_start_period_end: {
-          tenant_id: tenantId,
+          tenant_id: dubaiOrg.id,
           driver_id: driver.id,
           period_start: weekStart,
           period_end: weekEnd,
@@ -1248,7 +1371,58 @@ async function main() {
       },
       update: {},
       create: {
-        tenant_id: tenantId,
+        tenant_id: dubaiOrg.id,
+        driver_id: driver.id,
+        period_start: weekStart,
+        period_end: weekEnd,
+        total_trips: revenues.length,
+        completed_trips: revenues.length,
+        cancelled_trips: Math.floor(Math.random() * 5),
+        total_distance: totalDistance,
+        total_hours: totalDuration / 60,
+        total_revenue: totalRevenue,
+        platform_fees: totalRevenue * 0.25,
+        net_revenue: totalRevenue * 0.75,
+        average_rating: 4.5 + Math.random() * 0.5,
+        total_ratings: revenues.length,
+        acceptance_rate: 85 + Math.random() * 10,
+        cancellation_rate: Math.random() * 5,
+      },
+    });
+    performanceCount++;
+  }
+
+  // Paris drivers
+  for (const driver of createdParisDrivers) {
+    const revenues = await prisma.rev_driver_revenues.findMany({
+      where: { driver_id: driver.id },
+    });
+
+    const totalRevenue = revenues.reduce(
+      (sum, r) => sum + Number(r.driver_earnings),
+      0
+    );
+    const totalDistance = revenues.reduce(
+      (sum, r) => sum + Number(r.distance_km || 0),
+      0
+    );
+    const totalDuration = revenues.reduce(
+      (sum, r) => sum + Number(r.duration_minutes || 0),
+      0
+    );
+
+    await prisma.rid_driver_performance.upsert({
+      where: {
+        tenant_id_driver_id_period_start_period_end: {
+          tenant_id: parisOrg.id,
+          driver_id: driver.id,
+          period_start: weekStart,
+          period_end: weekEnd,
+        },
+      },
+      update: {},
+      create: {
+        tenant_id: parisOrg.id,
         driver_id: driver.id,
         period_start: weekStart,
         period_end: weekEnd,
@@ -1279,12 +1453,28 @@ async function main() {
 
   let scoreCount = 0;
 
-  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
-    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-
+  // Dubai drivers
+  for (const driver of createdDubaiDrivers) {
     await prisma.rid_driver_scores.create({
       data: {
-        tenant_id: tenantId,
+        tenant_id: dubaiOrg.id,
+        driver_id: driver.id,
+        score_date: weekEnd,
+        overall_score: 85 + Math.random() * 10,
+        safety_score: 80 + Math.random() * 15,
+        efficiency_score: 85 + Math.random() * 10,
+        customer_score: 90 + Math.random() * 8,
+        compliance_score: 95 + Math.random() * 5,
+      },
+    });
+    scoreCount++;
+  }
+
+  // Paris drivers
+  for (const driver of createdParisDrivers) {
+    await prisma.rid_driver_scores.create({
+      data: {
+        tenant_id: parisOrg.id,
         driver_id: driver.id,
         score_date: weekEnd,
         overall_score: 85 + Math.random() * 10,
@@ -1307,9 +1497,8 @@ async function main() {
 
   let reconciliationCount = 0;
 
-  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
-    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-
+  // Dubai drivers
+  for (const driver of createdDubaiDrivers) {
     const revenues = await prisma.rev_driver_revenues.findMany({
       where: { driver_id: driver.id },
     });
@@ -1323,7 +1512,7 @@ async function main() {
 
     await prisma.rev_reconciliations.create({
       data: {
-        tenant_id: tenantId,
+        tenant_id: dubaiOrg.id,
         driver_id: driver.id,
         period_start: weekStart,
         period_end: weekEnd,
@@ -1331,9 +1520,44 @@ async function main() {
         calculated_revenue: calculatedRevenue,
         difference: declaredRevenue - calculatedRevenue,
         status:
-          Math.abs(declaredRevenue - calculatedRevenue) < 10
+          Math.abs(declaredRevenue - calculatedRevenue) < 100
             ? "approved"
             : "pending",
+        reviewed_by: systemUserId,
+        reviewed_at: new Date(),
+      },
+    });
+    reconciliationCount++;
+  }
+
+  // Paris drivers
+  for (const driver of createdParisDrivers) {
+    const revenues = await prisma.rev_driver_revenues.findMany({
+      where: { driver_id: driver.id },
+    });
+
+    const calculatedRevenue = revenues.reduce(
+      (sum, r) => sum + Number(r.driver_earnings),
+      0
+    );
+    const declaredRevenue =
+      calculatedRevenue + (Math.random() > 0.5 ? 50 : -30);
+
+    await prisma.rev_reconciliations.create({
+      data: {
+        tenant_id: parisOrg.id,
+        driver_id: driver.id,
+        period_start: weekStart,
+        period_end: weekEnd,
+        declared_revenue: declaredRevenue,
+        calculated_revenue: calculatedRevenue,
+        difference: declaredRevenue - calculatedRevenue,
+        status:
+          Math.abs(declaredRevenue - calculatedRevenue) < 100
+            ? "approved"
+            : "pending",
+        reviewed_by: systemUserId,
+        reviewed_at: new Date(),
       },
     });
     reconciliationCount++;
@@ -1349,10 +1573,8 @@ async function main() {
 
   let paymentCount = 0;
 
-  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
-    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-    const currency = driver.country_code === "AE" ? "AED" : "EUR";
-
+  // Dubai drivers
+  for (const driver of createdDubaiDrivers) {
     const balance = await prisma.bil_driver_balances.findFirst({
       where: { driver_id: driver.id, period_start: weekStart },
     });
@@ -1360,13 +1582,39 @@ async function main() {
     if (balance && Number(balance.balance) > 0) {
       await prisma.bil_driver_payments.create({
         data: {
-          tenant_id: tenantId,
+          tenant_id: dubaiOrg.id,
           driver_id: driver.id,
           balance_id: balance.id,
           payment_date: new Date("2024-10-01"),
           payment_method: "bank_transfer",
           amount: Number(balance.balance),
-          currency: currency,
+          currency: "AED",
+          reference_number: `PAY-${Math.floor(Math.random() * 1000000)}`,
+          status: "completed",
+          processed_by: systemUserId,
+          processed_at: new Date(),
+        },
+      });
+      paymentCount++;
+    }
+  }
+
+  // Paris drivers
+  for (const driver of createdParisDrivers) {
+    const balance = await prisma.bil_driver_balances.findFirst({
+      where: { driver_id: driver.id, period_start: weekStart },
+    });
+
+    if (balance && Number(balance.balance) > 0) {
+      await prisma.bil_driver_payments.create({
+        data: {
+          tenant_id: parisOrg.id,
+          driver_id: driver.id,
+          balance_id: balance.id,
+          payment_date: new Date("2024-10-01"),
+          payment_method: "bank_transfer",
+          amount: Number(balance.balance),
+          currency: "EUR",
           reference_number: `PAY-${Math.floor(Math.random() * 1000000)}`,
           status: "completed",
           processed_by: systemUserId,
@@ -1429,12 +1677,31 @@ async function main() {
 
   let trainingCount = 0;
 
-  for (const driver of [...createdDubaiDrivers, ...createdParisDrivers]) {
-    const tenantId = driver.country_code === "AE" ? dubaiOrg.id : parisOrg.id;
-
+  // Dubai drivers
+  for (const driver of createdDubaiDrivers) {
     await prisma.rid_driver_training.create({
       data: {
-        tenant_id: tenantId,
+        tenant_id: dubaiOrg.id,
+        driver_id: driver.id,
+        training_type: "safety",
+        training_name: "Defensive Driving Course",
+        provider: "Safety First Academy",
+        scheduled_date: new Date("2024-01-10"),
+        completion_date: new Date("2024-01-15"),
+        duration_hours: 8,
+        status: "completed",
+        result: "passed",
+        expiry_date: new Date("2027-01-15"),
+      },
+    });
+    trainingCount++;
+  }
+
+  // Paris drivers
+  for (const driver of createdParisDrivers) {
+    await prisma.rid_driver_training.create({
+      data: {
+        tenant_id: parisOrg.id,
         driver_id: driver.id,
         training_type: "safety",
         training_name: "Defensive Driving Course",

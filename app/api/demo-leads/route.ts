@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const lead = await db.sys_demo_lead.create({
+    const lead = await db.crm_leads.create({
       data: {
         full_name: body.full_name,
         email: body.email,
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 // GET - Lister les leads
 export async function GET() {
   try {
-    const leads = await db.sys_demo_lead.findMany({
+    const leads = await db.crm_leads.findMany({
       orderBy: { created_at: "desc" },
     });
 

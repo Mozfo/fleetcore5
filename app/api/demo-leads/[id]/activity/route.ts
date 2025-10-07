@@ -36,7 +36,7 @@ export async function POST(
 
       // 2. Si outcome décisif, update le lead
       if (["qualified", "accepted", "refused"].includes(body.outcome)) {
-        await tx.sys_demo_lead.update({
+        await tx.crm_leads.update({
           where: { id: leadId },
           data: {
             status: body.outcome,

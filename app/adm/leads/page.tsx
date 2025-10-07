@@ -41,24 +41,18 @@ export default async function LeadsPage({
   }
 
   // Fetch leads
-  const leads = await db.sys_demo_lead.findMany({
+  const leads = await db.crm_leads.findMany({
     where,
     orderBy: { created_at: "desc" },
-    include: {
-      activities: {
-        orderBy: { activity_date: "desc" },
-        take: 1,
-      },
-    },
   });
 
   // Calculate stats using groupBy for better performance (1 query instead of 6)
   const [statusGroups, total] = await Promise.all([
-    db.sys_demo_lead.groupBy({
+    db.crm_leads.groupBy({
       by: ["status"],
       _count: { _all: true },
     }),
-    db.sys_demo_lead.count(),
+    db.crm_leads.count(),
   ]);
 
   // Transform groupBy results into stats object

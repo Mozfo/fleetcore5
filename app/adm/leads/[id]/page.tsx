@@ -18,13 +18,8 @@ export default async function LeadDetailPage({
     redirect("/en/login");
   }
 
-  const lead = await db.sys_demo_lead.findUnique({
+  const lead = await db.crm_leads.findUnique({
     where: { id },
-    include: {
-      activities: {
-        orderBy: { activity_date: "desc" },
-      },
-    },
   });
 
   if (!lead) {

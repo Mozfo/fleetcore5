@@ -7,10 +7,10 @@ export default async function AdminDashboardPage() {
   // Fetch global stats for admin backoffice
   const [totalLeads, qualifiedLeads, totalOrgs, convertedLeads] =
     await Promise.all([
-      db.sys_demo_lead.count(),
-      db.sys_demo_lead.count({ where: { status: "qualified" } }),
-      db.organization.count(),
-      db.sys_demo_lead.count({ where: { status: "converted" } }),
+      db.crm_leads.count(),
+      db.crm_leads.count({ where: { status: "qualified" } }),
+      db.adm_tenants.count(),
+      db.crm_leads.count({ where: { status: "converted" } }),
     ]);
 
   // Calculate conversion rate

@@ -17,7 +17,7 @@ export async function POST(
     // Transaction pour conversion lead → customer
     const result = await db.$transaction(async (tx) => {
       // 1. Récupérer le lead
-      const lead = await tx.sys_demo_lead.findUnique({
+      const lead = await tx.crm_leads.findUnique({
         where: { id: leadId },
       });
 
@@ -50,17 +50,17 @@ export async function POST(
       });
 
       // 4. Créer l'organisation dans notre DB
-      const organization = await tx.organization.create({
+      const organization = await tx.adm_tenants.create({
         data: {
           name: lead.demo_company_name,
           subdomain: lead.demo_company_name.toLowerCase().replace(/\s+/g, "-"),
           country_code: lead.country_code,
-          clerk_org_id: clerkOrg.id,
+          clerk_organization_id: clerkOrg.id,
         },
       });
 
       // 5. Mettre à jour le lead
-      await tx.sys_demo_lead.update({
+      await tx.crm_leads.update({
         where: { id: leadId },
         data: {
           status: "accepted",

@@ -15,13 +15,8 @@ export async function GET(
 
     const { id } = await params;
 
-    const lead = await db.sys_demo_lead.findUnique({
+    const lead = await db.crm_leads.findUnique({
       where: { id },
-      include: {
-        activities: {
-          orderBy: { activity_date: "desc" },
-        },
-      },
     });
 
     if (!lead) {
@@ -53,7 +48,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const lead = await db.sys_demo_lead.update({
+    const lead = await db.crm_leads.update({
       where: { id },
       data: {
         full_name: body.full_name,
@@ -93,7 +88,7 @@ export async function DELETE(
     const { id } = await params;
 
     // Soft delete: marquer comme deleted
-    await db.sys_demo_lead.update({
+    await db.crm_leads.update({
       where: { id },
       data: { status: "deleted" },
     });
