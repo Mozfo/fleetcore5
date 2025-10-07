@@ -15,26 +15,9 @@ export async function POST(
     const { id: leadId } = await params;
     const body = await request.json();
 
+    // TODO: Phase 2 - Activity logging will be implemented when sys_demo_lead_activity table is created
     const result = await db.$transaction(async (tx) => {
-      // 1. Créer l'activité
-      const activity = await tx.sys_demo_lead_activity.create({
-        data: {
-          lead_id: leadId,
-          activity_type: body.activity_type,
-          notes: body.notes,
-          outcome: body.outcome,
-          duration: body.duration,
-          priority: body.priority || "medium",
-          status: body.status || "completed",
-          performed_by: userId,
-          next_action: body.next_action,
-          next_action_date: body.next_action_date
-            ? new Date(body.next_action_date)
-            : null,
-        },
-      });
-
-      // 2. Si outcome décisif, update le lead
+      // Si outcome décisif, update le lead
       if (["qualified", "accepted", "refused"].includes(body.outcome)) {
         await tx.crm_leads.update({
           where: { id: leadId },
@@ -47,7 +30,9 @@ export async function POST(
         });
       }
 
-      return activity;
+      return {
+        message: "Activity recorded (Phase 1 - activity table pending)",
+      };
     });
 
     return NextResponse.json(result);

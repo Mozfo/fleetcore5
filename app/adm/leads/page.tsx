@@ -22,7 +22,7 @@ export default async function LeadsPage({
   const { status, country, search } = filters;
 
   // Build filters
-  const where: Prisma.sys_demo_leadWhereInput = {};
+  const where: Prisma.crm_leadsWhereInput = {};
 
   if (status) {
     where.status = status;

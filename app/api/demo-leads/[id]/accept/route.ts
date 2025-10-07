@@ -70,16 +70,17 @@ export async function POST(
       });
 
       // 6. Logger l'activité de conversion
-      await tx.sys_demo_lead_activity.create({
-        data: {
-          lead_id: leadId,
-          activity_type: "conversion",
-          notes: `Lead converted to organization: ${clerkOrg.id}`,
-          outcome: "accepted",
-          performed_by: userId,
-          status: "completed",
-        },
-      });
+      // TODO: Phase 2 - Add activity logging when sys_demo_lead_activity table is created
+      // await tx.sys_demo_lead_activity.create({
+      //   data: {
+      //     lead_id: leadId,
+      //     activity_type: "conversion",
+      //     notes: `Lead converted to organization: ${clerkOrg.id}`,
+      //     outcome: "accepted",
+      //     performed_by: userId,
+      //     status: "completed",
+      //   },
+      // });
 
       return {
         organization,

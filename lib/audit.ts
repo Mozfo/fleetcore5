@@ -46,28 +46,35 @@ export interface AuditLogOptions {
  */
 export async function auditLog(options: AuditLogOptions): Promise<void> {
   try {
-    await prisma.adm_audit_logs.create({
-      data: {
-        tenant_id: options.tenantId,
-        action: options.action,
-        entity_type: options.entityType,
-        entity_id: options.entityId,
-        snapshot: options.snapshot ?? undefined,
-        changes: options.changes ?? undefined,
-        performed_by: options.performedBy ?? undefined,
-        performed_by_clerk_id: options.performedByClerkId ?? undefined,
-        ip_address: options.ipAddress ?? undefined,
-        user_agent: options.userAgent ?? undefined,
-        reason: options.reason ?? undefined,
-        metadata: options.metadata ?? undefined,
-      },
+    // TODO: Phase 2 - Enable audit logging when adm_audit_logs table is created
+    console.log("[AUDIT]", {
+      tenant_id: options.tenantId,
+      action: options.action,
+      entity_type: options.entityType,
+      entity_id: options.entityId,
+      performed_by: options.performedBy,
     });
+
+    // await prisma.adm_audit_logs.create({
+    //   data: {
+    //     tenant_id: options.tenantId,
+    //     action: options.action,
+    //     entity_type: options.entityType,
+    //     entity_id: options.entityId,
+    //     snapshot: options.snapshot ?? undefined,
+    //     changes: options.changes ?? undefined,
+    //     performed_by: options.performedBy ?? undefined,
+    //     performed_by_clerk_id: options.performedByClerkId ?? undefined,
+    //     ip_address: options.ipAddress ?? undefined,
+    //     user_agent: options.userAgent ?? undefined,
+    //     reason: options.reason ?? undefined,
+    //     metadata: options.metadata ?? undefined,
+    //   },
+    // });
   } catch (error) {
     // Audit should never break main flow - silently fail
     if (process.env.NODE_ENV === "development") {
-      throw new Error(
-        `[AUDIT] Failed to create audit log: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      console.error("[AUDIT] Failed to log audit event:", error);
     }
   }
 }

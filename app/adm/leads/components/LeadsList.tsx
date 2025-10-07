@@ -12,13 +12,10 @@ type Lead = {
   full_name: string;
   email: string;
   demo_company_name: string;
-  fleet_size: string;
+  fleet_size: string | null;
   country_code: string;
   status: string | null;
   created_at: Date | null;
-  activities: Array<{
-    activity_date: Date;
-  }>;
 };
 
 interface LeadsListProps {
