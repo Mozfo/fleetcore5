@@ -166,7 +166,7 @@ export default async function LeadDetailPage({
           <AddActivityForm leadId={lead.id} />
 
           {/* Activity Timeline */}
-          <ActivityTimeline activities={lead.activities} />
+          <ActivityTimeline activities={[]} />
         </div>
       </div>
     </div>
