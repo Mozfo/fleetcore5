@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "lsof -ti:3000 | xargs kill -9 || true",
     "dev": "next dev --turbo",
     "build": "prisma generate && next build",
     "start": "next start",

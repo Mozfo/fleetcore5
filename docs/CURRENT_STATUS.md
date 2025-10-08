@@ -43,17 +43,23 @@ Modèle final: 55 tables, 14 domaines
 
 ### BLOQUANTS STEP 0
 
-#### 1. Webhook Clerk - BUGS CORRIGÉS ✅
+#### 1. Webhook Clerk - VALIDÉ ✅
 
-Bugs corrigés (commit 3d238dd):
+Status: **Production fonctionnelle - Zurich opérationnel**
 
-- app/api/webhooks/clerk/route.ts:53 → clerk_organization_id ✅
-- app/api/webhooks/clerk/route.ts:136 → clerk_organization_id ✅
+- app/api/webhooks/clerk/route.ts:44 → clerk_organization_id ✅
+- app/api/webhooks/clerk/route.ts:80,87,121,127 → clerk_organization_id ✅
+- Merge commit: 776e66d
+- Branch: main
+- Deployment: Vercel Production (https://fleetcore5.vercel.app)
 
-À faire:
+Tests effectués:
 
-1. Déployer sur Vercel (git push)
-2. Tester: créer org dans Clerk → vérifier insertion dans adm_tenants Supabase
+1. ✅ Créer org dans Clerk Dashboard → OK
+2. ✅ Vérifier insertion dans Supabase **Zurich** adm_tenants → OK
+3. ✅ Créer user dans org → Insertion dans Zurich adm_members → OK
+
+**Migration Mumbai → Zurich COMPLÈTE**
 
 #### 2. RLS Policies DÉSACTIVÉES
 
