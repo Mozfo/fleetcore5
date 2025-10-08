@@ -41,8 +41,29 @@ model adm_tenants {
   updated_at            DateTime    @updatedAt @db.Timestamptz(6)
 
   // Relations
-  members               adm_members[]
-  leads                 crm_leads[]
+  members                         adm_members[]
+  leads                           crm_leads[]
+  adm_roles                       adm_roles[]
+  adm_member_roles                adm_member_roles[]
+  adm_audit_logs                  adm_audit_logs[]
+  adm_tenant_lifecycle_events     adm_tenant_lifecycle_events[]
+  adm_invitations                 adm_invitations[]
+  dir_car_makes                   dir_car_makes[]
+  dir_car_models                  dir_car_models[]
+  doc_documents                   doc_documents[]
+  flt_vehicles                    flt_vehicles[]
+  flt_vehicle_assignments         flt_vehicle_assignments[]
+  flt_vehicle_events              flt_vehicle_events[]
+  flt_vehicle_maintenance         flt_vehicle_maintenance[]
+  flt_vehicle_expenses            flt_vehicle_expenses[]
+  flt_vehicle_insurances          flt_vehicle_insurances[]
+  rid_drivers                     rid_drivers[]
+  rid_driver_documents            rid_driver_documents[]
+  rid_driver_cooperation_terms    rid_driver_cooperation_terms[]
+  rid_driver_requests             rid_driver_requests[]
+  rid_driver_performances         rid_driver_performances[]
+  rid_driver_blacklists           rid_driver_blacklists[]
+  rid_driver_training             rid_driver_training[]
 
   // Index pour performance
   @@index([status])
@@ -78,7 +99,14 @@ model adm_members {
   updated_at        DateTime    @updatedAt @db.Timestamptz(6)
 
   // Relations
-  tenant            adm_tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tenant                                adm_tenants                                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  adm_member_roles                      adm_member_roles[]
+  adm_audit_logs                        adm_audit_logs[]
+  flt_vehicle_events                    flt_vehicle_events[]
+  rid_driver_documents_verified_by      rid_driver_documents[]                      @relation("rid_driver_documents_verified_by")
+  rid_driver_requests_assigned_to       rid_driver_requests[]                       @relation("rid_driver_requests_assigned_to")
+  rid_driver_blacklists_blacklisted_by  rid_driver_blacklists[]                     @relation("rid_driver_blacklists_blacklisted_by")
+  rid_driver_blacklists_resolved_by     rid_driver_blacklists[]                     @relation("rid_driver_blacklists_resolved_by")
 
   // Contraintes uniques et index
   @@unique([tenant_id, email])
@@ -144,5 +172,738 @@ model crm_leads {
   @@index([created_at])
   @@index([tenant_id])
   @@index([assigned_to])
+}
+
+// ============================================================================
+// STEP 1: ADM Domain (Administration)
+// ============================================================================
+
+model adm_roles {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  name            String    @db.VarChar(100)
+  description     String?   @db.Text
+  permissions     Json      @db.JsonB
+  status          String    @default("active") @db.VarChar(50)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  tenant           adm_tenants        @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  adm_member_roles adm_member_roles[]
+
+  @@unique([tenant_id, name])
+  @@index([tenant_id])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model adm_member_roles {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  member_id   String   @db.Uuid
+  role_id     String   @db.Uuid
+  assigned_at DateTime @default(now()) @db.Timestamptz(6)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant adm_tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  member adm_members @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  role   adm_roles   @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([tenant_id, member_id, role_id])
+  @@index([tenant_id])
+  @@index([member_id])
+  @@index([role_id])
+}
+
+model adm_audit_logs {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  member_id   String?  @db.Uuid
+  entity_type String   @db.VarChar(50)
+  entity_id   String   @db.Uuid
+  action      String   @db.VarChar(50)
+  changes     Json?    @db.JsonB
+  ip_address  String?  @db.VarChar(45)
+  user_agent  String?  @db.Text
+  logged_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  tenant adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  member adm_members? @relation(fields: [member_id], references: [id], onDelete: SetNull)
+
+  @@index([tenant_id])
+  @@index([tenant_id, entity_type, entity_id])
+  @@index([logged_at(sort: Desc)])
+}
+
+model adm_provider_employees {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clerk_user_id   String    @unique @db.VarChar(255)
+  name            String    @db.VarChar(100)
+  email           String    @unique @db.VarChar(255)
+  department      String?   @db.VarChar(50)
+  title           String?   @db.VarChar(50)
+  permissions     Json?     @db.JsonB
+  status          String    @default("active") @db.VarChar(50)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  adm_tenant_lifecycle_events adm_tenant_lifecycle_events[]
+  adm_invitations             adm_invitations[]
+
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model adm_tenant_lifecycle_events {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  event_type      String    @db.VarChar(50)
+  performed_by    String?   @db.Uuid
+  effective_date  DateTime? @db.Date
+  description     String?   @db.Text
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  tenant            adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  provider_employee adm_provider_employees? @relation(fields: [performed_by], references: [id], onDelete: SetNull)
+
+  @@index([tenant_id])
+  @@index([tenant_id, event_type])
+  @@index([effective_date(sort: Desc)])
+  @@index([deleted_at])
+}
+
+model adm_invitations {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  email           String    @db.VarChar(255)
+  role            String    @db.VarChar(50)
+  token           String    @unique @db.VarChar(255)
+  expires_at      DateTime  @db.Timestamptz(6)
+  status          String    @default("pending") @db.VarChar(50)
+  sent_by         String?   @db.Uuid
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  tenant            adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  provider_employee adm_provider_employees? @relation(fields: [sent_by], references: [id], onDelete: SetNull)
+
+  @@unique([tenant_id, email, role, status])
+  @@index([tenant_id])
+  @@index([token])
+  @@index([expires_at])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+// ============================================================================
+// STEP 1: DIR Domain (Reference Data)
+// ============================================================================
+
+model dir_car_makes {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String?   @db.Uuid
+  name            String    @db.VarChar(100)
+  status          String    @default("active") @db.VarChar(50)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  tenant         adm_tenants?     @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  dir_car_models dir_car_models[]
+  flt_vehicles   flt_vehicles[]
+
+  @@unique([tenant_id, name])
+  @@index([tenant_id])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model dir_car_models {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String?   @db.Uuid
+  make_id         String    @db.Uuid
+  name            String    @db.VarChar(100)
+  vehicle_class   String?   @db.VarChar(50)
+  status          String    @default("active") @db.VarChar(50)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  tenant       adm_tenants?  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  make         dir_car_makes @relation(fields: [make_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  flt_vehicles flt_vehicles[]
+
+  @@unique([tenant_id, make_id, name])
+  @@index([tenant_id])
+  @@index([make_id])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model dir_platforms {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name            String    @unique @db.VarChar(100)
+  api_config      Json?     @db.JsonB
+  status          String    @default("active") @db.VarChar(50)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model dir_country_regulations {
+  country_code      String   @id @db.Char(2)
+  vehicle_max_age   Int?
+  min_vehicle_class String?  @db.VarChar(50)
+  requires_vtc_card Boolean  @default(false)
+  min_fare_per_trip Decimal? @db.Decimal(10, 2)
+  min_fare_per_km   Decimal? @db.Decimal(10, 2)
+  min_fare_per_hour Decimal? @db.Decimal(10, 2)
+  vat_rate          Decimal? @db.Decimal(5, 2)
+  currency          String?  @db.Char(3)
+  timezone          String?  @db.VarChar(50)
+  metadata          Json?    @db.JsonB
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @updatedAt @db.Timestamptz(6)
+
+  dir_vehicle_classes dir_vehicle_classes[]
+}
+
+model dir_vehicle_classes {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  country_code    String    @db.Char(2)
+  name            String    @db.VarChar(50)
+  description     String?   @db.Text
+  max_age         Int?
+  status          String    @default("active") @db.VarChar(50)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  country dir_country_regulations @relation(fields: [country_code], references: [country_code], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([country_code, name])
+  @@index([country_code])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+// ============================================================================
+// STEP 1: DOC Domain (Documents)
+// ============================================================================
+
+model doc_documents {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  entity_type     String    @db.VarChar(50)
+  entity_id       String    @db.Uuid
+  document_type   String    @db.VarChar(50)
+  file_url        String    @db.Text
+  file_name       String?   @db.VarChar(255)
+  file_size       Int?
+  mime_type       String?   @db.VarChar(100)
+  issue_date      DateTime? @db.Date
+  expiry_date     DateTime? @db.Date
+  verified        Boolean   @default(false)
+  verified_by     String?   @db.Uuid
+  verified_at     DateTime? @db.Timestamptz(6)
+  metadata        Json?     @db.JsonB
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+
+  tenant                      adm_tenants                  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  flt_vehicle_insurances      flt_vehicle_insurances[]
+
+  @@index([tenant_id])
+  @@index([tenant_id, entity_type, entity_id])
+  @@index([tenant_id, document_type])
+  @@index([expiry_date])
+  @@index([deleted_at])
+}
+
+// ============================================================================
+// STEP 2: FLT Domain (Fleet Management)
+// ============================================================================
+
+model flt_vehicles {
+  id                  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id           String    @db.Uuid
+  make_id             String    @db.Uuid
+  model_id            String    @db.Uuid
+  year                Int
+  plate_number        String    @db.VarChar(50)
+  vin                 String?   @unique @db.VarChar(100)
+  body_type           String?   @db.VarChar(50)
+  vehicle_class       String?   @db.VarChar(50)
+  color               String?   @db.VarChar(50)
+  owner_type          String    @default("fleet") @db.VarChar(50)
+  owner_id            String?   @db.Uuid
+  current_driver_id   String?   @db.Uuid
+  traccar_device_id   String?   @unique @db.VarChar(100)
+  status              String    @default("active") @db.VarChar(50)
+  metadata            Json?     @db.JsonB
+  deleted_at          DateTime? @db.Timestamptz(6)
+  deleted_by          String?   @db.Uuid
+  deletion_reason     String?   @db.Text
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant                    adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  make                      dir_car_makes              @relation(fields: [make_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  model                     dir_car_models             @relation(fields: [model_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  current_driver            rid_drivers?               @relation(fields: [current_driver_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  flt_vehicle_assignments   flt_vehicle_assignments[]
+  flt_vehicle_events        flt_vehicle_events[]
+  flt_vehicle_maintenance   flt_vehicle_maintenance[]
+  flt_vehicle_expenses      flt_vehicle_expenses[]
+  flt_vehicle_insurances    flt_vehicle_insurances[]
+
+  @@unique([tenant_id, plate_number])
+  @@index([tenant_id])
+  @@index([tenant_id, status])
+  @@index([status])
+  @@index([current_driver_id])
+  @@index([plate_number])
+  @@index([traccar_device_id])
+  @@index([make_id])
+  @@index([model_id])
+  @@index([deleted_at])
+}
+
+model flt_vehicle_assignments {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  vehicle_id      String    @db.Uuid
+  driver_id       String    @db.Uuid
+  start_time      DateTime  @db.Timestamptz(6)
+  end_time        DateTime? @db.Timestamptz(6)
+  status          String    @default("active") @db.VarChar(50)
+  metadata        Json?     @db.JsonB
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant  adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle flt_vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver  rid_drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, vehicle_id, status])
+  @@index([tenant_id, driver_id, status])
+  @@index([vehicle_id, start_time, end_time])
+  @@index([driver_id, start_time, end_time])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model flt_vehicle_events {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  vehicle_id      String    @db.Uuid
+  event_type      String    @db.VarChar(50)
+  event_date      DateTime  @db.Date
+  event_time      DateTime? @db.Time
+  driver_id       String?   @db.Uuid
+  performed_by    String?   @db.Uuid
+  details         Json      @db.JsonB
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant       adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle      flt_vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver       rid_drivers? @relation("flt_vehicle_events_driver", fields: [driver_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  performed_by_member adm_members? @relation(fields: [performed_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, vehicle_id, event_type])
+  @@index([vehicle_id, event_date(sort: Desc)])
+  @@index([event_type, event_date(sort: Desc)])
+  @@index([deleted_at])
+}
+
+model flt_vehicle_maintenance {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id         String    @db.Uuid
+  vehicle_id        String    @db.Uuid
+  maintenance_type  String    @db.VarChar(100)
+  scheduled_date    DateTime  @db.Date
+  completion_date   DateTime? @db.Date
+  odometer_reading  Int?
+  next_service_date DateTime? @db.Date
+  next_service_km   Int?
+  provider          String?   @db.VarChar(255)
+  cost              Decimal?  @db.Decimal(10, 2)
+  currency          String    @default("AED") @db.VarChar(3)
+  invoice_number    String?   @db.VarChar(100)
+  notes             String?   @db.Text
+  status            String    @default("scheduled") @db.VarChar(50)
+  deleted_at        DateTime? @db.Timestamptz(6)
+  deleted_by        String?   @db.Uuid
+  deletion_reason   String?   @db.Text
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant  adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle flt_vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, vehicle_id, scheduled_date(sort: Desc)])
+  @@index([vehicle_id, status])
+  @@index([status, scheduled_date])
+  @@index([next_service_date])
+  @@index([deleted_at])
+}
+
+model flt_vehicle_expenses {
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id          String    @db.Uuid
+  vehicle_id         String    @db.Uuid
+  driver_id          String?   @db.Uuid
+  expense_date       DateTime  @db.Date
+  expense_time       DateTime? @db.Time
+  category           String    @db.VarChar(50)
+  amount             Decimal   @db.Decimal(10, 2)
+  currency           String    @default("AED") @db.VarChar(3)
+  payment_method     String?   @db.VarChar(50)
+  receipt_url        String?   @db.Text
+  odometer_reading   Int?
+  description        String?   @db.Text
+  charged_to_driver  Boolean   @default(false)
+  reimbursed         Boolean   @default(false)
+  deleted_at         DateTime? @db.Timestamptz(6)
+  deleted_by         String?   @db.Uuid
+  deletion_reason    String?   @db.Text
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant  adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle flt_vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver  rid_drivers? @relation("flt_vehicle_expenses_driver", fields: [driver_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, vehicle_id, expense_date(sort: Desc)])
+  @@index([tenant_id, driver_id, expense_date(sort: Desc)])
+  @@index([vehicle_id, category])
+  @@index([expense_date(sort: Desc)])
+  @@index([charged_to_driver, reimbursed])
+  @@index([deleted_at])
+}
+
+model flt_vehicle_insurances {
+  id                  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id           String    @db.Uuid
+  vehicle_id          String    @db.Uuid
+  provider            String    @db.VarChar(255)
+  policy_number       String    @db.VarChar(100)
+  coverage_type       String    @db.VarChar(50)
+  coverage_amount     Decimal   @db.Decimal(12, 2)
+  currency            String    @default("AED") @db.VarChar(3)
+  start_date          DateTime  @db.Date
+  end_date            DateTime  @db.Date
+  premium_amount      Decimal   @db.Decimal(10, 2)
+  premium_frequency   String    @default("annual") @db.VarChar(50)
+  deductible          Decimal?  @db.Decimal(10, 2)
+  status              String    @default("active") @db.VarChar(50)
+  policy_document_id  String?   @db.Uuid
+  deleted_at          DateTime? @db.Timestamptz(6)
+  deleted_by          String?   @db.Uuid
+  deletion_reason     String?   @db.Text
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant          adm_tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle         flt_vehicles  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  policy_document doc_documents? @relation(fields: [policy_document_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([tenant_id, vehicle_id, policy_number])
+  @@index([tenant_id])
+  @@index([tenant_id, vehicle_id, status])
+  @@index([vehicle_id, end_date])
+  @@index([end_date])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+// ============================================================================
+// STEP 2: RID Domain (Drivers/Riders)
+// ============================================================================
+
+model rid_drivers {
+  id                        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id                 String    @db.Uuid
+  clerk_user_id             String?   @unique @db.VarChar(255)
+  first_name                String    @db.VarChar(100)
+  last_name                 String    @db.VarChar(100)
+  email                     String?   @db.VarChar(255)
+  phone                     String    @db.VarChar(50)
+  date_of_birth             DateTime? @db.Date
+  nationality               String?   @db.VarChar(2)
+  licence_number            String    @db.VarChar(100)
+  licence_issue_date        DateTime? @db.Date
+  licence_expiry_date       DateTime? @db.Date
+  licence_country           String?   @db.VarChar(2)
+  professional_card_number  String?   @db.VarChar(100)
+  professional_card_expiry  DateTime? @db.Date
+  status                    String    @default("active") @db.VarChar(50)
+  metadata                  Json?     @db.JsonB
+  deleted_at                DateTime? @db.Timestamptz(6)
+  deleted_by                String?   @db.Uuid
+  deletion_reason           String?   @db.Text
+  created_at                DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant                          adm_tenants                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  flt_vehicles                    flt_vehicles[]
+  flt_vehicle_assignments         flt_vehicle_assignments[]
+  flt_vehicle_events              flt_vehicle_events[]              @relation("flt_vehicle_events_driver")
+  flt_vehicle_expenses            flt_vehicle_expenses[]            @relation("flt_vehicle_expenses_driver")
+  rid_driver_documents            rid_driver_documents[]
+  rid_driver_cooperation_terms    rid_driver_cooperation_terms[]
+  rid_driver_requests             rid_driver_requests[]
+  rid_driver_performances         rid_driver_performances[]
+  rid_driver_blacklists           rid_driver_blacklists[]
+  rid_driver_training             rid_driver_training[]
+
+  @@unique([tenant_id, licence_number])
+  @@unique([tenant_id, email])
+  @@unique([tenant_id, professional_card_number])
+  @@index([tenant_id])
+  @@index([tenant_id, status])
+  @@index([status])
+  @@index([clerk_user_id])
+  @@index([email])
+  @@index([phone])
+  @@index([licence_number])
+  @@index([professional_card_number])
+  @@index([licence_expiry_date])
+  @@index([professional_card_expiry])
+  @@index([deleted_at])
+}
+
+model rid_driver_documents {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  driver_id       String    @db.Uuid
+  document_type   String    @db.VarChar(50)
+  file_url        String    @db.Text
+  issue_date      DateTime? @db.Date
+  expiry_date     DateTime? @db.Date
+  verified        Boolean   @default(false)
+  verified_by     String?   @db.Uuid
+  verified_at     DateTime? @db.Timestamptz(6)
+  status          String    @default("pending") @db.VarChar(50)
+  notes           String?   @db.Text
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant      adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver      rid_drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  verified_by_member adm_members? @relation("rid_driver_documents_verified_by", fields: [verified_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, driver_id, document_type])
+  @@index([driver_id, expiry_date])
+  @@index([expiry_date])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model rid_driver_cooperation_terms {
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id        String    @db.Uuid
+  driver_id        String    @db.Uuid
+  cooperation_type String    @db.VarChar(50)
+  start_date       DateTime  @db.Date
+  end_date         DateTime? @db.Date
+  terms            Json      @db.JsonB
+  status           String    @default("active") @db.VarChar(50)
+  deleted_at       DateTime? @db.Timestamptz(6)
+  deleted_by       String?   @db.Uuid
+  deletion_reason  String?   @db.Text
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant adm_tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver rid_drivers @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, driver_id, status])
+  @@index([driver_id, start_date(sort: Desc)])
+  @@index([cooperation_type, status])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model rid_driver_requests {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id         String    @db.Uuid
+  driver_id         String    @db.Uuid
+  request_type      String    @db.VarChar(50)
+  priority          String    @default("medium") @db.VarChar(50)
+  subject           String    @db.VarChar(255)
+  description       String    @db.Text
+  assigned_to       String?   @db.Uuid
+  assigned_team     String?   @db.VarChar(50)
+  sla_deadline      DateTime? @db.Timestamptz(6)
+  status            String    @default("new") @db.VarChar(50)
+  escalated         Boolean   @default(false)
+  resolution_notes  String?   @db.Text
+  resolved_at       DateTime? @db.Timestamptz(6)
+  closed_at         DateTime? @db.Timestamptz(6)
+  deleted_at        DateTime? @db.Timestamptz(6)
+  deleted_by        String?   @db.Uuid
+  deletion_reason   String?   @db.Text
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant      adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver      rid_drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assigned_to_member adm_members? @relation("rid_driver_requests_assigned_to", fields: [assigned_to], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, status, priority])
+  @@index([driver_id, status])
+  @@index([assigned_to, status])
+  @@index([assigned_team, status])
+  @@index([sla_deadline])
+  @@index([request_type, status])
+  @@index([escalated, status])
+  @@index([deleted_at])
+}
+
+model rid_driver_performances {
+  id                  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id           String    @db.Uuid
+  driver_id           String    @db.Uuid
+  period_start        DateTime  @db.Date
+  period_end          DateTime  @db.Date
+  trips_count         Int       @default(0)
+  total_revenue       Decimal   @default(0) @db.Decimal(10, 2)
+  total_distance_km   Decimal?  @db.Decimal(10, 2)
+  total_hours         Decimal?  @db.Decimal(10, 2)
+  average_rating      Decimal?  @db.Decimal(3, 2)
+  cancellation_count  Int       @default(0)
+  cancellation_rate   Decimal?  @db.Decimal(5, 2)
+  late_pickups_count  Int       @default(0)
+  punctuality_rate    Decimal?  @db.Decimal(5, 2)
+  acceptance_rate     Decimal?  @db.Decimal(5, 2)
+  revenue_per_trip    Decimal?  @db.Decimal(10, 2)
+  revenue_per_km      Decimal?  @db.Decimal(10, 2)
+  revenue_per_hour    Decimal?  @db.Decimal(10, 2)
+  notes               String?   @db.Text
+  currency            String    @default("AED") @db.VarChar(3)
+  deleted_at          DateTime? @db.Timestamptz(6)
+  deleted_by          String?   @db.Uuid
+  deletion_reason     String?   @db.Text
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant adm_tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver rid_drivers @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([tenant_id, driver_id, period_start, period_end])
+  @@index([tenant_id])
+  @@index([tenant_id, period_start(sort: Desc)])
+  @@index([driver_id, period_start(sort: Desc)])
+  @@index([period_start, period_end])
+  @@index([deleted_at])
+}
+
+model rid_driver_blacklists {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id         String    @db.Uuid
+  driver_id         String    @db.Uuid
+  reason            String    @db.Text
+  severity          String    @default("moderate") @db.VarChar(50)
+  blacklisted_at    DateTime  @default(now()) @db.Timestamptz(6)
+  blacklisted_by    String    @db.Uuid
+  resolved_at       DateTime? @db.Timestamptz(6)
+  resolved_by       String?   @db.Uuid
+  resolution_notes  String?   @db.Text
+  status            String    @default("active") @db.VarChar(50)
+  deleted_at        DateTime? @db.Timestamptz(6)
+  deleted_by        String?   @db.Uuid
+  deletion_reason   String?   @db.Text
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant             adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver             rid_drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  blacklisted_by_member adm_members  @relation("rid_driver_blacklists_blacklisted_by", fields: [blacklisted_by], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  resolved_by_member adm_members? @relation("rid_driver_blacklists_resolved_by", fields: [resolved_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, status])
+  @@index([driver_id, status])
+  @@index([blacklisted_at(sort: Desc)])
+  @@index([status])
+  @@index([deleted_at])
+}
+
+model rid_driver_training {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  driver_id       String    @db.Uuid
+  course_name     String    @db.VarChar(255)
+  course_type     String?   @db.VarChar(50)
+  provider        String    @db.VarChar(255)
+  training_date   DateTime? @db.Date
+  completion_date DateTime? @db.Date
+  expiry_date     DateTime? @db.Date
+  status          String    @default("scheduled") @db.VarChar(50)
+  certificate_url String?   @db.Text
+  score           Int?
+  notes           String?   @db.Text
+  deleted_at      DateTime? @db.Timestamptz(6)
+  deleted_by      String?   @db.Uuid
+  deletion_reason String?   @db.Text
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant adm_tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver rid_drivers @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([tenant_id])
+  @@index([tenant_id, driver_id, status])
+  @@index([driver_id, completion_date(sort: Desc)])
+  @@index([expiry_date])
+  @@index([course_type, status])
+  @@index([status])
+  @@index([deleted_at])
 }
 
