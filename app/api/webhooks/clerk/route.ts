@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         data: {
           clerk_organization_id: evt.data.id,
           name: evt.data.name,
-          subdomain: evt.data.slug,
+          // subdomain: evt.data.slug,
           country_code: "AE",
         },
       });
@@ -56,7 +56,6 @@ export async function POST(req: Request) {
         snapshot: {
           clerk_organization_id: organization.clerk_organization_id,
           name: organization.name,
-          subdomain: organization.subdomain,
           country_code: organization.country_code,
         },
         performedBy: "Clerk Webhook",
@@ -76,18 +75,18 @@ export async function POST(req: Request) {
   // Organization updated
   if (evt.type === "organization.updated") {
     try {
-      const org = await prisma.adm_tenants.findUnique({
+      const org = await prisma.adm_tenants.findFirst({
         where: { clerk_organization_id: evt.data.id },
       });
 
       if (org) {
-        const oldSnapshot = { name: org.name, subdomain: org.subdomain };
+        const oldSnapshot = { name: org.name };
 
         const updated = await prisma.adm_tenants.update({
           where: { clerk_organization_id: evt.data.id },
           data: {
             name: evt.data.name,
-            subdomain: evt.data.slug,
+            // subdomain: evt.data.slug,
           },
         });
 
@@ -99,7 +98,6 @@ export async function POST(req: Request) {
           snapshot: oldSnapshot,
           changes: {
             name: { old: org.name, new: updated.name },
-            subdomain: { old: org.subdomain, new: updated.subdomain },
           },
           performedBy: "Clerk Webhook",
           ipAddress,
@@ -127,7 +125,6 @@ export async function POST(req: Request) {
           where: { clerk_organization_id: evt.data.id },
           data: {
             deleted_at: new Date(),
-            deleted_by: "Clerk Webhook",
           },
         });
 
