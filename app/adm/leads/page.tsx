@@ -36,7 +36,7 @@ export default async function LeadsPage({
     where.OR = [
       { full_name: { contains: search, mode: "insensitive" } },
       { email: { contains: search, mode: "insensitive" } },
-      { demo_company_name: { contains: search, mode: "insensitive" } },
+      { company_name: { contains: search, mode: "insensitive" } },
     ];
   }
 

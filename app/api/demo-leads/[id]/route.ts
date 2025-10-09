@@ -53,8 +53,8 @@ export async function PUT(
       data: {
         full_name: body.full_name,
         email: body.email,
-        demo_company_name: body.demo_company_name,
-        fleet_size: body.fleet_size,
+        company_name: body.company_name,
+        company_size: body.company_size,
         phone: body.phone,
         message: body.message,
         status: body.status,

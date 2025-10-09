@@ -11,8 +11,8 @@ type Lead = {
   id: string;
   full_name: string;
   email: string;
-  demo_company_name: string;
-  fleet_size: string | null;
+  company_name: string | null;
+  company_size: string | null;
   country_code: string;
   status: string | null;
   created_at: Date | null;
@@ -167,13 +167,13 @@ export default function LeadsList({ leads }: LeadsListProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
-                      {lead.demo_company_name}
+                      {lead.company_name}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
                       {lead.country_code === "AE" ? "🇦🇪 UAE" : "🇫🇷 France"}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
-                      {lead.fleet_size}
+                      {lead.company_size}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(lead.status)}

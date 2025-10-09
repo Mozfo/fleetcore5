@@ -32,11 +32,13 @@ export async function POST(
       // 2. Créer l'organisation dans Clerk
       const clerk = await clerkClient();
       const clerkOrg = await clerk.organizations.createOrganization({
-        name: lead.demo_company_name,
-        slug: lead.demo_company_name.toLowerCase().replace(/\s+/g, "-"),
+        name: lead.company_name || "Unnamed Company",
+        slug: (lead.company_name || "unnamed-company")
+          .toLowerCase()
+          .replace(/\s+/g, "-"),
         publicMetadata: {
           country_code: lead.country_code,
-          fleet_size: lead.fleet_size,
+          company_size: lead.company_size,
           lead_id: leadId,
         },
       });
@@ -52,8 +54,8 @@ export async function POST(
       // 4. Créer l'organisation dans notre DB
       const organization = await tx.adm_tenants.create({
         data: {
-          name: lead.demo_company_name,
-          subdomain: lead.demo_company_name.toLowerCase().replace(/\s+/g, "-"),
+          name: lead.company_name,
+          subdomain: lead.company_name.toLowerCase().replace(/\s+/g, "-"),
           country_code: lead.country_code,
           clerk_organization_id: clerkOrg.id,
         },
@@ -64,7 +66,7 @@ export async function POST(
         where: { id: leadId },
         data: {
           status: "accepted",
-          qualified_date: new Date(),
+          converted_at: new Date(),
           assigned_to: userId,
         },
       });

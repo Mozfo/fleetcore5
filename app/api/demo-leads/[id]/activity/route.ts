@@ -24,8 +24,7 @@ export async function POST(
           data: {
             status: body.outcome,
             assigned_to: userId,
-            qualified_date:
-              body.outcome === "accepted" ? new Date() : undefined,
+            converted_at: body.outcome === "accepted" ? new Date() : undefined,
           },
         });
       }
