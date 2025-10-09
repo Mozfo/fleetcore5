@@ -104,7 +104,7 @@ export default async function LeadDetailPage({
                   Company
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {lead.company_name}
+                  {lead.demo_company_name || "-"}
                 </dd>
               </div>
               <div>
@@ -120,7 +120,7 @@ export default async function LeadDetailPage({
                   Fleet Size
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {lead.company_size}
+                  {lead.fleet_size || "-"}
                 </dd>
               </div>
               <div>

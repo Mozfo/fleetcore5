@@ -16,17 +16,11 @@ async function main() {
     create: {
       id: "550e8400-e29b-41d4-a716-446655440001",
       name: "Dubai Fleet Operations",
-      subdomain: "dubai-fleet",
       country_code: "AE",
-      currency: "AED",
+      default_currency: "AED",
       vat_rate: 5.0,
       timezone: "Asia/Dubai",
-      status: "active",
       clerk_organization_id: null,
-      metadata: {
-        city: "Dubai",
-        fleet_size: 50,
-      },
     },
   });
 
@@ -36,17 +30,11 @@ async function main() {
     create: {
       id: "550e8400-e29b-41d4-a716-446655440002",
       name: "Paris VTC Services",
-      subdomain: "paris-vtc",
       country_code: "FR",
-      currency: "EUR",
+      default_currency: "EUR",
       vat_rate: 20.0,
       timezone: "Europe/Paris",
-      status: "active",
       clerk_organization_id: null,
-      metadata: {
-        city: "Paris",
-        fleet_size: 30,
-      },
     },
   });
 
@@ -67,9 +55,9 @@ async function main() {
       email: "admin@dubaifleet.ae",
       first_name: "Ahmed",
       last_name: "Al Maktoum",
+      role: "admin",
       status: "active",
       metadata: {
-        role: "admin",
         department: "operations",
       },
     },
@@ -85,9 +73,9 @@ async function main() {
       email: "admin@parisvtc.fr",
       first_name: "Marie",
       last_name: "Dubois",
+      role: "admin",
       status: "active",
       metadata: {
-        role: "admin",
         department: "operations",
       },
     },
@@ -98,9 +86,9 @@ async function main() {
   );
 
   // ===================================
-  // CRM_LEADS - Demo Requests
+  // CRM_LEADS - FleetCore Internal Leads (NO tenant_id)
   // ===================================
-  console.log("📋 Creating demo leads...");
+  console.log("📋 Creating CRM leads...");
 
   const leads = [
     {
@@ -109,11 +97,18 @@ async function main() {
       email: "hassan.abdullah@emiratesfleet.ae",
       phone: "+971501234567",
       demo_company_name: "Emirates Fleet Services",
-      fleet_size: "20-50",
       country_code: "AE",
-      status: "pending",
+      fleet_size: "20-50",
+      current_software: "Excel",
       message:
         "Interested in fleet management solution for our Dubai operations",
+      status: "new",
+      utm_source: "website",
+      utm_medium: "organic",
+      metadata: {
+        industry: "transportation",
+        employees: 150,
+      },
     },
     {
       id: "770e8400-e29b-41d4-a716-446655440002",
@@ -121,10 +116,20 @@ async function main() {
       email: "jp.martin@francevtc.fr",
       phone: "+33612345678",
       demo_company_name: "France VTC Premium",
-      fleet_size: "10-20",
       country_code: "FR",
-      status: "contacted",
+      fleet_size: "10-20",
+      current_software: "Custom Solution",
       message: "Looking for VTC management platform with driver payroll",
+      status: "qualified",
+      qualification_score: 75,
+      qualification_notes: "Strong interest, budget confirmed, decision maker",
+      utm_source: "google",
+      utm_medium: "cpc",
+      utm_campaign: "vtc-france-2025",
+      metadata: {
+        industry: "vtc",
+        employees: 50,
+      },
     },
     {
       id: "770e8400-e29b-41d4-a716-446655440003",
@@ -132,11 +137,22 @@ async function main() {
       email: "fatima@abudhabirides.ae",
       phone: "+971509876543",
       demo_company_name: "Abu Dhabi Luxury Rides",
-      fleet_size: "50-100",
       country_code: "AE",
-      status: "qualified",
+      fleet_size: "50-100",
+      current_software: "Outdated System",
       message: "Enterprise fleet solution needed for 80 vehicles",
+      status: "qualified",
+      qualification_score: 90,
+      qualification_notes:
+        "Ready to sign, enterprise deal, needs multi-tenant support",
       qualified_date: new Date("2025-10-05"),
+      utm_source: "referral",
+      utm_medium: "partner",
+      metadata: {
+        industry: "luxury-transport",
+        employees: 200,
+        urgency: "high",
+      },
     },
   ];
 
@@ -148,7 +164,7 @@ async function main() {
     });
   }
 
-  console.log(`✅ Created ${leads.length} demo leads`);
+  console.log(`✅ Created ${leads.length} CRM leads`);
 
   console.log("\n🎉 Phase 1 seed completed successfully!");
   console.log("📊 Summary:");

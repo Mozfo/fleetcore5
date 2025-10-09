@@ -36,7 +36,7 @@ export default async function LeadsPage({
     where.OR = [
       { full_name: { contains: search, mode: "insensitive" } },
       { email: { contains: search, mode: "insensitive" } },
-      { company_name: { contains: search, mode: "insensitive" } },
+      { demo_company_name: { contains: search, mode: "insensitive" } },
     ];
   }
 
@@ -58,14 +58,13 @@ export default async function LeadsPage({
   // Transform groupBy results into stats object
   const stats = {
     total,
-    pending: statusGroups.find((g) => g.status === "pending")?._count._all || 0,
-    contacted:
-      statusGroups.find((g) => g.status === "contacted")?._count._all || 0,
+    pending: statusGroups.find((g) => g.status === "new")?._count._all || 0,
+    contacted: 0,
     qualified:
       statusGroups.find((g) => g.status === "qualified")?._count._all || 0,
     accepted:
-      statusGroups.find((g) => g.status === "accepted")?._count._all || 0,
-    refused: statusGroups.find((g) => g.status === "refused")?._count._all || 0,
+      statusGroups.find((g) => g.status === "converted")?._count._all || 0,
+    refused: statusGroups.find((g) => g.status === "lost")?._count._all || 0,
   };
 
   return (

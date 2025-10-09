@@ -11,11 +11,11 @@ type Lead = {
   id: string;
   full_name: string;
   email: string;
-  company_name: string | null;
-  company_size: string | null;
-  country_code: string;
-  status: string | null;
-  created_at: Date | null;
+  demo_company_name: string | null;
+  fleet_size: string | null;
+  country_code: string | null;
+  status: string;
+  created_at: Date;
 };
 
 interface LeadsListProps {
@@ -167,13 +167,17 @@ export default function LeadsList({ leads }: LeadsListProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
-                      {lead.company_name}
+                      {lead.demo_company_name || "-"}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
-                      {lead.country_code === "AE" ? "🇦🇪 UAE" : "🇫🇷 France"}
+                      {lead.country_code === "AE"
+                        ? "🇦🇪 UAE"
+                        : lead.country_code === "FR"
+                          ? "🇫🇷 France"
+                          : lead.country_code || "-"}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
-                      {lead.company_size}
+                      {lead.fleet_size || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(lead.status)}

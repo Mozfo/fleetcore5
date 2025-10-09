@@ -22,9 +22,6 @@ model adm_tenants {
   deleted_at            DateTime?     @db.Timestamptz(6)
 
   members               adm_members[]
-  leads                 crm_leads[]
-  opportunities         crm_opportunities[]
-  contracts             crm_contracts[]
   support_tickets       sup_tickets[]
   customer_feedback     sup_customer_feedback[]
   roles                 adm_roles[]
@@ -242,17 +239,6 @@ model adm_members {
   reconciliations_updated         rev_reconciliations[]          @relation("rev_reconciliation_updated_by")
   reconciliations_deleted         rev_reconciliations[]          @relation("rev_reconciliation_deleted_by")
 
-  // CRM opportunities relations
-  opportunities_assigned          crm_opportunities[]            @relation("opportunity_assigned_to")
-  opportunities_created           crm_opportunities[]            @relation("opportunity_created_by")
-  opportunities_updated           crm_opportunities[]            @relation("opportunity_updated_by")
-  opportunities_deleted           crm_opportunities[]            @relation("opportunity_deleted_by")
-
-  // CRM contracts relations
-  contracts_created               crm_contracts[]                @relation("contract_created_by")
-  contracts_updated               crm_contracts[]                @relation("contract_updated_by")
-  contracts_deleted               crm_contracts[]                @relation("contract_deleted_by")
-
   // Support tickets relations
   tickets_created                 sup_tickets[]                  @relation("ticket_created_by")
   tickets_updated                 sup_tickets[]                  @relation("ticket_updated_by")
@@ -278,27 +264,50 @@ model adm_members {
   @@map("adm_members")
 }
 
-/// Table des prospects/leads
+/// Table interne FleetCore - prospects/leads (pas de tenant_id)
 model crm_leads {
-  id            String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  tenant_id     String    @db.Uuid
-  contact_name  String
-  contact_email String
-  contact_phone String?
-  company_name  String?
-  source        String?
-  status        String    @default("new")
-  notes         String?
-  created_at    DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  id                  String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  full_name           String
+  demo_company_name   String?
+  email               String
+  phone               String?
+  country_code        String?   @db.VarChar(2)
+  fleet_size          String?   @db.VarChar(50)
+  current_software    String?   @db.VarChar(255)
+  message             String?   @db.Text
+  status              String    @default("new") // Enum: new, contacted, qualified, disqualified, converted
+  assigned_to         String?   @db.Uuid
+  qualification_score Int?
+  qualification_notes String?   @db.Text
+  qualified_date      DateTime? @db.Timestamptz(6)
+  converted_date      DateTime? @db.Timestamptz(6)
+  utm_source          String?   @db.VarChar(255)
+  utm_medium          String?   @db.VarChar(255)
+  utm_campaign        String?   @db.VarChar(255)
+  metadata            Json      @default("{}") @db.JsonB
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  created_by          String?   @db.Uuid
+  updated_at          DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  updated_by          String?   @db.Uuid
+  deleted_at          DateTime? @db.Timestamptz(6)
+  deleted_by          String?   @db.Uuid
+  deletion_reason     String?
 
-  tenant        adm_tenants         @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  assigned_to_employee adm_provider_employees? @relation("lead_assigned_to", fields: [assigned_to], references: [id], onDelete: SetNull)
+  created_by_employee  adm_provider_employees? @relation("lead_created_by", fields: [created_by], references: [id], onDelete: SetNull)
+  updated_by_employee  adm_provider_employees? @relation("lead_updated_by", fields: [updated_by], references: [id], onDelete: SetNull)
+  deleted_by_employee  adm_provider_employees? @relation("lead_deleted_by", fields: [deleted_by], references: [id], onDelete: SetNull)
+
   opportunities crm_opportunities[]
+  contracts     crm_contracts[]
 
-  @@index([tenant_id])
-  @@index([contact_email])
+  @@unique([email, deleted_at])
+  @@index([assigned_to])
   @@index([status])
+  @@index([country_code])
   @@index([created_at(sort: Desc)])
+  @@index([deleted_at])
+  @@index([metadata], type: Gin)
 }
 
 /// Table des rôles
@@ -429,6 +438,23 @@ model adm_provider_employees {
   employees_created             adm_provider_employees[]      @relation("employee_created_by")
   employees_updated             adm_provider_employees[]      @relation("employee_updated_by")
   employees_deleted             adm_provider_employees[]      @relation("employee_deleted_by")
+
+  // CRM leads relations
+  leads_assigned                crm_leads[]                   @relation("lead_assigned_to")
+  leads_created                 crm_leads[]                   @relation("lead_created_by")
+  leads_updated                 crm_leads[]                   @relation("lead_updated_by")
+  leads_deleted                 crm_leads[]                   @relation("lead_deleted_by")
+
+  // CRM opportunities relations
+  opportunities_assigned        crm_opportunities[]           @relation("opportunity_assigned_to")
+  opportunities_created         crm_opportunities[]           @relation("opportunity_created_by")
+  opportunities_updated         crm_opportunities[]           @relation("opportunity_updated_by")
+  opportunities_deleted         crm_opportunities[]           @relation("opportunity_deleted_by")
+
+  // CRM contracts relations
+  contracts_created             crm_contracts[]               @relation("contract_created_by")
+  contracts_updated             crm_contracts[]               @relation("contract_updated_by")
+  contracts_deleted             crm_contracts[]               @relation("contract_deleted_by")
 
   @@index([deleted_at])
   @@index([created_by])
@@ -1979,14 +2005,15 @@ model bil_payment_methods {
 }
 
 /// Table des opportunités commerciales CRM
+/// Table interne FleetCore - pipeline de ventes (pas de tenant_id)
 model crm_opportunities {
   id                 String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  tenant_id          String    @db.Uuid
   lead_id            String    @db.Uuid
-  opportunity_stage  String    @default("prospect")
+  stage              String    @default("prospect") // Enum: prospect, proposal, negotiation, closed_won, closed_lost
   expected_value     Decimal?  @db.Decimal(18, 2)
   close_date         DateTime? @db.Date
   assigned_to        String?   @db.Uuid
+  probability        Int?
   metadata           Json      @default("{}") @db.JsonB
   created_at         DateTime  @default(now()) @db.Timestamptz(6)
   created_by         String?   @db.Uuid
@@ -1996,17 +2023,15 @@ model crm_opportunities {
   deleted_by         String?   @db.Uuid
   deletion_reason    String?
 
-  tenant              adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  lead                crm_leads    @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assigned_to_member  adm_members? @relation("opportunity_assigned_to", fields: [assigned_to], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  created_by_member   adm_members? @relation("opportunity_created_by", fields: [created_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  updated_by_member   adm_members? @relation("opportunity_updated_by", fields: [updated_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  deleted_by_member   adm_members? @relation("opportunity_deleted_by", fields: [deleted_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  lead                     crm_leads               @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assigned_to_employee     adm_provider_employees? @relation("opportunity_assigned_to", fields: [assigned_to], references: [id], onDelete: SetNull)
+  created_by_employee      adm_provider_employees? @relation("opportunity_created_by", fields: [created_by], references: [id], onDelete: SetNull)
+  updated_by_employee      adm_provider_employees? @relation("opportunity_updated_by", fields: [updated_by], references: [id], onDelete: SetNull)
+  deleted_by_employee      adm_provider_employees? @relation("opportunity_deleted_by", fields: [deleted_by], references: [id], onDelete: SetNull)
+  contracts                crm_contracts[]
 
-  @@unique([tenant_id, lead_id, deleted_at], map: "crm_opportunities_tenant_id_lead_id_key")
-  @@index([tenant_id])
   @@index([lead_id])
-  @@index([opportunity_stage])
+  @@index([stage])
   @@index([close_date])
   @@index([assigned_to])
   @@index([deleted_at])
@@ -2016,18 +2041,18 @@ model crm_opportunities {
   @@map("crm_opportunities")
 }
 
-/// Table des contrats clients
+/// Table interne FleetCore - contrats signés (pas de tenant_id)
 model crm_contracts {
   id                 String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  tenant_id          String    @db.Uuid
-  client_id          String    @db.Uuid
-  contract_reference String
+  lead_id            String?   @db.Uuid
+  opportunity_id     String?   @db.Uuid
+  contract_reference String    @db.VarChar(100)
   contract_date      DateTime  @db.Date
   effective_date     DateTime  @db.Date
   expiry_date        DateTime? @db.Date
   total_value        Decimal   @db.Decimal(18, 2)
-  currency           String    @db.VarChar(3)
-  status             String    @default("active")
+  currency           String    @default("EUR") @db.Char(3)
+  status             String    @default("draft") // Enum: draft, pending_signature, active, suspended, expired, terminated
   metadata           Json      @default("{}") @db.JsonB
   created_at         DateTime  @default(now()) @db.Timestamptz(6)
   created_by         String?   @db.Uuid
@@ -2037,18 +2062,19 @@ model crm_contracts {
   deleted_by         String?   @db.Uuid
   deletion_reason    String?
 
-  tenant            adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  created_by_member adm_members? @relation("contract_created_by", fields: [created_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  updated_by_member adm_members? @relation("contract_updated_by", fields: [updated_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  deleted_by_member adm_members? @relation("contract_deleted_by", fields: [deleted_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  lead                crm_leads?              @relation(fields: [lead_id], references: [id], onDelete: SetNull)
+  opportunity         crm_opportunities?      @relation(fields: [opportunity_id], references: [id], onDelete: SetNull)
+  created_by_employee adm_provider_employees? @relation("contract_created_by", fields: [created_by], references: [id], onDelete: SetNull)
+  updated_by_employee adm_provider_employees? @relation("contract_updated_by", fields: [updated_by], references: [id], onDelete: SetNull)
+  deleted_by_employee adm_provider_employees? @relation("contract_deleted_by", fields: [deleted_by], references: [id], onDelete: SetNull)
 
-  @@unique([tenant_id, contract_reference, deleted_at], map: "crm_contracts_tenant_id_contract_reference_deleted_at_key")
-  @@index([tenant_id])
-  @@index([client_id])
+  @@unique([contract_reference, deleted_at])
+  @@index([lead_id])
+  @@index([opportunity_id])
   @@index([contract_date])
   @@index([effective_date])
   @@index([expiry_date])
-  @@index([status], map: "crm_contracts_status_active_idx")
+  @@index([status])
   @@index([deleted_at])
   @@index([created_by])
   @@index([updated_by])

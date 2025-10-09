@@ -25,20 +25,20 @@ export async function POST(
         throw new Error("Lead not found");
       }
 
-      if (lead.status === "accepted") {
+      if (lead.status === "converted") {
         throw new Error("Lead already converted");
       }
 
       // 2. Créer l'organisation dans Clerk
       const clerk = await clerkClient();
       const clerkOrg = await clerk.organizations.createOrganization({
-        name: lead.company_name || "Unnamed Company",
-        slug: (lead.company_name || "unnamed-company")
+        name: lead.demo_company_name || "Unnamed Company",
+        slug: (lead.demo_company_name || "unnamed-company")
           .toLowerCase()
           .replace(/\s+/g, "-"),
         publicMetadata: {
           country_code: lead.country_code,
-          company_size: lead.company_size,
+          fleet_size: lead.fleet_size,
           lead_id: leadId,
         },
       });
@@ -54,9 +54,9 @@ export async function POST(
       // 4. Créer l'organisation dans notre DB
       const organization = await tx.adm_tenants.create({
         data: {
-          name: lead.company_name,
-          subdomain: lead.company_name.toLowerCase().replace(/\s+/g, "-"),
-          country_code: lead.country_code,
+          name: lead.demo_company_name || "Unnamed Company",
+          country_code: lead.country_code || "AE",
+          default_currency: "AED",
           clerk_organization_id: clerkOrg.id,
         },
       });
@@ -65,8 +65,8 @@ export async function POST(
       await tx.crm_leads.update({
         where: { id: leadId },
         data: {
-          status: "accepted",
-          converted_at: new Date(),
+          status: "converted",
+          converted_date: new Date(),
           assigned_to: userId,
         },
       });
