@@ -147,10 +147,10 @@ export default async function LeadDetailPage({
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Qualified Date
+                  Converted Date
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {formatDate(lead.converted_at)}
+                  {formatDate(lead.converted_date)}
                 </dd>
               </div>
             </dl>

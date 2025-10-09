@@ -95,7 +95,7 @@ export default async function OrganizationsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {org.subdomain}
+                        {org.clerk_organization_id || "N/A"}
                       </div>
                     </td>
                     <td className="px-6 py-4">
