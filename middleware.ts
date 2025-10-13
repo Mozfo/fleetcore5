@@ -1,7 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getLocaleFromPathname, getLocalizedPath } from "@/lib/navigation";
+import { getLocaleFromPathname } from "@/lib/navigation";
+import { getTenantId } from "@/lib/auth/clerk-helpers";
 
 // Admin organization ID (FleetCore backoffice)
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
@@ -17,13 +18,96 @@ const isProtectedRoute = createRouteMatcher([
   "/api/v1(.*)",
 ]);
 
+// Rate limiting store (in-memory)
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 100; // 100 requests per minute
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
+
 // Locale handling with react-i18next
 export default clerkMiddleware(async (auth, req: NextRequest) => {
   // Basic locale handling for non-API routes
   const pathname = req.nextUrl.pathname;
 
-  // Skip API routes FIRST (before any auth checks)
+  // Handle API routes with authentication and rate limiting
   if (pathname.startsWith("/api")) {
+    // Allow webhooks without authentication
+    if (pathname.startsWith("/api/webhooks")) {
+      return NextResponse.next();
+    }
+
+    // Protected API routes (v1)
+    if (pathname.startsWith("/api/v1")) {
+      const { userId } = await auth();
+
+      // Require authentication for v1 API
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // Get tenant ID for this user
+      const tenantId = await getTenantId(userId);
+
+      if (!tenantId) {
+        return NextResponse.json(
+          { error: "No tenant found for user" },
+          { status: 403 }
+        );
+      }
+
+      // Check rate limit for this tenant
+      const now = Date.now();
+      const rateLimitKey = `tenant:${tenantId}`;
+      const rateLimit = rateLimitStore.get(rateLimitKey);
+
+      if (rateLimit) {
+        // If window has passed, reset
+        if (now > rateLimit.resetTime) {
+          rateLimitStore.set(rateLimitKey, {
+            count: 1,
+            resetTime: now + RATE_LIMIT_WINDOW,
+          });
+        } else if (rateLimit.count >= RATE_LIMIT) {
+          // Rate limit exceeded
+          return NextResponse.json(
+            { error: "Rate limit exceeded. Try again later." },
+            { status: 429 }
+          );
+        } else {
+          // Increment counter
+          rateLimit.count++;
+        }
+      } else {
+        // First request from this tenant
+        rateLimitStore.set(rateLimitKey, {
+          count: 1,
+          resetTime: now + RATE_LIMIT_WINDOW,
+        });
+      }
+
+      // Clean up old rate limit entries periodically
+      if (Math.random() < 0.01) {
+        // 1% chance to clean up
+        for (const [key, value] of rateLimitStore.entries()) {
+          if (now > value.resetTime + RATE_LIMIT_WINDOW) {
+            rateLimitStore.delete(key);
+          }
+        }
+      }
+
+      // Add headers for downstream services
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set("x-user-id", userId);
+      requestHeaders.set("x-tenant-id", tenantId);
+
+      // Continue with modified headers
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+    }
+
+    // Other API routes (demo-leads, etc.) - no auth required
     return NextResponse.next();
   }
 
@@ -64,7 +148,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   }
 
   // Extract locale from pathname using centralized helper
-  const locale = getLocaleFromPathname(pathname);
+  const _locale = getLocaleFromPathname(pathname);
 
   // Check if this is a protected route
   if (isProtectedRoute(req)) {
@@ -90,10 +174,10 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 export const config = {
   matcher: [
     // Match all pathnames except for:
-    // - /api routes
     // - /_next (Next.js internals)
     // - /_vercel (Vercel internals)
     // - Static files (e.g. /favicon.ico, /sitemap.xml, /robots.txt, etc.)
-    "/((?!api|_next|_vercel|.*\\..*).*)",
+    // Note: /api routes are NOW included for authentication and rate limiting
+    "/((?!_next|_vercel|.*\\..*).*)",
   ],
 };

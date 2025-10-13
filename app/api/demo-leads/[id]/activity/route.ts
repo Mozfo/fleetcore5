@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function POST(
   request: NextRequest,
@@ -37,7 +38,7 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error creating activity:", error);
+    logger.error({ error }, "Error creating activity");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

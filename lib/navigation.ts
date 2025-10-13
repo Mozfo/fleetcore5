@@ -30,6 +30,7 @@
 
 import { redirect as nextRedirect } from "next/navigation";
 import { type Locale, locales, defaultLocale } from "@/lib/i18n/locales";
+import { logger } from "@/lib/logger";
 
 /**
  * Constructs a localized path by prefixing with locale
@@ -105,8 +106,9 @@ export function getAbsoluteLocalizedPath(path: string, locale: Locale): string {
   if (!baseUrl) {
     if (process.env.NODE_ENV === "development") {
       const fallback = "http://localhost:3000";
-      console.warn(
-        `⚠️  NEXT_PUBLIC_APP_URL not set, using fallback: ${fallback}`
+      logger.warn(
+        { fallback },
+        "⚠️  NEXT_PUBLIC_APP_URL not set, using fallback"
       );
       return `${fallback}${getLocalizedPath(path, locale)}`;
     }

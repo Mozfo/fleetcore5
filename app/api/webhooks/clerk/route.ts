@@ -7,11 +7,15 @@ import {
   getIpFromRequest,
   getUserAgentFromRequest,
 } from "@/lib/audit";
+import { assertDefined } from "@/lib/core/errors";
 
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
-  const webhookSecret = process.env.CLERK_WEBHOOK_SECRET!;
+  const webhookSecret = assertDefined(
+    process.env.CLERK_WEBHOOK_SECRET,
+    "CLERK_WEBHOOK_SECRET is not configured"
+  );
 
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
@@ -25,11 +29,18 @@ export async function POST(req: Request) {
 
   try {
     evt = wh.verify(body, {
-      "svix-id": svix_id!,
-      "svix-timestamp": svix_timestamp!,
-      "svix-signature": svix_signature!,
+      "svix-id": assertDefined(svix_id, "Missing svix-id header"),
+      "svix-timestamp": assertDefined(
+        svix_timestamp,
+        "Missing svix-timestamp header"
+      ),
+      "svix-signature": assertDefined(
+        svix_signature,
+        "Missing svix-signature header"
+      ),
     }) as WebhookEvent;
-  } catch {
+  } catch (_error: unknown) {
+    // Error non utilisé mais typé explicitement (bonne pratique TypeScript)
     return new Response("Error verifying webhook", { status: 400 });
   }
 
@@ -64,7 +75,7 @@ export async function POST(req: Request) {
         userAgent,
         metadata: { source: "clerk_webhook", event_type: evt.type },
       });
-    } catch (error) {
+    } catch (error: unknown) {
       return new Response(
         `Error creating organization: ${error instanceof Error ? error.message : "Unknown"}`,
         { status: 500 }
@@ -105,7 +116,7 @@ export async function POST(req: Request) {
           metadata: { source: "clerk_webhook", event_type: evt.type },
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return new Response(
         `Error updating organization: ${error instanceof Error ? error.message : "Unknown"}`,
         { status: 500 }
@@ -144,7 +155,7 @@ export async function POST(req: Request) {
           metadata: { source: "clerk_webhook", event_type: evt.type },
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return new Response(
         `Error deleting organization: ${error instanceof Error ? error.message : "Unknown"}`,
         { status: 500 }
@@ -186,7 +197,7 @@ export async function POST(req: Request) {
           metadata: { source: "clerk_webhook", event_type: evt.type },
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return new Response(
         `Error creating member: ${error instanceof Error ? error.message : "Unknown"}`,
         { status: 500 }
@@ -233,7 +244,7 @@ export async function POST(req: Request) {
           });
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return new Response(
         `Error updating member: ${error instanceof Error ? error.message : "Unknown"}`,
         { status: 500 }
@@ -283,7 +294,7 @@ export async function POST(req: Request) {
           });
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return new Response(
         `Error deleting member: ${error instanceof Error ? error.message : "Unknown"}`,
         { status: 500 }

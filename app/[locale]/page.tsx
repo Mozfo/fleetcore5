@@ -13,36 +13,23 @@ import {
   Car,
   Users,
   Globe,
-  X,
   ChevronRight,
   ArrowRight,
   // Features
   CreditCard,
   FileSignature,
   Wrench,
-  MapPin,
   CheckCircle,
   AlertCircle,
   BarChart3,
   Calendar,
-  DollarSign,
   TrendingUp,
   // Platforms
-  Activity,
-  Database,
   Settings,
-  Wifi,
   // Status
   Circle,
-  CircleCheck,
-  Gauge,
   Zap,
-  // Process
-  Phone,
-  UserCheck,
-  FileCheck,
-  Briefcase,
-  Rocket,
+  // Process - all unused, removed
 } from "lucide-react";
 
 export default function FleetCoreUltimatePremium() {
@@ -51,9 +38,6 @@ export default function FleetCoreUltimatePremium() {
   const [dashboardView, setDashboardView] = useState<
     "operations" | "financial" | "maintenance"
   >("operations");
-  const [fleetType, setFleetType] = useState<"rental" | "ridehailing">(
-    "rental"
-  );
   const { theme, setTheme } = useTheme();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("rental");
@@ -74,7 +58,7 @@ export default function FleetCoreUltimatePremium() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMetrics((prev) => ({
+      setMetrics((_prev) => ({
         activeVehicles: 342 + Math.floor(Math.random() * 10 - 5),
         dailyRevenue: 48750 + Math.floor(Math.random() * 2000 - 1000),
         utilization: 78.5 + (Math.random() * 4 - 2),

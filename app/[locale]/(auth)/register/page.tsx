@@ -6,13 +6,12 @@ import * as z from "zod";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import {
   ArrowRight,
   Loader2,
-  CheckCircle2,
   Eye,
   EyeOff,
   Building2,

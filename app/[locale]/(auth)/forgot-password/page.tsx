@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
         identifier: data.email,
       });
       setIsSuccess(true);
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       // Security: always show success to prevent email enumeration
       // We don't use the error, just show success for security
       setIsSuccess(true);

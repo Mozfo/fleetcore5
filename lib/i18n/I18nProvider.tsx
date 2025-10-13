@@ -20,7 +20,8 @@ export function I18nProvider({ children, locale }: I18nProviderProps) {
       setIsLoading(false);
     };
 
-    initI18n();
+    // Use void to explicitly mark as fire-and-forget in useEffect
+    void initI18n();
   }, [locale]);
 
   if (isLoading) {

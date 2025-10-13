@@ -9,11 +9,11 @@ import {
   Building,
   Phone,
   Users,
-  MessageSquare,
   Send,
   CheckCircle,
   Car,
 } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface FormData {
   fullName: string;
@@ -94,7 +94,7 @@ export default function RequestDemoForm() {
 
       setIsSuccess(true);
     } catch (error) {
-      console.error("Error submitting form:", error);
+      logger.error({ error }, "Error submitting form");
       alert("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);

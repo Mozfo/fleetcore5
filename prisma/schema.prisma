@@ -154,6 +154,9 @@ model adm_members {
   rid_driver_documents_rid_driver_documents_deleted_byToadm_members                 rid_driver_documents[]         @relation("rid_driver_documents_deleted_byToadm_members")
   rid_driver_documents_rid_driver_documents_updated_byToadm_members                 rid_driver_documents[]         @relation("rid_driver_documents_updated_byToadm_members")
   rid_driver_documents_rid_driver_documents_verified_byToadm_members                rid_driver_documents[]         @relation("rid_driver_documents_verified_byToadm_members")
+  rid_driver_languages_rid_driver_languages_created_byToadm_members                 rid_driver_languages[]         @relation("rid_driver_languages_created_byToadm_members")
+  rid_driver_languages_rid_driver_languages_deleted_byToadm_members                 rid_driver_languages[]         @relation("rid_driver_languages_deleted_byToadm_members")
+  rid_driver_languages_rid_driver_languages_updated_byToadm_members                 rid_driver_languages[]         @relation("rid_driver_languages_updated_byToadm_members")
   rid_driver_performances_rid_driver_performances_created_byToadm_members           rid_driver_performances[]      @relation("rid_driver_performances_created_byToadm_members")
   rid_driver_performances_rid_driver_performances_deleted_byToadm_members           rid_driver_performances[]      @relation("rid_driver_performances_deleted_byToadm_members")
   rid_driver_performances_rid_driver_performances_updated_byToadm_members           rid_driver_performances[]      @relation("rid_driver_performances_updated_byToadm_members")
@@ -342,6 +345,7 @@ model adm_tenants {
   rid_driver_blacklists        rid_driver_blacklists[]
   rid_driver_cooperation_terms rid_driver_cooperation_terms[]
   rid_driver_documents         rid_driver_documents[]
+  rid_driver_languages         rid_driver_languages[]
   rid_driver_performances      rid_driver_performances[]
   rid_driver_requests          rid_driver_requests[]
   rid_driver_training          rid_driver_training[]
@@ -1603,6 +1607,14 @@ model rid_drivers {
   deleted_at                   DateTime?                      @db.Timestamptz(6)
   rating                       Decimal?                       @db.Decimal
   notes                        String?
+  date_of_birth                DateTime?                      @db.Date
+  gender                       String?
+  nationality                  String?                        @db.Char(2)
+  hire_date                    DateTime?                      @db.Date
+  employment_status            String                         @default("active")
+  cooperation_type             String?
+  emergency_contact_name       String?
+  emergency_contact_phone      String?
   fin_driver_payments          fin_driver_payments[]
   fin_toll_transactions        fin_toll_transactions[]
   fin_traffic_fines            fin_traffic_fines[]
@@ -1612,6 +1624,7 @@ model rid_drivers {
   rid_driver_blacklists        rid_driver_blacklists[]
   rid_driver_cooperation_terms rid_driver_cooperation_terms[]
   rid_driver_documents         rid_driver_documents[]
+  rid_driver_languages         rid_driver_languages[]
   rid_driver_performances      rid_driver_performances[]
   rid_driver_requests          rid_driver_requests[]
   rid_driver_training          rid_driver_training[]
@@ -1997,4 +2010,26 @@ model trp_trips {
   @@index([tenant_id])
   @@index([trip_date])
   @@index([vehicle_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rid_driver_languages {
+  id                                                       String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id                                                String       @db.Uuid
+  driver_id                                                String       @db.Uuid
+  language_code                                            String       @db.Char(2)
+  proficiency                                              String?
+  created_at                                               DateTime     @default(now()) @db.Timestamptz(6)
+  created_by                                               String?      @db.Uuid
+  updated_at                                               DateTime     @default(now()) @db.Timestamptz(6)
+  updated_by                                               String?      @db.Uuid
+  deleted_at                                               DateTime?    @db.Timestamptz(6)
+  deleted_by                                               String?      @db.Uuid
+  deletion_reason                                          String?
+  adm_members_rid_driver_languages_created_byToadm_members adm_members? @relation("rid_driver_languages_created_byToadm_members", fields: [created_by], references: [id])
+  adm_members_rid_driver_languages_deleted_byToadm_members adm_members? @relation("rid_driver_languages_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  rid_drivers                                              rid_drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  adm_tenants                                              adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  adm_members_rid_driver_languages_updated_byToadm_members adm_members? @relation("rid_driver_languages_updated_byToadm_members", fields: [updated_by], references: [id])
 }

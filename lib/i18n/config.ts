@@ -6,7 +6,8 @@ import { locales, defaultLocale } from "./locales";
 export { locales, defaultLocale, type Locale } from "./locales";
 
 // Import des fichiers de traduction de manière dynamique
-i18n
+// Use void to explicitly mark as fire-and-forget initialization
+void i18n
   .use(initReactI18next)
   .use(
     resourcesToBackend(

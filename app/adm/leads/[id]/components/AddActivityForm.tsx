@@ -45,7 +45,7 @@ export default function AddActivityForm({ leadId }: AddActivityFormProps) {
         });
         router.refresh();
       }
-    } catch (error) {
+    } catch (_error) {
       // Error handled
     } finally {
       setIsSubmitting(false);

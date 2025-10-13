@@ -1,1 +1,20 @@
+#!/bin/sh
+
+# Exit on any error
+set -e
+
+echo "🔍 Running pre-commit checks..."
+echo ""
+
+# 1. Lint and format staged files
+echo "📝 Checking staged files (ESLint + Prettier)..."
 pnpm lint-staged
+
+echo ""
+
+# 2. TypeScript type check (entire project)
+echo "🔎 Running TypeScript type check..."
+pnpm typecheck
+
+echo ""
+echo "✅ All checks passed! Proceeding with commit..."

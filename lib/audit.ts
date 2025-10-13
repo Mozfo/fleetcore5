@@ -1,5 +1,5 @@
-import { prisma } from "./prisma";
 import { Prisma } from "@prisma/client";
+import { logger } from "./logger";
 
 export type AuditAction =
   | "create"
@@ -19,6 +19,9 @@ export type AuditEntityType =
   | "invitation"
   | "driver"
   | "vehicle"
+  | "vehicle_assignment"
+  | "vehicle_maintenance"
+  | "vehicle_expense"
   | "revenue_import"
   | "payment"
   | "system_parameter"
@@ -47,13 +50,16 @@ export interface AuditLogOptions {
 export async function auditLog(options: AuditLogOptions): Promise<void> {
   try {
     // TODO: Phase 2 - Enable audit logging when adm_audit_logs table is created
-    console.log("[AUDIT]", {
-      tenant_id: options.tenantId,
-      action: options.action,
-      entity_type: options.entityType,
-      entity_id: options.entityId,
-      performed_by: options.performedBy,
-    });
+    logger.info(
+      {
+        tenant_id: options.tenantId,
+        action: options.action,
+        entity_type: options.entityType,
+        entity_id: options.entityId,
+        performed_by: options.performedBy,
+      },
+      "[AUDIT] Log entry"
+    );
 
     // await prisma.adm_audit_logs.create({
     //   data: {
@@ -74,9 +80,17 @@ export async function auditLog(options: AuditLogOptions): Promise<void> {
   } catch (error) {
     // Audit should never break main flow - silently fail
     if (process.env.NODE_ENV === "development") {
-      console.error("[AUDIT] Failed to log audit event:", error);
+      logger.error({ error }, "[AUDIT] Failed to log audit event");
     }
   }
+}
+
+/**
+ * Serialize any object for audit logging
+ * Converts Dates to ISO strings and removes undefined values
+ */
+export function serializeForAudit<T>(obj: T): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(obj)) as Prisma.InputJsonValue;
 }
 
 /**

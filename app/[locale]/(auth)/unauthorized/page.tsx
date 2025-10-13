@@ -8,7 +8,7 @@ import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import { Button } from "@/components/ui/button";
 
 export default function UnauthorizedPage() {
-  const { t } = useTranslation("auth");
+  useTranslation("auth"); // Load auth translations
   const { localizedPath } = useLocalizedPath();
 
   return (

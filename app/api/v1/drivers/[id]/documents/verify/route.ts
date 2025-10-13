@@ -1,0 +1,103 @@
+// Driver Document Verify API route: POST /api/v1/drivers/:id/documents/verify
+import { NextRequest, NextResponse } from "next/server";
+import { DriverService } from "@/lib/services/drivers/driver.service";
+import { ValidationError, NotFoundError } from "@/lib/core/errors";
+
+/**
+ * POST /api/v1/drivers/:id/documents/verify
+ * Mark a driver document as verified
+ *
+ * Updates both tables (transaction for atomicity):
+ * - rid_driver_documents: verified, verified_by, verified_at, updated_by, updated_at
+ * - doc_documents: verified, updated_at only (verified_by and verified_at don't exist in this table)
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // 1. Extract headers (injected by middleware)
+    const userId = request.headers.get("x-user-id");
+    const tenantId = request.headers.get("x-tenant-id");
+
+    if (!userId || !tenantId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Await params (Next.js 15 convention)
+    const { id } = await params;
+
+    // 3. Parse and validate request body
+    const body = await request.json();
+    const { document_id } = body;
+
+    if (!document_id || typeof document_id !== "string") {
+      return NextResponse.json(
+        { error: "document_id is required" },
+        { status: 400 }
+      );
+    }
+
+    // 4. Verify document belongs to driver
+    const driverService = new DriverService();
+    const existingDoc = await driverService[
+      "prisma"
+    ].rid_driver_documents.findFirst({
+      where: {
+        id: document_id,
+        driver_id: id,
+        tenant_id: tenantId,
+        deleted_at: null,
+      },
+    });
+
+    if (!existingDoc) {
+      return NextResponse.json(
+        { error: "Document not found for this driver" },
+        { status: 404 }
+      );
+    }
+
+    // 5. Update document verification status in transaction (2 tables)
+    await driverService["prisma"].$transaction(async (tx) => {
+      // Update rid_driver_documents (WITH verified_by, verified_at)
+      await tx.rid_driver_documents.update({
+        where: { id: document_id },
+        data: {
+          verified: true,
+          verified_by: userId, // Audit field (exists only in rid_driver_documents)
+          verified_at: new Date(), // Audit field (exists only in rid_driver_documents)
+          updated_by: userId,
+          updated_at: new Date(),
+        },
+      });
+
+      // Update doc_documents (WITHOUT verified_by, verified_at - these fields don't exist)
+      await tx.doc_documents.update({
+        where: { id: existingDoc.document_id },
+        data: {
+          verified: true,
+          updated_at: new Date(),
+          // NO verified_by, verified_at (don't exist in doc_documents table)
+        },
+      });
+    });
+
+    // 6. Return success message
+    return NextResponse.json(
+      { message: "Document verified successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

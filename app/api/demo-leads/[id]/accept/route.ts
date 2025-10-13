@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function POST(
   request: NextRequest,
@@ -93,7 +94,7 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error accepting lead:", error);
+    logger.error({ error }, "Error accepting lead");
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Internal server error",

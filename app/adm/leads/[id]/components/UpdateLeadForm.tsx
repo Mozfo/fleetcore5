@@ -33,7 +33,7 @@ export default function UpdateLeadForm({ lead }: UpdateLeadFormProps) {
       if (response.ok) {
         router.refresh();
       }
-    } catch (error) {
+    } catch (_error) {
       // Error handled
     } finally {
       setIsSubmitting(false);

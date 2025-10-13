@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // POST - Créer un nouveau lead
 export async function POST(req: Request) {
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, data: lead });
   } catch (error) {
-    console.error("Error creating lead:", error);
+    logger.error({ error }, "Error creating lead");
     return NextResponse.json(
       { error: "Failed to create lead" },
       { status: 500 }
@@ -38,7 +39,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: leads });
   } catch (error) {
-    console.error("Error fetching leads:", error);
+    logger.error({ error }, "Error fetching leads");
     return NextResponse.json(
       { error: "Failed to fetch leads" },
       { status: 500 }
