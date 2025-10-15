@@ -1,7 +1,7 @@
 // Driver History API route: GET /api/v1/drivers/:id/history
 import { NextRequest, NextResponse } from "next/server";
 import { DriverService } from "@/lib/services/drivers/driver.service";
-import { NotFoundError } from "@/lib/core/errors";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * GET /api/v1/drivers/:id/history
@@ -17,12 +17,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract headers (injected by middleware) - declared before try for error context
+  const tenantId = request.headers.get("x-tenant-id");
+  const userId = request.headers.get("x-user-id");
 
-    if (!userId || !tenantId) {
+  try {
+    // 2. Auth check
+    if (!tenantId || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -36,12 +37,11 @@ export async function GET(
     // 4. Return history object
     return NextResponse.json(history, { status: 200 });
   } catch (error) {
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
