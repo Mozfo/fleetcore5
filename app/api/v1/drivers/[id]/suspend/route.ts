@@ -1,9 +1,8 @@
 // Driver Suspend API route: POST /api/v1/drivers/:id/suspend
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { DriverService } from "@/lib/services/drivers/driver.service";
 import { driverSuspensionSchema } from "@/lib/validators/drivers.validators";
-import { ValidationError, NotFoundError } from "@/lib/core/errors";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * POST /api/v1/drivers/:id/suspend
@@ -18,12 +17,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract headers (injected by middleware) - declared before try for error context
+  const tenantId = request.headers.get("x-tenant-id");
+  const userId = request.headers.get("x-user-id");
 
-    if (!userId || !tenantId) {
+  try {
+    // 2. Auth check
+    if (!tenantId || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -49,22 +49,11 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
-    }
-    if (error instanceof ValidationError) {
-      // Example: Driver already suspended
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "POST",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
