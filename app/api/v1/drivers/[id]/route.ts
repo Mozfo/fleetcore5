@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { DriverService } from "@/lib/services/drivers/driver.service";
 import { updateDriverSchema } from "@/lib/validators/drivers.validators";
 import { ValidationError, NotFoundError } from "@/lib/core/errors";
-import { z } from "zod";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * GET /api/v1/drivers/:id
@@ -57,23 +57,24 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract headers (injected by middleware) - declared before try for error context
+  const tenantId = request.headers.get("x-tenant-id");
+  const userId = request.headers.get("x-user-id");
 
-    if (!userId || !tenantId) {
+  try {
+    // 2. Auth check
+    if (!tenantId || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Await params (Next.js 15 convention)
+    // 3. Await params (Next.js 15 convention)
     const { id } = await params;
 
-    // 3. Parse and validate request body
+    // 4. Parse and validate request body
     const body = await request.json();
     const validatedData = updateDriverSchema.parse(body);
 
-    // 4. Call DriverService to update driver
+    // 5. Call DriverService to update driver
     const driverService = new DriverService();
     const driver = await driverService.updateDriver(
       id,
@@ -82,25 +83,15 @@ export async function PATCH(
       tenantId
     );
 
-    // 5. Return updated driver
+    // 6. Return updated driver
     return NextResponse.json(driver, { status: 200 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "PATCH",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
 
