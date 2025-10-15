@@ -103,7 +103,7 @@ fetch("/api/v1/drivers/123")
 - ✅ Phase 3.3: Implemented `handleApiError()` with Prisma support
 - ✅ Phase 3.4 Batch 1: Migrated 10 routes (October 15, 2025)
 - ✅ Phase 3.5 Batch 2: Migrated 10 routes (October 15, 2025)
-- ⏳ Phase 3.6 Batch 3: Final ~8 routes (planned)
+- ✅ Phase 3.6 Batch 3: Migrated 8 routes (October 16, 2025)
 - ⏳ Phase 3.7-3.8: ADR documentation and frontend examples
 
 **Technical Details**:
@@ -144,10 +144,55 @@ fetch("/api/v1/drivers/123")
 
 - Batch 1: 10 routes ✅ (October 15, 2025)
 - Batch 2: 10 routes ✅ (October 15, 2025)
-- Batch 3: ~8 routes remaining ⏳ (planned)
-- **Total Progress**: 20/28 routes migrated (71%)
+- Batch 3: 8 routes ✅ (October 16, 2025)
+- **Total Progress**: 28/41 routes migrated (68%)
 
 **Impact**: Same as Batch 1 - frontend/mobile apps must handle envelope format for these routes.
+
+#### Error Response Format Standardization (Phase 3.6 Batch 3)
+
+**Date**: October 16, 2025
+**Affected Routes**: 8 additional API routes (see list below)
+
+**Migration Status**: ✅ Batch 3 Complete (Routes 21-28 of 41)
+
+**Continuing the Error Format Migration**: Batch 3 completes the migration of 8 more routes to standardized error handling, bringing total coverage to 68% (28/41 routes).
+
+**Migrated Routes (Batch 3)**:
+
+21. `DELETE /api/v1/vehicles/:id` - Vehicle deletion (soft delete)
+22. `POST /api/v1/directory/makes` - Car make creation
+23. `GET /api/v1/drivers` - Driver listing with pagination (CRITICAL - 11 params)
+24. `POST /api/v1/directory/models` - Car model creation
+25. `GET /api/v1/directory/regulations` - Country regulations directory
+26. `GET /api/v1/drivers/:id/statistics` - Driver statistics with Prisma aggregations
+27. `GET /api/v1/vehicles/insurance-expiring` - Vehicles with expiring insurance
+28. `GET /api/v1/vehicles/maintenance` - Vehicles requiring maintenance
+
+**Technical Details**:
+
+- Implementation: Same `handleApiError()` from Phase 3.3
+- Documentation: `docs/api/MIGRATION_BATCH_3.md`
+- Git Commits: 8 atomic commits (IDs: a2236d6 through 6024828)
+- LOC Reduction: -50 lines (-43.5% in error handling code)
+- Files 100% Migrated: 8 files (19 total across all batches)
+- TypeScript: 0 errors maintained (4 checkpoints passed)
+
+**Special Considerations**:
+
+- **Route #23 (GET /drivers)**: Critical route with 11 query parameters requiring careful migration
+- **Route #26 (GET /drivers/:id/statistics)**: Complex Prisma aggregations with direct database access
+- All 8 routes passed pre-commit hooks (ESLint, Prettier, TypeScript)
+
+**Migration Progress Update**:
+
+- Batch 1: 10 routes ✅ (October 15, 2025)
+- Batch 2: 10 routes ✅ (October 15, 2025)
+- Batch 3: 8 routes ✅ (October 16, 2025)
+- **Total Progress**: 28/41 routes migrated (68%)
+- Remaining: 13 routes (Batches 4-5 planned)
+
+**Impact**: Same as previous batches - frontend/mobile apps must handle envelope format for these routes.
 
 ---
 
