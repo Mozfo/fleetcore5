@@ -1,7 +1,8 @@
 // Driver Statistics API route: GET /api/v1/drivers/:id/statistics
 import { NextRequest, NextResponse } from "next/server";
 import { DriverService } from "@/lib/services/drivers/driver.service";
-import { NotFoundError, ValidationError } from "@/lib/core/errors";
+import { ValidationError } from "@/lib/core/errors";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * GET /api/v1/drivers/:id/statistics
@@ -20,19 +21,20 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract headers (injected by middleware) - declared before try for error context
+  const tenantId = request.headers.get("x-tenant-id");
+  const userId = request.headers.get("x-user-id");
 
-    if (!userId || !tenantId) {
+  try {
+    // 2. Auth check
+    if (!tenantId || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Await params (Next.js 15 convention)
+    // 3. Await params (Next.js 15 convention)
     const { id } = await params;
 
-    // 3. Verify driver exists
+    // 4. Verify driver exists
     const driverService = new DriverService();
     const driver = await driverService.getDriver(id, tenantId);
 
@@ -40,7 +42,7 @@ export async function GET(
       return NextResponse.json({ error: "Driver not found" }, { status: 404 });
     }
 
-    // 4. Parse query parameters for date range
+    // 5. Parse query parameters for date range
     const { searchParams } = new URL(request.url);
     const startDateParam = searchParams.get("start_date");
     const endDateParam = searchParams.get("end_date");
@@ -62,18 +64,18 @@ export async function GET(
       }
     }
 
-    // 5. Validate date range
+    // 6. Validate date range
     if (startDate && endDate && startDate > endDate) {
       throw new ValidationError("start_date cannot be after end_date");
     }
 
-    // 6. Build date filter
+    // 7. Build date filter
     const dateFilter = {
       ...(startDate && { gte: startDate }),
       ...(endDate && { lte: endDate }),
     };
 
-    // 7. Aggregate trips from trp_trips
+    // 8. Aggregate trips from trp_trips
     const tripAggregate = await driverService["prisma"].trp_trips.aggregate({
       where: {
         driver_id: id,
@@ -88,7 +90,7 @@ export async function GET(
       },
     });
 
-    // 8. Aggregate revenue from rev_driver_revenues
+    // 9. Aggregate revenue from rev_driver_revenues
     const revenueAggregate = await driverService[
       "prisma"
     ].rev_driver_revenues.aggregate({
@@ -104,7 +106,7 @@ export async function GET(
       },
     });
 
-    // 9. Aggregate performance from rid_driver_performances
+    // 10. Aggregate performance from rid_driver_performances
     const performanceAggregate = await driverService[
       "prisma"
     ].rid_driver_performances.aggregate({
@@ -126,7 +128,7 @@ export async function GET(
       },
     });
 
-    // 10. Calculate success rate (completed trips - incidents) / completed trips
+    // 11. Calculate success rate (completed trips - incidents) / completed trips
     const tripsCompleted = performanceAggregate._sum?.trips_completed || 0;
     const incidents = performanceAggregate._sum?.incidents_count || 0;
     const successRate =
@@ -136,7 +138,7 @@ export async function GET(
           )
         : 0;
 
-    // 11. Return aggregated statistics
+    // 12. Return aggregated statistics
     return NextResponse.json(
       {
         driver_id: id,
@@ -166,15 +168,11 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
