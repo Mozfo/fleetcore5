@@ -5,8 +5,6 @@ import {
   createDriverSchema,
   driverQuerySchema,
 } from "@/lib/validators/drivers.validators";
-import { ValidationError, NotFoundError } from "@/lib/core/errors";
-import { z } from "zod";
 import { handleApiError } from "@/lib/api/error-handler";
 
 /**
@@ -53,16 +51,17 @@ export async function POST(request: NextRequest) {
  * List drivers with pagination and filters
  */
 export async function GET(request: NextRequest) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract headers (injected by middleware) - declared before try for error context
+  const tenantId = request.headers.get("x-tenant-id");
+  const userId = request.headers.get("x-user-id");
 
-    if (!userId || !tenantId) {
+  try {
+    // 2. Auth check
+    if (!tenantId || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Parse query parameters
+    // 3. Parse query parameters
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
@@ -80,10 +79,10 @@ export async function GET(request: NextRequest) {
       expiring_documents: searchParams.get("expiring_documents") || undefined,
     };
 
-    // 3. Validate query parameters with Zod
+    // 4. Validate query parameters with Zod
     const validatedQuery = driverQuerySchema.parse(queryParams);
 
-    // 4. Extract filters and pagination options
+    // 5. Extract filters and pagination options
     const filters = {
       driver_status: validatedQuery.driver_status,
       cooperation_type: validatedQuery.cooperation_type,
@@ -101,7 +100,7 @@ export async function GET(request: NextRequest) {
       sortOrder: validatedQuery.sortOrder,
     };
 
-    // 5. Call DriverService to list drivers
+    // 6. Call DriverService to list drivers
     const driverService = new DriverService();
     const result = await driverService.listDrivers(
       filters,
@@ -109,24 +108,14 @@ export async function GET(request: NextRequest) {
       tenantId
     );
 
-    // 6. Return paginated result
+    // 7. Return paginated result
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
