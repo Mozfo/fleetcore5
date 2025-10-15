@@ -7,26 +7,28 @@ import {
 } from "@/lib/validators/drivers.validators";
 import { ValidationError, NotFoundError } from "@/lib/core/errors";
 import { z } from "zod";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * POST /api/v1/drivers
  * Create a new driver
  */
 export async function POST(request: NextRequest) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract headers (injected by middleware) - declared before try for error context
+  const tenantId = request.headers.get("x-tenant-id");
+  const userId = request.headers.get("x-user-id");
 
-    if (!userId || !tenantId) {
+  try {
+    // 2. Auth check
+    if (!tenantId || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Parse and validate request body
+    // 3. Parse and validate request body
     const body = await request.json();
     const validatedData = createDriverSchema.parse(body);
 
-    // 3. Call DriverService to create driver
+    // 4. Call DriverService to create driver
     const driverService = new DriverService();
     const driver = await driverService.createDriver(
       validatedData,
@@ -34,25 +36,15 @@ export async function POST(request: NextRequest) {
       tenantId
     );
 
-    // 4. Return created driver
+    // 5. Return created driver
     return NextResponse.json(driver, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "POST",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
 
