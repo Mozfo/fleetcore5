@@ -2,7 +2,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getLocaleFromPathname } from "@/lib/navigation";
-import { getTenantId } from "@/lib/auth/clerk-helpers";
 
 // Admin organization ID (FleetCore backoffice)
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
@@ -37,22 +36,23 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 
     // Protected API routes (v1)
     if (pathname.startsWith("/api/v1")) {
-      const { userId } = await auth();
+      const { userId, orgId } = await auth();
 
       // Require authentication for v1 API
       if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      // Get tenant ID for this user
-      const tenantId = await getTenantId(userId);
-
-      if (!tenantId) {
+      // Require organization membership (orgId = tenant_id in FleetCore)
+      if (!orgId) {
         return NextResponse.json(
-          { error: "No tenant found for user" },
+          { error: "No organization found for user" },
           { status: 403 }
         );
       }
+
+      // Use orgId as tenant ID (Clerk Organizations = FleetCore tenants)
+      const tenantId = orgId;
 
       // Check rate limit for this tenant
       const now = Date.now();
