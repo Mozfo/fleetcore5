@@ -2,8 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DirectoryService } from "@/lib/services/directory/directory.service";
 import { listRegulationsSchema } from "@/lib/validators/directory.validators";
-import { ValidationError } from "@/lib/core/errors";
-import { z } from "zod";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * GET /api/v1/directory/regulations
@@ -31,46 +30,40 @@ import { z } from "zod";
  * ]
  */
 export async function GET(request: NextRequest) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract headers (injected by middleware) - declared before try for error context
+  const tenantId = request.headers.get("x-tenant-id");
+  const userId = request.headers.get("x-user-id");
 
-    if (!userId || !tenantId) {
+  try {
+    // 2. Auth check
+    if (!tenantId || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Parse query parameters
+    // 3. Parse query parameters
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
       country_code: searchParams.get("country_code") || undefined,
     };
 
-    // 3. Validate query parameters with Zod
+    // 4. Validate query parameters with Zod
     const validatedQuery = listRegulationsSchema.parse(queryParams);
 
-    // 4. Call DirectoryService to list regulations
+    // 5. Call DirectoryService to list regulations
     const directoryService = new DirectoryService();
     const regulations = await directoryService.listRegulations(
       validatedQuery.country_code
     );
 
-    // 5. Return regulations array
+    // 6. Return regulations array
     return NextResponse.json(regulations, { status: 200 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
