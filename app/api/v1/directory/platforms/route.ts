@@ -8,6 +8,7 @@ import {
 import { ValidationError } from "@/lib/core/errors";
 import { hasPermission } from "@/lib/auth/permissions";
 import { z } from "zod";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * GET /api/v1/directory/platforms
@@ -62,19 +63,10 @@ export async function GET(request: NextRequest) {
     // 5. Return platforms array
     return NextResponse.json(platforms, { status: 200 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+    });
   }
 }
 
