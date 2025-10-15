@@ -2,8 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DriverService } from "@/lib/services/drivers/driver.service";
 import { driverPerformanceQuerySchema } from "@/lib/validators/drivers.validators";
-import { ValidationError, NotFoundError } from "@/lib/core/errors";
-import { z } from "zod";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * GET /api/v1/drivers/:id/performance
@@ -35,19 +34,20 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract headers (injected by middleware) - declared before try for error context
+  const tenantId = request.headers.get("x-tenant-id");
+  const userId = request.headers.get("x-user-id");
 
-    if (!userId || !tenantId) {
+  try {
+    // 2. Auth check
+    if (!tenantId || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Await params (Next.js 15 convention)
+    // 3. Await params (Next.js 15 convention)
     const { id: driverId } = await params;
 
-    // 3. Parse query parameters
+    // 4. Parse query parameters
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
@@ -56,17 +56,17 @@ export async function GET(
       platform: searchParams.get("platform") || undefined,
     };
 
-    // 4. Validate query parameters with Zod
+    // 5. Validate query parameters with Zod
     const validatedQuery = driverPerformanceQuerySchema.parse(queryParams);
 
-    // 5. Extract filters
+    // 6. Extract filters
     const filters = {
       from_date: validatedQuery.from_date,
       to_date: validatedQuery.to_date,
       platform: validatedQuery.platform,
     };
 
-    // 6. Call DriverService to get performance metrics
+    // 7. Call DriverService to get performance metrics
     const driverService = new DriverService();
     const result = await driverService.getDriverPerformance(
       driverId,
@@ -74,24 +74,14 @@ export async function GET(
       tenantId
     );
 
-    // 7. Return aggregated metrics
+    // 8. Return aggregated metrics
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
