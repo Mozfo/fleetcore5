@@ -1,9 +1,8 @@
 // Driver Documents API routes: POST /api/v1/drivers/:id/documents (create) and GET /api/v1/drivers/:id/documents (list)
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { DriverService } from "@/lib/services/drivers/driver.service";
 import { driverDocumentSchema } from "@/lib/validators/drivers.validators";
-import { ValidationError, NotFoundError } from "@/lib/core/errors";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * POST /api/v1/drivers/:id/documents
@@ -19,23 +18,24 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract auth headers (before try for error context)
+  const userId = request.headers.get("x-user-id");
+  const tenantId = request.headers.get("x-tenant-id");
 
+  try {
+    // 2. Auth check
     if (!userId || !tenantId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Await params (Next.js 15 convention)
+    // 3. Await params (Next.js 15 convention)
     const { id } = await params;
 
-    // 3. Parse and validate request body
+    // 4. Parse and validate request body
     const body = await request.json();
     const validatedData = driverDocumentSchema.parse(body);
 
-    // 4. Verify driver exists
+    // 5. Verify driver exists
     const driverService = new DriverService();
     const driver = await driverService.getDriver(id, tenantId);
 
@@ -43,7 +43,7 @@ export async function POST(
       return NextResponse.json({ error: "Driver not found" }, { status: 404 });
     }
 
-    // 5. Create document in transaction (2 steps for atomicity)
+    // 6. Create document in transaction (2 steps for atomicity)
     const result = await driverService["prisma"].$transaction(async (tx) => {
       // STEP 1: Create doc_documents (WITHOUT audit fields created_by, updated_by)
       const docDocument = await tx.doc_documents.create({
@@ -81,25 +81,15 @@ export async function POST(
       return driverDocument;
     });
 
-    // 6. Return created document
+    // 7. Return created document
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.issues },
-        { status: 400 }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "POST",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
 
@@ -111,19 +101,20 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract auth headers (before try for error context)
+  const userId = request.headers.get("x-user-id");
+  const tenantId = request.headers.get("x-tenant-id");
 
+  try {
+    // 2. Auth check
     if (!userId || !tenantId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Await params (Next.js 15 convention)
+    // 3. Await params (Next.js 15 convention)
     const { id } = await params;
 
-    // 3. Query driver documents with Prisma
+    // 4. Query driver documents with Prisma
     const driverService = new DriverService();
     const documents = await driverService[
       "prisma"
@@ -141,15 +132,14 @@ export async function GET(
       },
     });
 
-    // 4. Return documents list
+    // 5. Return documents list
     return NextResponse.json(documents, { status: 200 });
   } catch (error) {
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
