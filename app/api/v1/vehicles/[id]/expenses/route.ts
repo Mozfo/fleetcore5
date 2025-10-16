@@ -4,7 +4,7 @@ import {
   createExpenseSchema,
   expenseQuerySchema,
 } from "@/lib/validators/vehicles.validators";
-import { ZodError } from "zod";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * POST /api/v1/vehicles/:id/expenses
@@ -28,26 +28,24 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract auth headers
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract auth headers (before try for error context)
+  const userId = request.headers.get("x-user-id");
+  const tenantId = request.headers.get("x-tenant-id");
 
+  try {
+    // 2. Auth check
     if (!userId || !tenantId) {
-      return NextResponse.json(
-        { error: "Unauthorized", message: "Missing authentication headers" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Extract vehicle ID from params
+    // 3. Extract vehicle ID from params
     const { id: vehicleId } = await params;
 
-    // 3. Parse and validate request body
+    // 4. Parse and validate request body
     const body = await request.json();
     const validatedData = createExpenseSchema.parse(body);
 
-    // 4. Create expense via service
+    // 5. Create expense via service
     const vehicleService = new VehicleService();
     const expense = await vehicleService.createExpense(
       vehicleId,
@@ -56,48 +54,15 @@ export async function POST(
       tenantId
     );
 
-    // 5. Return created expense
+    // 6. Return created expense
     return NextResponse.json(expense, { status: 201 });
   } catch (error) {
-    // Handle validation errors
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        {
-          error: "Validation Error",
-          message: "Invalid expense data",
-          details: error.issues,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Handle known errors
-    if (error instanceof Error) {
-      const errorName = error.constructor.name;
-
-      if (errorName === "NotFoundError") {
-        return NextResponse.json(
-          { error: "Not Found", message: error.message },
-          { status: 404 }
-        );
-      }
-
-      if (errorName === "ValidationError") {
-        return NextResponse.json(
-          { error: "Validation Error", message: error.message },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Handle unexpected errors
-    return NextResponse.json(
-      {
-        error: "Internal Server Error",
-        message: "Failed to create expense record",
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "POST",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
 
@@ -125,22 +90,20 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract auth headers
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract auth headers (before try for error context)
+  const userId = request.headers.get("x-user-id");
+  const tenantId = request.headers.get("x-tenant-id");
 
+  try {
+    // 2. Auth check
     if (!userId || !tenantId) {
-      return NextResponse.json(
-        { error: "Unauthorized", message: "Missing authentication headers" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Extract vehicle ID from params
+    // 3. Extract vehicle ID from params
     const { id: vehicleId } = await params;
 
-    // 3. Parse and validate query parameters
+    // 4. Parse and validate query parameters
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
@@ -156,7 +119,7 @@ export async function GET(
 
     const validatedQuery = expenseQuerySchema.parse(queryParams);
 
-    // 4. Get expense records via service
+    // 5. Get expense records via service
     const vehicleService = new VehicleService();
     const result = await vehicleService.getVehicleExpenses(
       vehicleId,
@@ -164,47 +127,14 @@ export async function GET(
       validatedQuery
     );
 
-    // 5. Return paginated results
+    // 6. Return paginated results
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    // Handle validation errors
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        {
-          error: "Validation Error",
-          message: "Invalid query parameters",
-          details: error.issues,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Handle known errors
-    if (error instanceof Error) {
-      const errorName = error.constructor.name;
-
-      if (errorName === "NotFoundError") {
-        return NextResponse.json(
-          { error: "Not Found", message: error.message },
-          { status: 404 }
-        );
-      }
-
-      if (errorName === "ValidationError") {
-        return NextResponse.json(
-          { error: "Validation Error", message: error.message },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Handle unexpected errors
-    return NextResponse.json(
-      {
-        error: "Internal Server Error",
-        message: "Failed to fetch expense records",
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
