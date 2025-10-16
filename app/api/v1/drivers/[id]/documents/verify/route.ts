@@ -1,7 +1,7 @@
 // Driver Document Verify API route: POST /api/v1/drivers/:id/documents/verify
 import { NextRequest, NextResponse } from "next/server";
 import { DriverService } from "@/lib/services/drivers/driver.service";
-import { ValidationError, NotFoundError } from "@/lib/core/errors";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * POST /api/v1/drivers/:id/documents/verify
@@ -15,19 +15,20 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract auth headers (before try for error context)
+  const userId = request.headers.get("x-user-id");
+  const tenantId = request.headers.get("x-tenant-id");
 
+  try {
+    // 2. Auth check
     if (!userId || !tenantId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Await params (Next.js 15 convention)
+    // 3. Await params (Next.js 15 convention)
     const { id } = await params;
 
-    // 3. Parse and validate request body
+    // 4. Parse and validate request body
     const body = await request.json();
     const { document_id } = body;
 
@@ -38,7 +39,7 @@ export async function POST(
       );
     }
 
-    // 4. Verify document belongs to driver
+    // 5. Verify document belongs to driver
     const driverService = new DriverService();
     const existingDoc = await driverService[
       "prisma"
@@ -58,7 +59,7 @@ export async function POST(
       );
     }
 
-    // 5. Update document verification status in transaction (2 tables)
+    // 6. Update document verification status in transaction (2 tables)
     await driverService["prisma"].$transaction(async (tx) => {
       // Update rid_driver_documents (WITH verified_by, verified_at)
       await tx.rid_driver_documents.update({
@@ -83,21 +84,17 @@ export async function POST(
       });
     });
 
-    // 6. Return success message
+    // 7. Return success message
     return NextResponse.json(
       { message: "Document verified successfully" },
       { status: 200 }
     );
   } catch (error) {
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "POST",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
