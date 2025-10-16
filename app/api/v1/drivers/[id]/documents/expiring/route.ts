@@ -1,7 +1,7 @@
 // Driver Documents Expiring API route: GET /api/v1/drivers/:id/documents/expiring
 import { NextRequest, NextResponse } from "next/server";
 import { DriverService } from "@/lib/services/drivers/driver.service";
-import { NotFoundError } from "@/lib/core/errors";
+import { handleApiError } from "@/lib/api/error-handler";
 
 /**
  * GET /api/v1/drivers/:id/documents/expiring
@@ -14,34 +14,34 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract auth headers (before try for error context)
+  const userId = request.headers.get("x-user-id");
+  const tenantId = request.headers.get("x-tenant-id");
 
+  try {
+    // 2. Auth check
     if (!userId || !tenantId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Await params (Next.js 15 convention)
+    // 3. Await params (Next.js 15 convention)
     const { id } = await params;
 
-    // 3. Call DriverService to validate documents and get expiring_soon list
+    // 4. Call DriverService to validate documents and get expiring_soon list
     const driverService = new DriverService();
     const validation = await driverService.validateDriverDocuments(
       id,
       tenantId
     );
 
-    // 4. Return expiring documents list
+    // 5. Return expiring documents list
     return NextResponse.json(validation.expiring_soon, { status: 200 });
   } catch (error) {
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, {
+      path: request.nextUrl.pathname,
+      method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
+    });
   }
 }
