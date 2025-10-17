@@ -29,16 +29,17 @@ import { handleApiError } from "@/lib/api/error-handler";
  * ]
  */
 export async function GET(request: NextRequest) {
-  try {
-    // 1. Extract headers (injected by middleware)
-    const userId = request.headers.get("x-user-id");
-    const tenantId = request.headers.get("x-tenant-id");
+  // 1. Extract auth headers (before try for error context)
+  const userId = request.headers.get("x-user-id");
+  const tenantId = request.headers.get("x-tenant-id");
 
+  try {
+    // 2. Auth check
     if (!userId || !tenantId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Parse query parameters
+    // 3. Parse query parameters
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
@@ -47,10 +48,10 @@ export async function GET(request: NextRequest) {
       sortOrder: searchParams.get("sortOrder") || "asc",
     };
 
-    // 3. Validate query parameters with Zod
+    // 4. Validate query parameters with Zod
     const validatedQuery = listPlatformsSchema.parse(queryParams);
 
-    // 4. Call DirectoryService to list platforms
+    // 5. Call DirectoryService to list platforms
     const directoryService = new DirectoryService();
     const platforms = await directoryService.listPlatforms(
       validatedQuery.search,
@@ -58,12 +59,14 @@ export async function GET(request: NextRequest) {
       validatedQuery.sortOrder
     );
 
-    // 5. Return platforms array
+    // 6. Return platforms array
     return NextResponse.json(platforms, { status: 200 });
   } catch (error) {
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
+      tenantId: tenantId || undefined,
+      userId: userId || undefined,
     });
   }
 }
