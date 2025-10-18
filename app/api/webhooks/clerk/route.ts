@@ -8,6 +8,10 @@ import {
   getUserAgentFromRequest,
 } from "@/lib/audit";
 import { assertDefined } from "@/lib/core/errors";
+import {
+  setTenantIdInCache,
+  deleteTenantFromCache,
+} from "@/lib/cache/tenant-mapping";
 
 const prisma = new PrismaClient();
 
@@ -59,6 +63,9 @@ export async function POST(req: Request) {
         },
       });
 
+      // Warm cache proactively
+      await setTenantIdInCache(evt.data.id, organization.id);
+
       await auditLog({
         tenantId: organization.id,
         action: "create",
@@ -101,6 +108,9 @@ export async function POST(req: Request) {
           },
         });
 
+        // Warm cache proactively
+        await setTenantIdInCache(evt.data.id, org.id);
+
         await auditLog({
           tenantId: org.id,
           action: "update",
@@ -131,13 +141,16 @@ export async function POST(req: Request) {
         where: { clerk_organization_id: evt.data.id },
       });
 
-      if (org) {
+      if (org && evt.data.id) {
         await prisma.adm_tenants.update({
           where: { clerk_organization_id: evt.data.id },
           data: {
             deleted_at: new Date(),
           },
         });
+
+        // Invalidate cache immediately
+        await deleteTenantFromCache(evt.data.id);
 
         await auditLog({
           tenantId: org.id,

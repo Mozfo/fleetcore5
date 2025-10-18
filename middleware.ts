@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getLocaleFromPathname } from "@/lib/navigation";
 import { jwtDecode } from "jwt-decode";
+import { getTenantIdFromCache } from "@/lib/cache/tenant-mapping";
+import { logger } from "@/lib/logger";
 
 // Admin organization ID (FleetCore backoffice)
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
@@ -77,8 +79,63 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
         );
       }
 
-      // Use orgId as tenant ID (Clerk Organizations = FleetCore tenants)
-      const tenantId = orgId;
+      // Map Clerk Organization ID to Tenant UUID
+      // Flow:
+      // 1. Try KV cache (3-5ms, 99.9% hit rate)
+      // 2. Fallback to API route (50ms, 0.1% miss rate)
+      let tenantId = await getTenantIdFromCache(orgId);
+
+      if (!tenantId) {
+        // Cache MISS - fallback to internal API with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+
+        try {
+          const apiUrl =
+            process.env.NEXT_PUBLIC_APP_URL || `http://localhost:3000`;
+          const response = await fetch(
+            `${apiUrl}/api/internal/tenant-lookup?orgId=${orgId}`,
+            {
+              signal: controller.signal,
+              headers: {
+                "x-internal-auth": process.env.INTERNAL_API_KEY || "",
+              },
+            }
+          );
+
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const data = await response.json();
+            tenantId = data.tenantId;
+            logger.info(
+              { orgId, tenantId },
+              "Tenant lookup via fallback API (cache warmed)"
+            );
+          } else {
+            logger.error(
+              { orgId, status: response.status },
+              "Fallback API returned error"
+            );
+          }
+        } catch (error) {
+          clearTimeout(timeoutId);
+
+          if (error instanceof Error && error.name === "AbortError") {
+            logger.error({ orgId }, "Tenant lookup timeout (2s exceeded)");
+          } else {
+            logger.error({ orgId, error }, "Fallback tenant lookup failed");
+          }
+        }
+      }
+
+      if (!tenantId) {
+        // Both cache and fallback failed
+        return NextResponse.json(
+          { error: "Organization not found in database" },
+          { status: 403 }
+        );
+      }
 
       // Check rate limit for this tenant
       const now = Date.now();
