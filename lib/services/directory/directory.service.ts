@@ -1,6 +1,10 @@
 import { BaseService } from "@/lib/core/base.service";
 import { DirectoryRepository } from "@/lib/repositories/directory.repository";
-import { NotFoundError, ValidationError } from "@/lib/core/errors";
+import {
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+} from "@/lib/core/errors";
 import type {
   CarMake,
   CarModel,
@@ -111,7 +115,7 @@ export class DirectoryService extends BaseService {
       );
       if (exists) {
         const scope = tenantId ? "your organization" : "globally";
-        throw new ValidationError(
+        throw new ConflictError(
           `Car make "${data.name}" already exists ${scope}`
         );
       }
@@ -119,7 +123,7 @@ export class DirectoryService extends BaseService {
       // Create make
       return await this.directoryRepo.createMake(data, tenantId);
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof ConflictError) {
         throw error;
       }
       this.handleError(error, "DirectoryService.createMake");

@@ -33,7 +33,11 @@ import { randomUUID } from "crypto";
 import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger";
-import { ValidationError, NotFoundError } from "@/lib/core/errors";
+import {
+  ValidationError,
+  NotFoundError,
+  ConflictError,
+} from "@/lib/core/errors";
 
 // ============================================================================
 // TYPES & INTERFACES (Phase 3.2A)
@@ -523,6 +527,38 @@ function formatNotFoundError(
 }
 
 /**
+ * Format ConflictError into standardized ErrorResponse
+ *
+ * Transforms our custom ConflictError class (lib/core/errors.ts)
+ * into the standardized error format.
+ *
+ * @param error - ConflictError from lib/core/errors.ts
+ * @param context - Request context for logging and correlation
+ * @returns ErrorResponse with CONFLICT code
+ *
+ * @example
+ * const exists = await checkDuplicate(name);
+ * if (exists) throw new ConflictError("Car make already exists");
+ * // Caught and formatted:
+ * return formatConflictError(error, { path: '/api/directory/makes' });
+ */
+function formatConflictError(
+  error: ConflictError,
+  context?: Partial<ErrorContext>
+): ErrorResponse {
+  return {
+    error: {
+      code: ErrorCode.CONFLICT,
+      message: error.message, // e.g., "Car make already exists globally"
+      details: undefined,
+      path: context?.path,
+      timestamp: new Date().toISOString(),
+      request_id: context?.request_id ?? generateRequestId(),
+    },
+  };
+}
+
+/**
  * Format unknown/internal error into standardized ErrorResponse
  *
  * SECURITY CRITICAL: This function handles all unexpected errors (500s) and
@@ -886,6 +922,10 @@ export function handleApiError(
     // Pattern A & B: NotFoundError (resource not found)
     errorResponse = formatNotFoundError(error, enrichedContext);
     statusCode = 404;
+  } else if (error instanceof ConflictError) {
+    // Pattern A: ConflictError (duplicate/conflict)
+    errorResponse = formatConflictError(error, enrichedContext);
+    statusCode = 409;
   } else {
     // Pattern B fallback + Prisma errors + unknown errors
     // Phase 3.3: formatInternalError now handles Prisma errors and returns

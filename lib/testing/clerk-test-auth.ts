@@ -382,11 +382,13 @@ async function createTestSession(
  * @param userId - Clerk user ID
  * @param orgId - Organization ID (tenant)
  * @param email - User email
+ * @param orgName - Organization name (from TEST_ORG_NAME env var)
  */
 async function createTestMemberWithPermissions(
   userId: string,
   orgId: string,
-  email: string
+  email: string,
+  orgName: string
 ): Promise<void> {
   try {
     logger.info({ userId, orgId }, "Creating test member with permissions");
@@ -401,7 +403,7 @@ async function createTestMemberWithPermissions(
     if (!tenant) {
       tenant = await prisma.adm_tenants.create({
         data: {
-          name: "FleetCore Test Organization CI",
+          name: orgName,
           country_code: "FR",
           clerk_organization_id: orgId,
           default_currency: "EUR",
@@ -415,19 +417,30 @@ async function createTestMemberWithPermissions(
 
     const tenantId = tenant.id;
 
-    // 2. Create member in adm_members
-    const member = await prisma.adm_members.create({
-      data: {
+    // 2. Get or create member in adm_members (handles webhook race condition)
+    let member = await prisma.adm_members.findFirst({
+      where: {
         tenant_id: tenantId,
         clerk_user_id: userId,
-        email: email,
-        first_name: "Test",
-        last_name: "FleetCore",
-        status: "active",
+        deleted_at: null,
       },
     });
 
-    logger.info({ memberId: member.id }, "Test member created");
+    if (member) {
+      logger.info({ memberId: member.id }, "Reusing existing test member");
+    } else {
+      member = await prisma.adm_members.create({
+        data: {
+          tenant_id: tenantId,
+          clerk_user_id: userId,
+          email: email,
+          first_name: "Test",
+          last_name: "FleetCore",
+          status: "active",
+        },
+      });
+      logger.info({ memberId: member.id }, "Test member created");
+    }
 
     // 3. Create or get test admin role with full permissions
     let role = await prisma.adm_roles.findFirst({
@@ -457,25 +470,52 @@ async function createTestMemberWithPermissions(
       logger.info({ roleId: role.id }, "Reusing existing test admin role");
     }
 
-    // 4. Assign role to member
-    await prisma.adm_member_roles.create({
-      data: {
+    // 4. Get or create role assignment (idempotence)
+    const existingAssignment = await prisma.adm_member_roles.findFirst({
+      where: {
         member_id: member.id,
         role_id: role.id,
-        tenant_id: tenantId,
+        deleted_at: null,
       },
     });
 
-    logger.info(
-      { memberId: member.id, roleId: role.id },
-      "Role assigned to test member"
-    );
+    if (!existingAssignment) {
+      await prisma.adm_member_roles.create({
+        data: {
+          member_id: member.id,
+          role_id: role.id,
+          tenant_id: tenantId,
+        },
+      });
+      logger.info(
+        { memberId: member.id, roleId: role.id },
+        "Role assigned to test member"
+      );
+    } else {
+      logger.info(
+        { memberId: member.id, roleId: role.id },
+        "Role assignment already exists"
+      );
+    }
   } catch (error) {
     logger.error(
-      { error, userId, orgId },
+      {
+        error,
+        userId,
+        orgId,
+        errorCode:
+          error instanceof Error && "code" in error
+            ? (error as Record<string, unknown>).code
+            : undefined,
+        errorMeta:
+          error instanceof Error && "meta" in error
+            ? (error as Record<string, unknown>).meta
+            : undefined,
+      },
       "Failed to create test member with permissions"
     );
-    // Don't throw - permissions tests will fail but auth tests will still work
+    // Re-throw to fail fast (permissions required for most tests)
+    throw error;
   }
 }
 
@@ -623,7 +663,12 @@ export async function createClerkTestAuth(
     );
 
     // Step 5: Create member and role in database for permission checks
-    await createTestMemberWithPermissions(userId, orgId, email);
+    await createTestMemberWithPermissions(
+      userId,
+      orgId,
+      email,
+      fullConfig.orgName
+    );
 
     // Cache credentials
     credentialsCache = {

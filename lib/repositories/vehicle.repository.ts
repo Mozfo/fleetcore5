@@ -138,7 +138,6 @@ export class VehicleRepository extends BaseRepository<Vehicle> {
             flt_vehicle_maintenance: {
               some: {
                 status: "overdue",
-                deleted_at: null,
               },
             },
           },
