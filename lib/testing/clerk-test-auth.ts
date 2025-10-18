@@ -391,10 +391,34 @@ async function createTestMemberWithPermissions(
   try {
     logger.info({ userId, orgId }, "Creating test member with permissions");
 
-    // 1. Create member in adm_members
+    // 1. Get or create tenant (orgId is Clerk org ID, need to map to tenant UUID)
+    let tenant = await prisma.adm_tenants.findUnique({
+      where: {
+        clerk_organization_id: orgId,
+      },
+    });
+
+    if (!tenant) {
+      tenant = await prisma.adm_tenants.create({
+        data: {
+          name: "FleetCore Test Organization CI",
+          country_code: "FR",
+          clerk_organization_id: orgId,
+          default_currency: "EUR",
+          timezone: "Europe/Paris",
+        },
+      });
+      logger.info({ tenantId: tenant.id }, "Test tenant created");
+    } else {
+      logger.info({ tenantId: tenant.id }, "Reusing existing test tenant");
+    }
+
+    const tenantId = tenant.id;
+
+    // 2. Create member in adm_members
     const member = await prisma.adm_members.create({
       data: {
-        tenant_id: orgId,
+        tenant_id: tenantId,
         clerk_user_id: userId,
         email: email,
         first_name: "Test",
@@ -405,10 +429,10 @@ async function createTestMemberWithPermissions(
 
     logger.info({ memberId: member.id }, "Test member created");
 
-    // 2. Create or get test admin role with full permissions
+    // 3. Create or get test admin role with full permissions
     let role = await prisma.adm_roles.findFirst({
       where: {
-        tenant_id: orgId,
+        tenant_id: tenantId,
         name: "test_admin_role",
         deleted_at: null,
       },
@@ -417,7 +441,7 @@ async function createTestMemberWithPermissions(
     if (!role) {
       role = await prisma.adm_roles.create({
         data: {
-          tenant_id: orgId,
+          tenant_id: tenantId,
           name: "test_admin_role",
           permissions: {
             admin: true,
@@ -433,12 +457,12 @@ async function createTestMemberWithPermissions(
       logger.info({ roleId: role.id }, "Reusing existing test admin role");
     }
 
-    // 3. Assign role to member
+    // 4. Assign role to member
     await prisma.adm_member_roles.create({
       data: {
         member_id: member.id,
         role_id: role.id,
-        tenant_id: orgId,
+        tenant_id: tenantId,
       },
     });
 
@@ -665,13 +689,20 @@ export async function cleanupClerkTestAuth(auth: ClerkTestAuth): Promise<void> {
 
     // Delete test member (cascades to member_roles via ON DELETE CASCADE)
     try {
-      await prisma.adm_members.deleteMany({
-        where: {
-          clerk_user_id: auth.userId,
-          tenant_id: auth.orgId,
-        },
+      // Get tenant UUID from Clerk orgId
+      const tenant = await prisma.adm_tenants.findUnique({
+        where: { clerk_organization_id: auth.orgId },
       });
-      logger.info({ userId: auth.userId }, "Test member deleted");
+
+      if (tenant) {
+        await prisma.adm_members.deleteMany({
+          where: {
+            clerk_user_id: auth.userId,
+            tenant_id: tenant.id,
+          },
+        });
+        logger.info({ userId: auth.userId }, "Test member deleted");
+      }
     } catch (error) {
       logger.warn({ error }, "Failed to delete test member (may not exist)");
     }
