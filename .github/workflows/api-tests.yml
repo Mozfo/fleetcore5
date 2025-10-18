@@ -73,7 +73,7 @@ jobs:
           NODE_ENV: production
 
       - name: Start Next.js server
-        run: pnpm start &
+        run: pnpm start > server.log 2>&1 &
         env:
           NODE_ENV: production
 
@@ -91,4 +91,12 @@ jobs:
         with:
           name: batch3-test-results
           path: docs/test-results/batch3-test-results.json
+          retention-days: 30
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs
+          path: server.log
           retention-days: 30
