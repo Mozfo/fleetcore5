@@ -67,6 +67,19 @@ jobs:
       - name: ESLint check
         run: pnpm lint
 
+      - name: Build Next.js application
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Start Next.js server
+        run: pnpm start &
+        env:
+          NODE_ENV: production
+
+      - name: Wait for server to be ready
+        run: bash scripts/wait-for-server.sh
+
       - name: Run Batch 3 API Tests
         run: pnpm test:batch3:ci
         env:
