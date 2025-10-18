@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { prisma } from "./prisma";
 import { logger } from "./logger";
 
 export type AuditAction =
@@ -11,7 +12,9 @@ export type AuditAction =
   | "invite"
   | "accept_invite"
   | "export"
-  | "import";
+  | "import"
+  | "validation_failed" // Security: sortBy validation failures and other input validation attempts
+  | "ip_blocked"; // Security: IP whitelist access denied (system-level, tenantId: null)
 
 export type AuditEntityType =
   | "organization"
@@ -49,34 +52,55 @@ export interface AuditLogOptions {
  */
 export async function auditLog(options: AuditLogOptions): Promise<void> {
   try {
-    // TODO: Phase 2 - Enable audit logging when adm_audit_logs table is created
+    // Allow null tenantId for system-level security events (ip_blocked, etc.)
+    // Skip only if undefined (not provided at all)
+    if (options.tenantId === undefined) {
+      logger.warn(
+        {
+          action: options.action,
+          entityType: options.entityType,
+          entityId: options.entityId,
+        },
+        "[AUDIT] Skipping audit log - tenantId not provided"
+      );
+      return;
+    }
+
+    // Log to console in development
     logger.info(
       {
         tenant_id: options.tenantId,
         action: options.action,
-        entity_type: options.entityType,
+        entity: options.entityType,
         entity_id: options.entityId,
         performed_by: options.performedBy,
       },
       "[AUDIT] Log entry"
     );
 
-    // await prisma.adm_audit_logs.create({
-    //   data: {
-    //     tenant_id: options.tenantId,
-    //     action: options.action,
-    //     entity_type: options.entityType,
-    //     entity_id: options.entityId,
-    //     snapshot: options.snapshot ?? undefined,
-    //     changes: options.changes ?? undefined,
-    //     performed_by: options.performedBy ?? undefined,
-    //     performed_by_clerk_id: options.performedByClerkId ?? undefined,
-    //     ip_address: options.ipAddress ?? undefined,
-    //     user_agent: options.userAgent ?? undefined,
-    //     reason: options.reason ?? undefined,
-    //     metadata: options.metadata ?? undefined,
-    //   },
-    // });
+    // Insert audit log to database
+    // Note: tenant_id is NOT NULL in schema but we skip validation above for null
+    // This means system events (tenantId: null) will fail at DB level
+    // We need to use a system tenant ID instead
+    await prisma.adm_audit_logs.create({
+      data: {
+        tenant_id: options.tenantId ?? "00000000-0000-0000-0000-000000000000", // System tenant for null
+        action: options.action,
+        entity: options.entityType, // Corrected: entity (not entity_type)
+        entity_id: options.entityId,
+        member_id: options.performedBy ?? undefined, // Corrected: member_id (not performed_by)
+        ip_address: options.ipAddress ?? undefined,
+        user_agent: options.userAgent ?? undefined,
+        changes:
+          buildChangesJSON({
+            changes: options.changes,
+            snapshot: options.snapshot,
+            reason: options.reason,
+            metadata: options.metadata,
+            performedByClerkId: options.performedByClerkId,
+          }) ?? undefined,
+      },
+    });
   } catch (error) {
     // Audit should never break main flow - silently fail
     if (process.env.NODE_ENV === "development") {
@@ -112,6 +136,78 @@ export function captureChanges(
   }
 
   return changes;
+}
+
+/**
+ * Build JSONB structure for adm_audit_logs.changes column
+ *
+ * Combines domain changes with audit metadata using _audit_* prefix
+ * to avoid conflicts with business data.
+ *
+ * @param options - Subset of audit log options containing JSONB fields
+ * @returns JSONB object ready for Prisma insertion, or null if no data
+ *
+ * @example
+ * // Update with changes and reason
+ * buildChangesJSON({
+ *   changes: { name: { old: "John", new: "Jane" } },
+ *   reason: "User request"
+ * })
+ * // Returns: { name: { old: "John", new: "Jane" }, _audit_reason: "User request" }
+ *
+ * @example
+ * // Create with snapshot and metadata
+ * buildChangesJSON({
+ *   snapshot: { id: "123", name: "John" },
+ *   metadata: { source: "api" }
+ * })
+ * // Returns: { _audit_snapshot: {...}, _audit_metadata: {...} }
+ */
+export function buildChangesJSON(
+  options: Pick<
+    AuditLogOptions,
+    "changes" | "snapshot" | "reason" | "metadata" | "performedByClerkId"
+  >
+): Prisma.InputJsonValue | null {
+  const result: Record<string, unknown> = {};
+
+  // 1. Add domain changes first (if present)
+  if (
+    options.changes !== null &&
+    options.changes !== undefined &&
+    typeof options.changes === "object" &&
+    !Array.isArray(options.changes)
+  ) {
+    Object.assign(result, options.changes as Record<string, unknown>);
+  }
+
+  // 2. Add snapshot with _audit_ prefix
+  if (options.snapshot !== null && options.snapshot !== undefined) {
+    result._audit_snapshot = options.snapshot;
+  }
+
+  // 3. Add reason with _audit_ prefix
+  if (options.reason !== null && options.reason !== undefined) {
+    result._audit_reason = options.reason;
+  }
+
+  // 4. Add metadata with _audit_ prefix
+  if (options.metadata !== null && options.metadata !== undefined) {
+    result._audit_metadata = options.metadata;
+  }
+
+  // 5. Add performedByClerkId with _audit_ prefix
+  if (
+    options.performedByClerkId !== null &&
+    options.performedByClerkId !== undefined
+  ) {
+    result._audit_clerk_id = options.performedByClerkId;
+  }
+
+  // 6. Return null if no data (column is nullable)
+  return Object.keys(result).length > 0
+    ? (result as Prisma.InputJsonValue)
+    : null;
 }
 
 /**
