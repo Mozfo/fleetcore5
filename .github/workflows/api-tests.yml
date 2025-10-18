@@ -1,0 +1,81 @@
+name: API Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # Clerk Configuration (from secrets)
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+
+      # Database (from secret)
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Application URLs (public)
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+
+      # Test-specific configuration (public)
+      CLERK_JWT_TEMPLATE_NAME: "test-api"
+      CLERK_TEST_TOKEN_LIFETIME: "86400"
+
+      # Test user credentials (password from secret)
+      TEST_USER_EMAIL_PREFIX: "test-fleetcore-ci"
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_FIRST_NAME: "Test"
+      TEST_USER_LAST_NAME: "FleetCore"
+
+      # Test organization (public)
+      TEST_ORG_NAME: "FleetCore Test Organization CI"
+
+      # Cache configuration (public)
+      TEST_CREDENTIALS_CACHE_DURATION: "3600000"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: TypeScript check
+        run: pnpm typecheck
+
+      - name: ESLint check
+        run: pnpm lint
+
+      - name: Run Batch 3 API Tests
+        run: pnpm test:batch3
+        env:
+          NODE_ENV: test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch3-test-results
+          path: docs/test-results/batch3-test-results.json
+          retention-days: 30
