@@ -258,6 +258,30 @@ pnpm prisma db pull
 2. Relancer workflow
 3. Si récurrent: créer separate Clerk project pour CI
 
+### Erreur: "Ignoring not compatible lockfile" / "pnpm-lock.yaml is absent"
+
+**Cause:** Conflit de version pnpm entre workflow et package.json
+
+**Fix:**
+
+La version pnpm est auto-détectée depuis le champ `packageManager` dans package.json. Ne PAS spécifier de version explicite dans le workflow.
+
+**Configuration correcte:**
+
+```yaml
+- name: Setup pnpm
+  uses: pnpm/action-setup@v4
+  # Version auto-detected from packageManager field in package.json
+```
+
+**Vérifier package.json:**
+
+```json
+{
+  "packageManager": "pnpm@10.18.0"
+}
+```
+
 ---
 
 ## 📈 MÉTRIQUES & MONITORING
