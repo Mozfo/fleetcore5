@@ -23,8 +23,18 @@
  * ```
  */
 
-import { clerkClient } from "@clerk/nextjs/server";
+import { createClerkClient } from "@clerk/backend";
 import { logger } from "@/lib/logger";
+
+// Initialize Clerk client for standalone Node.js environment (GitHub Actions)
+// Uses CLERK_SECRET_KEY from environment variables
+const getClerkClient = () => {
+  const secretKey = process.env.CLERK_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error("CLERK_SECRET_KEY environment variable is required");
+  }
+  return createClerkClient({ secretKey });
+};
 
 /**
  * Clerk test authentication credentials
@@ -165,7 +175,7 @@ async function createTestUser(
 
     logger.info({ email }, "Creating test user in Clerk");
 
-    const client = await clerkClient();
+    const client = getClerkClient();
     const user = await client.users.createUser({
       emailAddress: [email],
       password: config.password,
@@ -201,7 +211,7 @@ async function createOrGetOrganization(
   try {
     logger.info({ userId, orgName }, "Creating/getting organization");
 
-    const client = await clerkClient();
+    const client = getClerkClient();
 
     // Try to find existing test organization first (to reuse if possible)
     const orgs = await client.organizations.getOrganizationList({
@@ -348,7 +358,7 @@ async function generateToken(
   try {
     logger.info({ sessionId, templateName }, "Generating JWT token");
 
-    const client = await clerkClient();
+    const client = getClerkClient();
     const tokenResponse = await client.sessions.getToken(
       sessionId,
       templateName
@@ -543,7 +553,7 @@ export async function cleanupClerkTestAuth(auth: ClerkTestAuth): Promise<void> {
       "Cleaning up test credentials"
     );
 
-    const client = await clerkClient();
+    const client = getClerkClient();
 
     // Delete test user (cascades to sessions and org memberships)
     await client.users.deleteUser(auth.userId);
