@@ -31,7 +31,8 @@
     "test:audit:e2e": "dotenv -e .env.local -- tsx scripts/test-audit-e2e.ts",
     "validate:sql": "dotenv -e .env.local -- tsx scripts/validate-sql.ts",
     "test:batch3": "dotenv -e .env.test -- tsx scripts/test-batch3-staging.ts",
-    "test:batch3:verbose": "dotenv -e .env.test -- tsx scripts/test-batch3-staging.ts --verbose"
+    "test:batch3:verbose": "dotenv -e .env.test -- tsx scripts/test-batch3-staging.ts --verbose",
+    "test:batch3:ci": "tsx scripts/test-batch3-staging.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -31,19 +31,13 @@ import { logger } from "@/lib/logger";
 const getClerkClient = () => {
   const secretKey = process.env.CLERK_SECRET_KEY;
 
-  // Debug: Log key presence and format (safe - no actual key value)
   if (!secretKey) {
     logger.error("CLERK_SECRET_KEY environment variable is not set");
     throw new Error("CLERK_SECRET_KEY environment variable is required");
   }
 
-  const keyPrefix = secretKey.substring(0, 8);
-  const keyLength = secretKey.length;
-  logger.info({ keyPrefix, keyLength }, "Clerk client initialization");
-
   if (!secretKey.startsWith("sk_test_") && !secretKey.startsWith("sk_live_")) {
     logger.error(
-      { keyPrefix },
       "CLERK_SECRET_KEY has invalid format (should start with sk_test_ or sk_live_)"
     );
     throw new Error("CLERK_SECRET_KEY has invalid format");

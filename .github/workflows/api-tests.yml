@@ -68,7 +68,7 @@ jobs:
         run: pnpm lint
 
       - name: Run Batch 3 API Tests
-        run: pnpm test:batch3
+        run: pnpm test:batch3:ci
         env:
           NODE_ENV: test
 
