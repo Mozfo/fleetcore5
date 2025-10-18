@@ -418,6 +418,8 @@ async function createTestMemberWithPermissions(
     const tenantId = tenant.id;
 
     // 2. Get or create member in adm_members (handles webhook race condition)
+    // CRITICAL: Webhook may create member between findFirst and create, causing P2002
+    // Solution: Try create first, catch P2002, then findFirst
     let member = await prisma.adm_members.findFirst({
       where: {
         tenant_id: tenantId,
@@ -429,17 +431,51 @@ async function createTestMemberWithPermissions(
     if (member) {
       logger.info({ memberId: member.id }, "Reusing existing test member");
     } else {
-      member = await prisma.adm_members.create({
-        data: {
-          tenant_id: tenantId,
-          clerk_user_id: userId,
-          email: email,
-          first_name: "Test",
-          last_name: "FleetCore",
-          status: "active",
-        },
-      });
-      logger.info({ memberId: member.id }, "Test member created");
+      try {
+        member = await prisma.adm_members.create({
+          data: {
+            tenant_id: tenantId,
+            clerk_user_id: userId,
+            email: email,
+            first_name: "Test",
+            last_name: "FleetCore",
+            status: "active",
+          },
+        });
+        logger.info({ memberId: member.id }, "Test member created");
+      } catch (error) {
+        // Handle race condition: webhook created member between findFirst and create
+        if (
+          error instanceof Error &&
+          "code" in error &&
+          error.code === "P2002"
+        ) {
+          logger.warn(
+            { tenantId, email },
+            "Member created by webhook during race condition, fetching existing member"
+          );
+          // Retry findFirst - member must exist now (created by webhook)
+          member = await prisma.adm_members.findFirst({
+            where: {
+              tenant_id: tenantId,
+              email: email,
+              deleted_at: null,
+            },
+          });
+          if (!member) {
+            throw new Error(
+              "Member should exist after P2002 but findFirst returned null"
+            );
+          }
+          logger.info(
+            { memberId: member.id },
+            "Found member created by webhook"
+          );
+        } else {
+          // Re-throw if not P2002
+          throw error;
+        }
+      }
     }
 
     // 3. Create or get test admin role with full permissions
@@ -470,7 +506,7 @@ async function createTestMemberWithPermissions(
       logger.info({ roleId: role.id }, "Reusing existing test admin role");
     }
 
-    // 4. Get or create role assignment (idempotence)
+    // 4. Get or create role assignment (handles race condition)
     const existingAssignment = await prisma.adm_member_roles.findFirst({
       where: {
         member_id: member.id,
@@ -480,17 +516,35 @@ async function createTestMemberWithPermissions(
     });
 
     if (!existingAssignment) {
-      await prisma.adm_member_roles.create({
-        data: {
-          member_id: member.id,
-          role_id: role.id,
-          tenant_id: tenantId,
-        },
-      });
-      logger.info(
-        { memberId: member.id, roleId: role.id },
-        "Role assigned to test member"
-      );
+      try {
+        await prisma.adm_member_roles.create({
+          data: {
+            member_id: member.id,
+            role_id: role.id,
+            tenant_id: tenantId,
+          },
+        });
+        logger.info(
+          { memberId: member.id, roleId: role.id },
+          "Role assigned to test member"
+        );
+      } catch (error) {
+        // Handle race condition: assignment created between findFirst and create
+        if (
+          error instanceof Error &&
+          "code" in error &&
+          error.code === "P2002"
+        ) {
+          logger.warn(
+            { memberId: member.id, roleId: role.id },
+            "Role assignment created during race condition, continuing"
+          );
+          // Assignment exists now, continue
+        } else {
+          // Re-throw if not P2002
+          throw error;
+        }
+      }
     } else {
       logger.info(
         { memberId: member.id, roleId: role.id },
