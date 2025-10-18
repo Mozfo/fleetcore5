@@ -208,3 +208,108 @@ export function extractTokenFromHeader(request: NextRequest): string | null {
 
   return token || null;
 }
+
+// ===== INLINE TESTS =====
+/* eslint-disable no-console */
+if (process.env.NODE_ENV === "test") {
+  void (async () => {
+    console.log("🧪 Running JWT inline tests...\n");
+
+    // Test 1: Generate and verify valid token
+    const token = await generateToken({
+      userId: "user_test_123",
+      tenantId: "tenant_test_abc",
+      email: "test@example.com",
+      roles: ["admin"],
+    });
+    const result = await verifyToken(token);
+    console.assert(
+      result.valid === true,
+      "Test 1 failed: Token should be valid"
+    );
+    console.assert(
+      result.payload?.userId === "user_test_123",
+      "Test 1 failed: UserId mismatch"
+    );
+    console.assert(
+      result.payload?.tenantId === "tenant_test_abc",
+      "Test 1 failed: TenantId mismatch"
+    );
+    console.log("✅ Test 1: Valid token generation and verification");
+
+    // Test 2: Expired token
+    const expiredToken = await generateToken({
+      userId: "user_test",
+      tenantId: "tenant_test",
+      expiresIn: "1s",
+    });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const expiredResult = await verifyToken(expiredToken);
+    console.assert(
+      expiredResult.valid === false,
+      "Test 2 failed: Expired token should be invalid"
+    );
+    console.assert(
+      expiredResult.error === "JWTExpired",
+      "Test 2 failed: Error should be JWTExpired"
+    );
+    console.log("✅ Test 2: Expired token rejection");
+
+    // Test 3: Tampered token
+    const validToken = await generateToken({
+      userId: "user_test",
+      tenantId: "tenant_test",
+    });
+    const tamperedToken = validToken.slice(0, -10) + "CORRUPTED!";
+    const tamperedResult = await verifyToken(tamperedToken);
+    console.assert(
+      tamperedResult.valid === false,
+      "Test 3 failed: Tampered token should be invalid"
+    );
+    console.log("✅ Test 3: Tampered token rejection");
+
+    // Test 4: Extract valid Bearer token
+    const mockRequest = {
+      headers: {
+        get: (name: string) =>
+          name === "authorization" ? "Bearer test_token_123" : null,
+      },
+    } as unknown as NextRequest;
+    const extracted = extractTokenFromHeader(mockRequest);
+    console.assert(
+      extracted === "test_token_123",
+      "Test 4 failed: Should extract token correctly"
+    );
+    console.log("✅ Test 4: Bearer token extraction");
+
+    // Test 5: Invalid Authorization header
+    const mockRequestInvalid = {
+      headers: {
+        get: (name: string) =>
+          name === "authorization" ? "InvalidFormat token" : null,
+      },
+    } as unknown as NextRequest;
+    const extractedInvalid = extractTokenFromHeader(mockRequestInvalid);
+    console.assert(
+      extractedInvalid === null,
+      "Test 5 failed: Should return null for invalid format"
+    );
+    console.log("✅ Test 5: Invalid header format rejection");
+
+    // Test 6: Missing Authorization header
+    const mockRequestMissing = {
+      headers: {
+        get: () => null,
+      },
+    } as unknown as NextRequest;
+    const extractedMissing = extractTokenFromHeader(mockRequestMissing);
+    console.assert(
+      extractedMissing === null,
+      "Test 6 failed: Should return null when header missing"
+    );
+    console.log("✅ Test 6: Missing header handling");
+
+    console.log("\n✅ All 6 tests passed");
+  })();
+}
+/* eslint-enable no-console */

@@ -6,6 +6,105 @@ import {
   dir_platforms,
   dir_vehicle_classes,
 } from "@prisma/client";
+import type { SortFieldWhitelist } from "@/lib/core/validation";
+
+/**
+ * Whitelist of sortable fields for dir_car_makes table
+ *
+ * ✅ All columns safe (reference table, no PII/soft-delete)
+ * - System IDs: id, tenant_id (multi-tenant support)
+ * - Business data: name (make name like "Toyota", "BMW")
+ * - Timestamps: created_at, updated_at
+ */
+export const CAR_MAKES_SORT_FIELDS = [
+  "id",
+  "tenant_id",
+  "name",
+  "created_at",
+  "updated_at",
+] as const satisfies SortFieldWhitelist;
+
+/**
+ * Whitelist of sortable fields for dir_car_models table
+ *
+ * ✅ All columns safe (reference table, no PII/soft-delete)
+ * - System IDs: id, tenant_id (multi-tenant support)
+ * - Relations: make_id, vehicle_class_id (FK)
+ * - Business data: name (model name like "Corolla", "X5")
+ * - Timestamps: created_at, updated_at
+ */
+export const CAR_MODELS_SORT_FIELDS = [
+  "id",
+  "tenant_id",
+  "make_id",
+  "name",
+  "vehicle_class_id",
+  "created_at",
+  "updated_at",
+] as const satisfies SortFieldWhitelist;
+
+/**
+ * Whitelist of sortable fields for dir_country_regulations table
+ *
+ * ✅ All columns safe (regulatory reference data)
+ * - Primary key: country_code (ISO 3166-1 alpha-2)
+ * - Regulatory constraints: vehicle_max_age, min_vehicle_class, requires_vtc_card
+ * - Pricing: min_fare_per_trip, min_fare_per_km, min_fare_per_hour, vat_rate
+ * - Localization: currency (ISO 4217), timezone (IANA)
+ * - Timestamps: created_at, updated_at
+ */
+export const COUNTRY_REGULATIONS_SORT_FIELDS = [
+  "country_code",
+  "currency",
+  "timezone",
+  "vehicle_max_age",
+  "min_vehicle_class",
+  "min_fare_per_trip",
+  "min_fare_per_km",
+  "min_fare_per_hour",
+  "vat_rate",
+  "requires_vtc_card",
+  "created_at",
+  "updated_at",
+] as const satisfies SortFieldWhitelist;
+
+/**
+ * Whitelist of sortable fields for dir_platforms table
+ *
+ * ✅ Included columns:
+ * - System ID: id
+ * - Business data: name (platform name like "Uber", "Bolt", "Careem")
+ * - Timestamps: created_at, updated_at
+ *
+ * ❌ Excluded columns:
+ * - api_config: JSONB containing API keys/secrets (SECURITY RISK)
+ */
+export const PLATFORMS_SORT_FIELDS = [
+  "id",
+  "name",
+  "created_at",
+  "updated_at",
+] as const satisfies SortFieldWhitelist;
+
+/**
+ * Whitelist of sortable fields for dir_vehicle_classes table
+ *
+ * ✅ All columns safe (regulatory reference data)
+ * - System ID: id
+ * - Localization: country_code (ISO 3166-1 alpha-2)
+ * - Business data: name (class name like "Economy", "Premium", "Luxury")
+ * - Metadata: description, max_age (vehicle age limit for this class)
+ * - Timestamps: created_at, updated_at
+ */
+export const VEHICLE_CLASSES_SORT_FIELDS = [
+  "id",
+  "country_code",
+  "name",
+  "description",
+  "max_age",
+  "created_at",
+  "updated_at",
+] as const satisfies SortFieldWhitelist;
 
 /**
  * Type aliases from Prisma

@@ -11,6 +11,37 @@ import {
   doc_documents,
 } from "@prisma/client";
 import type { PrismaTransaction } from "@/lib/core/types";
+import type { SortFieldWhitelist } from "@/lib/core/validation";
+
+/**
+ * Whitelist of sortable fields for rid_drivers table
+ *
+ * ✅ Included columns:
+ * - System IDs: id, tenant_id (isolation)
+ * - Business identifiers: first_name, last_name, email (non-sensitive)
+ * - Status fields: driver_status, employment_status (operational filtering)
+ * - Metrics: rating (performance), hire_date (HR)
+ * - Timestamps: created_at, updated_at (chronological sorting)
+ *
+ * ❌ Excluded columns (security reasons):
+ * - PII: license_number, professional_card_no, phone, date_of_birth
+ * - Personal data: gender, nationality, emergency_contact_*
+ * - Soft-delete: deleted_at (NEVER expose in sortBy)
+ * - Confidential: notes, cooperation_type, license dates
+ */
+export const DRIVER_SORT_FIELDS = [
+  "id",
+  "tenant_id",
+  "first_name",
+  "last_name",
+  "email",
+  "driver_status",
+  "employment_status",
+  "rating",
+  "hire_date",
+  "created_at",
+  "updated_at",
+] as const satisfies SortFieldWhitelist;
 
 /**
  * Driver type alias from Prisma generated types
@@ -43,6 +74,14 @@ export interface DriverWithRelations extends rid_drivers {
 export class DriverRepository extends BaseRepository<Driver> {
   constructor(prisma: PrismaClient) {
     super(prisma.rid_drivers, prisma);
+  }
+
+  /**
+   * Provide sortBy whitelist for driver queries
+   * @returns DRIVER_SORT_FIELDS whitelist (11 safe columns)
+   */
+  protected getSortWhitelist(): SortFieldWhitelist {
+    return DRIVER_SORT_FIELDS;
   }
 
   /**

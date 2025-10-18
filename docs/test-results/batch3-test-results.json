@@ -1,0 +1,512 @@
+{
+  "summary": {
+    "total": 16,
+    "passed": 8,
+    "failed": 8,
+    "passRate": "50.0"
+  },
+  "byRoute": {
+    "GET /api/v1/drivers?page=1&limit=10": {
+      "passed": 0,
+      "failed": 1,
+      "tests": [
+        {
+          "route": "GET /api/v1/drivers?page=1&limit=10",
+          "test": "Basic list",
+          "passed": false,
+          "statusCode": 500,
+          "duration": 3225,
+          "response": {
+            "error": {
+              "code": "INTERNAL_ERROR",
+              "message": "An unexpected error occurred",
+              "path": "/api/v1/drivers",
+              "timestamp": "2025-10-18T06:24:38.663Z",
+              "request_id": "6eea6c87-8b94-4c72-9e33-900af4f16aa6"
+            }
+          },
+          "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/drivers\",\n    \"timestamp\": \"2025-10-18T06:24:38.663Z\",\n    \"request_id\": \"6eea6c87-8b94-4c72-9e33-900af4f16aa6\"\n  }\n}"
+        }
+      ]
+    },
+    "GET /api/v1/drivers?page=1&limit=20&sortBy=created_at&sortOrder=desc&driver_status=active&cooperation_type=employee&rating_min=4.0&rating_max=5.0&search=test&has_active_assignment=true&expiring_documents=30": {
+      "passed": 0,
+      "failed": 1,
+      "tests": [
+        {
+          "route": "GET /api/v1/drivers?page=1&limit=20&sortBy=created_at&sortOrder=desc&driver_status=active&cooperation_type=employee&rating_min=4.0&rating_max=5.0&search=test&has_active_assignment=true&expiring_documents=30",
+          "test": "Complex query (11 params)",
+          "passed": false,
+          "statusCode": 500,
+          "duration": 918,
+          "response": {
+            "error": {
+              "code": "INTERNAL_ERROR",
+              "message": "An unexpected error occurred",
+              "path": "/api/v1/drivers",
+              "timestamp": "2025-10-18T06:24:39.582Z",
+              "request_id": "59d114df-e4f2-4ee1-bf7f-3b9880076141"
+            }
+          },
+          "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/drivers\",\n    \"timestamp\": \"2025-10-18T06:24:39.582Z\",\n    \"request_id\": \"59d114df-e4f2-4ee1-bf7f-3b9880076141\"\n  }\n}"
+        }
+      ]
+    },
+    "GET /api/v1/drivers?sortBy=invalid_field": {
+      "passed": 1,
+      "failed": 0,
+      "tests": [
+        {
+          "route": "GET /api/v1/drivers?sortBy=invalid_field",
+          "test": "Invalid sortBy",
+          "passed": true,
+          "statusCode": 400,
+          "duration": 358,
+          "response": {
+            "error": {
+              "code": "VALIDATION_ERROR",
+              "message": "Validation failed",
+              "details": [
+                {
+                  "code": "invalid_value",
+                  "values": [
+                    "created_at",
+                    "last_name",
+                    "email",
+                    "rating",
+                    "driver_status",
+                    "employment_status"
+                  ],
+                  "path": [
+                    "sortBy"
+                  ],
+                  "message": "Invalid option: expected one of \"created_at\"|\"last_name\"|\"email\"|\"rating\"|\"driver_status\"|\"employment_status\""
+                }
+              ],
+              "path": "/api/v1/drivers",
+              "timestamp": "2025-10-18T06:24:39.940Z",
+              "request_id": "fe248be8-8dcf-4955-a089-0c43c21dded9"
+            }
+          }
+        }
+      ]
+    },
+    "GET /api/v1/drivers": {
+      "passed": 1,
+      "failed": 0,
+      "tests": [
+        {
+          "route": "GET /api/v1/drivers",
+          "test": "Unauthorized",
+          "passed": true,
+          "statusCode": 401,
+          "duration": 114,
+          "response": {
+            "error": "Unauthorized"
+          }
+        }
+      ]
+    },
+    "POST /api/v1/directory/makes": {
+      "passed": 1,
+      "failed": 3,
+      "tests": [
+        {
+          "route": "POST /api/v1/directory/makes",
+          "test": "Create make",
+          "passed": false,
+          "statusCode": 403,
+          "duration": 1009,
+          "response": {
+            "error": "Forbidden: You do not have permission to manage directory"
+          },
+          "error": "{\n  \"error\": \"Forbidden: You do not have permission to manage directory\"\n}"
+        },
+        {
+          "route": "POST /api/v1/directory/makes",
+          "test": "Duplicate name",
+          "passed": false,
+          "statusCode": 403,
+          "duration": 729,
+          "response": {
+            "error": "Forbidden: You do not have permission to manage directory"
+          },
+          "error": "{\n  \"error\": \"Forbidden: You do not have permission to manage directory\"\n}"
+        },
+        {
+          "route": "POST /api/v1/directory/makes",
+          "test": "Invalid body",
+          "passed": false,
+          "statusCode": 403,
+          "duration": 727,
+          "response": {
+            "error": "Forbidden: You do not have permission to manage directory"
+          },
+          "error": "{\n  \"error\": \"Forbidden: You do not have permission to manage directory\"\n}"
+        },
+        {
+          "route": "POST /api/v1/directory/makes",
+          "test": "Unauthorized",
+          "passed": true,
+          "statusCode": 401,
+          "duration": 5,
+          "response": {
+            "error": "Unauthorized"
+          }
+        }
+      ]
+    },
+    "GET /api/v1/directory/regulations": {
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "route": "GET /api/v1/directory/regulations",
+          "test": "List all regulations",
+          "passed": true,
+          "statusCode": 200,
+          "duration": 1043,
+          "response": []
+        },
+        {
+          "route": "GET /api/v1/directory/regulations",
+          "test": "Unauthorized",
+          "passed": true,
+          "statusCode": 401,
+          "duration": 9,
+          "response": {
+            "error": "Unauthorized"
+          }
+        }
+      ]
+    },
+    "GET /api/v1/directory/regulations?country_code=FR": {
+      "passed": 1,
+      "failed": 0,
+      "tests": [
+        {
+          "route": "GET /api/v1/directory/regulations?country_code=FR",
+          "test": "Filter by country",
+          "passed": true,
+          "statusCode": 200,
+          "duration": 857,
+          "response": []
+        }
+      ]
+    },
+    "GET /api/v1/vehicles/insurance-expiring": {
+      "passed": 1,
+      "failed": 1,
+      "tests": [
+        {
+          "route": "GET /api/v1/vehicles/insurance-expiring",
+          "test": "Default daysAhead",
+          "passed": false,
+          "statusCode": 500,
+          "duration": 941,
+          "response": {
+            "error": {
+              "code": "INTERNAL_ERROR",
+              "message": "An unexpected error occurred",
+              "path": "/api/v1/vehicles/insurance-expiring",
+              "timestamp": "2025-10-18T06:24:45.405Z",
+              "request_id": "335a6dcc-0d6a-4307-bb59-bd4a3745ea81"
+            }
+          },
+          "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/vehicles/insurance-expiring\",\n    \"timestamp\": \"2025-10-18T06:24:45.405Z\",\n    \"request_id\": \"335a6dcc-0d6a-4307-bb59-bd4a3745ea81\"\n  }\n}"
+        },
+        {
+          "route": "GET /api/v1/vehicles/insurance-expiring",
+          "test": "Unauthorized",
+          "passed": true,
+          "statusCode": 401,
+          "duration": 118,
+          "response": {
+            "error": "Unauthorized"
+          }
+        }
+      ]
+    },
+    "GET /api/v1/vehicles/insurance-expiring?daysAhead=60": {
+      "passed": 0,
+      "failed": 1,
+      "tests": [
+        {
+          "route": "GET /api/v1/vehicles/insurance-expiring?daysAhead=60",
+          "test": "Custom daysAhead",
+          "passed": false,
+          "statusCode": 500,
+          "duration": 865,
+          "response": {
+            "error": {
+              "code": "INTERNAL_ERROR",
+              "message": "An unexpected error occurred",
+              "path": "/api/v1/vehicles/insurance-expiring",
+              "timestamp": "2025-10-18T06:24:46.271Z",
+              "request_id": "448bce5f-ad09-46cb-9c5a-4a2fc7f6e4c5"
+            }
+          },
+          "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/vehicles/insurance-expiring\",\n    \"timestamp\": \"2025-10-18T06:24:46.271Z\",\n    \"request_id\": \"448bce5f-ad09-46cb-9c5a-4a2fc7f6e4c5\"\n  }\n}"
+        }
+      ]
+    },
+    "GET /api/v1/vehicles/maintenance": {
+      "passed": 1,
+      "failed": 1,
+      "tests": [
+        {
+          "route": "GET /api/v1/vehicles/maintenance",
+          "test": "List maintenance needed",
+          "passed": false,
+          "statusCode": 500,
+          "duration": 414,
+          "response": {
+            "error": {
+              "code": "INTERNAL_ERROR",
+              "message": "An unexpected error occurred",
+              "path": "/api/v1/vehicles/maintenance",
+              "timestamp": "2025-10-18T06:24:46.804Z",
+              "request_id": "7570cfdd-9ce1-42d2-b55d-8552172cb934"
+            }
+          },
+          "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/vehicles/maintenance\",\n    \"timestamp\": \"2025-10-18T06:24:46.804Z\",\n    \"request_id\": \"7570cfdd-9ce1-42d2-b55d-8552172cb934\"\n  }\n}"
+        },
+        {
+          "route": "GET /api/v1/vehicles/maintenance",
+          "test": "Unauthorized",
+          "passed": true,
+          "statusCode": 401,
+          "duration": 124,
+          "response": {
+            "error": "Unauthorized"
+          }
+        }
+      ]
+    }
+  },
+  "allResults": [
+    {
+      "route": "GET /api/v1/drivers?page=1&limit=10",
+      "test": "Basic list",
+      "passed": false,
+      "statusCode": 500,
+      "duration": 3225,
+      "response": {
+        "error": {
+          "code": "INTERNAL_ERROR",
+          "message": "An unexpected error occurred",
+          "path": "/api/v1/drivers",
+          "timestamp": "2025-10-18T06:24:38.663Z",
+          "request_id": "6eea6c87-8b94-4c72-9e33-900af4f16aa6"
+        }
+      },
+      "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/drivers\",\n    \"timestamp\": \"2025-10-18T06:24:38.663Z\",\n    \"request_id\": \"6eea6c87-8b94-4c72-9e33-900af4f16aa6\"\n  }\n}"
+    },
+    {
+      "route": "GET /api/v1/drivers?page=1&limit=20&sortBy=created_at&sortOrder=desc&driver_status=active&cooperation_type=employee&rating_min=4.0&rating_max=5.0&search=test&has_active_assignment=true&expiring_documents=30",
+      "test": "Complex query (11 params)",
+      "passed": false,
+      "statusCode": 500,
+      "duration": 918,
+      "response": {
+        "error": {
+          "code": "INTERNAL_ERROR",
+          "message": "An unexpected error occurred",
+          "path": "/api/v1/drivers",
+          "timestamp": "2025-10-18T06:24:39.582Z",
+          "request_id": "59d114df-e4f2-4ee1-bf7f-3b9880076141"
+        }
+      },
+      "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/drivers\",\n    \"timestamp\": \"2025-10-18T06:24:39.582Z\",\n    \"request_id\": \"59d114df-e4f2-4ee1-bf7f-3b9880076141\"\n  }\n}"
+    },
+    {
+      "route": "GET /api/v1/drivers?sortBy=invalid_field",
+      "test": "Invalid sortBy",
+      "passed": true,
+      "statusCode": 400,
+      "duration": 358,
+      "response": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Validation failed",
+          "details": [
+            {
+              "code": "invalid_value",
+              "values": [
+                "created_at",
+                "last_name",
+                "email",
+                "rating",
+                "driver_status",
+                "employment_status"
+              ],
+              "path": [
+                "sortBy"
+              ],
+              "message": "Invalid option: expected one of \"created_at\"|\"last_name\"|\"email\"|\"rating\"|\"driver_status\"|\"employment_status\""
+            }
+          ],
+          "path": "/api/v1/drivers",
+          "timestamp": "2025-10-18T06:24:39.940Z",
+          "request_id": "fe248be8-8dcf-4955-a089-0c43c21dded9"
+        }
+      }
+    },
+    {
+      "route": "GET /api/v1/drivers",
+      "test": "Unauthorized",
+      "passed": true,
+      "statusCode": 401,
+      "duration": 114,
+      "response": {
+        "error": "Unauthorized"
+      }
+    },
+    {
+      "route": "POST /api/v1/directory/makes",
+      "test": "Create make",
+      "passed": false,
+      "statusCode": 403,
+      "duration": 1009,
+      "response": {
+        "error": "Forbidden: You do not have permission to manage directory"
+      },
+      "error": "{\n  \"error\": \"Forbidden: You do not have permission to manage directory\"\n}"
+    },
+    {
+      "route": "POST /api/v1/directory/makes",
+      "test": "Duplicate name",
+      "passed": false,
+      "statusCode": 403,
+      "duration": 729,
+      "response": {
+        "error": "Forbidden: You do not have permission to manage directory"
+      },
+      "error": "{\n  \"error\": \"Forbidden: You do not have permission to manage directory\"\n}"
+    },
+    {
+      "route": "POST /api/v1/directory/makes",
+      "test": "Invalid body",
+      "passed": false,
+      "statusCode": 403,
+      "duration": 727,
+      "response": {
+        "error": "Forbidden: You do not have permission to manage directory"
+      },
+      "error": "{\n  \"error\": \"Forbidden: You do not have permission to manage directory\"\n}"
+    },
+    {
+      "route": "POST /api/v1/directory/makes",
+      "test": "Unauthorized",
+      "passed": true,
+      "statusCode": 401,
+      "duration": 5,
+      "response": {
+        "error": "Unauthorized"
+      }
+    },
+    {
+      "route": "GET /api/v1/directory/regulations",
+      "test": "List all regulations",
+      "passed": true,
+      "statusCode": 200,
+      "duration": 1043,
+      "response": []
+    },
+    {
+      "route": "GET /api/v1/directory/regulations?country_code=FR",
+      "test": "Filter by country",
+      "passed": true,
+      "statusCode": 200,
+      "duration": 857,
+      "response": []
+    },
+    {
+      "route": "GET /api/v1/directory/regulations",
+      "test": "Unauthorized",
+      "passed": true,
+      "statusCode": 401,
+      "duration": 9,
+      "response": {
+        "error": "Unauthorized"
+      }
+    },
+    {
+      "route": "GET /api/v1/vehicles/insurance-expiring",
+      "test": "Default daysAhead",
+      "passed": false,
+      "statusCode": 500,
+      "duration": 941,
+      "response": {
+        "error": {
+          "code": "INTERNAL_ERROR",
+          "message": "An unexpected error occurred",
+          "path": "/api/v1/vehicles/insurance-expiring",
+          "timestamp": "2025-10-18T06:24:45.405Z",
+          "request_id": "335a6dcc-0d6a-4307-bb59-bd4a3745ea81"
+        }
+      },
+      "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/vehicles/insurance-expiring\",\n    \"timestamp\": \"2025-10-18T06:24:45.405Z\",\n    \"request_id\": \"335a6dcc-0d6a-4307-bb59-bd4a3745ea81\"\n  }\n}"
+    },
+    {
+      "route": "GET /api/v1/vehicles/insurance-expiring?daysAhead=60",
+      "test": "Custom daysAhead",
+      "passed": false,
+      "statusCode": 500,
+      "duration": 865,
+      "response": {
+        "error": {
+          "code": "INTERNAL_ERROR",
+          "message": "An unexpected error occurred",
+          "path": "/api/v1/vehicles/insurance-expiring",
+          "timestamp": "2025-10-18T06:24:46.271Z",
+          "request_id": "448bce5f-ad09-46cb-9c5a-4a2fc7f6e4c5"
+        }
+      },
+      "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/vehicles/insurance-expiring\",\n    \"timestamp\": \"2025-10-18T06:24:46.271Z\",\n    \"request_id\": \"448bce5f-ad09-46cb-9c5a-4a2fc7f6e4c5\"\n  }\n}"
+    },
+    {
+      "route": "GET /api/v1/vehicles/insurance-expiring",
+      "test": "Unauthorized",
+      "passed": true,
+      "statusCode": 401,
+      "duration": 118,
+      "response": {
+        "error": "Unauthorized"
+      }
+    },
+    {
+      "route": "GET /api/v1/vehicles/maintenance",
+      "test": "List maintenance needed",
+      "passed": false,
+      "statusCode": 500,
+      "duration": 414,
+      "response": {
+        "error": {
+          "code": "INTERNAL_ERROR",
+          "message": "An unexpected error occurred",
+          "path": "/api/v1/vehicles/maintenance",
+          "timestamp": "2025-10-18T06:24:46.804Z",
+          "request_id": "7570cfdd-9ce1-42d2-b55d-8552172cb934"
+        }
+      },
+      "error": "{\n  \"error\": {\n    \"code\": \"INTERNAL_ERROR\",\n    \"message\": \"An unexpected error occurred\",\n    \"path\": \"/api/v1/vehicles/maintenance\",\n    \"timestamp\": \"2025-10-18T06:24:46.804Z\",\n    \"request_id\": \"7570cfdd-9ce1-42d2-b55d-8552172cb934\"\n  }\n}"
+    },
+    {
+      "route": "GET /api/v1/vehicles/maintenance",
+      "test": "Unauthorized",
+      "passed": true,
+      "statusCode": 401,
+      "duration": 124,
+      "response": {
+        "error": "Unauthorized"
+      }
+    }
+  ],
+  "timestamp": "2025-10-18T06:24:46.971Z",
+  "testCredentials": {
+    "userId": "user_34EB6LaUl4F1g3ldbku4aYwAWDU",
+    "orgId": "org_34E5E4g3eTrXLmK9NAsMd4X44zW",
+    "email": "test-fleetcore-1760768673367@example.com"
+  }
+}

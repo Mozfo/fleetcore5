@@ -25,6 +25,7 @@
 
 import { createClerkClient } from "@clerk/backend";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
 
 // Initialize Clerk client for standalone Node.js environment (GitHub Actions)
 // Uses CLERK_SECRET_KEY from environment variables
@@ -375,6 +376,86 @@ async function createTestSession(
 }
 
 /**
+ * Create test member with admin permissions in database
+ * Required for API routes that check permissions (e.g., POST /directory/makes)
+ *
+ * @param userId - Clerk user ID
+ * @param orgId - Organization ID (tenant)
+ * @param email - User email
+ */
+async function createTestMemberWithPermissions(
+  userId: string,
+  orgId: string,
+  email: string
+): Promise<void> {
+  try {
+    logger.info({ userId, orgId }, "Creating test member with permissions");
+
+    // 1. Create member in adm_members
+    const member = await prisma.adm_members.create({
+      data: {
+        tenant_id: orgId,
+        clerk_user_id: userId,
+        email: email,
+        first_name: "Test",
+        last_name: "FleetCore",
+        status: "active",
+      },
+    });
+
+    logger.info({ memberId: member.id }, "Test member created");
+
+    // 2. Create or get test admin role with full permissions
+    let role = await prisma.adm_roles.findFirst({
+      where: {
+        tenant_id: orgId,
+        name: "test_admin_role",
+        deleted_at: null,
+      },
+    });
+
+    if (!role) {
+      role = await prisma.adm_roles.create({
+        data: {
+          tenant_id: orgId,
+          name: "test_admin_role",
+          permissions: {
+            admin: true,
+            manage_directory: true,
+            manage_drivers: true,
+            manage_vehicles: true,
+          },
+          status: "active",
+        },
+      });
+      logger.info({ roleId: role.id }, "Test admin role created");
+    } else {
+      logger.info({ roleId: role.id }, "Reusing existing test admin role");
+    }
+
+    // 3. Assign role to member
+    await prisma.adm_member_roles.create({
+      data: {
+        member_id: member.id,
+        role_id: role.id,
+        tenant_id: orgId,
+      },
+    });
+
+    logger.info(
+      { memberId: member.id, roleId: role.id },
+      "Role assigned to test member"
+    );
+  } catch (error) {
+    logger.error(
+      { error, userId, orgId },
+      "Failed to create test member with permissions"
+    );
+    // Don't throw - permissions tests will fail but auth tests will still work
+  }
+}
+
+/**
  * Generate JWT token for the session using specified template
  */
 async function generateToken(
@@ -517,6 +598,9 @@ export async function createClerkTestAuth(
       fullConfig.templateName
     );
 
+    // Step 5: Create member and role in database for permission checks
+    await createTestMemberWithPermissions(userId, orgId, email);
+
     // Cache credentials
     credentialsCache = {
       userId,
@@ -578,6 +662,19 @@ export async function cleanupClerkTestAuth(auth: ClerkTestAuth): Promise<void> {
       { userId: auth.userId, email: auth.email },
       "Cleaning up test credentials"
     );
+
+    // Delete test member (cascades to member_roles via ON DELETE CASCADE)
+    try {
+      await prisma.adm_members.deleteMany({
+        where: {
+          clerk_user_id: auth.userId,
+          tenant_id: auth.orgId,
+        },
+      });
+      logger.info({ userId: auth.userId }, "Test member deleted");
+    } catch (error) {
+      logger.warn({ error }, "Failed to delete test member (may not exist)");
+    }
 
     const client = getClerkClient();
 

@@ -4,10 +4,59 @@ import {
   Vehicle,
   VehicleWithRelations,
 } from "@/lib/services/vehicles/vehicle.types";
+import type { SortFieldWhitelist } from "@/lib/core/validation";
+
+/**
+ * Whitelist of sortable fields for flt_vehicles table
+ *
+ * ✅ Included columns:
+ * - System IDs: id, tenant_id (isolation)
+ * - Relations: make_id, model_id (FK for joins)
+ * - Public data: license_plate (visible on vehicle)
+ * - Physical characteristics: year, color, seats (non-sensitive)
+ * - Technical specs: vehicle_class, fuel_type, transmission
+ * - Status: status (operational), ownership_type (business)
+ * - Metrics: odometer (maintenance tracking)
+ * - Timestamps: created_at, updated_at (chronological sorting)
+ *
+ * ❌ Excluded columns (security reasons):
+ * - Unique identifiers: vin (globally unique, sensitive)
+ * - Insurance: insurance_number (confidential)
+ * - JSONB: metadata (may contain tokens/API keys)
+ * - Audit trail: created_by, updated_by (reveals member identity)
+ * - Soft-delete: deleted_at, deleted_by, deletion_reason (NEVER expose)
+ * - Dates: insurance_expiry, registration_date, inspection dates
+ */
+export const VEHICLE_SORT_FIELDS = [
+  "id",
+  "tenant_id",
+  "make_id",
+  "model_id",
+  "license_plate",
+  "year",
+  "color",
+  "seats",
+  "vehicle_class",
+  "fuel_type",
+  "transmission",
+  "status",
+  "ownership_type",
+  "odometer",
+  "created_at",
+  "updated_at",
+] as const satisfies SortFieldWhitelist;
 
 export class VehicleRepository extends BaseRepository<Vehicle> {
   constructor(prisma: PrismaClient) {
     super(prisma.flt_vehicles, prisma);
+  }
+
+  /**
+   * Provide sortBy whitelist for vehicle queries
+   * @returns VEHICLE_SORT_FIELDS whitelist (15 safe columns)
+   */
+  protected getSortWhitelist(): SortFieldWhitelist {
+    return VEHICLE_SORT_FIELDS;
   }
 
   /**

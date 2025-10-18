@@ -5,6 +5,8 @@
 
 import { PrismaClient } from "@prisma/client";
 import { PaginationOptions, PaginatedResult } from "./types";
+import { validateSortBy } from "./validation";
+import type { SortFieldWhitelist } from "./validation";
 
 export abstract class BaseRepository<T> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,6 +17,21 @@ export abstract class BaseRepository<T> {
   constructor(model: any, prisma: PrismaClient) {
     this.model = model;
     this.prisma = prisma;
+  }
+
+  /**
+   * Abstract method - child repositories MUST provide sortBy whitelist
+   * @returns Non-empty array of allowed sortable fields
+   */
+  protected abstract getSortWhitelist(): SortFieldWhitelist;
+
+  /**
+   * Hook for repositories without soft-delete support
+   * Override to return false for tables without deleted_at column
+   * @returns true if table has soft-delete (default), false otherwise
+   */
+  protected shouldFilterDeleted(): boolean {
+    return true; // Default: filter soft-deleted records
   }
 
   /**
@@ -41,11 +58,22 @@ export abstract class BaseRepository<T> {
     const limit = options.limit || 20;
     const skip = (page - 1) * limit;
 
-    // Add soft-delete filter
-    const whereWithDeleted = {
-      ...where,
-      deleted_at: null,
-    };
+    // Validate sortBy if provided
+    if (options.sortBy) {
+      // Extract tenantId from where clause (simple cases only)
+      // For complex where clauses (AND/OR), tenantId extraction may fail
+      // In that case, audit log will be skipped but validation still works
+      const tenantId =
+        typeof where.tenant_id === "string" ? where.tenant_id : undefined;
+
+      validateSortBy(options.sortBy, this.getSortWhitelist(), tenantId);
+    }
+
+    // Add soft-delete filter conditionally
+    // Repositories without deleted_at column can override shouldFilterDeleted()
+    const whereWithDeleted = this.shouldFilterDeleted()
+      ? { ...where, deleted_at: null }
+      : where;
 
     // Count total records
     const total = await this.model.count({

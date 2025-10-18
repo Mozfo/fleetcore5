@@ -6,11 +6,57 @@ import type {
   DocumentWithMetadata,
   DocumentFilters,
 } from "./document.types";
+import type { SortFieldWhitelist } from "@/lib/core/validation";
+
+/**
+ * Whitelist of sortable fields for doc_documents table
+ *
+ * ✅ All columns safe (11 total):
+ * - System IDs: id, tenant_id (multi-tenant isolation)
+ * - Relations: entity_type, entity_id (polymorphic FK)
+ * - Document metadata: document_type, file_url (business data)
+ * - Lifecycle dates: issue_date, expiry_date (renewal tracking)
+ * - Status: verified (approval workflow)
+ * - Timestamps: created_at, updated_at (chronological sorting)
+ *
+ * ❌ No excluded columns - all 11 columns are safe for sorting
+ *
+ * NOTE: doc_documents has NO soft-delete (no deleted_at column)
+ */
+export const DOC_DOCUMENTS_SORT_FIELDS = [
+  "id",
+  "tenant_id",
+  "entity_type",
+  "entity_id",
+  "document_type",
+  "file_url",
+  "issue_date",
+  "expiry_date",
+  "verified",
+  "created_at",
+  "updated_at",
+] as const satisfies SortFieldWhitelist;
 
 export class DocumentRepository extends BaseRepository<Document> {
   constructor(prisma: PrismaClient) {
     // Use correct signature: super(model, prisma)
     super(prisma.doc_documents, prisma);
+  }
+
+  /**
+   * Provide sortBy whitelist for document queries
+   * @returns DOC_DOCUMENTS_SORT_FIELDS whitelist (11 safe columns)
+   */
+  protected getSortWhitelist(): SortFieldWhitelist {
+    return DOC_DOCUMENTS_SORT_FIELDS;
+  }
+
+  /**
+   * Override soft-delete behavior - doc_documents has NO deleted_at column
+   * @returns false to skip deleted_at filtering in BaseRepository.findMany()
+   */
+  protected shouldFilterDeleted(): boolean {
+    return false;
   }
 
   /**

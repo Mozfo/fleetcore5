@@ -6,6 +6,7 @@ import {
   driverQuerySchema,
 } from "@/lib/validators/drivers.validators";
 import { handleApiError } from "@/lib/api/error-handler";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/v1/drivers
@@ -111,6 +112,17 @@ export async function GET(request: NextRequest) {
     // 7. Return paginated result
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    // DEBUG: Log full error for CI investigation of 500 errors
+    logger.error(
+      {
+        path: request.nextUrl.pathname,
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      "[DEBUG] Full error details for CI investigation"
+    );
+
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { VehicleService } from "@/lib/services/vehicles/vehicle.service";
 import { handleApiError } from "@/lib/api/error-handler";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/v1/vehicles/insurance-expiring
@@ -43,6 +44,17 @@ export async function GET(request: NextRequest) {
     // 6. Return vehicles array with insurance relations
     return NextResponse.json(vehicles, { status: 200 });
   } catch (error) {
+    // DEBUG: Log full error for CI investigation of 500 errors
+    logger.error(
+      {
+        path: request.nextUrl.pathname,
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      "[DEBUG] Full error details for CI investigation"
+    );
+
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
