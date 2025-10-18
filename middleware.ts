@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getLocaleFromPathname } from "@/lib/navigation";
+import { jwtDecode } from "jwt-decode";
 
 // Admin organization ID (FleetCore backoffice)
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
@@ -36,11 +37,36 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 
     // Protected API routes (v1)
     if (pathname.startsWith("/api/v1")) {
-      const { userId, orgId } = await auth();
+      const authData = await auth();
+      const { userId } = authData;
+      let { orgId } = authData;
 
       // Require authentication for v1 API
       if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // Fallback: Read orgId from JWT custom claims if not in auth context
+      // This pattern supports automated testing with Backend API sessions
+      // while maintaining compatibility with production user sessions
+      if (!orgId) {
+        const authHeader = req.headers.get("authorization");
+        if (authHeader?.startsWith("Bearer ")) {
+          try {
+            const token = authHeader.replace("Bearer ", "");
+            // Clerk JWT templates can use either orgId or org_id depending on configuration
+            const decoded = jwtDecode<{
+              orgId?: string;
+              org_id?: string;
+            }>(token);
+            // Try both camelCase (orgId) and snake_case (org_id)
+            orgId = decoded.orgId || decoded.org_id;
+          } catch {
+            // JWT decode failed - token invalid or malformed
+            // orgId remains undefined, will trigger 403 below
+            // Silent failure - error logged by Clerk middleware
+          }
+        }
       }
 
       // Require organization membership (orgId = tenant_id in FleetCore)
