@@ -1,30 +1,34 @@
-import { defineConfig } from 'vitest/config'
-import path from 'path'
+import { defineConfig } from "vitest/config";
+import path from "path";
 
 export default defineConfig({
   test: {
     // Environnement: Node.js (pas browser/jsdom)
     // Justification: Nous testons des helpers backend (audit.ts), pas des composants React
-    environment: 'node',
+    environment: "node",
 
     // Globals: true (évite imports répétés de describe, it, expect)
     globals: true,
 
+    // Mock @vercel/kv in CI (use __mocks__ directory)
+    // Required: Tests must work without actual KV connection
+    setupFiles: process.env.CI ? ["./vitest.setup.ts"] : undefined,
+
     // Include/exclude patterns
-    include: ['**/*.test.ts', '**/*.test.tsx'],
-    exclude: ['node_modules', '.next', 'dist'],
+    include: ["**/*.test.ts", "**/*.test.tsx"],
+    exclude: ["node_modules", ".next", "dist"],
 
     // Coverage configuration (optionnel mais utile)
     coverage: {
-      provider: 'v8', // v8 est plus rapide que istanbul
-      reporter: ['text', 'json', 'html'],
+      provider: "v8", // v8 est plus rapide que istanbul
+      reporter: ["text", "json", "html"],
       exclude: [
-        'node_modules/',
-        '.next/',
-        'vitest.config.ts',
-        '**/*.d.ts',
-        '**/*.test.ts',
-        '**/*.test.tsx',
+        "node_modules/",
+        ".next/",
+        "vitest.config.ts",
+        "**/*.d.ts",
+        "**/*.test.ts",
+        "**/*.test.tsx",
       ],
     },
   },
@@ -32,7 +36,7 @@ export default defineConfig({
   resolve: {
     // Alias de chemins pour correspondre à tsconfig.json
     alias: {
-      '@': path.resolve(__dirname, './'),
+      "@": path.resolve(__dirname, "./"),
     },
   },
-})
+});
