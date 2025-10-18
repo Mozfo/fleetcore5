@@ -10,10 +10,6 @@ export default defineConfig({
     // Globals: true (évite imports répétés de describe, it, expect)
     globals: true,
 
-    // Mock @vercel/kv in CI (use __mocks__ directory)
-    // Required: Tests must work without actual KV connection
-    setupFiles: process.env.CI ? ["./vitest.setup.ts"] : undefined,
-
     // Include/exclude patterns
     include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: ["node_modules", ".next", "dist"],

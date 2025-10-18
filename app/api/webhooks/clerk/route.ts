@@ -1,6 +1,6 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
-import { WebhookEvent } from "@clerk/nextjs/server";
+import { WebhookEvent, clerkClient } from "@clerk/nextjs/server";
 import { PrismaClient } from "@prisma/client";
 import {
   auditLog,
@@ -8,10 +8,6 @@ import {
   getUserAgentFromRequest,
 } from "@/lib/audit";
 import { assertDefined } from "@/lib/core/errors";
-import {
-  setTenantIdInCache,
-  deleteTenantFromCache,
-} from "@/lib/cache/tenant-mapping";
 
 const prisma = new PrismaClient();
 
@@ -63,8 +59,13 @@ export async function POST(req: Request) {
         },
       });
 
-      // Warm cache proactively
-      await setTenantIdInCache(evt.data.id, organization.id);
+      // Sync tenant UUID to Clerk publicMetadata (for JWT injection)
+      const client = await clerkClient();
+      await client.organizations.updateOrganizationMetadata(evt.data.id, {
+        publicMetadata: {
+          tenantId: organization.id,
+        },
+      });
 
       await auditLog({
         tenantId: organization.id,
@@ -108,8 +109,13 @@ export async function POST(req: Request) {
           },
         });
 
-        // Warm cache proactively
-        await setTenantIdInCache(evt.data.id, org.id);
+        // Sync tenant UUID to Clerk publicMetadata (for JWT injection)
+        const client = await clerkClient();
+        await client.organizations.updateOrganizationMetadata(evt.data.id, {
+          publicMetadata: {
+            tenantId: org.id,
+          },
+        });
 
         await auditLog({
           tenantId: org.id,
@@ -149,8 +155,7 @@ export async function POST(req: Request) {
           },
         });
 
-        // Invalidate cache immediately
-        await deleteTenantFromCache(evt.data.id);
+        // Note: Clerk automatically removes org.publicMetadata when organization is deleted
 
         await auditLog({
           tenantId: org.id,
