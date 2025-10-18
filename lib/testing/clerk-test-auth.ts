@@ -29,15 +29,31 @@ import { logger } from "@/lib/logger";
 // Initialize Clerk client for standalone Node.js environment (GitHub Actions)
 // Uses CLERK_SECRET_KEY from environment variables
 const getClerkClient = () => {
-  const secretKey = process.env.CLERK_SECRET_KEY;
+  const rawSecretKey = process.env.CLERK_SECRET_KEY;
 
-  if (!secretKey) {
+  if (!rawSecretKey) {
     logger.error("CLERK_SECRET_KEY environment variable is not set");
     throw new Error("CLERK_SECRET_KEY environment variable is required");
   }
 
+  // Trim whitespace (common issue when copying secrets)
+  const secretKey = rawSecretKey.trim();
+
+  // Debug log (safe - only prefix and length)
+  const keyPrefix = secretKey.substring(0, Math.min(8, secretKey.length));
+  logger.info(
+    { keyPrefix, keyLength: secretKey.length },
+    "Clerk secret key validation"
+  );
+
   if (!secretKey.startsWith("sk_test_") && !secretKey.startsWith("sk_live_")) {
     logger.error(
+      {
+        keyPrefix,
+        keyLength: secretKey.length,
+        rawLength: rawSecretKey.length,
+        hasTrimmed: rawSecretKey !== secretKey,
+      },
       "CLERK_SECRET_KEY has invalid format (should start with sk_test_ or sk_live_)"
     );
     throw new Error("CLERK_SECRET_KEY has invalid format");
