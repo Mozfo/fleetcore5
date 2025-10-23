@@ -3,9 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model adm_audit_logs {
@@ -247,6 +248,9 @@ model adm_provider_employees {
   bil_tenant_usage_metrics_bil_tenant_usage_metrics_created_byToadm_provider_employees   bil_tenant_usage_metrics[]    @relation("bil_tenant_usage_metrics_created_byToadm_provider_employees")
   bil_tenant_usage_metrics_bil_tenant_usage_metrics_deleted_byToadm_provider_employees   bil_tenant_usage_metrics[]    @relation("bil_tenant_usage_metrics_deleted_byToadm_provider_employees")
   bil_tenant_usage_metrics_bil_tenant_usage_metrics_updated_byToadm_provider_employees   bil_tenant_usage_metrics[]    @relation("bil_tenant_usage_metrics_updated_byToadm_provider_employees")
+  dir_car_makes_created_by                                                               dir_car_makes[]               @relation("dir_car_makes_created_by")
+  dir_car_makes_updated_by                                                               dir_car_makes[]               @relation("dir_car_makes_updated_by")
+  dir_car_makes_deleted_by                                                               dir_car_makes[]               @relation("dir_car_makes_deleted_by")
   sup_tickets                                                                            sup_tickets[]
 
   @@index([created_by])
@@ -668,19 +672,51 @@ model crm_opportunities {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model dir_car_makes {
+  // V1 columns (existing)
   id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id      String?          @db.Uuid
   name           String
   created_at     DateTime         @default(now()) @db.Timestamptz(6)
   updated_at     DateTime         @default(now()) @db.Timestamptz(6)
+
+  // V2 columns (new) - Business data
+  code              String?   @db.VarChar(50)
+  country_of_origin String?   @db.Char(2)
+  parent_company    String?   @db.VarChar(100)
+  founded_year      Int?
+  logo_url          String?
+  status            String    @default("active") @db.VarChar(50)
+  metadata          Json      @default("{}")
+
+  // V2 columns (new) - Audit trail
+  created_by        String?   @db.Uuid
+  updated_by        String?   @db.Uuid
+
+  // V2 columns (new) - Soft delete
+  deleted_at        DateTime? @db.Timestamptz(6)
+  deleted_by        String?   @db.Uuid
+  deletion_reason   String?
+
+  // V1 relations (existing)
   adm_tenants    adm_tenants?     @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   dir_car_models dir_car_models[]
   flt_vehicles   flt_vehicles[]
 
-  @@unique([tenant_id, name], map: "dir_car_makes_tenant_name_uq")
+  // V2 relations (new) - Audit FK to adm_provider_employees
+  adm_provider_employees_created_by adm_provider_employees? @relation("dir_car_makes_created_by", fields: [created_by], references: [id])
+  adm_provider_employees_updated_by adm_provider_employees? @relation("dir_car_makes_updated_by", fields: [updated_by], references: [id])
+  adm_provider_employees_deleted_by adm_provider_employees? @relation("dir_car_makes_deleted_by", fields: [deleted_by], references: [id])
+
+  // V1 indexes (existing)
   @@index([created_at])
   @@index([tenant_id])
   @@index([updated_at])
+
+  // V2 indexes (new)
+  @@index([status])
+  @@index([country_of_origin])
+  @@index([deleted_at])
+  @@index([metadata], type: Gin)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
