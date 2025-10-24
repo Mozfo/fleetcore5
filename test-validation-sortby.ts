@@ -73,7 +73,9 @@ try {
     logPass("ValidationError thrown as expected");
     logInfo(`Error message: "${(error as Error).message}"`);
     logInfo("Fire-and-forget audit should be logged to adm_audit_logs");
-    logInfo(`Query: SELECT * FROM adm_audit_logs WHERE tenant_id = '${TEST_TENANT_ID}' AND action = 'validation_failed' ORDER BY timestamp DESC LIMIT 1;`);
+    logInfo(
+      `Query: SELECT * FROM adm_audit_logs WHERE tenant_id = '${TEST_TENANT_ID}' AND action = 'validation_failed' ORDER BY timestamp DESC LIMIT 1;`
+    );
   } else {
     logFail(`Wrong error type: ${(error as Error).constructor.name}`);
   }
@@ -119,11 +121,14 @@ try {
 logTest(5, "Empty whitelist runtime failsafe");
 try {
   // Simulate type system bypass: developer uses `as any`
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const EMPTY_BYPASSED = [] as any as SortFieldWhitelist;
   validateSortBy("id", EMPTY_BYPASSED, TEST_TENANT_ID);
   logFail("Should have thrown Error for empty whitelist");
 } catch (error: unknown) {
-  if ((error as Error).message.includes("SECURITY: Whitelist cannot be empty")) {
+  if (
+    (error as Error).message.includes("SECURITY: Whitelist cannot be empty")
+  ) {
     logPass("Runtime check caught empty whitelist");
     logInfo("Defense in depth: Type bypass detected");
   } else {
@@ -142,7 +147,9 @@ for (let i = 0; i < iterations; i++) {
   try {
     validateSortBy("email", TEST_WHITELIST, TEST_TENANT_ID);
   } catch (error) {
-    logFail(`Unexpected error in performance test: ${(error as Error).message}`);
+    logFail(
+      `Unexpected error in performance test: ${(error as Error).message}`
+    );
     break;
   }
 }
@@ -207,8 +214,8 @@ process.stdout.write(` Passed: ${passCount}/8\n`);
 process.stdout.write(`L Failed: ${failCount}/8\n`);
 
 if (failCount === 0) {
-  process.stdout.write(`\n<‰ All tests passed!\n`);
-  process.stdout.write(`\n   MANUAL VERIFICATION REQUIRED:\n`);
+  process.stdout.write(`\n<ï¿½ All tests passed!\n`);
+  process.stdout.write(`\nï¿½  MANUAL VERIFICATION REQUIRED:\n`);
   process.stdout.write(`   1. Check audit logs in database:\n`);
   process.stdout.write(`      SELECT * FROM adm_audit_logs \n`);
   process.stdout.write(`      WHERE action = 'validation_failed' \n`);

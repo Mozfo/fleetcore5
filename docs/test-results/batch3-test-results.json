@@ -15,7 +15,7 @@
           "test": "Basic list",
           "passed": false,
           "statusCode": 200,
-          "duration": 2930,
+          "duration": 1317,
           "response": {
             "data": [],
             "total": 0,
@@ -35,7 +35,7 @@
           "test": "Complex query (11 params)",
           "passed": true,
           "statusCode": 200,
-          "duration": 1535,
+          "duration": 1206,
           "response": {
             "data": [],
             "total": 0,
@@ -54,7 +54,7 @@
           "test": "Invalid sortBy",
           "passed": true,
           "statusCode": 400,
-          "duration": 268,
+          "duration": 9,
           "response": {
             "error": {
               "code": "VALIDATION_ERROR",
@@ -75,8 +75,8 @@
                 }
               ],
               "path": "/api/v1/drivers",
-              "timestamp": "2025-10-18T16:42:40.686Z",
-              "request_id": "72460d2f-e677-4ccc-a01f-23a49651c835"
+              "timestamp": "2025-10-18T17:10:04.753Z",
+              "request_id": "4dfd35c6-bf75-4b33-bc31-527b8b8083db"
             }
           }
         }
@@ -91,7 +91,7 @@
           "test": "Unauthorized",
           "passed": true,
           "statusCode": 401,
-          "duration": 264,
+          "duration": 4,
           "response": {
             "error": "Unauthorized"
           }
@@ -107,13 +107,13 @@
           "test": "Create make",
           "passed": true,
           "statusCode": 201,
-          "duration": 3017,
+          "duration": 2687,
           "response": {
-            "id": "8c626d15-1303-4350-b729-f7f4ce766df1",
+            "id": "283f1ced-1af9-4011-83eb-eb8fb31165f6",
             "tenant_id": null,
-            "name": "Tesla_Test_1760805760964",
-            "created_at": "2025-10-18T16:42:43.346Z",
-            "updated_at": "2025-10-18T16:42:43.346Z"
+            "name": "Tesla_Test_1760807404769",
+            "created_at": "2025-10-18T17:10:06.852Z",
+            "updated_at": "2025-10-18T17:10:06.852Z"
           }
         },
         {
@@ -121,14 +121,14 @@
           "test": "Duplicate name",
           "passed": true,
           "statusCode": 409,
-          "duration": 2403,
+          "duration": 2045,
           "response": {
             "error": {
               "code": "CONFLICT",
-              "message": "Car make \"Tesla_Test_1760805760964\" already exists globally",
+              "message": "Car make \"Tesla_Test_1760807404769\" already exists globally",
               "path": "/api/v1/directory/makes",
-              "timestamp": "2025-10-18T16:42:46.383Z",
-              "request_id": "7b382824-9e42-4ae7-ae66-73e1e5819a94"
+              "timestamp": "2025-10-18T17:10:09.499Z",
+              "request_id": "5e94e6b2-930b-4619-b55b-c0bad025970e"
             }
           }
         },
@@ -137,7 +137,7 @@
           "test": "Invalid body",
           "passed": true,
           "statusCode": 400,
-          "duration": 1889,
+          "duration": 1453,
           "response": {
             "error": {
               "code": "VALIDATION_ERROR",
@@ -151,8 +151,8 @@
                 }
               ],
               "path": "/api/v1/directory/makes",
-              "timestamp": "2025-10-18T16:42:48.272Z",
-              "request_id": "34cdb348-fdf0-43ff-a981-a12fc4d03510"
+              "timestamp": "2025-10-18T17:10:10.952Z",
+              "request_id": "80db2302-f605-49ed-b743-da6672aac1ca"
             }
           }
         },
@@ -161,7 +161,7 @@
           "test": "Unauthorized",
           "passed": true,
           "statusCode": 401,
-          "duration": 140,
+          "duration": 7,
           "response": {
             "error": "Unauthorized"
           }
@@ -177,7 +177,7 @@
           "test": "List all regulations",
           "passed": true,
           "statusCode": 200,
-          "duration": 886,
+          "duration": 604,
           "response": []
         },
         {
@@ -185,7 +185,7 @@
           "test": "Unauthorized",
           "passed": true,
           "statusCode": 401,
-          "duration": 18,
+          "duration": 5,
           "response": {
             "error": "Unauthorized"
           }
@@ -201,7 +201,7 @@
           "test": "Filter by country",
           "passed": true,
           "statusCode": 200,
-          "duration": 895,
+          "duration": 615,
           "response": []
         }
       ]
@@ -215,7 +215,7 @@
           "test": "Default daysAhead",
           "passed": true,
           "statusCode": 200,
-          "duration": 1053,
+          "duration": 608,
           "response": []
         },
         {
@@ -223,7 +223,7 @@
           "test": "Unauthorized",
           "passed": true,
           "statusCode": 401,
-          "duration": 14,
+          "duration": 4,
           "response": {
             "error": "Unauthorized"
           }
@@ -239,7 +239,7 @@
           "test": "Custom daysAhead",
           "passed": true,
           "statusCode": 200,
-          "duration": 899,
+          "duration": 603,
           "response": []
         }
       ]
@@ -253,7 +253,7 @@
           "test": "List maintenance needed",
           "passed": true,
           "statusCode": 200,
-          "duration": 1168,
+          "duration": 596,
           "response": []
         },
         {
@@ -261,7 +261,7 @@
           "test": "Unauthorized",
           "passed": true,
           "statusCode": 401,
-          "duration": 20,
+          "duration": 4,
           "response": {
             "error": "Unauthorized"
           }
@@ -275,7 +275,7 @@
       "test": "Basic list",
       "passed": false,
       "statusCode": 200,
-      "duration": 2930,
+      "duration": 1317,
       "response": {
         "data": [],
         "total": 0,
@@ -289,7 +289,7 @@
       "test": "Complex query (11 params)",
       "passed": true,
       "statusCode": 200,
-      "duration": 1535,
+      "duration": 1206,
       "response": {
         "data": [],
         "total": 0,
@@ -302,7 +302,7 @@
       "test": "Invalid sortBy",
       "passed": true,
       "statusCode": 400,
-      "duration": 268,
+      "duration": 9,
       "response": {
         "error": {
           "code": "VALIDATION_ERROR",
@@ -323,8 +323,8 @@
             }
           ],
           "path": "/api/v1/drivers",
-          "timestamp": "2025-10-18T16:42:40.686Z",
-          "request_id": "72460d2f-e677-4ccc-a01f-23a49651c835"
+          "timestamp": "2025-10-18T17:10:04.753Z",
+          "request_id": "4dfd35c6-bf75-4b33-bc31-527b8b8083db"
         }
       }
     },
@@ -333,7 +333,7 @@
       "test": "Unauthorized",
       "passed": true,
       "statusCode": 401,
-      "duration": 264,
+      "duration": 4,
       "response": {
         "error": "Unauthorized"
       }
@@ -343,13 +343,13 @@
       "test": "Create make",
       "passed": true,
       "statusCode": 201,
-      "duration": 3017,
+      "duration": 2687,
       "response": {
-        "id": "8c626d15-1303-4350-b729-f7f4ce766df1",
+        "id": "283f1ced-1af9-4011-83eb-eb8fb31165f6",
         "tenant_id": null,
-        "name": "Tesla_Test_1760805760964",
-        "created_at": "2025-10-18T16:42:43.346Z",
-        "updated_at": "2025-10-18T16:42:43.346Z"
+        "name": "Tesla_Test_1760807404769",
+        "created_at": "2025-10-18T17:10:06.852Z",
+        "updated_at": "2025-10-18T17:10:06.852Z"
       }
     },
     {
@@ -357,14 +357,14 @@
       "test": "Duplicate name",
       "passed": true,
       "statusCode": 409,
-      "duration": 2403,
+      "duration": 2045,
       "response": {
         "error": {
           "code": "CONFLICT",
-          "message": "Car make \"Tesla_Test_1760805760964\" already exists globally",
+          "message": "Car make \"Tesla_Test_1760807404769\" already exists globally",
           "path": "/api/v1/directory/makes",
-          "timestamp": "2025-10-18T16:42:46.383Z",
-          "request_id": "7b382824-9e42-4ae7-ae66-73e1e5819a94"
+          "timestamp": "2025-10-18T17:10:09.499Z",
+          "request_id": "5e94e6b2-930b-4619-b55b-c0bad025970e"
         }
       }
     },
@@ -373,7 +373,7 @@
       "test": "Invalid body",
       "passed": true,
       "statusCode": 400,
-      "duration": 1889,
+      "duration": 1453,
       "response": {
         "error": {
           "code": "VALIDATION_ERROR",
@@ -387,8 +387,8 @@
             }
           ],
           "path": "/api/v1/directory/makes",
-          "timestamp": "2025-10-18T16:42:48.272Z",
-          "request_id": "34cdb348-fdf0-43ff-a981-a12fc4d03510"
+          "timestamp": "2025-10-18T17:10:10.952Z",
+          "request_id": "80db2302-f605-49ed-b743-da6672aac1ca"
         }
       }
     },
@@ -397,7 +397,7 @@
       "test": "Unauthorized",
       "passed": true,
       "statusCode": 401,
-      "duration": 140,
+      "duration": 7,
       "response": {
         "error": "Unauthorized"
       }
@@ -407,7 +407,7 @@
       "test": "List all regulations",
       "passed": true,
       "statusCode": 200,
-      "duration": 886,
+      "duration": 604,
       "response": []
     },
     {
@@ -415,7 +415,7 @@
       "test": "Filter by country",
       "passed": true,
       "statusCode": 200,
-      "duration": 895,
+      "duration": 615,
       "response": []
     },
     {
@@ -423,7 +423,7 @@
       "test": "Unauthorized",
       "passed": true,
       "statusCode": 401,
-      "duration": 18,
+      "duration": 5,
       "response": {
         "error": "Unauthorized"
       }
@@ -433,7 +433,7 @@
       "test": "Default daysAhead",
       "passed": true,
       "statusCode": 200,
-      "duration": 1053,
+      "duration": 608,
       "response": []
     },
     {
@@ -441,7 +441,7 @@
       "test": "Custom daysAhead",
       "passed": true,
       "statusCode": 200,
-      "duration": 899,
+      "duration": 603,
       "response": []
     },
     {
@@ -449,7 +449,7 @@
       "test": "Unauthorized",
       "passed": true,
       "statusCode": 401,
-      "duration": 14,
+      "duration": 4,
       "response": {
         "error": "Unauthorized"
       }
@@ -459,7 +459,7 @@
       "test": "List maintenance needed",
       "passed": true,
       "statusCode": 200,
-      "duration": 1168,
+      "duration": 596,
       "response": []
     },
     {
@@ -467,16 +467,16 @@
       "test": "Unauthorized",
       "passed": true,
       "statusCode": 401,
-      "duration": 20,
+      "duration": 4,
       "response": {
         "error": "Unauthorized"
       }
     }
   ],
-  "timestamp": "2025-10-18T16:42:53.404Z",
+  "timestamp": "2025-10-18T17:10:14.015Z",
   "testCredentials": {
-    "userId": "user_34FOFYRxIVnRxiCtbD4N2RRqdKh",
+    "userId": "user_34FRaNuSMjMA6u8FlsY4HLiQwdy",
     "orgId": "org_34EXxYF5pWSgjfzuoGlmcHA11aa",
-    "email": "test-fleetcore-1760805749313@example.com"
+    "email": "test-fleetcore-ci-1760807394583@example.com"
   }
 }

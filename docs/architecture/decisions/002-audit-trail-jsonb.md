@@ -1,6 +1,7 @@
 # ADR 002: Single JSONB Column for Audit Trail Storage
 
 ## Status
+
 **Accepted** (October 14, 2025)
 
 Supersedes: None
@@ -59,9 +60,10 @@ FleetCore is a multi-tenant SaaS platform for ride-hailing fleet management oper
 **How do we store flexible audit log data without requiring frequent database migrations while maintaining query performance and type safety?**
 
 Traditional approaches have significant drawbacks:
-- **Separate columns** í Requires migration for every new metadata field
-- **EAV (Entity-Attribute-Value)** í Complex queries, poor performance, difficult indexing
-- **Pure JSON without conventions** í Risk of key collisions, no structure enforcement
+
+- **Separate columns** ÔøΩ Requires migration for every new metadata field
+- **EAV (Entity-Attribute-Value)** ÔøΩ Complex queries, poor performance, difficult indexing
+- **Pure JSON without conventions** ÔøΩ Risk of key collisions, no structure enforcement
 
 ## Decision
 
@@ -103,6 +105,7 @@ CREATE INDEX adm_audit_logs_timestamp_idx
 #### JSONB Structure Convention
 
 **CREATE action** (snapshot of full entity):
+
 ```json
 {
   "_audit_snapshot": {
@@ -120,6 +123,7 @@ CREATE INDEX adm_audit_logs_timestamp_idx
 ```
 
 **UPDATE action** (old/new values + old state snapshot):
+
 ```json
 {
   "email": {
@@ -140,6 +144,7 @@ CREATE INDEX adm_audit_logs_timestamp_idx
 ```
 
 **DELETE action** (reason required for GDPR compliance):
+
 ```json
 {
   "_audit_reason": "GDPR Article 17 - Right to erasure requested by user",
@@ -152,6 +157,7 @@ CREATE INDEX adm_audit_logs_timestamp_idx
 ```
 
 **WEBHOOK action** (external system integration):
+
 ```json
 {
   "_audit_snapshot": {
@@ -181,8 +187,8 @@ export function captureChanges(oldData, newData): Record<string, unknown>
 **Key Design Decisions:**
 
 1. **API Parameter Mappings**:
-   - `entityType` í database column `entity` (avoid reserved keywords)
-   - `performedBy` í database column `member_id` (consistent with schema naming)
+   - `entityType` ÔøΩ database column `entity` (avoid reserved keywords)
+   - `performedBy` ÔøΩ database column `member_id` (consistent with schema naming)
 
 2. **Non-Blocking Design**:
    - `auditLog()` catches all errors silently (try/catch)
@@ -201,6 +207,7 @@ export function captureChanges(oldData, newData): Record<string, unknown>
 #### 1. Schema Flexibility
 
 **No migrations required for new metadata fields:**
+
 ```typescript
 // Adding new metadata field (e.g., geolocation)
 await auditLog({
@@ -209,25 +216,28 @@ await auditLog({
   entityType: "driver",
   entityId: driver.id,
   metadata: {
-    geolocation: { lat: 25.2048, lng: 55.2708 },  // ê New field
-    source: "mobile_app"
-  }
+    geolocation: { lat: 25.2048, lng: 55.2708 }, // ÔøΩ New field
+    source: "mobile_app",
+  },
 });
 // No ALTER TABLE required!
 ```
 
 **Entity-specific fields coexist naturally:**
+
 - Vehicle: `odometer`, `fuel_level`
 - Driver: `license_expiry`, `professional_card_expiry`
 - Document: `file_size`, `mime_type`
 
 **Future-proof for new modules:**
-- Billing module í `_audit_invoice_id`, `_audit_payment_method`
-- CRM module í `_audit_lead_source`, `_audit_campaign_id`
+
+- Billing module ÔøΩ `_audit_invoice_id`, `_audit_payment_method`
+- CRM module ÔøΩ `_audit_lead_source`, `_audit_campaign_id`
 
 #### 2. Query Performance
 
 **GIN index enables fast JSONB queries (<50ms):**
+
 ```sql
 -- Containment query (GIN-optimized)
 WHERE changes @> '{"_audit_reason": "GDPR"}'::jsonb
@@ -239,11 +249,13 @@ WHERE changes ? '_audit_snapshot'
 ```
 
 **Single column reduces table width:**
+
 - No sparse columns with mostly NULL values
 - Better cache locality for sequential scans
 - Efficient JSONB compression in PostgreSQL
 
 **Composite indexes support complex queries:**
+
 ```sql
 WHERE tenant_id = '...' AND entity = 'driver' AND entity_id = '...'
 -- Uses: adm_audit_logs_tenant_entity_entity_id_idx
@@ -252,6 +264,7 @@ WHERE tenant_id = '...' AND entity = 'driver' AND entity_id = '...'
 #### 3. Developer Experience
 
 **Simple, intuitive API:**
+
 ```typescript
 // CREATE
 await auditLog({
@@ -276,11 +289,13 @@ await auditLog({
 ```
 
 **Type-safe helpers prevent malformed JSONB:**
+
 - `serializeForAudit()` converts Dates to ISO strings
 - `buildChangesJSON()` enforces `_audit_*` prefix convention
 - `captureChanges()` auto-detects field differences
 
 **Non-blocking by design:**
+
 - Audit failures never block business operations
 - Silent fail in production, logged in development
 - Resilient to temporary DB connection issues
@@ -288,37 +303,41 @@ await auditLog({
 #### 4. Multi-Tenant Security
 
 **Strict isolation via `tenant_id` foreign key:**
+
 ```sql
 tenant_id UUID NOT NULL REFERENCES adm_tenants(id) ON DELETE CASCADE
 ```
 
 **Benefits:**
+
 - Automatic cascade delete when tenant removed
 - Query planner uses tenant_id index first
 - RLS (Row Level Security) ready for future enhancement
 
 **Validated via E2E tests:**
+
 ```bash
 pnpm test:audit:e2e
 #  Multi-tenant isolation - 32 log(s) found
 #  No cross-tenant leakage detected
 ```
 
-### Negative †
+### Negative ÔøΩ
 
 #### 1. Query Complexity
 
 **Developers must learn PostgreSQL JSONB operators:**
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `->` | Get JSON object | `changes->'_audit_snapshot'` |
-| `->>` | Get JSON text | `changes->>'_audit_reason'` |
-| `@>` | Containment | `changes @> '{"status": "active"}'::jsonb` |
-| `?` | Key exists | `changes ? '_audit_snapshot'` |
-| `?|` | Any key exists | `changes ?| ARRAY['_audit_snapshot', '_audit_metadata']` |
+| Operator | Description     | Example                                    |
+| -------- | --------------- | ------------------------------------------ | ---------- | -------------------------------------------- |
+| `->`     | Get JSON object | `changes->'_audit_snapshot'`               |
+| `->>`    | Get JSON text   | `changes->>'_audit_reason'`                |
+| `@>`     | Containment     | `changes @> '{"status": "active"}'::jsonb` |
+| `?`      | Key exists      | `changes ? '_audit_snapshot'`              |
+| `?       | `               | Any key exists                             | `changes ? | ARRAY['_audit_snapshot', '_audit_metadata']` |
 
 **EXPLAIN ANALYZE required for optimization:**
+
 ```sql
 EXPLAIN ANALYZE
 SELECT * FROM adm_audit_logs
@@ -326,6 +345,7 @@ WHERE changes @> '{"_audit_reason": "GDPR"}'::jsonb;
 ```
 
 **Mitigation:**
+
 - Comprehensive operations guide with 16 example queries
 - Performance section documenting GIN-compatible operators
 - `docs/operations/AUDIT_TRAIL_GUIDE.md` provides copy-paste SQL
@@ -333,6 +353,7 @@ WHERE changes @> '{"_audit_reason": "GDPR"}'::jsonb;
 #### 2. Type Safety Limitations
 
 **No database-level validation on JSONB content:**
+
 ```sql
 -- L This will succeed even if malformed
 INSERT INTO adm_audit_logs (tenant_id, action, entity, entity_id, changes)
@@ -340,20 +361,23 @@ VALUES ('...', 'create', 'driver', '...', '{"invalid": "structure"}'::jsonb);
 ```
 
 **Application-level enforcement required:**
+
 - Must use `auditLog()` helper (not raw Prisma)
 - `buildChangesJSON()` enforces prefix convention
 - Code reviews critical to prevent bypasses
 
 **TypeScript types not enforced at DB layer:**
+
 ```typescript
 // TypeScript can't prevent this at runtime
-const changes = { reason: "..." };  // Missing _audit_ prefix
+const changes = { reason: "..." }; // Missing _audit_ prefix
 await prisma.adm_audit_logs.create({
-  data: { changes }  // ê No type error, but breaks convention
+  data: { changes }, // ÔøΩ No type error, but breaks convention
 });
 ```
 
 **Mitigation:**
+
 - Automated E2E tests validate structure (9 validation checks)
 - Linting rules to detect raw Prisma calls
 - Developer documentation emphasizes helper usage
@@ -361,11 +385,13 @@ await prisma.adm_audit_logs.create({
 #### 3. Maintenance Overhead
 
 **Prefix convention must be manually enforced:**
+
 - Code reviews required to catch violations
 - No automated linter for JSONB key naming
 - Documentation must be kept in sync with conventions
 
 **Migration complexity for retroactive changes:**
+
 ```sql
 -- Example: Renaming _audit_snapshot to _audit_state
 UPDATE adm_audit_logs
@@ -378,6 +404,7 @@ WHERE changes ? '_audit_snapshot';
 ```
 
 **Mitigation:**
+
 - Comprehensive ADR documentation (this document)
 - Operations guide with troubleshooting section
 - E2E tests validate structure continuously
@@ -387,6 +414,7 @@ WHERE changes ? '_audit_snapshot';
 ### Alternative 1: Separate Columns for Each Metadata Field
 
 **Schema:**
+
 ```sql
 CREATE TABLE adm_audit_logs (
   id UUID PRIMARY KEY,
@@ -402,11 +430,13 @@ CREATE TABLE adm_audit_logs (
 ```
 
 **Pros:**
+
 - Clear column semantics
 - Type constraints possible (`reason TEXT NOT NULL` for DELETE)
 - Standard SQL queries (no JSONB operators)
 
 **Cons:**
+
 - L **Requires migration for new fields**: Adding `geolocation` needs ALTER TABLE
 - L **Sparse columns**: Most fields NULL for most rows (waste space)
 - L **Entity-specific fields**: Cannot store vehicle `odometer` vs driver `license_expiry` in same schema
@@ -417,6 +447,7 @@ CREATE TABLE adm_audit_logs (
 ### Alternative 2: Pure JSON Column (No Prefix Convention)
 
 **Schema:**
+
 ```sql
 CREATE TABLE adm_audit_logs (
   id UUID PRIMARY KEY,
@@ -427,11 +458,13 @@ CREATE TABLE adm_audit_logs (
 ```
 
 **Pros:**
+
 - Maximum flexibility
 - No naming rules to enforce
 
 **Cons:**
-- L **Key collision risk**: User entity has field `metadata` í conflicts with audit metadata
+
+- L **Key collision risk**: User entity has field `metadata` ÔøΩ conflicts with audit metadata
 - L **No structure enforcement**: Developers can put anything anywhere
 - L **Queries ambiguous**: `data->>'reason'` could be audit reason or business reason
 
@@ -440,6 +473,7 @@ CREATE TABLE adm_audit_logs (
 ### Alternative 3: EAV (Entity-Attribute-Value) Table
 
 **Schema:**
+
 ```sql
 CREATE TABLE adm_audit_logs (
   id UUID PRIMARY KEY,
@@ -458,10 +492,12 @@ CREATE TABLE adm_audit_log_attributes (
 ```
 
 **Pros:**
+
 - Highly normalized
 - Easy to add new attributes
 
 **Cons:**
+
 - L **Complex queries**: Retrieving full log requires JOINs + pivot
 - L **Poor performance**: 1 row per attribute (10 attributes = 10 rows per log)
 - L **Difficult indexing**: Cannot index on specific attribute values efficiently
@@ -472,6 +508,7 @@ CREATE TABLE adm_audit_log_attributes (
 ### Alternative 4: Hybrid (Columns + JSONB)
 
 **Schema:**
+
 ```sql
 CREATE TABLE adm_audit_logs (
   id UUID PRIMARY KEY,
@@ -484,10 +521,12 @@ CREATE TABLE adm_audit_logs (
 ```
 
 **Pros:**
+
 - Balance between structure and flexibility
 - Common fields in columns, rare fields in JSONB
 
 **Cons:**
+
 - L **Decision overhead**: Where to put new fields? Column or JSONB?
 - L **Migration still needed**: Adding common field requires ALTER TABLE
 - L **Inconsistent queries**: Mix of column and JSONB syntax
@@ -499,6 +538,7 @@ CREATE TABLE adm_audit_logs (
 ### Production Validation
 
 **28 auditLog() calls** deployed across 5 services:
+
 - `lib/services/drivers/driver.service.ts`: 5 calls
 - `lib/services/vehicles/vehicle.service.ts`: 8 calls
 - `lib/services/documents/document.service.ts`: 6 calls
@@ -506,6 +546,7 @@ CREATE TABLE adm_audit_logs (
 - `app/api/webhooks/clerk/route.ts`: 6 calls
 
 **E2E Test Coverage (100%):**
+
 ```bash
 pnpm test:audit:e2e
 #  9/9 validations passed
@@ -516,6 +557,7 @@ pnpm test:audit:e2e
 ### Performance Benchmarks
 
 **GIN Index Effectiveness:**
+
 ```sql
 EXPLAIN ANALYZE
 SELECT * FROM adm_audit_logs
@@ -527,9 +569,10 @@ WHERE changes @> '{"_audit_reason": "GDPR"}'::jsonb;
 ```
 
 **Without GIN index (Seq Scan):**
+
 ```
 -- Execution Time: 1,847 ms (same query)
--- † 150x slower!
+-- ÔøΩ 150x slower!
 ```
 
 ### Multi-Tenant Isolation Test Results
@@ -545,12 +588,14 @@ pnpm test:audit:e2e
 ## References
 
 ### Compliance Standards
+
 - **GDPR Article 30**: Records of processing activities
   - https://gdpr-info.eu/art-30-gdpr/
 - **ISO 27001:2013**: Audit logging and monitoring
   - https://www.iso27001security.com/html/27001.html
 
 ### Technical Documentation
+
 - **PostgreSQL JSONB**: Data types and indexing
   - https://www.postgresql.org/docs/current/datatype-json.html
 - **Prisma JSONB**: Schema definition and queries
@@ -559,6 +604,7 @@ pnpm test:audit:e2e
   - https://www.postgresql.org/docs/current/gin-intro.html
 
 ### Internal Documentation
+
 - **Operations Guide**: `docs/operations/AUDIT_TRAIL_GUIDE.md`
   - 16 example SQL queries
   - 5 troubleshooting scenarios
