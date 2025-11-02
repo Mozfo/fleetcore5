@@ -35,7 +35,8 @@
     "test:batch3:ci": "tsx scripts/test-batch3-staging.ts"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "schema": "prisma/schema"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.32.2",

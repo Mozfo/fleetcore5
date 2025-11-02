@@ -1,0 +1,472 @@
+// ============================================================================
+// MODULE SUPPORT - Prisma Schema
+// Description: Support ticket management, customer feedback, and helpdesk
+// Tables: 6 (3 MODIFY + 3 NEW)
+// Dependencies: ADM (tenants, members, provider_employees), RID (drivers)
+// Version: V2
+// Generated: 2025-11-02
+// ============================================================================
+
+// ============================================================================
+// ENUMS - Support Module Specific
+// ============================================================================
+
+enum TicketStatus {
+  new                  // Newly created, not yet assigned
+  open                 // Assigned and being worked on
+  waiting_client       // Waiting for client response
+  waiting_internal     // Waiting for internal team/escalation
+  resolved             // Issue resolved, awaiting confirmation
+  closed               // Ticket closed permanently
+
+  @@map("ticket_status")
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  critical  // Added for urgent escalations
+
+  @@map("ticket_priority")
+}
+
+enum TicketSourcePlatform {
+  web
+  mobile
+  api
+  email     // Added for email-based tickets
+  phone     // Added for phone-based tickets
+
+  @@map("ticket_source_platform")
+}
+
+enum TicketRaisedByType {
+  admin    // Tenant admin
+  driver   // Driver user
+  client   // End customer
+  guest    // Non-authenticated user
+
+  @@map("ticket_raised_by_type")
+}
+
+enum MessageType {
+  public    // Visible to client
+  internal  // Visible only to support team
+  note      // Private note on ticket
+
+  @@map("message_type")
+}
+
+enum SubmitterType {
+  driver
+  client
+  member
+  guest
+
+  @@map("submitter_type")
+}
+
+enum ServiceType {
+  ride         // Feedback on ride service
+  support      // Feedback on support service
+  maintenance  // Feedback on maintenance
+  other        // Other types
+
+  @@map("service_type")
+}
+
+// ============================================================================
+// TABLES - MODIFY (Existing V1 with V2 Evolutions)
+// ============================================================================
+
+/// Support tickets with advanced categorization and SLA tracking
+/// V1: Basic ticket management (raised_by, subject, description, status, priority, assigned_to)
+/// V2: Added categorization, multilingual support, SLA tracking, attachments, source tracking
+model SupTicket {
+  // ============================================================================
+  // PRIMARY KEY & TENANT ISOLATION
+  // ============================================================================
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @db.Uuid
+
+  // ============================================================================
+  // V1 FIELDS - Core Ticket Information
+  // ============================================================================
+  raisedBy    String   @db.Uuid  // FK to adm_members
+  subject     String   @db.VarChar(255)
+  description String   @db.Text
+  status      TicketStatus @default(new)
+  priority    TicketPriority @default(medium)
+  assignedTo  String?  @db.Uuid  // FK to adm_provider_employees
+
+  // ============================================================================
+  // V2 ADDITIONS - Categorization & Routing
+  // ============================================================================
+  category       String?  @db.VarChar(100)  // Type: technique, facturation, formation
+  subCategory    String?  @db.VarChar(100)  // Fine-grained orientation
+  
+  // ============================================================================
+  // V2 ADDITIONS - Multilingual & Source Tracking
+  // ============================================================================
+  language          String?  @db.VarChar(10)  // ISO 639-1 language code
+  sourcePlatform    TicketSourcePlatform @default(web)
+  raisedByType      TicketRaisedByType @default(member)
+  
+  // ============================================================================
+  // V2 ADDITIONS - Attachments & Resolution
+  // ============================================================================
+  attachmentsUrl    String[] @default([])  // Array of attachment URLs
+  resolutionNotes   String?  @db.Text      // Notes on how issue was resolved
+  
+  // ============================================================================
+  // V2 ADDITIONS - SLA Tracking
+  // ============================================================================
+  slaDueAt   DateTime? @db.Timestamptz  // SLA deadline
+  closedAt   DateTime? @db.Timestamptz  // Actual closure timestamp
+
+  // ============================================================================
+  // AUDIT TRAIL
+  // ============================================================================
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  createdBy String   @db.Uuid  // FK to adm_provider_employees
+  updatedBy String?  @db.Uuid  // FK to adm_provider_employees
+
+  // ============================================================================
+  // RELATIONS
+  // ============================================================================
+  tenant             AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  member             AdmMember              @relation("TicketRaisedBy", fields: [raisedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assignedEmployee   AdmProviderEmployee?   @relation("TicketAssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  creator            AdmProviderEmployee    @relation("TicketCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updater            AdmProviderEmployee?   @relation("TicketUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  
+  // Reverse relations
+  messages           SupTicketMessage[]
+  feedback           SupCustomerFeedback[]
+
+  // ============================================================================
+  // INDEXES
+  // ============================================================================
+  @@index([tenantId, raisedBy, createdAt])  // V1 index
+  @@index([category, status, slaDueAt])     // V2: SLA reporting
+  @@index([assignedTo, status])             // V2: Agent workload
+  @@index([status, priority])               // V2: Ticket filtering
+  @@index([sourcePlatform, raisedByType])   // V2: Source analytics
+
+  @@map("sup_tickets")
+}
+
+/// Ticket messages with threading, attachments, and sentiment analysis
+/// V1: Simple messages (ticket_id, sender_id, message_body, sent_at)
+/// V2: Added message types, threading, attachments, multilingual, AI features
+model SupTicketMessage {
+  // ============================================================================
+  // PRIMARY KEY
+  // ============================================================================
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  // ============================================================================
+  // V1 FIELDS - Core Message Information
+  // ============================================================================
+  ticketId    String   @db.Uuid  // FK to sup_tickets
+  senderId    String   @db.Uuid  // FK to adm_members or adm_provider_employees
+  messageBody String   @db.Text
+  sentAt      DateTime @default(now()) @db.Timestamptz
+
+  // ============================================================================
+  // V2 ADDITIONS - Message Types & Threading
+  // ============================================================================
+  messageType       MessageType @default(public)
+  parentMessageId   String?     @db.Uuid  // For threaded discussions
+
+  // ============================================================================
+  // V2 ADDITIONS - Attachments
+  // ============================================================================
+  attachmentUrl     String?  @db.Text      // Link to attached file
+  attachmentType    String?  @db.VarChar(50)  // image, pdf, video
+
+  // ============================================================================
+  // V2 ADDITIONS - Multilingual Support
+  // ============================================================================
+  language          String?  @db.VarChar(10)  // ISO 639-1 code
+
+  // ============================================================================
+  // V2 ADDITIONS - AI Features
+  // ============================================================================
+  sentimentScore    Float?   // Sentiment score (-1 to +1)
+  isAutomated       Boolean  @default(false)  // Auto-generated message
+  aiSuggestions     Json?    // AI-suggested responses
+  translation       Json?    // Automatic translations
+
+  // ============================================================================
+  // RELATIONS
+  // ============================================================================
+  ticket            SupTicket           @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  parentMessage     SupTicketMessage?   @relation("MessageThread", fields: [parentMessageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  
+  // Reverse relations
+  replies           SupTicketMessage[]  @relation("MessageThread")
+
+  // ============================================================================
+  // INDEXES
+  // ============================================================================
+  @@index([ticketId, sentAt])               // V1: Messages by ticket
+  @@index([ticketId, parentMessageId])      // V2: Threading
+  @@index([messageType, sentAt])            // V2: Filtering by type
+  @@index([senderId])                       // V2: Sender lookup
+
+  @@map("sup_ticket_messages")
+}
+
+/// Customer feedback with detailed ratings and sentiment analysis
+/// V1: Basic feedback (submitted_by, submitter_type, feedback_text, rating)
+/// V2: Added links to tickets/drivers, detailed ratings, anonymity, tags, sentiment
+model SupCustomerFeedback {
+  // ============================================================================
+  // PRIMARY KEY
+  // ============================================================================
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  // ============================================================================
+  // V1 FIELDS - Core Feedback Information
+  // ============================================================================
+  submittedBy    String?        @db.Uuid  // Nullable for anonymous feedback
+  submitterType  SubmitterType
+  feedbackText   String         @db.Text
+
+  // ============================================================================
+  // V2 ADDITIONS - Explicit Links
+  // ============================================================================
+  ticketId       String?  @db.Uuid  // FK to sup_tickets (nullable)
+  driverId       String?  @db.Uuid  // FK to rid_drivers (nullable)
+  serviceType    ServiceType @default(other)
+
+  // ============================================================================
+  // V2 ADDITIONS - Multilingual & Sentiment
+  // ============================================================================
+  language        String?  @db.VarChar(10)  // ISO 639-1 code
+  sentimentScore  Float?   // AI sentiment analysis (-1 to +1)
+  isAnonymous     Boolean  @default(false)
+
+  // ============================================================================
+  // V2 ADDITIONS - Categorization
+  // ============================================================================
+  category        String?  @db.VarChar(100)
+  tags            String[] @default([])  // Tags for classification
+
+  // ============================================================================
+  // V2 ADDITIONS - Detailed Ratings (1-5)
+  // ============================================================================
+  overallRating                Int?  // Overall rating (replaces old single 'rating')
+  responseTimeRating           Int?  // Rating for response time
+  resolutionQualityRating      Int?  // Rating for resolution quality
+  agentProfessionalismRating   Int?  // Rating for agent professionalism
+
+  // ============================================================================
+  // AUDIT TRAIL
+  // ============================================================================
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  // ============================================================================
+  // RELATIONS
+  // ============================================================================
+  ticket    SupTicket?   @relation(fields: [ticketId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  // Note: driverId FK to rid_drivers - relation defined when RID module is created
+
+  // ============================================================================
+  // INDEXES
+  // ============================================================================
+  @@index([ticketId, serviceType])     // V2: Link with tickets
+  @@index([driverId, createdAt])       // V2: Driver tracking
+  @@index([category, createdAt])       // V2: Category analytics
+  @@index([sentimentScore])            // V2: Sentiment filtering
+  @@index([tags], type: Gin)           // V2: Tag search (GIN index)
+
+  @@map("sup_customer_feedback")
+}
+
+// ============================================================================
+// TABLES - NEW (Created in V2)
+// ============================================================================
+
+/// Configurable ticket categories with hierarchy and SLA defaults
+/// NEW in V2: Enables customizable categorization per tenant
+model SupTicketCategory {
+  // ============================================================================
+  // PRIMARY KEY & TENANT ISOLATION
+  // ============================================================================
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @db.Uuid
+
+  // ============================================================================
+  // CATEGORY INFORMATION
+  // ============================================================================
+  name              String   @db.VarChar(100)
+  slug              String   @db.VarChar(100)  // Stable identifier
+  description       String?  @db.Text
+  parentCategoryId  String?  @db.Uuid  // For hierarchy
+
+  // ============================================================================
+  // DEFAULTS & CONFIGURATION
+  // ============================================================================
+  defaultPriority      TicketPriority?
+  defaultAssignedTeam  String?  @db.VarChar(100)  // Team name/identifier
+  slaHours             Int?     // Default SLA for this category
+
+  // ============================================================================
+  // STATUS & ORDERING
+  // ============================================================================
+  isActive       Boolean @default(true)
+  displayOrder   Int     @default(0)
+
+  // ============================================================================
+  // AUDIT TRAIL
+  // ============================================================================
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  createdBy String   @db.Uuid  // FK to adm_provider_employees
+  updatedBy String?  @db.Uuid  // FK to adm_provider_employees
+
+  // ============================================================================
+  // RELATIONS
+  // ============================================================================
+  tenant          AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  parentCategory  SupTicketCategory?     @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  creator         AdmProviderEmployee    @relation("CategoryCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updater         AdmProviderEmployee?   @relation("CategoryUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // Reverse relations
+  subCategories   SupTicketCategory[]    @relation("CategoryHierarchy")
+  slaRules        SupTicketSlaRule[]
+
+  // ============================================================================
+  // CONSTRAINTS
+  // ============================================================================
+  @@unique([tenantId, slug])  // Unique slug per tenant
+
+  // ============================================================================
+  // INDEXES
+  // ============================================================================
+  @@index([tenantId, isActive])
+  @@index([parentCategoryId])
+  @@index([displayOrder])
+
+  @@map("sup_ticket_categories")
+}
+
+/// SLA rules configuration per tenant, category, and priority
+/// NEW in V2: Configurable SLA tracking with escalation
+model SupTicketSlaRule {
+  // ============================================================================
+  // PRIMARY KEY & TENANT ISOLATION
+  // ============================================================================
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @db.Uuid
+
+  // ============================================================================
+  // RULE TARGETING
+  // ============================================================================
+  categoryId  String?         @db.Uuid  // Nullable = applies to all categories
+  priority    TicketPriority
+
+  // ============================================================================
+  // SLA TIMEFRAMES (in hours)
+  // ============================================================================
+  responseTimeHours   Int  // Time to first response
+  resolutionTimeHours Int  // Time to resolution
+
+  // ============================================================================
+  // ESCALATION & CONFIGURATION
+  // ============================================================================
+  escalationRules     Json?    // Escalation rules in JSON
+  businessHoursOnly   Boolean  @default(false)  // Count only business hours
+
+  // ============================================================================
+  // STATUS
+  // ============================================================================
+  isActive Boolean @default(true)
+
+  // ============================================================================
+  // AUDIT TRAIL
+  // ============================================================================
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  createdBy String   @db.Uuid  // FK to adm_provider_employees
+  updatedBy String?  @db.Uuid  // FK to adm_provider_employees
+
+  // ============================================================================
+  // RELATIONS
+  // ============================================================================
+  tenant    AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  category  SupTicketCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  creator   AdmProviderEmployee    @relation("SlaRuleCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updater   AdmProviderEmployee?   @relation("SlaRuleUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // ============================================================================
+  // CONSTRAINTS
+  // ============================================================================
+  @@unique([tenantId, categoryId, priority])  // One rule per tenant/category/priority combo
+
+  // ============================================================================
+  // INDEXES
+  // ============================================================================
+  @@index([tenantId, isActive])
+  @@index([categoryId])
+  @@index([priority])
+
+  @@map("sup_ticket_sla_rules")
+}
+
+/// Predefined responses for common support questions
+/// NEW in V2: Enables quick, consistent responses with usage tracking
+model SupCannedResponse {
+  // ============================================================================
+  // PRIMARY KEY & TENANT ISOLATION
+  // ============================================================================
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @db.Uuid
+
+  // ============================================================================
+  // RESPONSE CONTENT
+  // ============================================================================
+  title       String   @db.VarChar(255)
+  content     String   @db.Text
+  category    String?  @db.VarChar(100)
+  language    String   @db.VarChar(10)  // ISO 639-1 code
+
+  // ============================================================================
+  // USAGE STATISTICS
+  // ============================================================================
+  usageCount   Int       @default(0)
+  lastUsedAt   DateTime? @db.Timestamptz
+
+  // ============================================================================
+  // STATUS
+  // ============================================================================
+  isActive Boolean @default(true)
+
+  // ============================================================================
+  // AUDIT TRAIL
+  // ============================================================================
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  createdBy String   @db.Uuid  // FK to adm_provider_employees
+
+  // ============================================================================
+  // RELATIONS
+  // ============================================================================
+  tenant  AdmTenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  creator AdmProviderEmployee @relation(fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  // ============================================================================
+  // INDEXES
+  // ============================================================================
+  @@index([tenantId, category, isActive])
+  @@index([language])
+  @@index([usageCount])  // For popularity sorting
+
+  @@map("sup_canned_responses")
+}

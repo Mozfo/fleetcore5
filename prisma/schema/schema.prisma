@@ -1,0 +1,22 @@
+// ============================================================================
+// FLEETCORE V2 - SCHEMA PRINCIPAL
+// ============================================================================
+// Date: 2 Novembre 2025
+// Version: 2.0
+// Stream: 1/12 - ADM Module
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// NOTE: Tous les modèles sont définis dans les fichiers *.prisma de ce dossier
+// Prisma les combine automatiquement (prismaSchemaFolder feature)
+// ============================================================================

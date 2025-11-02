@@ -1,0 +1,360 @@
+// ============================================================================
+// MODULE TRANSPORT/TRIPS (TRP) - Prisma Schema
+// ============================================================================
+// Version: 2.0
+// Date: 2025-11-02
+// Tables: 6 tables (4 MODIFY + 2 NEW)
+// Description: Import courses plateformes, settlements, facturation B2B
+// ============================================================================
+
+// ============================================================================
+// ENUMS - Module Transport
+// ============================================================================
+
+enum PlatformAccountStatus {
+  active      // Compte actif, import en cours
+  inactive    // Compte désactivé temporairement (maintenance)
+  suspended   // Compte suspendu (erreurs répétées, problème API)
+
+  @@map("platform_account_status")
+}
+
+enum PlatformAccountKeyType {
+  read_only   // Clé lecture seule (query data)
+  read_write  // Clé lecture/écriture (import + webhook)
+  admin       // Clé admin (gestion compte plateforme)
+
+  @@map("platform_account_key_type")
+}
+
+enum TripStatus {
+  completed   // Course terminée avec succès
+  cancelled   // Course annulée (driver ou passenger)
+  rejected    // Course refusée par driver
+  no_show     // Passenger absent au pickup
+
+  @@map("trip_status")
+}
+
+enum SettlementType {
+  platform_payout  // Paiement régulier plateforme → driver
+  adjustment       // Ajustement (correction, bonus, pénalité)
+  refund           // Remboursement
+  bonus            // Bonus/incentive
+
+  @@map("settlement_type")
+}
+
+enum SettlementStatus {
+  pending    // En attente de traitement
+  settled    // Réglé/payé
+  cancelled  // Annulé
+
+  @@map("settlement_status")
+}
+
+enum PaymentMethod {
+  bank_transfer  // Virement bancaire
+  card           // Carte bancaire
+  check          // Chèque
+  cash           // Espèces
+
+  @@map("payment_method")
+}
+
+enum InvoiceStatus {
+  draft           // Brouillon, non finalisée
+  sent            // Envoyée au client
+  viewed          // Client a consulté la facture
+  partially_paid  // Paiement partiel reçu
+  paid            // Payée intégralement
+  disputed        // Litige en cours
+  cancelled       // Annulée
+  overdue         // En retard de paiement
+
+  @@map("invoice_status")
+}
+
+// ============================================================================
+// MODELS - Module Transport
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// TABLE 1/6: trp_platform_accounts (MODIFY)
+// Description: Comptes plateformes (Uber, Bolt, etc.) avec gestion sécurisée credentials
+// ----------------------------------------------------------------------------
+model TrpPlatformAccount {
+  id            String                   @id @default(uuid()) @db.Uuid
+  tenantId      String                   @map("tenant_id") @db.Uuid
+  platformId    String                   @map("platform_id") @db.Uuid
+  accountName   String?                  @map("account_name") @db.VarChar(255)
+  apiKey        String?                  @map("api_key") @db.Text // DEPRECATED: à migrer vers Vault
+  status        PlatformAccountStatus    @default(active)
+  connectedAt   DateTime?                @map("connected_at") @db.Timestamptz(6)
+  lastSyncAt    DateTime?                @map("last_sync_at") @db.Timestamptz(6)
+  lastError     String?                  @map("last_error") @db.Text
+  errorCount    Int                      @default(0) @map("error_count")
+  syncFrequency String?                  @map("sync_frequency") @db.VarChar(50) // Ex: "15 minutes", "1 hour"
+  metadata      Json?                    @db.JsonB
+  createdAt     DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy     String                   @map("created_by") @db.Uuid
+  updatedBy     String?                  @map("updated_by") @db.Uuid
+  deletedAt     DateTime?                @map("deleted_at") @db.Timestamptz(6)
+  deletedBy     String?                  @map("deleted_by") @db.Uuid
+  deletionReason String?                 @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant        AdmTenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  platform      DirPlatform              @relation(fields: [platformId], references: [id])
+  createdByUser AdmProviderEmployee      @relation("TrpPlatformAccountCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser AdmProviderEmployee?     @relation("TrpPlatformAccountUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByUser AdmProviderEmployee?     @relation("TrpPlatformAccountDeletedBy", fields: [deletedBy], references: [id])
+  keys          TrpPlatformAccountKey[]
+  trips         TrpTrip[]
+  settlements   TrpSettlement[]
+
+  @@unique([tenantId, platformId, deletedAt], name: "trp_platform_accounts_tenant_platform_unique")
+  @@index([status, lastSyncAt])
+  @@index([errorCount], map: "idx_trp_platform_accounts_error_count")
+  @@index([deletedAt])
+  @@map("trp_platform_accounts")
+}
+
+// ----------------------------------------------------------------------------
+// TABLE 2/6: trp_platform_account_keys (NEW)
+// Description: Gestion multi-clés avec rotation et expiration
+// ----------------------------------------------------------------------------
+model TrpPlatformAccountKey {
+  id          String                  @id @default(uuid()) @db.Uuid
+  accountId   String                  @map("account_id") @db.Uuid
+  keyValue    String                  @map("key_value") @db.Text // Chiffré
+  keyType     PlatformAccountKeyType  @map("key_type")
+  expiresAt   DateTime?               @map("expires_at") @db.Timestamptz(6)
+  isActive    Boolean                 @default(true) @map("is_active")
+  lastUsedAt  DateTime?               @map("last_used_at") @db.Timestamptz(6)
+  createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt   DateTime?               @map("revoked_at") @db.Timestamptz(6)
+  revokedBy   String?                 @map("revoked_by") @db.Uuid
+  revokeReason String?                @map("revoke_reason") @db.Text
+
+  // Relations
+  account       TrpPlatformAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  revokedByUser AdmProviderEmployee?    @relation("TrpPlatformAccountKeyRevokedBy", fields: [revokedBy], references: [id])
+
+  @@index([accountId, isActive])
+  @@index([expiresAt], map: "idx_trp_account_keys_expires")
+  @@index([keyType])
+  @@map("trp_platform_account_keys")
+}
+
+// ----------------------------------------------------------------------------
+// TABLE 3/6: trp_trips (MODIFY)
+// Description: Courses importées avec cycle de vie complet (requested → finished)
+// ----------------------------------------------------------------------------
+model TrpTrip {
+  id                 String             @id @default(uuid()) @db.Uuid
+  tenantId           String             @map("tenant_id") @db.Uuid
+  platformAccountId  String             @map("platform_account_id") @db.Uuid
+  driverId           String?            @map("driver_id") @db.Uuid
+  vehicleId          String?            @map("vehicle_id") @db.Uuid
+  platformTripId     String             @map("platform_trip_id") @db.VarChar(255)
+  
+  // Timestamps cycle de vie (V2: enrichi avec requested/matched/accepted/arrived)
+  requestedAt        DateTime?          @map("requested_at") @db.Timestamptz(6)
+  matchedAt          DateTime?          @map("matched_at") @db.Timestamptz(6)
+  acceptedAt         DateTime?          @map("accepted_at") @db.Timestamptz(6)
+  arrivedAt          DateTime?          @map("arrived_at") @db.Timestamptz(6)
+  startedAt          DateTime?          @map("started_at") @db.Timestamptz(6) // V1: start_time → started_at
+  finishedAt         DateTime?          @map("finished_at") @db.Timestamptz(6) // V1: end_time → finished_at
+  
+  // Géolocalisation
+  pickupLat          Decimal            @map("pickup_lat") @db.Decimal(10, 7)
+  pickupLng          Decimal            @map("pickup_lng") @db.Decimal(10, 7)
+  dropoffLat         Decimal            @map("dropoff_lat") @db.Decimal(10, 7)
+  dropoffLng         Decimal            @map("dropoff_lng") @db.Decimal(10, 7)
+  
+  // Métriques course
+  distance           Decimal?           @db.Decimal(10, 2) // En km
+  duration           Int?               // En secondes
+  
+  // Tarification détaillée
+  baseFare           Decimal            @map("base_fare") @db.Decimal(10, 2)
+  distanceFare       Decimal            @map("distance_fare") @db.Decimal(10, 2)
+  timeFare           Decimal            @map("time_fare") @db.Decimal(10, 2)
+  surgeMultiplier    Decimal?           @map("surge_multiplier") @db.Decimal(4, 2)
+  surgeAmount        Decimal?           @map("surge_amount") @db.Decimal(10, 2)
+  tipAmount          Decimal?           @map("tip_amount") @db.Decimal(10, 2)
+  totalFare          Decimal            @map("total_fare") @db.Decimal(10, 2)
+  platformCommission Decimal            @map("platform_commission") @db.Decimal(10, 2)
+  netEarnings        Decimal            @map("net_earnings") @db.Decimal(10, 2)
+  currency           String             @db.Char(3) // ISO 4217 (AED, EUR, GBP)
+  
+  status             TripStatus
+  metadata           Json?              @db.JsonB // V2: incentives, cancellation_reason, quality_metrics
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy          String             @map("created_by") @db.Uuid
+  updatedBy          String?            @map("updated_by") @db.Uuid
+  deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  deletedBy          String?            @map("deleted_by") @db.Uuid
+  deletionReason     String?            @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant            AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  platformAccount   TrpPlatformAccount    @relation(fields: [platformAccountId], references: [id])
+  driver            DriverDriver?         @relation(fields: [driverId], references: [id])
+  vehicle           FleetVehicle?         @relation(fields: [vehicleId], references: [id])
+  createdByUser     AdmProviderEmployee   @relation("TrpTripCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser     AdmProviderEmployee?  @relation("TrpTripUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByUser     AdmProviderEmployee?  @relation("TrpTripDeletedBy", fields: [deletedBy], references: [id])
+  settlements       TrpSettlement[]
+  invoiceLines      TrpClientInvoiceLine[]
+
+  @@unique([platformAccountId, platformTripId, deletedAt], name: "trp_trips_platform_trip_unique")
+  @@index([tenantId, status, startedAt])
+  @@index([driverId, status])
+  @@index([vehicleId, startedAt])
+  @@index([requestedAt, finishedAt])
+  @@index([status, deletedAt])
+  @@map("trp_trips")
+}
+
+// ----------------------------------------------------------------------------
+// TABLE 4/6: trp_settlements (MODIFY)
+// Description: Règlements plateformes avec réconciliation et multi-devises
+// ----------------------------------------------------------------------------
+model TrpSettlement {
+  id                     String            @id @default(uuid()) @db.Uuid
+  tenantId               String            @map("tenant_id") @db.Uuid
+  platformAccountId      String            @map("platform_account_id") @db.Uuid
+  tripId                 String?           @map("trip_id") @db.Uuid
+  settlementType         SettlementType    @map("settlement_type") @default(platform_payout)
+  platformSettlementId   String?           @map("platform_settlement_id") @db.VarChar(255)
+  amount                 Decimal           @db.Decimal(14, 2)
+  commission             Decimal           @db.Decimal(14, 2)
+  netAmount              Decimal           @map("net_amount") @db.Decimal(14, 2)
+  
+  // Taxes et multi-devises (V2)
+  taxAmount              Decimal?          @map("tax_amount") @db.Decimal(14, 2)
+  taxRate                Decimal?          @map("tax_rate") @db.Decimal(5, 2)
+  exchangeRate           Decimal?          @map("exchange_rate") @db.Decimal(10, 6)
+  originalCurrency       String?           @map("original_currency") @db.Char(3)
+  originalAmount         Decimal?          @map("original_amount") @db.Decimal(14, 2)
+  
+  status                 SettlementStatus  @default(pending)
+  settlementDate         DateTime?         @map("settlement_date") @db.Date
+  paidAt                 DateTime?         @map("paid_at") @db.Timestamptz(6)
+  cancelledAt            DateTime?         @map("cancelled_at") @db.Timestamptz(6)
+  settlementReference    String?           @map("settlement_reference") @db.VarChar(255)
+  
+  // Réconciliation (V2)
+  reconciled             Boolean           @default(false)
+  reconciliationId       String?           @map("reconciliation_id") @db.Uuid
+  
+  metadata               Json?             @db.JsonB
+  createdAt              DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy              String            @map("created_by") @db.Uuid
+  updatedBy              String?           @map("updated_by") @db.Uuid
+  deletedAt              DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  deletedBy              String?           @map("deleted_by") @db.Uuid
+  deletionReason         String?           @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant            AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  platformAccount   TrpPlatformAccount    @relation(fields: [platformAccountId], references: [id])
+  trip              TrpTrip?              @relation(fields: [tripId], references: [id])
+  reconciliation    RevReconciliation?    @relation(fields: [reconciliationId], references: [id])
+  createdByUser     AdmProviderEmployee   @relation("TrpSettlementCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser     AdmProviderEmployee?  @relation("TrpSettlementUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByUser     AdmProviderEmployee?  @relation("TrpSettlementDeletedBy", fields: [deletedBy], references: [id])
+
+  @@index([platformAccountId, settlementDate])
+  @@index([tripId])
+  @@index([status, paidAt])
+  @@index([platformSettlementId])
+  @@index([reconciled], map: "idx_trp_settlements_not_reconciled")
+  @@index([deletedAt])
+  @@map("trp_settlements")
+}
+
+// ----------------------------------------------------------------------------
+// TABLE 5/6: trp_client_invoices (MODIFY)
+// Description: Factures clients B2B avec suivi paiement détaillé
+// ----------------------------------------------------------------------------
+model TrpClientInvoice {
+  id                 String         @id @default(uuid()) @db.Uuid
+  tenantId           String         @map("tenant_id") @db.Uuid
+  clientId           String         @map("client_id") @db.Uuid
+  invoiceNumber      String         @map("invoice_number") @db.VarChar(50)
+  invoiceDate        DateTime       @map("invoice_date") @db.Date
+  dueDate            DateTime       @map("due_date") @db.Date
+  
+  // Contexte commercial (V2)
+  pricingPlanId      String?        @map("pricing_plan_id") @db.Uuid
+  clientPoNumber     String?        @map("client_po_number") @db.VarChar(100)
+  
+  // Montants
+  totalAmount        Decimal        @map("total_amount") @db.Decimal(14, 2)
+  discountAmount     Decimal?       @map("discount_amount") @db.Decimal(14, 2)
+  discountReason     String?        @map("discount_reason") @db.Text
+  currency           String         @db.Char(3)
+  
+  // Suivi paiement (V2)
+  status             InvoiceStatus  @default(draft)
+  paidAt             DateTime?      @map("paid_at") @db.Timestamptz(6)
+  paymentReference   String?        @map("payment_reference") @db.VarChar(255)
+  paymentMethod      PaymentMethod? @map("payment_method")
+  
+  metadata           Json?          @db.JsonB
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy          String         @map("created_by") @db.Uuid
+  updatedBy          String?        @map("updated_by") @db.Uuid
+  deletedAt          DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  deletedBy          String?        @map("deleted_by") @db.Uuid
+  deletionReason     String?        @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant        AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client        CrmClient             @relation(fields: [clientId], references: [id])
+  pricingPlan   CrmPricingPlan?       @relation(fields: [pricingPlanId], references: [id])
+  createdByUser AdmProviderEmployee   @relation("TrpClientInvoiceCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser AdmProviderEmployee?  @relation("TrpClientInvoiceUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByUser AdmProviderEmployee?  @relation("TrpClientInvoiceDeletedBy", fields: [deletedBy], references: [id])
+  lines         TrpClientInvoiceLine[]
+
+  @@unique([tenantId, invoiceNumber, deletedAt], name: "trp_client_invoices_number_unique")
+  @@index([clientId, status, invoiceDate])
+  @@index([status, dueDate])
+  @@index([paidAt])
+  @@index([deletedAt])
+  @@map("trp_client_invoices")
+}
+
+// ----------------------------------------------------------------------------
+// TABLE 6/6: trp_client_invoice_lines (NEW)
+// Description: Lignes détail facture pour transparence B2B
+// ----------------------------------------------------------------------------
+model TrpClientInvoiceLine {
+  id          String              @id @default(uuid()) @db.Uuid
+  invoiceId   String              @map("invoice_id") @db.Uuid
+  lineNumber  Int                 @map("line_number")
+  description String              @db.Text
+  tripId      String?             @map("trip_id") @db.Uuid
+  quantity    Decimal             @db.Decimal(10, 2)
+  unitPrice   Decimal             @map("unit_price") @db.Decimal(14, 2)
+  taxRate     Decimal?            @map("tax_rate") @db.Decimal(5, 2)
+  lineAmount  Decimal             @map("line_amount") @db.Decimal(14, 2)
+  metadata    Json?               @db.JsonB
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  invoice TrpClientInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  trip    TrpTrip?         @relation(fields: [tripId], references: [id])
+
+  @@index([invoiceId, lineNumber])
+  @@index([tripId])
+  @@map("trp_client_invoice_lines")
+}
