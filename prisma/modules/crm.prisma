@@ -1,0 +1,492 @@
+// =============================================================================
+// MODULE CRM - Customer Relationship Management (FleetCore Internal)
+// =============================================================================
+// Tables: 7 (3 principales + 4 référence)
+// Note: Tables INTERNES FleetCore (pas de tenant_id)
+// Utilisées par l'équipe commerciale AVANT création des tenants
+// =============================================================================
+
+// =============================================================================
+// ENUMS - Lead Management
+// =============================================================================
+
+enum LeadStatus {
+  new
+  qualified
+  converted
+  lost
+
+  @@map("lead_status")
+}
+
+enum LeadStage {
+  top_of_funnel
+  marketing_qualified
+  sales_qualified
+  opportunity
+
+  @@map("lead_stage")
+}
+
+// =============================================================================
+// ENUMS - Opportunity Management
+// =============================================================================
+
+enum OpportunityStage {
+  prospect
+  proposal
+  negotiation
+  closed
+
+  @@map("opportunity_stage")
+}
+
+enum OpportunityStatus {
+  open
+  won
+  lost
+  on_hold
+  cancelled
+
+  @@map("opportunity_status")
+}
+
+// =============================================================================
+// ENUMS - Contract Management
+// =============================================================================
+
+enum ContractStatus {
+  draft
+  negotiation
+  signed
+  active
+  future
+  expired
+  terminated
+  renewal_in_progress
+  cancelled
+
+  @@map("contract_status")
+}
+
+enum RenewalType {
+  automatic
+  optional
+  perpetual
+  non_renewing
+
+  @@map("renewal_type")
+}
+
+// =============================================================================
+// ENUMS - Address Management
+// =============================================================================
+
+enum AddressType {
+  billing
+  shipping
+
+  @@map("address_type")
+}
+
+// =============================================================================
+// TABLE 1: crm_leads - Gestion des Prospects
+// =============================================================================
+
+model CrmLead {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadCode             String?   @unique @map("lead_code") @db.VarChar(50)
+  
+  // Informations de contact (V1)
+  firstName            String    @map("first_name") @db.Text
+  lastName             String    @map("last_name") @db.Text
+  email                String    @db.Citext
+  phone                String?   @db.VarChar(50)
+  companyName          String?   @map("company_name") @db.Text
+  
+  // Informations entreprise (V2)
+  countryCode          String?   @map("country_code") @db.Char(2)
+  industry             String?   @db.Text
+  companySize          Int?      @map("company_size")
+  websiteUrl           String?   @map("website_url") @db.Text
+  linkedinUrl          String?   @map("linkedin_url") @db.Text
+  city                 String?   @db.Text
+  
+  // Message et source (V1)
+  message              String?   @db.Text
+  source               String?   @db.VarChar(50) // V1: texte libre
+  status               LeadStatus @default(new)
+  
+  // Scoring avancé (V2)
+  leadStage            LeadStage? @map("lead_stage")
+  fitScore             Decimal?   @map("fit_score") @db.Decimal(5, 2)
+  engagementScore      Decimal?   @map("engagement_score") @db.Decimal(5, 2)
+  scoring              Json?      @db.JsonB
+  qualificationNotes   String?    @map("qualification_notes") @db.Text
+  
+  // RGPD & Consentement (V2)
+  gdprConsent          Boolean?   @map("gdpr_consent")
+  consentAt            DateTime?  @map("consent_at") @db.Timestamptz(6)
+  
+  // Suivi commercial (V2)
+  sourceId             String?    @map("source_id") @db.Uuid
+  assignedTo           String?    @map("assigned_to") @db.Uuid
+  opportunityId        String?    @map("opportunity_id") @db.Uuid
+  nextActionDate       DateTime?  @map("next_action_date") @db.Timestamptz(6)
+  
+  // Tracking marketing (V2)
+  utmSource            String?    @map("utm_source") @db.Text
+  utmMedium            String?    @map("utm_medium") @db.Text
+  utmCampaign          String?    @map("utm_campaign") @db.Text
+  
+  // Audit trail (V1)
+  createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // Audit trail avancé (V2)
+  createdBy            String?    @map("created_by") @db.Uuid
+  updatedBy            String?    @map("updated_by") @db.Uuid
+  
+  // Soft delete (V2)
+  deletedAt            DateTime?  @map("deleted_at") @db.Timestamptz(6)
+  deletedBy            String?    @map("deleted_by") @db.Uuid
+  deletionReason       String?    @map("deletion_reason") @db.Text
+
+  // Relations
+  leadSource           CrmLeadSource?         @relation(fields: [sourceId], references: [id])
+  assignedEmployee     AdmProviderEmployee?   @relation("LeadAssignedTo", fields: [assignedTo], references: [id])
+  opportunity          CrmOpportunity?        @relation("LeadToOpportunity", fields: [opportunityId], references: [id])
+  createdByEmployee    AdmProviderEmployee?   @relation("LeadCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee    AdmProviderEmployee?   @relation("LeadUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee    AdmProviderEmployee?   @relation("LeadDeletedBy", fields: [deletedBy], references: [id])
+  
+  // Relation inverse: une opportunité peut être créée depuis ce lead
+  opportunitiesFromThisLead CrmOpportunity[] @relation("OpportunityFromLead")
+
+  @@unique([email], map: "idx_leads_email_unique", where: deletedAt == null)
+  @@index([status], map: "idx_leads_status")
+  @@index([leadStage], map: "idx_leads_stage")
+  @@index([sourceId], map: "idx_leads_source")
+  @@index([assignedTo], map: "idx_leads_assigned")
+  @@index([nextActionDate], map: "idx_leads_next_action")
+  @@index([createdAt], map: "idx_leads_created")
+  @@map("crm_leads")
+}
+
+// =============================================================================
+// TABLE 2: crm_opportunities - Pipeline de Vente
+// =============================================================================
+
+model CrmOpportunity {
+  id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  
+  // Lien lead (V1)
+  leadId               String             @map("lead_id") @db.Uuid
+  
+  // Progression (V1)
+  stage                OpportunityStage   @default(prospect)
+  
+  // Status distinct de stage (V2)
+  status               OpportunityStatus  @default(open)
+  
+  // Valeurs financières (V1 + V2)
+  expectedValue        Decimal            @map("expected_value") @db.Decimal(15, 2)
+  currency             String             @default("EUR") @db.Char(3)
+  discountAmount       Decimal?           @map("discount_amount") @db.Decimal(15, 2)
+  probabilityPercent   Decimal            @map("probability_percent") @db.Decimal(5, 2)
+  
+  // Valeur forecast calculée (V2)
+  forecastValue        Decimal?           @map("forecast_value") @db.Decimal(15, 2)
+  wonValue             Decimal?           @map("won_value") @db.Decimal(15, 2)
+  
+  // Dates (V1 + V2)
+  expectedCloseDate    DateTime           @map("expected_close_date") @db.Date
+  wonDate              DateTime?          @map("won_date") @db.Date
+  lostDate             DateTime?          @map("lost_date") @db.Date
+  
+  // Assignation (V1 + V2)
+  assignedTo           String             @map("assigned_to") @db.Uuid
+  ownerId              String?            @map("owner_id") @db.Uuid
+  
+  // Raisons de perte (V2)
+  lossReasonId         String?            @map("loss_reason_id") @db.Uuid
+  
+  // Liens critiques (V2)
+  planId               String?            @map("plan_id") @db.Uuid
+  contractId           String?            @map("contract_id") @db.Uuid
+  pipelineId           String?            @map("pipeline_id") @db.Uuid
+  
+  // Notes (V1)
+  notes                String?            @db.Text
+  
+  // Audit trail (V1)
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // Audit trail avancé (V2)
+  createdBy            String?            @map("created_by") @db.Uuid
+  updatedBy            String?            @map("updated_by") @db.Uuid
+  
+  // Soft delete (V2)
+  deletedAt            DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  deletedBy            String?            @map("deleted_by") @db.Uuid
+  deletionReason       String?            @map("deletion_reason") @db.Text
+
+  // Relations
+  lead                 CrmLead                        @relation("OpportunityFromLead", fields: [leadId], references: [id])
+  assignedEmployee     AdmProviderEmployee            @relation("OpportunityAssignedTo", fields: [assignedTo], references: [id])
+  owner                AdmProviderEmployee?           @relation("OpportunityOwner", fields: [ownerId], references: [id])
+  lossReason           CrmOpportunityLossReason?      @relation(fields: [lossReasonId], references: [id])
+  plan                 BilBillingPlan?                @relation(fields: [planId], references: [id])
+  contract             CrmContract?                   @relation("OpportunityToContract", fields: [contractId], references: [id])
+  pipeline             CrmPipeline?                   @relation(fields: [pipelineId], references: [id])
+  createdByEmployee    AdmProviderEmployee?           @relation("OpportunityCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee    AdmProviderEmployee?           @relation("OpportunityUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee    AdmProviderEmployee?           @relation("OpportunityDeletedBy", fields: [deletedBy], references: [id])
+  
+  // Relation inverse: un contrat peut être généré depuis cette opportunité
+  contractsFromThisOpportunity CrmContract[] @relation("ContractFromOpportunity")
+  
+  // Relation inverse: leads qui pointent vers cette opportunité
+  leadsPointingToThisOpportunity CrmLead[] @relation("LeadToOpportunity")
+
+  @@index([leadId], map: "idx_opportunities_lead")
+  @@index([stage], map: "idx_opportunities_stage")
+  @@index([status], map: "idx_opportunities_status")
+  @@index([assignedTo], map: "idx_opportunities_assigned")
+  @@index([ownerId], map: "idx_opportunities_owner")
+  @@index([expectedCloseDate], map: "idx_opportunities_close_date")
+  @@index([createdAt], map: "idx_opportunities_created")
+  @@map("crm_opportunities")
+}
+
+// =============================================================================
+// TABLE 3: crm_contracts - Contrats Signés
+// =============================================================================
+
+model CrmContract {
+  id                       String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  
+  // Identifiants (V1 + V2)
+  contractCode             String         @unique @map("contract_code") @db.Text
+  contractReference        String         @map("contract_reference") @db.Text
+  
+  // Lien source (V1 + V2)
+  leadId                   String?        @map("lead_id") @db.Uuid
+  opportunityId            String?        @map("opportunity_id") @db.Uuid
+  
+  // Cycle de vie (V1 + V2)
+  status                   ContractStatus @default(draft)
+  
+  // Dates (V1)
+  signatureDate            DateTime?      @map("signature_date") @db.Date
+  effectiveDate            DateTime       @map("effective_date") @db.Date
+  expirationDate           DateTime       @map("expiration_date") @db.Date
+  
+  // Valeurs financières (V1 + V2)
+  totalValue               Decimal        @map("total_value") @db.Decimal(15, 2)
+  currency                 String         @default("EUR") @db.Char(3)
+  vatRate                  Decimal?       @map("vat_rate") @db.Decimal(5, 2)
+  
+  // Renouvellement (V2)
+  renewalType              RenewalType?   @map("renewal_type")
+  autoRenew                Boolean        @default(false) @map("auto_renew")
+  renewalDate              DateTime?      @map("renewal_date") @db.Date
+  noticePeriodDays         Int?           @map("notice_period_days")
+  renewedFromContractId    String?        @map("renewed_from_contract_id") @db.Uuid
+  
+  // Liens système (V2)
+  tenantId                 String?        @map("tenant_id") @db.Uuid
+  planId                   String?        @map("plan_id") @db.Uuid
+  subscriptionId           String?        @map("subscription_id") @db.Uuid
+  
+  // Informations contact (V2)
+  companyName              String?        @map("company_name") @db.Text
+  contactName              String?        @map("contact_name") @db.Text
+  contactEmail             String?        @map("contact_email") @db.Citext
+  contactPhone             String?        @map("contact_phone") @db.VarChar(50)
+  billingAddressId         String?        @map("billing_address_id") @db.Uuid
+  
+  // Versionnement (V2)
+  versionNumber            Int            @default(1) @map("version_number")
+  documentUrl              String?        @map("document_url") @db.Text
+  notes                    String?        @db.Text
+  approvedBy               String?        @map("approved_by") @db.Uuid
+  
+  // Audit trail (V1)
+  createdAt                DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // Audit trail avancé (V2)
+  createdBy                String?        @map("created_by") @db.Uuid
+  updatedBy                String?        @map("updated_by") @db.Uuid
+  
+  // Soft delete (V2)
+  deletedAt                DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  deletedBy                String?        @map("deleted_by") @db.Uuid
+  deletionReason           String?        @map("deletion_reason") @db.Text
+
+  // Relations
+  opportunity              CrmOpportunity?        @relation("ContractFromOpportunity", fields: [opportunityId], references: [id])
+  tenant                   AdmTenant?             @relation(fields: [tenantId], references: [id])
+  plan                     BilBillingPlan?        @relation(fields: [planId], references: [id])
+  subscription             BilTenantSubscription? @relation(fields: [subscriptionId], references: [id])
+  billingAddress           CrmAddress?            @relation(fields: [billingAddressId], references: [id])
+  renewedFromContract      CrmContract?           @relation("ContractRenewals", fields: [renewedFromContractId], references: [id])
+  approvedByEmployee       AdmProviderEmployee?   @relation("ContractApprovedBy", fields: [approvedBy], references: [id])
+  createdByEmployee        AdmProviderEmployee?   @relation("ContractCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee        AdmProviderEmployee?   @relation("ContractUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee        AdmProviderEmployee?   @relation("ContractDeletedBy", fields: [deletedBy], references: [id])
+  
+  // Relations inverses
+  renewals                 CrmContract[]           @relation("ContractRenewals")
+  opportunitiesPointingToThisContract CrmOpportunity[] @relation("OpportunityToContract")
+
+  @@unique([contractReference], map: "idx_contracts_reference_unique", where: deletedAt == null)
+  @@index([status], map: "idx_contracts_status")
+  @@index([opportunityId], map: "idx_contracts_opportunity")
+  @@index([tenantId], map: "idx_contracts_tenant")
+  @@index([renewalDate], map: "idx_contracts_renewal_date")
+  @@index([expirationDate], map: "idx_contracts_expiration")
+  @@index([effectiveDate], map: "idx_contracts_effective")
+  @@map("crm_contracts")
+}
+
+// =============================================================================
+// TABLE 4: crm_lead_sources - Normalisation Sources
+// =============================================================================
+
+model CrmLeadSource {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String    @unique @db.VarChar(50)
+  description String?   @db.Text
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  leads       CrmLead[]
+
+  @@index([isActive], map: "idx_lead_sources_active")
+  @@map("crm_lead_sources")
+}
+
+// =============================================================================
+// TABLE 5: crm_opportunity_loss_reasons - Analyse Pertes
+// =============================================================================
+
+model CrmOpportunityLossReason {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String           @unique @db.VarChar(100)
+  category     String?          @db.VarChar(50) // price, features, timing, competition
+  description  String?          @db.Text
+  isActive     Boolean          @default(true) @map("is_active")
+
+  // Relations
+  opportunities CrmOpportunity[]
+
+  @@index([category], map: "idx_loss_reasons_category")
+  @@index([isActive], map: "idx_loss_reasons_active")
+  @@map("crm_opportunity_loss_reasons")
+}
+
+// =============================================================================
+// TABLE 6: crm_pipelines - Multi-Pipelines
+// =============================================================================
+
+model CrmPipeline {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String           @db.VarChar(100)
+  description          String?          @db.Text
+  stages               Json             @db.JsonB // ['prospect','proposal','negotiation']
+  defaultProbability   Json?            @map("default_probability") @db.JsonB
+  isDefault            Boolean          @default(false) @map("is_default")
+  isActive             Boolean          @default(true) @map("is_active")
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  opportunities        CrmOpportunity[]
+
+  @@index([isActive], map: "idx_pipelines_active")
+  @@index([isDefault], map: "idx_pipelines_default")
+  @@map("crm_pipelines")
+}
+
+// =============================================================================
+// TABLE 7: crm_addresses - Adresses Facturation
+// =============================================================================
+
+model CrmAddress {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  streetLine1  String      @map("street_line1") @db.Text
+  streetLine2  String?     @map("street_line2") @db.Text
+  city         String      @db.VarChar(100)
+  state        String?     @db.VarChar(100)
+  postalCode   String?     @map("postal_code") @db.VarChar(20)
+  countryCode  String      @map("country_code") @db.Char(2)
+  addressType  AddressType? @map("address_type")
+  isDefault    Boolean     @default(false) @map("is_default")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  contracts    CrmContract[]
+
+  @@index([countryCode], map: "idx_addresses_country")
+  @@index([addressType], map: "idx_addresses_type")
+  @@map("crm_addresses")
+}
+
+// =============================================================================
+// EXTERNAL REFERENCES (from other modules)
+// =============================================================================
+// These models are defined in their respective module files but referenced here
+
+model AdmProviderEmployee {
+  id String @id @db.Uuid
+  
+  // Relations to CRM (inverse relations defined in each CRM table)
+  leadsAssigned          CrmLead[]        @relation("LeadAssignedTo")
+  leadsCreated           CrmLead[]        @relation("LeadCreatedBy")
+  leadsUpdated           CrmLead[]        @relation("LeadUpdatedBy")
+  leadsDeleted           CrmLead[]        @relation("LeadDeletedBy")
+  
+  opportunitiesAssigned  CrmOpportunity[] @relation("OpportunityAssignedTo")
+  opportunitiesOwned     CrmOpportunity[] @relation("OpportunityOwner")
+  opportunitiesCreated   CrmOpportunity[] @relation("OpportunityCreatedBy")
+  opportunitiesUpdated   CrmOpportunity[] @relation("OpportunityUpdatedBy")
+  opportunitiesDeleted   CrmOpportunity[] @relation("OpportunityDeletedBy")
+  
+  contractsApproved      CrmContract[]    @relation("ContractApprovedBy")
+  contractsCreated       CrmContract[]    @relation("ContractCreatedBy")
+  contractsUpdated       CrmContract[]    @relation("ContractUpdatedBy")
+  contractsDeleted       CrmContract[]    @relation("ContractDeletedBy")
+  
+  @@map("adm_provider_employees")
+}
+
+model AdmTenant {
+  id String @id @db.Uuid
+  
+  // Relations to CRM
+  contracts CrmContract[]
+  
+  @@map("adm_tenants")
+}
+
+model BilBillingPlan {
+  id String @id @db.Uuid
+  
+  // Relations to CRM
+  opportunities CrmOpportunity[]
+  contracts     CrmContract[]
+  
+  @@map("bil_billing_plans")
+}
+
+model BilTenantSubscription {
+  id String @id @db.Uuid
+  
+  // Relations to CRM
+  contracts CrmContract[]
+  
+  @@map("bil_tenant_subscriptions")
+}

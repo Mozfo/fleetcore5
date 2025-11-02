@@ -1,0 +1,306 @@
+// ============================================================================
+// MODULE: DOCUMENTS (DOC)
+// Description: Document management with versioning, verification, and multi-storage
+// Tables: 4 (1 MODIFY + 3 NEW)
+// Version: V2
+// Generated: 2025-11-02
+// ============================================================================
+
+// ============================================================================
+// ENUMS - Documents Module
+// ============================================================================
+
+// Verification workflow status (3-state workflow)
+enum VerificationStatus {
+  pending      // Awaiting verification
+  verified     // Verified and validated
+  rejected     // Rejected as non-compliant
+
+  @@map("verification_status")
+}
+
+// Storage provider for multi-cloud support
+enum StorageProvider {
+  supabase     // Supabase Storage
+  s3           // Amazon S3
+  azure_blob   // Azure Blob Storage
+  gcs          // Google Cloud Storage
+
+  @@map("storage_provider")
+}
+
+// Document access level for security
+enum AccessLevel {
+  private      // Private - requires authentication
+  public       // Public - accessible to all
+  signed       // Signed URLs with expiration
+
+  @@map("access_level")
+}
+
+// Document lifecycle status
+enum DocumentStatus {
+  active       // Active document
+  expired      // Expired (past expiry_date)
+  archived     // Archived for retention
+
+  @@map("document_status")
+}
+
+// ============================================================================
+// REFERENCE TABLES
+// ============================================================================
+
+// Reference table: Document types
+// SPEC: L99-154 (doc_document_types)
+model DocDocumentType {
+  // Primary Key
+  code                    String   @id @db.VarChar(50) @map("code")
+
+  // Basic Information
+  name                    String   @map("name")
+  description             String?  @map("description")
+
+  // Configuration
+  requiresExpiry          Boolean  @default(false) @map("requires_expiry")
+  defaultValidityDays     Int?     @map("default_validity_days")
+  requiresVerification    Boolean  @default(true) @map("requires_verification")
+  allowedMimeTypes        String[] @map("allowed_mime_types")
+  maxFileSizeMb           Int?     @default(10) @map("max_file_size_mb")
+
+  // Metadata
+  category                String?  @db.VarChar(50) @map("category") // legal, identity, vehicle, financial
+  isMandatory             Boolean  @default(false) @map("is_mandatory")
+  displayOrder            Int      @default(0) @map("display_order")
+  icon                    String?  @db.VarChar(50) @map("icon")
+
+  // Audit Trail
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy               String?  @map("created_by") @db.Uuid
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy               String?  @map("updated_by") @db.Uuid
+
+  // Soft Delete
+  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy               String?   @map("deleted_by") @db.Uuid
+  deletionReason          String?   @map("deletion_reason")
+
+  // Relations
+  createdByEmployee       AdmProviderEmployee? @relation("DocDocumentTypeCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee       AdmProviderEmployee? @relation("DocDocumentTypeUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee       AdmProviderEmployee? @relation("DocDocumentTypeDeletedBy", fields: [deletedBy], references: [id])
+
+  // Inverse Relations
+  documents               DocDocument[]
+
+  // Indexes
+  @@index([category], name: "idx_doc_document_types_category", where: deletedAt == null)
+  @@index([deletedAt], name: "idx_doc_document_types_deleted")
+
+  @@map("doc_document_types")
+}
+
+// Reference table: Entity types (polymorphic relations)
+// SPEC: L158-201 (doc_entity_types)
+model DocEntityType {
+  // Primary Key
+  code                    String   @id @db.VarChar(50) @map("code")
+
+  // Basic Information
+  description             String   @map("description")
+  tableName               String   @db.VarChar(100) @map("table_name")
+
+  // Configuration
+  isActive                Boolean  @default(true) @map("is_active")
+  displayOrder            Int      @default(0) @map("display_order")
+
+  // Metadata
+  metadata                Json     @default("{}") @map("metadata") @db.JsonB
+
+  // Audit Trail
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy               String?  @map("created_by") @db.Uuid
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy               String?  @map("updated_by") @db.Uuid
+
+  // Soft Delete
+  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy               String?   @map("deleted_by") @db.Uuid
+
+  // Relations
+  createdByEmployee       AdmProviderEmployee? @relation("DocEntityTypeCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee       AdmProviderEmployee? @relation("DocEntityTypeUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee       AdmProviderEmployee? @relation("DocEntityTypeDeletedBy", fields: [deletedBy], references: [id])
+
+  // Inverse Relations
+  documents               DocDocument[]
+
+  // Indexes
+  @@index([deletedAt], name: "idx_doc_entity_types_deleted")
+
+  @@map("doc_entity_types")
+}
+
+// ============================================================================
+// MAIN TABLES
+// ============================================================================
+
+// Main table: Documents (polymorphic storage)
+// SPEC: L28-96 (doc_documents modifications V1→V2)
+model DocDocument {
+  // Primary Key
+  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("id")
+
+  // Polymorphic References
+  tenantId                String?  @map("tenant_id") @db.Uuid
+  entityType              String   @db.VarChar(50) @map("entity_type") // FK → doc_entity_types
+  entityId                String   @map("entity_id") @db.Uuid
+  documentType            String   @db.VarChar(50) @map("document_type") // FK → doc_document_types
+
+  // File Metadata (NEW in V2)
+  fileName                String?  @db.VarChar(255) @map("file_name")
+  fileSize                Int?     @map("file_size")
+  mimeType                String?  @db.VarChar(100) @map("mime_type")
+  metadata                Json?    @default("{}") @map("metadata") @db.JsonB
+
+  // Storage (MODIFIED in V2: file_url → storage_key + storage_provider)
+  storageProvider         StorageProvider @default(supabase) @map("storage_provider")
+  storageKey              String   @map("storage_key")
+  accessLevel             AccessLevel     @default(private) @map("access_level")
+
+  // Document Dates
+  issueDate               DateTime? @map("issue_date") @db.Date
+  expiryDate              DateTime? @map("expiry_date") @db.Date
+
+  // Verification (MODIFIED in V2: verified boolean → verification_status enum)
+  verificationStatus      VerificationStatus @default(pending) @map("verification_status")
+  verifiedBy              String?  @map("verified_by") @db.Uuid // FK → adm_members OR adm_provider_employees
+  verifiedAt              DateTime? @map("verified_at") @db.Timestamptz(6)
+  rejectionReason         String?  @map("rejection_reason")
+
+  // Status & Notifications (NEW in V2)
+  status                  DocumentStatus @default(active) @map("status")
+  expiryNotificationSent  Boolean  @default(false) @map("expiry_notification_sent")
+
+  // Audit Trail (ENHANCED in V2)
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy               String?  @map("created_by") @db.Uuid // FK → adm_members
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy               String?  @map("updated_by") @db.Uuid // FK → adm_members
+
+  // Soft Delete (NEW in V2)
+  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy               String?   @map("deleted_by") @db.Uuid // FK → adm_members
+  deletionReason          String?   @map("deletion_reason")
+
+  // Relations
+  tenant                  AdmTenant?              @relation(fields: [tenantId], references: [id])
+  entityTypeRef           DocEntityType           @relation(fields: [entityType], references: [code])
+  documentTypeRef         DocDocumentType         @relation(fields: [documentType], references: [code])
+  verifiedByMember        AdmMember?              @relation("DocDocumentVerifiedBy", fields: [verifiedBy], references: [id])
+  createdByMember         AdmMember?              @relation("DocDocumentCreatedBy", fields: [createdBy], references: [id])
+  updatedByMember         AdmMember?              @relation("DocDocumentUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByMember         AdmMember?              @relation("DocDocumentDeletedBy", fields: [deletedBy], references: [id])
+
+  // Inverse Relations
+  versions                DocDocumentVersion[]
+
+  // Unique Constraints
+  @@unique([tenantId, entityType, entityId, documentType, storageKey], name: "idx_documents_unique", where: deletedAt == null)
+
+  // Indexes
+  @@index([verificationStatus], name: "idx_documents_verification", where: deletedAt == null)
+  @@index([status], name: "idx_documents_status", where: deletedAt == null)
+  @@index([expiryDate], name: "idx_documents_expiry", where: deletedAt == null && status == active)
+  @@index([storageProvider, storageKey], name: "idx_documents_storage")
+  @@index([metadata], name: "idx_documents_metadata", type: Gin)
+
+  @@map("doc_documents")
+}
+
+// Versioning table: Document versions
+// SPEC: L205-255 (doc_document_versions)
+model DocDocumentVersion {
+  // Primary Key
+  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("id")
+
+  // Reference to main document
+  documentId              String   @map("document_id") @db.Uuid
+  versionNumber           Int      @map("version_number")
+
+  // Snapshot - Storage
+  storageProvider         String   @db.VarChar(50) @map("storage_provider")
+  storageKey              String   @map("storage_key")
+  fileName                String   @db.VarChar(255) @map("file_name")
+  fileSize                Int      @map("file_size")
+  mimeType                String   @db.VarChar(100) @map("mime_type")
+
+  // Snapshot - Dates
+  issueDate               DateTime? @map("issue_date") @db.Date
+  expiryDate              DateTime? @map("expiry_date") @db.Date
+
+  // Snapshot - Verification
+  verificationStatus      String   @db.VarChar(20) @map("verification_status")
+  verifiedBy              String?  @map("verified_by") @db.Uuid
+  verifiedAt              DateTime? @map("verified_at") @db.Timestamptz(6)
+  rejectionReason         String?  @map("rejection_reason")
+
+  // Snapshot - Metadata
+  metadata                Json     @default("{}") @map("metadata") @db.JsonB
+
+  // Who and When
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy               String   @map("created_by") @db.Uuid
+  changeReason            String?  @map("change_reason")
+
+  // Relations
+  document                DocDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdByMember         AdmMember    @relation(fields: [createdBy], references: [id])
+
+  // Unique Constraint
+  @@unique([documentId, versionNumber], name: "idx_document_versions_unique")
+
+  // Indexes
+  @@index([documentId], name: "idx_document_versions_document")
+  @@index([createdAt], name: "idx_document_versions_created")
+  @@index([verificationStatus], name: "idx_document_versions_verification")
+
+  @@map("doc_document_versions")
+}
+
+// ============================================================================
+// EXTERNAL RELATIONS (reference to other modules)
+// ============================================================================
+
+// These models are defined in their respective modules but referenced here
+
+// From ADM module (adm.prisma)
+model AdmTenant {
+  id                      String   @id @db.Uuid
+  documents               DocDocument[]
+  // ... other fields defined in adm.prisma
+  @@map("adm_tenants")
+}
+
+model AdmMember {
+  id                      String   @id @db.Uuid
+  documentsVerified       DocDocument[]          @relation("DocDocumentVerifiedBy")
+  documentsCreated        DocDocument[]          @relation("DocDocumentCreatedBy")
+  documentsUpdated        DocDocument[]          @relation("DocDocumentUpdatedBy")
+  documentsDeleted        DocDocument[]          @relation("DocDocumentDeletedBy")
+  documentVersions        DocDocumentVersion[]
+  // ... other fields defined in adm.prisma
+  @@map("adm_members")
+}
+
+model AdmProviderEmployee {
+  id                      String   @id @db.Uuid
+  documentTypesCreated    DocDocumentType[]      @relation("DocDocumentTypeCreatedBy")
+  documentTypesUpdated    DocDocumentType[]      @relation("DocDocumentTypeUpdatedBy")
+  documentTypesDeleted    DocDocumentType[]      @relation("DocDocumentTypeDeletedBy")
+  entityTypesCreated      DocEntityType[]        @relation("DocEntityTypeCreatedBy")
+  entityTypesUpdated      DocEntityType[]        @relation("DocEntityTypeUpdatedBy")
+  entityTypesDeleted      DocEntityType[]        @relation("DocEntityTypeDeletedBy")
+  // ... other fields defined in adm.prisma
+  @@map("adm_provider_employees")
+}
