@@ -47,3 +47,8 @@ next-env.d.ts
 .env.sentry-build-plugin
 fleetcore5-day1-backup.tar.gz
 backup/
+
+# Archive nettoyage projet - NE JAMAIS COMMITER
+archive_fleetcore_20251106/
+archive_fleetcore_*/
+

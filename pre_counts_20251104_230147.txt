@@ -1,9 +1,0 @@
-adm_audit_logs|41
-adm_members|30
-adm_roles|1
-adm_tenants|8
-crm_leads|3
-dir_car_makes|16
-dir_car_models|1
-flt_vehicles|1
-rid_drivers|1
