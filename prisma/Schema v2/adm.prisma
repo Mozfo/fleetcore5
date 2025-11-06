@@ -1,0 +1,507 @@
+// ========================================
+// MODULE ADM - ADMINISTRATION
+// ========================================
+// FleetCore V2 - Prisma Schema
+// Compatible: Prisma 6.16.2
+// Module: Administration (8 tables core + 4 tables support)
+// ========================================
+
+// Enums partagés référencés depuis enums/shared.prisma
+// - TenantStatus (utilisé par ADM, BIL, tous modules)
+// - AuditSeverity (utilisé par ADM et tous modules avec audit)
+// - AuditCategory (utilisé par ADM et tous modules avec audit)
+// - PerformedByType (utilisé par ADM et autres modules pour actions système)
+
+// ========================================
+// ENUMS EXCLUSIFS AU MODULE ADM
+// ========================================
+
+// Statut des membres (utilisateurs tenant)
+enum MemberStatus {
+  invited      // Invitation envoyée, non acceptée
+  active       // Actif et opérationnel
+  suspended    // Suspendu temporairement
+  terminated   // Terminé/Révoqué définitivement
+
+  @@map("member_status")
+}
+
+// Départements des employés FleetCore
+enum Department {
+  support      // Support client
+  tech         // Technique/IT
+  finance      // Finance/Comptabilité
+  sales        // Commercial/Ventes
+
+  @@map("department")
+}
+
+// Rôles des employés FleetCore
+enum EmployeeRole {
+  support_agent // Agent de support
+  admin         // Administrateur
+  super_admin   // Super administrateur
+
+  @@map("employee_role")
+}
+
+// Type de scope pour les rôles
+enum ScopeType {
+  global       // Scope global (tenant entier)
+  branch       // Scope branche/agence
+  team         // Scope équipe
+
+  @@map("scope_type")
+}
+
+// Statut des invitations
+enum InvitationStatus {
+  pending      // En attente
+  accepted     // Acceptée
+  expired      // Expirée
+  revoked      // Révoquée
+
+  @@map("invitation_status")
+}
+
+// Type d'invitation
+enum InvitationType {
+  initial_admin      // Premier admin (onboarding)
+  additional_user    // Utilisateur additionnel
+  role_change        // Changement de rôle
+  reactivation       // Réactivation compte
+
+  @@map("invitation_type")
+}
+
+// Types d'événements lifecycle tenant
+enum LifecycleEventType {
+  created           // Tenant créé
+  trial_started     // Essai démarré
+  trial_extended    // Essai prolongé
+  activated         // Activé (devient payant)
+  plan_upgraded     // Plan amélioré
+  plan_downgraded   // Plan réduit
+  suspended         // Suspendu
+  reactivated       // Réactivé
+  cancelled         // Annulé
+  archived          // Archivé
+  deleted           // Supprimé
+
+  @@map("lifecycle_event_type")
+}
+
+// ========================================
+// TABLE 1: adm_tenants - Organisations multi-tenant
+// ========================================
+model AdmTenant {
+  // Champs existants V1
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  slug      String   @unique @db.VarChar(100)
+  metadata  Json?    @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Nouveaux champs V2 - Status et lifecycle
+  status                  TenantStatus  @default(trialing)
+  onboardingCompletedAt   DateTime?     @map("onboarding_completed_at") @db.Timestamptz(6)
+  trialEndsAt             DateTime?     @map("trial_ends_at") @db.Timestamptz(6)
+  nextInvoiceDate         DateTime?     @map("next_invoice_date") @db.Date
+
+  // Nouveaux champs V2 - Contacts
+  primaryContactEmail     String?       @map("primary_contact_email") @db.VarChar(255)
+  primaryContactPhone     String?       @map("primary_contact_phone") @db.VarChar(50)
+  billingEmail            String?       @map("billing_email") @db.VarChar(255)
+
+  // Relations
+  members                 AdmMember[]
+  roles                   AdmRole[]
+  lifecycleEvents         AdmTenantLifecycleEvent[]
+  invitations             AdmInvitation[]
+  settings                AdmTenantSetting[]
+  auditLogs               AdmAuditLog[]              @relation("AuditLogTenant")
+
+  @@map("adm_tenants")
+}
+
+// ========================================
+// TABLE 2: adm_members - Utilisateurs par tenant
+// ========================================
+model AdmMember {
+  // Champs existants V1
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  clerkUserId   String   @map("clerk_user_id") @db.VarChar(255)
+  email         String   @db.Citext
+  firstName     String?  @map("first_name") @db.VarChar(100)
+  lastName      String?  @map("last_name") @db.VarChar(100)
+  avatarUrl     String?  @map("avatar_url") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Nouveaux champs V2 - Sécurité et vérification
+  status                  MemberStatus  @default(invited)
+  emailVerifiedAt         DateTime?     @map("email_verified_at") @db.Timestamptz(6)
+  twoFactorEnabled        Boolean       @default(false) @map("two_factor_enabled")
+  twoFactorSecret         String?       @map("two_factor_secret") @db.Text
+  passwordChangedAt       DateTime?     @map("password_changed_at") @db.Timestamptz(6)
+  failedLoginAttempts     Int           @default(0) @map("failed_login_attempts")
+  lockedUntil             DateTime?     @map("locked_until") @db.Timestamptz(6)
+
+  // Nouveaux champs V2 - Configuration
+  defaultRoleId           String?       @map("default_role_id") @db.Uuid
+  preferredLanguage       String?       @map("preferred_language") @db.VarChar(10)
+  notificationPreferences Json?         @map("notification_preferences") @db.JsonB
+
+  // Relations
+  tenant                  AdmTenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  defaultRole             AdmRole?           @relation("MemberDefaultRole", fields: [defaultRoleId], references: [id])
+  memberRoles             AdmMemberRole[]
+  sessions                AdmMemberSession[]
+  auditLogsPerformed      AdmAuditLog[]      @relation("AuditLogPerformedBy")
+  memberRolesAssigned     AdmMemberRole[]    @relation("MemberRoleAssignedBy")
+  roleVersionsChanged     AdmRoleVersion[]   @relation("RoleVersionChangedBy")
+  invitationsAccepted     AdmInvitation[]    @relation("InvitationAcceptedBy")
+
+  @@unique([tenantId, email])
+  @@index([tenantId, status])
+  @@index([clerkUserId])
+  @@map("adm_members")
+}
+
+// ========================================
+// TABLE 3: adm_roles - Définition des rôles RBAC
+// ========================================
+model AdmRole {
+  // Champs existants V1
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  permissions Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Nouveaux champs V2 - Identification et hiérarchie
+  slug            String    @db.VarChar(100)
+  parentRoleId    String?   @map("parent_role_id") @db.Uuid
+  isSystem        Boolean   @default(false) @map("is_system")
+  isDefault       Boolean   @default(false) @map("is_default")
+
+  // Nouveaux champs V2 - Contrôles et validité
+  maxMembers      Int?      @map("max_members")
+  validFrom       DateTime? @map("valid_from") @db.Timestamptz(6)
+  validUntil      DateTime? @map("valid_until") @db.Timestamptz(6)
+  approvalRequired Boolean  @default(false) @map("approval_required")
+
+  // Relations
+  tenant          AdmTenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentRole      AdmRole?            @relation("RoleHierarchy", fields: [parentRoleId], references: [id])
+  childRoles      AdmRole[]           @relation("RoleHierarchy")
+  memberRoles     AdmMemberRole[]
+  rolePermissions AdmRolePermission[]
+  roleVersions    AdmRoleVersion[]
+  membersWithDefaultRole AdmMember[] @relation("MemberDefaultRole")
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, isSystem])
+  @@index([tenantId, isDefault])
+  @@map("adm_roles")
+}
+
+// ========================================
+// TABLE 4: adm_member_roles - Attribution des rôles
+// ========================================
+model AdmMemberRole {
+  // Champs existants V1
+  id        String   @id @default(uuid()) @db.Uuid
+  memberId  String   @map("member_id") @db.Uuid
+  roleId    String   @map("role_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Nouveaux champs V2 - Traçabilité et contexte
+  assignedBy       String?    @map("assigned_by") @db.Uuid
+  assignmentReason String?    @map("assignment_reason") @db.Text
+  validFrom        DateTime?  @map("valid_from") @db.Timestamptz(6)
+  validUntil       DateTime?  @map("valid_until") @db.Timestamptz(6)
+  isPrimary        Boolean    @default(false) @map("is_primary")
+
+  // Nouveaux champs V2 - Scope
+  scopeType        ScopeType? @map("scope_type")
+  scopeId          String?    @map("scope_id") @db.Uuid
+  priority         Int?       @default(0)
+
+  // Relations
+  member           AdmMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  role             AdmRole    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedByMember AdmMember? @relation("MemberRoleAssignedBy", fields: [assignedBy], references: [id], onDelete: SetNull)
+
+  @@unique([memberId, roleId, scopeType, scopeId])
+  @@index([memberId, isPrimary])
+  @@index([roleId])
+  @@index([validFrom, validUntil])
+  @@index([assignedBy])
+  @@map("adm_member_roles")
+}
+
+// ========================================
+// TABLE 5: adm_audit_logs - Journal d'audit immuable
+// ========================================
+model AdmAuditLog {
+  // Champs existants V1
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String?  @map("tenant_id") @db.Uuid
+  userId        String?  @map("user_id") @db.Uuid
+  action        String   @db.VarChar(100)
+  resourceType  String   @map("resource_type") @db.VarChar(100)
+  resourceId    String?  @map("resource_id") @db.Uuid
+  details       Json?    @db.JsonB
+  ipAddress     String?  @map("ip_address") @db.Inet
+  userAgent     String?  @map("user_agent") @db.Text
+  timestamp     DateTime @default(now()) @db.Timestamptz(6)
+
+  // Nouveaux champs V2 - Classification et contexte
+  severity      AuditSeverity  @default(info)
+  category      AuditCategory  @default(operational)
+  sessionId     String?        @map("session_id") @db.Uuid
+  requestId     String?        @map("request_id") @db.Uuid
+
+  // Nouveaux champs V2 - Changements et rétention
+  oldValues     Json?          @map("old_values") @db.JsonB
+  newValues     Json?          @map("new_values") @db.JsonB
+  retentionUntil DateTime?     @map("retention_until") @db.Timestamptz(6)
+  tags          String[]       @db.Text
+
+  // Relations
+  tenant            AdmTenant? @relation("AuditLogTenant", fields: [tenantId], references: [id], onDelete: SetNull)
+  performedByMember AdmMember? @relation("AuditLogPerformedBy", fields: [userId], references: [id])
+
+  @@index([tenantId, timestamp])
+  @@index([category, severity, timestamp])
+  @@index([resourceType, resourceId])
+  @@index([userId])
+  @@index([tags], type: Gin)
+  @@map("adm_audit_logs")
+}
+
+// ========================================
+// TABLE 6: adm_provider_employees - Staff FleetCore
+// ========================================
+model AdmProviderEmployee {
+  // Structure complète V2
+  id               String   @id @default(uuid()) @db.Uuid
+  employeeNumber   String   @unique @map("employee_number") @db.VarChar(50)
+  clerkUserId      String   @unique @map("clerk_user_id") @db.VarChar(255)
+  firstName        String   @map("first_name") @db.VarChar(100)
+  lastName         String   @map("last_name") @db.VarChar(100)
+  email            String   @unique @db.Citext
+  
+  // Département et rôle
+  department       Department
+  title            String?  @db.VarChar(100)
+  role             EmployeeRole
+
+  // Permissions spéciales
+  permissions      Json?    @db.JsonB
+  canImpersonate   Boolean  @default(false) @map("can_impersonate")
+  canOverrideLimits Boolean @default(false) @map("can_override_limits")
+  accessibleTenants String[] @map("accessible_tenants") @db.Uuid // Empty array = ALL
+  maxSupportTickets Int?    @map("max_support_tickets")
+
+  // Tracking RH
+  hireDate         DateTime @map("hire_date") @db.Date
+  terminationDate  DateTime? @map("termination_date") @db.Date
+  contractType     String?  @map("contract_type") @db.VarChar(50)
+  supervisorId     String?  @map("supervisor_id") @db.Uuid
+  lastActivityAt   DateTime? @map("last_activity_at") @db.Timestamptz(6)
+
+  // Audit trail
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  supervisor       AdmProviderEmployee?  @relation("EmployeeHierarchy", fields: [supervisorId], references: [id])
+  subordinates     AdmProviderEmployee[] @relation("EmployeeHierarchy")
+  lifecycleEventsPerformed AdmTenantLifecycleEvent[] @relation("LifecycleEventPerformedBy")
+  invitationsSent  AdmInvitation[]       @relation("InvitationSentBy")
+
+  @@index([department])
+  @@index([role])
+  @@index([supervisorId])
+  @@map("adm_provider_employees")
+}
+
+// ========================================
+// TABLE 7: adm_tenant_lifecycle_events - Historique tenant
+// ========================================
+model AdmTenantLifecycleEvent {
+  // Structure complète V2
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  eventType     LifecycleEventType @map("event_type")
+  eventDate     DateTime @map("event_date") @db.Timestamptz(6)
+  effectiveDate DateTime @map("effective_date") @db.Timestamptz(6)
+
+  // Qui a effectué l'action
+  performedBy     String?        @map("performed_by") @db.Uuid
+  performedByType PerformedByType @map("performed_by_type")
+
+  // Contexte de l'événement
+  reason           String  @db.Text
+  previousStatus   String? @map("previous_status") @db.VarChar(50)
+  newStatus        String  @map("new_status") @db.VarChar(50)
+  previousPlanId   String? @map("previous_plan_id") @db.Uuid
+  newPlanId        String? @map("new_plan_id") @db.Uuid
+  relatedInvoiceId String? @map("related_invoice_id") @db.Uuid
+  supportTicketId  String? @map("support_ticket_id") @db.Uuid
+
+  // Impact et actions
+  featuresAffected   Json?     @map("features_affected") @db.JsonB
+  usersNotified      String[]  @map("users_notified") @db.Uuid
+  notificationsSent  Json?     @map("notifications_sent") @db.JsonB
+  nextActionRequired String?   @map("next_action_required") @db.VarChar(255)
+  nextActionDate     DateTime? @map("next_action_date") @db.Timestamptz(6)
+
+  // Audit
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  tenant            AdmTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  performedByEmployee AdmProviderEmployee? @relation("LifecycleEventPerformedBy", fields: [performedBy], references: [id])
+
+  @@index([tenantId, eventDate])
+  @@index([eventType])
+  @@index([nextActionDate])
+  @@map("adm_tenant_lifecycle_events")
+}
+
+// ========================================
+// TABLE 8: adm_invitations - Onboarding sécurisé
+// ========================================
+model AdmInvitation {
+  // Structure complète V2
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  email     String   @db.Citext
+  token     String   @unique @db.VarChar(255)
+  role      String   @db.VarChar(100)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  status    InvitationStatus @default(pending)
+
+  // Tracking envois
+  sentAt       DateTime  @map("sent_at") @db.Timestamptz(6)
+  sentCount    Int       @default(1) @map("sent_count")
+  lastSentAt   DateTime  @map("last_sent_at") @db.Timestamptz(6)
+  
+  // Acceptation
+  acceptedAt         DateTime? @map("accepted_at") @db.Timestamptz(6)
+  acceptedFromIp     String?   @map("accepted_from_ip") @db.Inet
+  acceptedByMemberId String?   @map("accepted_by_member_id") @db.Uuid
+
+  // Contexte
+  invitationType InvitationType @map("invitation_type")
+  customMessage  String?        @map("custom_message") @db.Text
+  metadata       Json?          @db.JsonB
+  sentBy         String         @map("sent_by") @db.Uuid
+
+  // Audit
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  tenant           AdmTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sentByEmployee   AdmProviderEmployee  @relation("InvitationSentBy", fields: [sentBy], references: [id])
+  acceptedByMember AdmMember?           @relation("InvitationAcceptedBy", fields: [acceptedByMemberId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@index([email, status])
+  @@index([expiresAt])
+  @@map("adm_invitations")
+}
+
+// ========================================
+// TABLE 9: adm_role_permissions - Permissions granulaires
+// ========================================
+model AdmRolePermission {
+  // Structure complète V2
+  id         String   @id @default(uuid()) @db.Uuid
+  roleId     String   @map("role_id") @db.Uuid
+  resource   String   @db.VarChar(100)
+  action     String   @db.VarChar(50)
+  conditions Json?    @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  role       AdmRole  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, resource, action])
+  @@index([roleId])
+  @@map("adm_role_permissions")
+}
+
+// ========================================
+// TABLE 10: adm_role_versions - Historique rôles
+// ========================================
+model AdmRoleVersion {
+  // Structure complète V2
+  id                 String   @id @default(uuid()) @db.Uuid
+  roleId             String   @map("role_id") @db.Uuid
+  versionNumber      Int      @map("version_number")
+  permissionsSnapshot Json    @map("permissions_snapshot") @db.JsonB
+  changedBy          String?  @map("changed_by") @db.Uuid
+  changeReason       String?  @map("change_reason") @db.Text
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  role               AdmRole   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  changedByMember    AdmMember? @relation("RoleVersionChangedBy", fields: [changedBy], references: [id], onDelete: SetNull)
+
+  @@unique([roleId, versionNumber])
+  @@index([roleId, createdAt])
+  @@map("adm_role_versions")
+}
+
+// ========================================
+// TABLE 11: adm_member_sessions - Sessions actives
+// ========================================
+model AdmMemberSession {
+  // Structure complète V2
+  id        String   @id @default(uuid()) @db.Uuid
+  memberId  String   @map("member_id") @db.Uuid
+  tokenHash String   @map("token_hash") @db.VarChar(256)
+  ipAddress String?  @map("ip_address") @db.Inet
+  userAgent String?  @map("user_agent") @db.Text
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  member    AdmMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenHash])
+  @@index([memberId, expiresAt])
+  @@index([expiresAt])
+  @@map("adm_member_sessions")
+}
+
+// ========================================
+// TABLE 12: adm_tenant_settings - Configuration avancée
+// ========================================
+model AdmTenantSetting {
+  // Structure complète V2
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  settingKey   String   @map("setting_key") @db.VarChar(100)
+  settingValue Json     @map("setting_value") @db.JsonB
+  category     String?  @db.VarChar(50)
+  isEncrypted  Boolean  @default(false) @map("is_encrypted")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  tenant       AdmTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, settingKey])
+  @@index([tenantId, category])
+  @@map("adm_tenant_settings")
+}

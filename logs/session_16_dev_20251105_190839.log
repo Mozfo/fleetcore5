@@ -1,0 +1,201 @@
+
+[0;34m═══════════════════════════════════════════════════════════════[0m
+[0;34m  SESSION 16 - MIGRATION V1→V2[0m
+[0;34m═══════════════════════════════════════════════════════════════[0m
+
+[0;36m[19:08:39][0m Environnement: dev
+[0;36m[19:08:39][0m Mode: auto
+[0;36m[19:08:39][0m Log: /Users/mohamedfodil/Documents/fleetcore5/scripts/../logs/session_16_dev_20251105_190839.log
+[0;36m[19:08:39][0m Timestamp: 20251105_190839
+[0;36m[19:08:39][0m DATABASE_URL: postgresql://mohamedfodil@localhost:5432/fleetcore (local/dev)
+[0;36m[19:08:39][0m Vérification connexion DB...
+[0;32m[19:08:39] ✅ Connexion DB OK[0m
+
+[0;34m═══════════════════════════════════════════════════════════════[0m
+[0;34m  BACKUP PRÉ-MIGRATION[0m
+[0;34m═══════════════════════════════════════════════════════════════[0m
+
+[0;36m[19:08:39][0m Création backup: /Users/mohamedfodil/Documents/fleetcore5/scripts/../backup_session_16_pre_20251105_190839.dump
+[0;32m[19:08:40] ✅ Backup créé: /Users/mohamedfodil/Documents/fleetcore5/scripts/../backup_session_16_pre_20251105_190839.dump (696K)[0m
+
+[0;34m═══════════════════════════════════════════════════════════════[0m
+[0;34m  PHASE 0: Préparation[0m
+[0;34m═══════════════════════════════════════════════════════════════[0m
+
+[0;36m[19:08:40][0m Exécution: /Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_phase0_preparation.sql
+[0;32m[19:08:40] ✅ Phase 0 complétée[0m
+
+═══════════════════════════════════════════════════════════════
+  SESSION 16 - PHASE 0: PRÉPARATION & VALIDATIONS
+═══════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT: Vérifiez que vous êtes sur le BON environnement!
+
+   Environnements acceptables:
+     ✅ DB locale (postgresql://localhost/fleetcore_dev)
+     ✅ DB dev/staging (non-production)
+     ⚠️  DB Supabase Production (SEULEMENT après tests dev!)
+
+▶ Environnement actuel:
+ database_name | server_address |                                                       postgres_version                                                        
+---------------+----------------+-------------------------------------------------------------------------------------------------------------------------------
+ fleetcore     | ::1            | PostgreSQL 14.19 (Homebrew) on aarch64-apple-darwin23.6.0, compiled by Apple clang version 16.0.0 (clang-1600.0.26.6), 64-bit
+(1 row)
+
+
+⏸️  PAUSE: Confirmez que c'est le BON environnement avant de continuer.
+   Tapez Ctrl+C pour annuler, ou Entrée pour continuer.
+
+Continuer? (yes/no): psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_phase0_preparation.sql:45: error: \prompt: could not read value for variable
+
+▶ SECTION 1: BACKUP BASE DE DONNÉES
+   Durée: 5-10 minutes (selon taille DB)
+
+   IMPORTANT: Backup doit être créé AVANT toute modification!
+
+   Commande backup à exécuter (dans un terminal séparé):
+
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_phase0_preparation.sql:59: error: unterminated quoted string
+
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_phase0_preparation.sql:60: error: unterminated quoted string
+
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_phase0_preparation.sql:61: error: unterminated quoted string
+
+     --verbose
+
+   Puis vérifier:
+   ls -lh backup_session_16_pre_*.dump
+
+Backup créé et vérifié? (yes/no): psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_phase0_preparation.sql:67: error: \prompt: could not read value for variable
+
+═══════════════════════════════════════════════════════════════
+  SECTION 2: VALIDATIONS PRÉ-MIGRATION (6 CHECKS)
+═══════════════════════════════════════════════════════════════
+
+⚠️  Si UN SEUL check échoue → STOP migration!
+
+▶ CHECK 1: Compter colonnes _v2 (attendu: 34 total)
+ module | colonnes_v2 
+--------+-------------
+ BIL    |           5
+ RID    |          15
+ SCH    |           7
+ SUP    |           4
+ TRP    |           4
+(5 rows)
+
+
+✓ ATTENDU: BIL=5, RID=14, SCH=7, SUP=4, TRP=4 (TOTAL: 34)
+
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_phase0_preparation.sql:121: ERROR:  ❌ CHECK 1 FAILED: Attendu 34 colonnes _v2, trouvé 35
+CONTEXT:  PL/pgSQL function inline_code_block line 10 at RAISE
+
+▶ CHECK 2: Vérifier ZÉRO NULL sur colonnes critiques
+         column_check         | null_count | status 
+------------------------------+------------+--------
+ adm_members.phone            |          0 | ✅ OK
+ crm_leads.phone              |          0 | ✅ OK
+ dir_car_makes.code           |          0 | ✅ OK
+ rid_drivers.driver_status_v2 |          0 | ✅ OK
+(4 rows)
+
+
+✓ ATTENDU: null_count = 0 pour TOUTES les colonnes
+
+▶ CHECK 3: Vérifier ZÉRO doublon sur colonnes UNIQUE futures
+  3.1: adm_members(tenant_id, email)
+ tenant_id | email | duplicates 
+-----------+-------+------------
+(0 rows)
+
+  3.2: rid_drivers(tenant_id, phone)
+ tenant_id | phone | duplicates 
+-----------+-------+------------
+(0 rows)
+
+  3.3: flt_vehicles(tenant_id, vin)
+ tenant_id | vin | duplicates 
+-----------+-----+------------
+(0 rows)
+
+
+✓ ATTENDU: 0 lignes de doublons pour chaque requête
+
+▶ CHECK 4: Vérifier espace disque disponible
+ taille_db |       disk_status        
+-----------+--------------------------
+ 19 MB     | ⚠️ Vérifier espace disque
+(1 row)
+
+
+✓ ATTENDU: Taille DB raisonnable, espace suffisant
+
+▶ CHECK 5: Vérifier aucune transaction longue active
+ pid | state | duration | query_preview 
+-----+-------+----------+---------------
+(0 rows)
+
+
+✓ ATTENDU: Aucune transaction > 5 minutes (0 lignes)
+
+▶ CHECK 6: Compter connexions actives
+ total_connections | active_connections | idle_connections 
+-------------------+--------------------+------------------
+                 1 |                  1 |                0
+(1 row)
+
+
+✓ ATTENDU: Connexions raisonnables (< 50 total)
+
+
+═══════════════════════════════════════════════════════════════
+  SECTION 3: EXPORT ÉTAT PRÉ-MIGRATION
+═══════════════════════════════════════════════════════════════
+
+▶ 3.1: Liste complète colonnes _v2 (export pour comparaison post-migration)
+   ✓ Export sauvegardé: /tmp/session_16_pre_migration_colonnes_v2.txt
+
+▶ 3.2: Comptage index pré-migration
+ total_indexes | indexes_soft_delete | indexes_unique 
+---------------+---------------------+----------------
+           593 |                  11 |            122
+(1 row)
+
+
+
+═══════════════════════════════════════════════════════════════
+  RÉSUMÉ VALIDATION PHASE 0
+═══════════════════════════════════════════════════════════════
+
+✅ CHECK 1: 34 colonnes _v2 confirmées
+✅ CHECK 2: ZÉRO NULL sur colonnes critiques
+✅ CHECK 3: ZÉRO doublon sur UNIQUE futures
+✅ CHECK 4: Espace disque suffisant
+✅ CHECK 5: Aucune transaction longue
+✅ CHECK 6: Connexions raisonnables
+
+✅ Backup créé et vérifié
+✅ État pré-migration exporté
+
+═══════════════════════════════════════════════════════════════
+  PHASE 0 COMPLÉTÉE AVEC SUCCÈS
+═══════════════════════════════════════════════════════════════
+
+⏭️  Prochaine étape: Phase 1 (Cleanup _v2)
+
+⚠️  RAPPEL: Si vous êtes sur DB locale/dev:
+   → Continuez vers Phase 1
+
+⚠️  Si vous êtes sur DB Supabase Production:
+   → STOP! Testez d'abord sur DB locale/dev!
+   → Validez que Phase 1-5 fonctionnent correctement en dev
+   → Revenez ici seulement après validation dev complète
+[0;36m[19:08:40][0m Validation GO/NO-GO Phase 0...
+[0;31m[19:08:40] ❌ Erreur lors de la validation Phase 0[0m
+Validation Phase: 0
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_validations_inter_phases.sql:23: error: unrecognized value "0 = 0" for "\if expression": Boolean expected
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_validations_inter_phases.sql:69: error: unrecognized value "0 = 1" for "\if expression": Boolean expected
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_validations_inter_phases.sql:108: error: unrecognized value "0 = 2" for "\if expression": Boolean expected
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_validations_inter_phases.sql:178: error: unrecognized value "0 = 4" for "\if expression": Boolean expected
+psql:/Users/mohamedfodil/Documents/fleetcore5/scripts/session_16_validations_inter_phases.sql:214: error: reached EOF without finding closing \endif(s)
+[0;31m[19:08:40] ❌ Validation Phase 0 échouée - ARRÊT[0m

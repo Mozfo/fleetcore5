@@ -104,8 +104,8 @@ export class DirectoryService extends BaseService {
    * @throws ValidationError if duplicate name exists
    */
   async createMake(
-    data: { name: string },
-    tenantId: string | null
+    data: { name: string; code: string },
+    tenantId: string
   ): Promise<CarMake> {
     try {
       // Check for duplicate name
@@ -169,8 +169,8 @@ export class DirectoryService extends BaseService {
    * @throws ValidationError if duplicate name exists
    */
   async createModel(
-    data: { make_id: string; name: string; vehicle_class_id?: string },
-    tenantId: string | null,
+    data: { make_id: string; name: string; code: string; vehicle_class_id?: string },
+    tenantId: string,
     checkTenantId: string
   ): Promise<CarModel> {
     try {
@@ -229,12 +229,13 @@ export class DirectoryService extends BaseService {
 
   /**
    * Create a new platform
-   * @param data - Platform data
+   * @param data - Platform data (V2: code is now required)
    * @returns Created platform
    * @throws ValidationError if duplicate name exists
    */
   async createPlatform(data: {
     name: string;
+    code: string;
     api_config?: Record<string, unknown>;
   }): Promise<Platform> {
     try {
@@ -306,6 +307,7 @@ export class DirectoryService extends BaseService {
   async createVehicleClass(data: {
     country_code: string;
     name: string;
+    code: string;
     description?: string;
     max_age?: number;
   }): Promise<VehicleClass> {

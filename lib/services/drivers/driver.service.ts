@@ -10,6 +10,7 @@ import type {
   Driver,
   DriverWithRelations,
 } from "@/lib/repositories/driver.repository";
+import type { driver_document_type } from "@prisma/client";
 
 /**
  * DTO for creating a new driver
@@ -107,7 +108,7 @@ export interface DriverHistory {
   total_trips: number;
   total_revenue: number;
   average_rating: number;
-  documents: { type: string; verified: boolean; expiry_date?: Date }[];
+  documents: { type: driver_document_type | null; verified: boolean; expiry_date?: Date }[];
   recent_performances: { period: string; metrics: unknown }[];
   active_assignment?: { vehicle_id: string; start_date: Date };
 }
@@ -118,8 +119,8 @@ export interface DriverHistory {
 export interface DocumentValidationResult {
   is_valid: boolean;
   missing_documents: string[];
-  expired_documents: { type: string; expiry_date: Date }[];
-  expiring_soon: { type: string; expiry_date: Date; days_remaining: number }[];
+  expired_documents: { type: driver_document_type | null; expiry_date: Date }[];
+  expiring_soon: { type: driver_document_type | null; expiry_date: Date; days_remaining: number }[];
 }
 
 /**
@@ -199,9 +200,9 @@ export class DriverService extends BaseService {
 
       // 4. Create document placeholders
       const requiredDocs = [
-        "driver_license",
+        "driving_license",
         "professional_card",
-        "identity_document",
+        "national_id",
       ];
       for (const docType of requiredDocs) {
         await this.documentService.createPlaceholder(
@@ -824,9 +825,9 @@ export class DriverService extends BaseService {
 
     // 2. Required document types
     const requiredTypes = [
-      "driver_license",
+      "driving_license",
       "professional_card",
-      "identity_document",
+      "national_id",
     ];
 
     // 3. Check missing documents

@@ -1,0 +1,1170 @@
+// ============================================================================
+// FLEETCORE V2 - MODULE FLEET (FLT)
+// ============================================================================
+// Description: Fleet Management - Vehicles, assignments, events, maintenance,
+//              expenses, and insurances
+// Tables: 10 (6 main + 4 satellites)
+// Key Features: 
+//   - Handover protocol with photos & digital signatures
+//   - Predictive maintenance
+//   - Automated expense validation
+//   - Multi-policy insurance management
+//   - Multi-country compliance
+// ============================================================================
+
+// ============================================================================
+// ENUMS - FLEET MODULE (exclusifs à ce module)
+// ============================================================================
+
+// Vehicle Assignment Enums
+enum AssignmentType {
+  permanent
+  temporary
+  trial
+  
+  @@map("assignment_type")
+}
+
+enum AssignmentStatus {
+  active
+  completed
+  cancelled
+  
+  @@map("assignment_status")
+}
+
+enum HandoverType {
+  pickup
+  return
+  transfer
+  
+  @@map("handover_type")
+}
+
+// Vehicle Event Enums
+enum VehicleEventType {
+  accident
+  maintenance
+  violation
+  recovery
+  impound
+  theft
+  breakdown
+  
+  @@map("vehicle_event_type")
+}
+
+enum ResponsibleParty {
+  fleet
+  driver
+  third_party
+  
+  @@map("responsible_party")
+}
+
+enum EventSeverity {
+  minor
+  moderate
+  major
+  total_loss
+  
+  @@map("event_severity")
+}
+
+enum ClaimStatus {
+  filed
+  processing
+  approved
+  rejected
+  closed
+  
+  @@map("claim_status")
+}
+
+enum RepairStatus {
+  pending
+  approved
+  in_progress
+  completed
+  cancelled
+  
+  @@map("repair_status")
+}
+
+// Vehicle Maintenance Enums
+enum MaintenanceType {
+  oil_change
+  tire_rotation
+  brake_service
+  engine_service
+  transmission_service
+  battery_replacement
+  air_filter
+  coolant_flush
+  alignment
+  inspection
+  other
+  
+  @@map("maintenance_type")
+}
+
+enum MaintenanceCategory {
+  preventive
+  corrective
+  regulatory
+  emergency
+  
+  @@map("maintenance_category")
+}
+
+enum MaintenancePriority {
+  low
+  medium
+  high
+  urgent
+  emergency
+  
+  @@map("maintenance_priority")
+}
+
+enum MaintenanceStatus {
+  scheduled
+  in_progress
+  completed
+  cancelled
+  deferred
+  
+  @@map("maintenance_status")
+}
+
+// Vehicle Expense Enums
+enum ExpenseCategory {
+  fuel
+  toll
+  parking
+  wash
+  repair
+  fine
+  insurance_deductible
+  registration
+  inspection
+  permit
+  other
+  
+  @@map("expense_category")
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+  cancelled
+  auto_approved
+  
+  @@map("approval_status")
+}
+
+enum ReceiptStatus {
+  pending
+  verified
+  invalid
+  missing
+  
+  @@map("receipt_status")
+}
+
+enum AllocationRule {
+  driver
+  fleet
+  shared
+  client
+  
+  @@map("allocation_rule")
+}
+
+enum PaymentStatus {
+  pending
+  processed
+  failed
+  refunded
+  
+  @@map("payment_status")
+}
+
+// Vehicle Insurance Enums
+enum PolicyCategory {
+  main
+  supplementary
+  temporary
+  rider
+  
+  @@map("policy_category")
+}
+
+enum CoverageDrivers {
+  named
+  any
+  professional
+  
+  @@map("coverage_drivers")
+}
+
+enum VehicleUsage {
+  commercial
+  private
+  mixed
+  
+  @@map("vehicle_usage")
+}
+
+enum InsuranceStatus {
+  active
+  expired
+  cancelled
+  suspended
+  
+  @@map("insurance_status")
+}
+
+enum PaymentFrequency {
+  annual
+  semi_annual
+  quarterly
+  monthly
+  
+  @@map("payment_frequency")
+}
+
+enum PaymentMethod {
+  direct_debit
+  bank_transfer
+  credit_card
+  cash
+  cheque
+  
+  @@map("payment_method")
+}
+
+// Vehicle Inspection Enums
+enum InspectionType {
+  annual
+  pre_trip
+  post_accident
+  regulatory
+  pre_sale
+  custom
+  
+  @@map("inspection_type")
+}
+
+enum InspectionStatus {
+  scheduled
+  passed
+  failed
+  pending
+  cancelled
+  
+  @@map("inspection_status")
+}
+
+// Vehicle Equipment Enums
+enum EquipmentType {
+  dashcam
+  gps_tracker
+  tablet
+  phone_charger
+  phone_mount
+  spare_tire
+  jack
+  warning_triangle
+  first_aid_kit
+  fire_extinguisher
+  reflective_vest
+  other
+  
+  @@map("equipment_type")
+}
+
+enum EquipmentStatus {
+  provided
+  returned
+  lost
+  damaged
+  stolen
+  
+  @@map("equipment_status")
+}
+
+enum EquipmentCondition {
+  new_item
+  excellent
+  good
+  fair
+  poor
+  damaged
+  
+  @@map("equipment_condition")
+}
+
+// Additional Enums
+enum RiskRating {
+  A // Excellent
+  B // Good
+  C // Fair
+  D // Poor
+  E // High Risk
+  
+  @@map("risk_rating")
+}
+
+enum BodyType {
+  sedan
+  hatchback
+  suv
+  van
+  minivan
+  pickup
+  coupe
+  wagon
+  limousine
+  other
+  
+  @@map("body_type")
+}
+
+enum FuelType {
+  gasoline
+  diesel
+  hybrid
+  electric
+  plugin_hybrid
+  cng
+  lpg
+  hydrogen
+  
+  @@map("fuel_type")
+}
+
+enum TransmissionType {
+  manual
+  automatic
+  semi_automatic
+  cvt
+  
+  @@map("transmission_type")
+}
+
+// ============================================================================
+// SATELLITE TABLE 1: Vehicle Statuses Reference
+// ============================================================================
+// Purpose: Reference table for vehicle lifecycle statuses
+// Business: Workflow transitions, triggers, validation rules
+
+model DirVehicleStatus {
+  id                    String    @id @default(uuid()) @db.Uuid
+  code                  String    @unique @db.VarChar(50) // available, assigned, maintenance, accident, etc
+  name                  String    @db.VarChar(100)
+  description           String?   @db.Text
+  color                 String?   @db.VarChar(7) // Hex color for UI
+  
+  // Workflow rules
+  allowedTransitions    Json?     @db.JsonB // Array of allowed status codes
+  requiresApproval      Boolean   @default(false)
+  blockingStatus        Boolean   @default(false) // If true, vehicle cannot be assigned
+  
+  // Triggers
+  automaticActions      Json?     @db.JsonB // Actions to trigger on status change
+  notificationRules     Json?     @db.JsonB // Who to notify and how
+  
+  // Validation
+  requiredDocuments     Json?     @db.JsonB // Documents required for this status
+  validationRules       Json?     @db.JsonB // Conditions to enter/exit this status
+  
+  // Metadata
+  displayOrder          Int?
+  isActive              Boolean   @default(true)
+  metadata              Json?     @db.JsonB
+  
+  // Audit
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy             String    @db.Uuid
+  updatedBy             String?   @db.Uuid
+  deletedAt             DateTime? @db.Timestamptz(6)
+  deletedBy             String?   @db.Uuid
+  deletionReason        String?   @db.Text
+  
+  // Relations
+  createdByEmployee     AdmProviderEmployee  @relation("DirVehicleStatusCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee     AdmProviderEmployee? @relation("DirVehicleStatusUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee     AdmProviderEmployee? @relation("DirVehicleStatusDeletedBy", fields: [deletedBy], references: [id])
+  vehicles              FltVehicle[]
+  
+  @@index([code])
+  @@index([isActive])
+  @@map("dir_vehicle_statuses")
+}
+
+// ============================================================================
+// SATELLITE TABLE 2: Ownership Types Reference
+// ============================================================================
+// Purpose: Reference table for vehicle ownership types
+// Business: Owned, leased, rental, shared, etc
+
+model DirOwnershipType {
+  id                    String    @id @default(uuid()) @db.Uuid
+  code                  String    @unique @db.VarChar(50) // owned, leased, rental, etc
+  name                  String    @db.VarChar(100)
+  description           String?   @db.Text
+  
+  // Ownership rules
+  requiresOwner         Boolean   @default(false) // If true, owner_id is mandatory
+  allowsLeasing         Boolean   @default(false)
+  depreciation          Boolean   @default(true) // If false, no depreciation
+  
+  // Financial rules
+  maintenanceResponsibility String? @db.VarChar(20) // owner, lessee, fleet
+  insuranceResponsibility   String? @db.VarChar(20) // owner, lessee, fleet
+  
+  // Metadata
+  displayOrder          Int?
+  isActive              Boolean   @default(true)
+  metadata              Json?     @db.JsonB
+  
+  // Audit
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy             String    @db.Uuid
+  updatedBy             String?   @db.Uuid
+  deletedAt             DateTime? @db.Timestamptz(6)
+  deletedBy             String?   @db.Uuid
+  deletionReason        String?   @db.Text
+  
+  // Relations
+  createdByEmployee     AdmProviderEmployee  @relation("DirOwnershipTypeCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee     AdmProviderEmployee? @relation("DirOwnershipTypeUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee     AdmProviderEmployee? @relation("DirOwnershipTypeDeletedBy", fields: [deletedBy], references: [id])
+  vehicles              FltVehicle[]
+  
+  @@index([code])
+  @@index([isActive])
+  @@map("dir_ownership_types")
+}
+
+// ============================================================================
+// MAIN TABLE 1: Vehicles
+// ============================================================================
+// Purpose: Fleet vehicles with 48 columns
+// Business: Multi-country compliance, predictive maintenance, detailed insurance
+
+model FltVehicle {
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  
+  // Basic identification
+  makeId                    String    @db.Uuid
+  modelId                   String    @db.Uuid
+  licensePlate              String    @db.VarChar(20)
+  vin                       String    @unique @db.VarChar(17)
+  year                      Int
+  color                     String?   @db.VarChar(50)
+  
+  // Multi-country compliance (NEW V2)
+  countryCode               String    @db.Char(2) // Country of operation
+  requiresProfessionalLicense Boolean @default(false)
+  documentsStatus           Json?     @db.JsonB // Status by document type
+  
+  // Physical dimensions (NEW V2)
+  bodyType                  String?   @db.VarChar(20) // sedan, suv, van, etc
+  passengerCapacity         Int? // Regulatory capacity
+  carLengthCm               Int? // For platform eligibility
+  carWidthCm                Int?
+  carHeightCm               Int?
+  seats                     Int?
+  
+  // Vehicle class (MODIFIED V2)
+  vehicleClassId            String?   @db.Uuid // FK to dir_vehicle_classes
+  fuelType                  String?   @db.VarChar(50)
+  transmission              String?   @db.VarChar(50)
+  
+  // Registration & Dates
+  registrationDate          DateTime? @db.Date
+  firstRegistrationDate     DateTime? @db.Date // NEW V2 - First ever registration
+  
+  // Predictive maintenance (NEW V2)
+  warrantyExpiry            DateTime? @db.Date
+  serviceIntervalKm         Int? // Service interval in km
+  nextServiceAtKm           Int? // Next service at this odometer reading
+  
+  // Inspections
+  lastInspection            DateTime? @db.Date
+  nextInspection            DateTime? @db.Date
+  
+  // Insurance detailed (NEW V2)
+  insurancePolicyNumber     String?   @db.Text
+  insuranceCoverageType     String?   @db.Text
+  insuranceAmount           Decimal?  @db.Decimal(18, 2)
+  insuranceIssueDate        DateTime? @db.Date
+  insuranceExpiry           DateTime? @db.Date
+  
+  // Ownership & Finance (NEW V2)
+  ownershipTypeId           String?   @db.Uuid // FK to dir_ownership_types
+  ownerId                   String?   @db.Uuid // FK to investor/owner
+  acquisitionDate           DateTime? @db.Date
+  leaseEndDate              DateTime? @db.Date
+  residualValue             Decimal?  @db.Decimal(18, 2)
+  
+  // Current state
+  odometer                  Int? // Current mileage
+  statusId                  String    @db.Uuid // FK to dir_vehicle_statuses
+  statusChangedAt           DateTime? @db.Timestamptz(6) // NEW V2
+  
+  // Metadata
+  metadata                  Json?     @db.JsonB
+  
+  // Audit (enhanced V2)
+  createdAt                 DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy                 String    @db.Uuid
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz(6)
+  deletedBy                 String?   @db.Uuid
+  deletionReason            String?   @db.Text
+  
+  // Relations
+  tenant                    AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  make                      DirCarMake             @relation(fields: [makeId], references: [id])
+  model                     DirCarModel            @relation(fields: [modelId], references: [id])
+  vehicleClass              DirVehicleClass?       @relation(fields: [vehicleClassId], references: [id])
+  status                    DirVehicleStatus       @relation(fields: [statusId], references: [id])
+  ownershipType             DirOwnershipType?      @relation(fields: [ownershipTypeId], references: [id])
+  country                   DirCountryRegulation   @relation(fields: [countryCode], references: [countryCode])
+  createdByEmployee         AdmProviderEmployee    @relation("FltVehicleCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?   @relation("FltVehicleUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?   @relation("FltVehicleDeletedBy", fields: [deletedBy], references: [id])
+  
+  // Reverse relations
+  assignments               FltVehicleAssignment[]
+  events                    FltVehicleEvent[]
+  maintenances              FltVehicleMaintenance[]
+  expenses                  FltVehicleExpense[]
+  insurances                FltVehicleInsurance[]
+  inspections               FltVehicleInspection[]
+  equipments                FltVehicleEquipment[]
+  
+  @@unique([tenantId, licensePlate], name: "unique_tenant_license_plate")
+  @@index([tenantId])
+  @@index([statusId])
+  @@index([countryCode])
+  @@index([makeId, modelId])
+  @@index([deletedAt])
+  @@map("flt_vehicles")
+}
+
+// ============================================================================
+// SATELLITE TABLE 3: Vehicle Inspections
+// ============================================================================
+// Purpose: Complete inspection history
+// Business: Regulatory compliance, automatic scheduling
+
+model FltVehicleInspection {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @db.Uuid
+  vehicleId             String    @db.Uuid
+  
+  // Inspection details
+  inspectionType        String    @db.VarChar(50) // annual, pre_trip, post_accident, etc
+  scheduledDate         DateTime  @db.Date
+  actualDate            DateTime? @db.Date
+  
+  // Results
+  status                String    @db.VarChar(20) // scheduled, passed, failed, pending
+  passed                Boolean   @default(false)
+  score                 Int? // Score out of 100
+  
+  // Details
+  inspectorName         String?   @db.VarChar(100)
+  inspectionCenter      String?   @db.VarChar(200)
+  certificateNumber     String?   @db.VarChar(100)
+  expiryDate            DateTime? @db.Date
+  
+  // Issues found
+  issuesFound           Json?     @db.JsonB // Array of issues
+  correctiveActions     Json?     @db.JsonB // Actions required
+  
+  // Documents
+  reportUrl             String?   @db.Text
+  certificateUrl        String?   @db.Text
+  photosUrls            Json?     @db.JsonB // Array of photo URLs
+  
+  // Costs
+  costAmount            Decimal?  @db.Decimal(18, 2)
+  currency              String?   @db.Char(3)
+  
+  // Next inspection
+  nextInspectionDate    DateTime? @db.Date
+  reminderSent          Boolean   @default(false)
+  
+  // Notes
+  notes                 String?   @db.Text
+  metadata              Json?     @db.JsonB
+  
+  // Audit
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy             String    @db.Uuid
+  updatedBy             String?   @db.Uuid
+  
+  // Relations
+  tenant                AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle               FltVehicle             @relation(fields: [vehicleId], references: [id])
+  createdByEmployee     AdmProviderEmployee    @relation("FltVehicleInspectionCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee     AdmProviderEmployee?   @relation("FltVehicleInspectionUpdatedBy", fields: [updatedBy], references: [id])
+  
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("flt_vehicle_inspections")
+}
+
+// ============================================================================
+// SATELLITE TABLE 4: Vehicle Equipments
+// ============================================================================
+// Purpose: Equipment inventory provided with vehicles
+// Business: Traceability, expiry management, value tracking
+
+model FltVehicleEquipment {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @db.Uuid
+  vehicleId             String    @db.Uuid
+  
+  // Equipment details
+  equipmentType         String    @db.VarChar(50) // dashcam, gps, tablet, charger, etc
+  name                  String    @db.VarChar(100)
+  description           String?   @db.Text
+  serialNumber          String?   @db.VarChar(100)
+  
+  // Lifecycle
+  providedDate          DateTime  @db.Date
+  returnDate            DateTime? @db.Date
+  expiryDate            DateTime? @db.Date // For items with limited lifespan
+  
+  // Financial
+  purchasePrice         Decimal?  @db.Decimal(18, 2)
+  currentValue          Decimal?  @db.Decimal(18, 2)
+  currency              String?   @db.Char(3)
+  depreciationRate      Decimal?  @db.Decimal(5, 2) // Percentage per year
+  
+  // Condition
+  conditionAtProvision  String?   @db.VarChar(20) // new, good, fair, poor
+  conditionAtReturn     String?   @db.VarChar(20)
+  damageNotes           String?   @db.Text
+  
+  // Status
+  status                String    @db.VarChar(20) // provided, returned, lost, damaged
+  currentAssignmentId   String?   @db.Uuid // FK to assignment if currently assigned
+  
+  // Warranty
+  warrantyExpiry        DateTime? @db.Date
+  warrantyProvider      String?   @db.VarChar(100)
+  
+  // Maintenance
+  lastMaintenanceDate   DateTime? @db.Date
+  nextMaintenanceDate   DateTime? @db.Date
+  
+  // Notes
+  notes                 String?   @db.Text
+  metadata              Json?     @db.JsonB
+  
+  // Audit
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy             String    @db.Uuid
+  updatedBy             String?   @db.Uuid
+  deletedAt             DateTime? @db.Timestamptz(6)
+  deletedBy             String?   @db.Uuid
+  
+  // Relations
+  tenant                AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle               FltVehicle             @relation(fields: [vehicleId], references: [id])
+  currentAssignment     FltVehicleAssignment?  @relation(fields: [currentAssignmentId], references: [id])
+  createdByEmployee     AdmProviderEmployee    @relation("FltVehicleEquipmentCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee     AdmProviderEmployee?   @relation("FltVehicleEquipmentUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee     AdmProviderEmployee?   @relation("FltVehicleEquipmentDeletedBy", fields: [deletedBy], references: [id])
+  
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([currentAssignmentId])
+  @@map("flt_vehicle_equipments")
+}
+
+// ============================================================================
+// MAIN TABLE 2: Vehicle Assignments
+// ============================================================================
+// Purpose: Vehicle-driver assignments with complete handover protocol
+// Business: 5-step workflow, photos, digital signatures, legal protection
+
+model FltVehicleAssignment {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @db.Uuid
+  driverId              String    @db.Uuid
+  vehicleId             String    @db.Uuid
+  
+  // Assignment period
+  startDate             DateTime  @db.Date
+  endDate               DateTime? @db.Date
+  assignmentType        String    @db.VarChar(20) // permanent, temporary, trial
+  status                String    @db.VarChar(20) // active, completed, cancelled
+  
+  // Handover protocol (NEW V2)
+  handoverDate          DateTime? @db.Timestamptz(6) // Exact handover datetime
+  handoverLocation      String?   @db.Text // GPS coordinates + address
+  handoverType          String?   @db.VarChar(20) // pickup, return, transfer
+  
+  // Initial vehicle state (NEW V2)
+  initialOdometer       Int?
+  initialFuelLevel      Int? // Percentage 0-100
+  initialCondition      Json?     @db.JsonB // Structured: exterior, interior, mechanical
+  
+  // Photos protocol (NEW V2) - 6 mandatory photos
+  handoverPhotos        Json?     @db.JsonB // Array: front, rear, left, right, dashboard, interior
+  photosMetadata        Json?     @db.JsonB // Timestamp, GPS, device info
+  
+  // Digital validation (NEW V2)
+  driverSignature       String?   @db.Text // Base64 digital signature
+  fleetSignature        String?   @db.Text // Base64 fleet agent signature
+  handoverChecklist     Json?     @db.JsonB // Checklist of verified points
+  
+  // Return vehicle state (NEW V2)
+  returnDate            DateTime? @db.Timestamptz(6)
+  returnOdometer        Int?
+  returnFuelLevel       Int?
+  returnCondition       Json?     @db.JsonB
+  damagesReported       Json?     @db.JsonB // Detailed damages found
+  penaltyAmount         Decimal?  @db.Decimal(18, 2) // Auto-calculated penalties
+  
+  // Metadata
+  notes                 String?   @db.Text
+  metadata              Json?     @db.JsonB
+  
+  // Audit
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy             String    @db.Uuid
+  updatedBy             String?   @db.Uuid
+  deletedAt             DateTime? @db.Timestamptz(6)
+  deletedBy             String?   @db.Uuid
+  deletionReason        String?   @db.Text
+  
+  // Relations
+  tenant                AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver                DrvDriver              @relation(fields: [driverId], references: [id])
+  vehicle               FltVehicle             @relation(fields: [vehicleId], references: [id])
+  createdByEmployee     AdmProviderEmployee    @relation("FltVehicleAssignmentCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee     AdmProviderEmployee?   @relation("FltVehicleAssignmentUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee     AdmProviderEmployee?   @relation("FltVehicleAssignmentDeletedBy", fields: [deletedBy], references: [id])
+  
+  // Reverse relations
+  events                FltVehicleEvent[]
+  equipments            FltVehicleEquipment[]
+  
+  @@index([tenantId])
+  @@index([driverId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("flt_vehicle_assignments")
+}
+
+// ============================================================================
+// MAIN TABLE 3: Vehicle Events
+// ============================================================================
+// Purpose: Vehicle lifecycle events with responsibilities
+// Business: Accidents, maintenance, violations, tracking with liability
+
+model FltVehicleEvent {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @db.Uuid
+  vehicleId             String    @db.Uuid
+  
+  // Event identification
+  eventType             String    @db.VarChar(30) // accident, maintenance, violation, recovery, impound, theft, etc
+  eventDate             DateTime  @db.Timestamptz(6)
+  
+  // Links (NEW V2)
+  driverId              String?   @db.Uuid // Driver involved
+  rideId                String?   @db.Uuid // Related ride if applicable
+  assignmentId          String?   @db.Uuid // Active assignment
+  
+  // Responsibility (NEW V2)
+  responsibleParty      String?   @db.VarChar(20) // fleet, driver, third_party
+  faultPercentage       Int? // 0-100
+  liabilityAssessment   Json?     @db.JsonB // Detailed assessment
+  
+  // Accident specifics
+  severity              String?   @db.VarChar(20) // minor, moderate, major, total_loss
+  
+  // Police & Insurance (NEW V2)
+  policeReportNumber    String?   @db.Text
+  policeStation         String?   @db.Text
+  insuranceClaimId      String?   @db.Uuid
+  claimStatus           String?   @db.VarChar(20) // filed, processing, approved, rejected
+  
+  // Repair management (NEW V2)
+  repairStatus          String?   @db.VarChar(20) // pending, approved, in_progress, completed
+  repairShopId          String?   @db.Uuid
+  estimatedRepairDays   Int?
+  actualRepairDays      Int?
+  repairInvoiceId       String?   @db.Uuid
+  
+  // Financial impact
+  downtimeHours         Int?
+  costAmount            Decimal?  @db.Decimal(18, 2)
+  currency              String?   @db.Char(3)
+  
+  // Photos (NEW V2)
+  photos                Json?     @db.JsonB // Array of photo URLs with metadata
+  
+  // Details
+  details               Json?     @db.JsonB // Structured by event type
+  notes                 String?   @db.Text
+  metadata              Json?     @db.JsonB
+  
+  // Audit
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy             String    @db.Uuid
+  updatedBy             String?   @db.Uuid
+  deletedAt             DateTime? @db.Timestamptz(6)
+  deletedBy             String?   @db.Uuid
+  
+  // Relations
+  tenant                AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle               FltVehicle             @relation(fields: [vehicleId], references: [id])
+  driver                DrvDriver?             @relation(fields: [driverId], references: [id])
+  assignment            FltVehicleAssignment?  @relation(fields: [assignmentId], references: [id])
+  createdByEmployee     AdmProviderEmployee    @relation("FltVehicleEventCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee     AdmProviderEmployee?   @relation("FltVehicleEventUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee     AdmProviderEmployee?   @relation("FltVehicleEventDeletedBy", fields: [deletedBy], references: [id])
+  
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([eventType])
+  @@index([eventDate])
+  @@index([driverId])
+  @@map("flt_vehicle_events")
+}
+
+// ============================================================================
+// MAIN TABLE 4: Vehicle Maintenance
+// ============================================================================
+// Purpose: Planned maintenance with validation workflow
+// Business: 5-phase workflow, cost breakdown, warranty tracking, quality control
+
+model FltVehicleMaintenance {
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  vehicleId                 String    @db.Uuid
+  
+  // Maintenance identification
+  maintenanceType           String    @db.VarChar(30) // oil_change, tire_rotation, brake_service, etc
+  maintenanceCategory       String    @db.VarChar(20) // preventive, corrective, regulatory
+  
+  // Scheduling
+  scheduledDate             DateTime  @db.Date
+  actualStart               DateTime? @db.Timestamptz(6)
+  actualEnd                 DateTime? @db.Timestamptz(6)
+  
+  // Categorization (NEW V2)
+  priority                  String    @db.VarChar(20) // low, medium, high, urgent, emergency
+  regulatoryRequirement     Boolean   @default(false)
+  blockingVehicle           Boolean   @default(false) // If true, vehicle is unavailable
+  
+  // Warranty management (NEW V2)
+  warrantyCovered           Boolean   @default(false)
+  warrantyClaimNumber       String?   @db.Text
+  warrantyAmount            Decimal?  @db.Decimal(18, 2)
+  insuranceCovered          Boolean   @default(false)
+  insuranceClaimRef         String?   @db.Text
+  
+  // Validation workflow (NEW V2)
+  requestedBy               String?   @db.Uuid // Driver or fleet member
+  requestedAt               DateTime? @db.Timestamptz(6)
+  approvedBy                String?   @db.Uuid // Manager
+  approvedAt                DateTime? @db.Timestamptz(6)
+  approvalNotes             String?   @db.Text
+  
+  // Cost breakdown (NEW V2)
+  laborHours                Decimal?  @db.Decimal(8, 2)
+  laborRate                 Decimal?  @db.Decimal(18, 2)
+  laborCost                 Decimal?  @db.Decimal(18, 2)
+  partsCost                 Decimal?  @db.Decimal(18, 2)
+  otherCosts                Decimal?  @db.Decimal(18, 2)
+  taxAmount                 Decimal?  @db.Decimal(18, 2)
+  totalCostExclTax          Decimal?  @db.Decimal(18, 2)
+  totalCostInclTax          Decimal?  @db.Decimal(18, 2)
+  currency                  String?   @db.Char(3)
+  
+  // Parts detail (NEW V2)
+  partsDetail               Json?     @db.JsonB // Array: part_number, description, qty, price, supplier, warranty
+  
+  // Garage management (NEW V2)
+  garageId                  String?   @db.Uuid
+  workOrderNumber           String?   @db.Text
+  mechanicName              String?   @db.Text
+  mechanicCertification     String?   @db.Text
+  qualityCheckBy            String?   @db.Uuid
+  qualityCheckAt            DateTime? @db.Timestamptz(6)
+  
+  // Status
+  status                    String    @db.VarChar(20) // scheduled, in_progress, completed, cancelled
+  
+  // Blocking periods (NEW V2)
+  blockedPeriods            Json?     @db.JsonB // Array of tsrange for unavailability
+  
+  // Provider info
+  providerId                String?   @db.Uuid
+  providerInvoice           String?   @db.Text
+  
+  // Details
+  description               String?   @db.Text
+  notes                     String?   @db.Text
+  metadata                  Json?     @db.JsonB
+  
+  // Audit
+  createdAt                 DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy                 String    @db.Uuid
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz(6)
+  deletedBy                 String?   @db.Uuid
+  
+  // Relations
+  tenant                    AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle                   FltVehicle             @relation(fields: [vehicleId], references: [id])
+  requestedByEmployee       AdmProviderEmployee?   @relation("FltVehicleMaintenanceRequestedBy", fields: [requestedBy], references: [id])
+  approvedByEmployee        AdmProviderEmployee?   @relation("FltVehicleMaintenanceApprovedBy", fields: [approvedBy], references: [id])
+  qualityCheckByEmployee    AdmProviderEmployee?   @relation("FltVehicleMaintenanceQualityCheckBy", fields: [qualityCheckBy], references: [id])
+  createdByEmployee         AdmProviderEmployee    @relation("FltVehicleMaintenanceCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?   @relation("FltVehicleMaintenanceUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?   @relation("FltVehicleMaintenanceDeletedBy", fields: [deletedBy], references: [id])
+  
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([maintenanceCategory])
+  @@map("flt_vehicle_maintenance")
+}
+
+// ============================================================================
+// MAIN TABLE 5: Vehicle Expenses
+// ============================================================================
+// Purpose: Operational expenses with automated validation circuit
+// Business: 5-step workflow, OCR verification, allocation rules, batch payments
+
+model FltVehicleExpense {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @db.Uuid
+  vehicleId             String    @db.Uuid
+  
+  // Category (enhanced V2)
+  expenseCategory       String    @db.VarChar(30) // fuel, toll, parking, wash, repair, fine, insurance_deductible, registration, inspection, permit, other
+  expenseSubcategory    String?   @db.VarChar(50) // Detailed subcategory
+  
+  // Links
+  driverId              String?   @db.Uuid
+  rideId                String?   @db.Uuid
+  tripIds               String[]  @db.Uuid // Multiple trips (NEW V2)
+  
+  // Period (NEW V2) - For subscriptions/recurring
+  periodStart           DateTime? @db.Date
+  periodEnd             DateTime? @db.Date
+  mileageStart          Int? // For trip-based expenses
+  mileageEnd            Int?
+  
+  // Amounts
+  amount                Decimal   @db.Decimal(18, 2)
+  currency              String    @db.Char(3)
+  
+  // Validation circuit (NEW V2)
+  requiresApproval      Boolean   @default(true)
+  approvalThreshold     Decimal?  @db.Decimal(18, 2) // Auto-approve if below
+  approvalStatus        String    @db.VarChar(20) // pending, approved, rejected, cancelled
+  approvedBy            String?   @db.Uuid
+  approvedAt            DateTime? @db.Timestamptz(6)
+  rejectionReason       String?   @db.Text
+  
+  // Receipt verification (NEW V2)
+  receiptUrl            String?   @db.Text
+  receiptStatus         String?   @db.VarChar(20) // pending, verified, invalid
+  receiptVerifiedBy     String?   @db.Uuid
+  receiptVerifiedAt     DateTime? @db.Timestamptz(6)
+  receiptIssues         Json?     @db.JsonB // Problems detected
+  ocrExtractedData      Json?     @db.JsonB // Data extracted via OCR
+  
+  // Cost allocation (NEW V2)
+  allocationRule        String?   @db.VarChar(20) // driver, fleet, shared, client
+  driverSharePercent    Int? // 0-100
+  fleetSharePercent     Int? // 0-100
+  clientSharePercent    Int? // 0-100
+  costCenterId          String?   @db.Uuid
+  
+  // Reimbursement (NEW V2)
+  paymentBatchId        String?   @db.Uuid // Batch payment reference
+  paymentStatus         String?   @db.VarChar(20) // pending, processed, failed
+  paymentDate           DateTime? @db.Date
+  paymentReference      String?   @db.Text
+  
+  // Transaction
+  expenseDate           DateTime  @db.Date
+  description           String?   @db.Text
+  location              String?   @db.Text
+  
+  // Metadata
+  notes                 String?   @db.Text
+  metadata              Json?     @db.JsonB
+  
+  // Audit
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy             String    @db.Uuid
+  updatedBy             String?   @db.Uuid
+  deletedAt             DateTime? @db.Timestamptz(6)
+  deletedBy             String?   @db.Uuid
+  
+  // Relations
+  tenant                AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle               FltVehicle             @relation(fields: [vehicleId], references: [id])
+  driver                DrvDriver?             @relation(fields: [driverId], references: [id])
+  approvedByEmployee    AdmProviderEmployee?   @relation("FltVehicleExpenseApprovedBy", fields: [approvedBy], references: [id])
+  verifiedByEmployee    AdmProviderEmployee?   @relation("FltVehicleExpenseVerifiedBy", fields: [receiptVerifiedBy], references: [id])
+  createdByEmployee     AdmProviderEmployee    @relation("FltVehicleExpenseCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee     AdmProviderEmployee?   @relation("FltVehicleExpenseUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee     AdmProviderEmployee?   @relation("FltVehicleExpenseDeletedBy", fields: [deletedBy], references: [id])
+  
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([expenseCategory])
+  @@index([expenseDate])
+  @@index([approvalStatus])
+  @@index([paymentStatus])
+  @@map("flt_vehicle_expenses")
+}
+
+// ============================================================================
+// MAIN TABLE 6: Vehicle Insurances
+// ============================================================================
+// Purpose: Multi-policy insurance management with claims tracking
+// Business: Main + supplementary policies, bonus/malus, renewal automation
+
+model FltVehicleInsurance {
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  vehicleId                 String    @db.Uuid
+  
+  // Multi-policy support (NEW V2)
+  policyCategory            String    @db.VarChar(20) // main, supplementary, temporary, rider
+  policyPriority            Int? // Application order
+  parentPolicyId            String?   @db.Uuid // If this is an endorsement/rider
+  
+  // Policy details
+  policyNumber              String    @db.VarChar(100)
+  insurerName               String    @db.VarChar(200)
+  insurerContact            String?   @db.Text
+  
+  // Coverage detailed (NEW V2)
+  coverageTerritories       String[]  @default([]) // Array of country codes
+  coverageDrivers           String?   @db.VarChar(20) // named, any, professional
+  driverRestrictions        Json?     @db.JsonB // min_age, min_experience, max_claims, license_types
+  vehicleUsage              String?   @db.VarChar(20) // commercial, private, mixed
+  
+  // Dates
+  startDate                 DateTime  @db.Date
+  endDate                   DateTime  @db.Date
+  
+  // Premium & Deductibles
+  basePremium               Decimal?  @db.Decimal(18, 2) // NEW V2
+  finalPremium              Decimal   @db.Decimal(18, 2) // After bonus/malus
+  currency                  String    @db.Char(3)
+  deductible                Decimal?  @db.Decimal(18, 2)
+  
+  // Franchises structured (NEW V2)
+  excessDetails             Json?     @db.JsonB // By claim type: collision, theft, glass, natural
+  
+  // Bonus/Malus (NEW V2)
+  noClaimsYears             Int?      @default(0)
+  noClaimsBonus             Int?      @default(0) // Bonus percentage
+  claimsLoading             Int?      @default(0) // Malus percentage
+  
+  // Claims tracking (NEW V2)
+  claimsCount               Int       @default(0)
+  claimsDetail              Json?     @db.JsonB // Array: date, type, amount, fault%, status, impact_on_premium
+  totalClaimsAmount         Decimal?  @db.Decimal(18, 2)
+  claimsRatio               Decimal?  @db.Decimal(8, 4) // Claims to premium ratio
+  
+  // Risk management (NEW V2)
+  riskRating                String?   @db.VarChar(10) // A, B, C, D
+  riskFactors               Json?     @db.JsonB // Evaluation factors
+  specialConditions         Json?     @db.JsonB // Special conditions
+  exclusions                Json?     @db.JsonB // Specific exclusions
+  
+  // Broker (NEW V2)
+  brokerId                  String?   @db.Uuid
+  brokerCommission          Decimal?  @db.Decimal(5, 2) // Percentage
+  brokerReference           String?   @db.Text
+  
+  // Renewal (NEW V2)
+  renewalDate               DateTime? @db.Date
+  renewalNoticeSent         Boolean   @default(false)
+  renewalQuote              Decimal?  @db.Decimal(18, 2)
+  competitorQuotes          Json?     @db.JsonB // Array of competitor quotes
+  
+  // Payments (NEW V2)
+  paymentFrequency          String?   @db.VarChar(20) // annual, semi, quarterly, monthly
+  paymentMethod             String?   @db.VarChar(20) // direct_debit, transfer, card
+  paymentSchedule           Json?     @db.JsonB // Array of payment dates and amounts
+  nextPaymentDate           DateTime? @db.Date
+  outstandingAmount         Decimal?  @db.Decimal(18, 2)
+  
+  // Co-insurance (NEW V2)
+  coInsurance               Boolean   @default(false)
+  coInsurers                Json?     @db.JsonB // Array of co-insurers
+  leadInsurer               String?   @db.VarChar(200)
+  
+  // Documents
+  policyDocument            String?   @db.Text
+  
+  // Status
+  status                    String    @db.VarChar(20) // active, expired, cancelled
+  
+  // Metadata
+  notes                     String?   @db.Text
+  metadata                  Json?     @db.JsonB
+  
+  // Audit
+  createdAt                 DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz(6)
+  createdBy                 String    @db.Uuid
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz(6)
+  deletedBy                 String?   @db.Uuid
+  
+  // Relations
+  tenant                    AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicle                   FltVehicle             @relation(fields: [vehicleId], references: [id])
+  parentPolicy              FltVehicleInsurance?   @relation("InsuranceEndorsements", fields: [parentPolicyId], references: [id])
+  endorsements              FltVehicleInsurance[]  @relation("InsuranceEndorsements")
+  createdByEmployee         AdmProviderEmployee    @relation("FltVehicleInsuranceCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?   @relation("FltVehicleInsuranceUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?   @relation("FltVehicleInsuranceDeletedBy", fields: [deletedBy], references: [id])
+  
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@index([policyCategory])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("flt_vehicle_insurances")
+}

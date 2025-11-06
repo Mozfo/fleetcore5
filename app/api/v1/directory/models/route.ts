@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Determine target tenant_id (null if global admin, tenantId otherwise)
-    const targetTenantId = permCheck.isGlobalAdmin ? null : tenantId;
+    // 4. V2: tenant_id is now NOT NULL, must use tenantId
+    // Global admins still create resources scoped to their tenant
 
     // 5. Parse and validate request body
     const body = await request.json();
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const directoryService = new DirectoryService();
     const model = await directoryService.createModel(
       validatedData,
-      targetTenantId,
+      tenantId,
       tenantId // Use tenantId for checking make access
     );
 

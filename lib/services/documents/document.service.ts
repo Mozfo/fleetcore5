@@ -233,7 +233,7 @@ export class DocumentService extends BaseService {
         ],
         driverDocuments: [
           {
-            type: "driver_license",
+            type: "driving_license",
             required: true,
             renewable: true,
             expiryMonths: 120,
@@ -296,7 +296,7 @@ export class DocumentService extends BaseService {
         ],
         driverDocuments: [
           {
-            type: "driver_license",
+            type: "driving_license",
             required: true,
             renewable: true,
             expiryMonths: 24,
@@ -359,7 +359,7 @@ export class DocumentService extends BaseService {
         ],
         driverDocuments: [
           {
-            type: "driver_license",
+            type: "driving_license",
             required: true,
             renewable: true,
             expiryMonths: 48,

@@ -1,0 +1,1203 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE RID - PRISMA SCHEMA (Riding/Rideshare Drivers)
+// ═══════════════════════════════════════════════════════════════════════════
+// Description: Gestion complète des conducteurs (drivers/chauffeurs)
+// Tables: 7 (rid_drivers, rid_driver_documents, rid_driver_cooperation_terms,
+//            rid_driver_requests, rid_driver_performances, rid_driver_blacklists,
+//            rid_driver_training)
+// Relations: Liens avec ADM (tenants, members, employees), DIR (platforms),
+//            DOC (documents), FLT (vehicles), TRP (trips)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENUMS - MODULE RID (Riding/Rideshare)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT & FINANCIAL ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum PreferredPaymentMethod {
+  bank_transfer
+  cash
+  mobile_wallet
+  
+  @@map("preferred_payment_method")
+}
+
+enum PaymentMethodType {
+  cash
+  card
+  wallet
+  mixed
+  
+  @@map("payment_method_type")
+}
+
+enum PaidBy {
+  company
+  driver
+  platform
+  government
+  
+  @@map("paid_by")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRIVER STATUS & LIFECYCLE ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum DriverStatus {
+  active
+  inactive
+  suspended
+  terminated
+  
+  @@map("driver_status")
+}
+
+enum DocumentVerificationStatus {
+  pending
+  verified
+  rejected
+  expired
+  
+  @@map("document_verification_status")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTRACT & COOPERATION ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum SignatureMethod {
+  digital
+  wet_signature
+  app
+  email
+  
+  @@map("signature_method")
+}
+
+enum CompensationModel {
+  fixed_rental
+  percentage_split
+  salary
+  crew_rental
+  buyout
+  custom
+  
+  @@map("compensation_model")
+}
+
+enum CooperationStatus {
+  pending
+  active
+  expired
+  terminated
+  
+  @@map("cooperation_status")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REQUEST MANAGEMENT ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum DriverRequestType {
+  leave
+  vehicle_change
+  schedule_change
+  expense_reimbursement
+  advance_payment
+  document_update
+  complaint
+  support
+  contract_modification
+  termination
+  other
+  
+  @@map("driver_request_type")
+}
+
+enum RequestPriority {
+  low
+  normal
+  high
+  urgent
+  
+  @@map("request_priority")
+}
+
+enum RequestStatus {
+  pending
+  under_review
+  approved
+  rejected
+  cancelled
+  completed
+  
+  @@map("request_status")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PERFORMANCE ANALYTICS ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum PeriodType {
+  daily
+  weekly
+  monthly
+  quarterly
+  yearly
+  
+  @@map("period_type")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BLACKLIST MANAGEMENT ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum BlacklistCategory {
+  disciplinary
+  administrative
+  legal
+  safety
+  financial
+  performance
+  contract_breach
+  criminal
+  voluntary
+  
+  @@map("blacklist_category")
+}
+
+enum BlacklistSeverity {
+  low
+  medium
+  high
+  critical
+  
+  @@map("blacklist_severity")
+}
+
+enum BlacklistStatus {
+  active
+  expired
+  revoked
+  appealed_lifted
+  
+  @@map("blacklist_status")
+}
+
+enum AppealStatus {
+  not_applicable
+  pending
+  under_review
+  accepted
+  rejected
+  
+  @@map("appeal_status")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRAINING MANAGEMENT ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum TrainingType {
+  mandatory
+  safety
+  customer_service
+  technical
+  compliance
+  platform_specific
+  professional_development
+  onboarding
+  refresher
+  specialized
+  
+  @@map("training_type")
+}
+
+enum ProviderType {
+  internal
+  external
+  online_platform
+  government
+  
+  @@map("provider_type")
+}
+
+enum TrainingStatus {
+  planned
+  in_progress
+  completed
+  expired
+  cancelled
+  
+  @@map("training_status")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCUMENT MANAGEMENT ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum DriverDocumentType {
+  driving_license
+  professional_card
+  national_id
+  passport
+  visa
+  work_permit
+  residence_permit
+  proof_of_address
+  criminal_record
+  medical_certificate
+  vehicle_registration
+  insurance_policy
+  contract_signed
+  bank_statement
+  other
+  
+  @@map("driver_document_type")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TABLE 1/7: rid_drivers - Conducteurs (table principale)
+// ═══════════════════════════════════════════════════════════════════════════
+// Description: Table centrale pour les conducteurs avec conformité UAE,
+//              support WPS, informations bancaires, tracking activité
+// Évolutions V2: +70 champs (conformité UAE, WPS, contacts urgence, adresse,
+//                banque IBAN/SWIFT, tracking, suspension détaillée, photos)
+// Relations: tenant, created_by/updated_by/deleted_by, verified_by,
+//            photo_verified_by (employees)
+// ═══════════════════════════════════════════════════════════════════════════
+model RidDriver {
+  // ─────────────────────────────────────────────────────────────────────────
+  // IDENTIFIANTS & CLÉS PRIMAIRES
+  // ─────────────────────────────────────────────────────────────────────────
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String?   @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INFORMATIONS PERSONNELLES BASIQUES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  firstName                 String    @db.VarChar(100)
+  lastName                  String    @db.VarChar(100)
+  email                     String    @db.VarChar(255)
+  phoneNumber               String    @db.VarChar(20)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // CONFORMITÉ UAE (V2 - OBLIGATOIRE)
+  // ─────────────────────────────────────────────────────────────────────────
+  dateOfBirth               DateTime  @db.Date
+  placeOfBirth              String?   @db.VarChar(100)
+  nationality               String?   @db.Char(2)
+  emiratesId                String?   @db.VarChar(50)
+  emiratesIdExpiry          DateTime? @db.Date
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // SÉPARATION NOMS ET GÉNÉRATION (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  fullName                  String?   @db.Text // GENERATED column
+  preferredName             String?   @db.VarChar(100)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // CONTACT DÉTAILLÉ (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  secondaryPhone            String?   @db.VarChar(20)
+  emergencyContactName      String?   @db.VarChar(100)
+  emergencyContactPhone     String?   @db.VarChar(20)
+  emergencyContactRelation  String?   @db.VarChar(50)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // ADRESSE COMPLÈTE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  addressLine1              String?   @db.Text
+  addressLine2              String?   @db.Text
+  city                      String?   @db.VarChar(100)
+  state                     String?   @db.VarChar(100)
+  postalCode                String?   @db.VarChar(20)
+  countryCode               String?   @db.Char(2)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INFORMATIONS BANCAIRES ET PAIEMENTS WPS (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  bankName                  String?   @db.VarChar(100)
+  bankAccountNumber         String?   @db.VarChar(50)
+  bankIban                  String?   @db.VarChar(34)
+  bankSwiftCode             String?   @db.VarChar(11)
+  preferredPaymentMethod    PreferredPaymentMethod?
+  wpsEligible               Boolean   @default(false)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // PERMIS ET DOCUMENTS (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  licenseNumber             String?   @db.VarChar(50)
+  licenseExpiry             DateTime? @db.Date
+  professionalCardNumber    String?   @db.VarChar(50)
+  professionalCardExpiry    DateTime? @db.Date
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // STATUT ET ACTIVITÉ (V1 + V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  driverStatus              DriverStatus @default(active)
+  onboardedAt               DateTime? @db.Timestamptz
+  lastActiveAt              DateTime? @db.Timestamptz
+  totalTripsCompleted       Int       @default(0)
+  lifetimeEarnings          Decimal   @default(0) @db.Decimal(18, 2)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // SUSPENSION DÉTAILLÉE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  suspensionReason          String?   @db.Text
+  suspensionStartDate       DateTime? @db.Date
+  suspensionEndDate         DateTime? @db.Date
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // TERMINAISON (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  terminationReason         String?   @db.Text
+  terminationDate           DateTime? @db.Date
+  rehireEligible            Boolean   @default(true)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // PHOTOS ET VÉRIFICATION IDENTITÉ (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  photoUrl                  String?   @db.Text
+  photoVerifiedAt           DateTime? @db.Timestamptz
+  photoVerifiedBy           String?   @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RATING ET NOTES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  averageRating             Decimal?  @db.Decimal(3, 2)
+  notes                     String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTADONNÉES EXTENSIBLES (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  metadata                  Json      @default("{}")
+  preferences               Json      @default("{}")
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUDIT TRAIL COMPLET (V1 + V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  createdAt                 DateTime  @default(now()) @db.Timestamptz
+  createdBy                 String?   @db.Uuid
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz
+  updatedBy                 String?   @db.Uuid
+  verifiedBy                String?   @db.Uuid
+  verifiedAt                DateTime? @db.Timestamptz
+  deletedAt                 DateTime? @db.Timestamptz
+  deletedBy                 String?   @db.Uuid
+  deletionReason            String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RELATIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  tenant                    AdmTenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByEmployee         AdmProviderEmployee?  @relation("DriverCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?  @relation("DriverUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?  @relation("DriverDeletedBy", fields: [deletedBy], references: [id])
+  verifiedByEmployee        AdmProviderEmployee?  @relation("DriverVerifiedBy", fields: [verifiedBy], references: [id])
+  photoVerifiedByEmployee   AdmProviderEmployee?  @relation("DriverPhotoVerifiedBy", fields: [photoVerifiedBy], references: [id])
+  
+  // Relations inverses
+  documents                 RidDriverDocument[]
+  cooperationTerms          RidDriverCooperationTerm[]
+  requests                  RidDriverRequest[]
+  performances              RidDriverPerformance[]
+  blacklists                RidDriverBlacklist[]
+  trainings                 RidDriverTraining[]
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INDEXES
+  // ─────────────────────────────────────────────────────────────────────────
+  @@unique([tenantId, email], name: "idx_driver_tenant_email_unique")
+  @@index([tenantId, driverStatus], name: "idx_driver_tenant_status")
+  @@index([nationality], name: "idx_driver_nationality")
+  @@index([dateOfBirth], name: "idx_driver_date_of_birth")
+  @@index([wpsEligible, driverStatus], name: "idx_driver_wps_eligible_active")
+  @@index([onboardedAt], name: "idx_driver_onboarded_at")
+  @@index([lastActiveAt], name: "idx_driver_last_active")
+  @@index([suspensionEndDate, driverStatus], name: "idx_driver_suspension_end")
+  
+  @@map("rid_drivers")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TABLE 2/7: rid_driver_documents - Documents conducteurs
+// ═══════════════════════════════════════════════════════════════════════════
+// Description: Gestion documents conducteurs avec workflow vérification,
+//              renouvellement automatique, OCR, traçabilité remplacement
+// Évolutions V2: +30 champs (types normalisés ENUM, vérification structurée,
+//                OCR data, renouvellement automatique, score confiance)
+// Relations: driver, document_id, verified_by, replaced_document
+// ═══════════════════════════════════════════════════════════════════════════
+model RidDriverDocument {
+  // ─────────────────────────────────────────────────────────────────────────
+  // IDENTIFIANTS & CLÉS PRIMAIRES
+  // ─────────────────────────────────────────────────────────────────────────
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  driverId                  String    @db.Uuid
+  documentId                String    @db.Uuid // FK vers doc_documents
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // TYPE NORMALISÉ (V2 - ENUM)
+  // ─────────────────────────────────────────────────────────────────────────
+  documentType              DriverDocumentType
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RENOUVELLEMENT ET RAPPELS (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  requiresRenewal           Boolean   @default(true)
+  renewalFrequencyDays      Int?
+  reminderSentAt            DateTime? @db.Timestamptz
+  reminderDaysBefore        Int       @default(30)
+  expiryDate                DateTime? @db.Date
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // VÉRIFICATION STRUCTURÉE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  verificationStatus        DocumentVerificationStatus @default(pending)
+  verifiedAt                DateTime? @db.Timestamptz
+  verifiedBy                String?   @db.Uuid
+  rejectionReason           String?   @db.Text
+  verificationMethod        String?   @db.VarChar(50) // manual, ocr, api
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // DÉTAILS DOCUMENT (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  documentNumber            String?   @db.VarChar(100)
+  issuingAuthority          String?   @db.VarChar(255)
+  issuingCountry            String?   @db.Char(2)
+  issueDate                 DateTime? @db.Date
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // TRAÇABILITÉ REMPLACEMENT (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  replacedDocumentId        String?   @db.Uuid
+  replacementReason         String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTADONNÉES OCR (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  ocrData                   Json?
+  confidenceScore           Decimal?  @db.Decimal(5, 2)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUDIT TRAIL
+  // ─────────────────────────────────────────────────────────────────────────
+  createdAt                 DateTime  @default(now()) @db.Timestamptz
+  createdBy                 String?   @db.Uuid
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz
+  deletedBy                 String?   @db.Uuid
+  deletionReason            String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RELATIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  tenant                    AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver                    RidDriver             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  document                  DocDocument           @relation(fields: [documentId], references: [id])
+  verifiedByEmployee        AdmProviderEmployee?  @relation("DriverDocumentVerifiedBy", fields: [verifiedBy], references: [id])
+  replacedDocument          RidDriverDocument?    @relation("DocumentReplacement", fields: [replacedDocumentId], references: [id])
+  replacingDocuments        RidDriverDocument[]   @relation("DocumentReplacement")
+  createdByEmployee         AdmProviderEmployee?  @relation("DriverDocumentCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?  @relation("DriverDocumentUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?  @relation("DriverDocumentDeletedBy", fields: [deletedBy], references: [id])
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INDEXES
+  // ─────────────────────────────────────────────────────────────────────────
+  @@unique([driverId, documentType, deletedAt], name: "idx_driver_doc_type_unique")
+  @@index([tenantId, driverId], name: "idx_driver_doc_tenant_driver")
+  @@index([documentType], name: "idx_driver_doc_type")
+  @@index([verificationStatus, deletedAt], name: "idx_driver_doc_verification_status")
+  @@index([expiryDate, requiresRenewal, verificationStatus], name: "idx_driver_doc_expiry")
+  @@index([reminderSentAt], name: "idx_driver_doc_reminder")
+  @@index([documentNumber], name: "idx_driver_doc_number")
+  @@index([replacedDocumentId], name: "idx_driver_doc_replaced")
+  
+  @@map("rid_driver_documents")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TABLE 3/7: rid_driver_cooperation_terms - Termes coopération
+// ═══════════════════════════════════════════════════════════════════════════
+// Description: Contrats conducteurs avec 6 modèles de compensation,
+//              signatures digitales doubles, historisation versions
+// Évolutions V2: +35 champs (6 modèles compensation, signatures digitales,
+//                historisation, validation légale, auto-renouvellement)
+// Relations: driver, terms_document, previous_terms, superseded_by_terms,
+//            company_signatory, legal_reviewed_by
+// ═══════════════════════════════════════════════════════════════════════════
+model RidDriverCooperationTerm {
+  // ─────────────────────────────────────────────────────────────────────────
+  // IDENTIFIANTS & CLÉS PRIMAIRES
+  // ─────────────────────────────────────────────────────────────────────────
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  driverId                  String    @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // VERSION ET DOCUMENT (V1 + V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  termsVersion              String    @db.VarChar(50)
+  termsDocumentId           String?   @db.Uuid
+  termsDocumentUrl          String?   @db.Text
+  versionNumber             Int       @default(1)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // DATES ET STATUT (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  acceptedAt                DateTime? @db.Timestamptz
+  effectiveDate             DateTime  @db.Date
+  expiryDate                DateTime? @db.Date
+  status                    CooperationStatus @default(pending)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // SIGNATURE DIGITALE DRIVER (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  signedByDriver            Boolean   @default(false)
+  driverSignatureData       String?   @db.Text
+  driverSignatureIp         String?   @db.Inet
+  driverSignatureTimestamp  DateTime? @db.Timestamptz
+  signatureMethod           SignatureMethod?
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // SIGNATURE ENTREPRISE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  signedByCompany           Boolean   @default(false)
+  companySignatoryId        String?   @db.Uuid
+  companySignatureTimestamp DateTime? @db.Timestamptz
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MODÈLE DE COMPENSATION (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  compensationModel         CompensationModel
+  compensationParams        Json // JSONB structuré selon modèle
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // HISTORISATION (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  previousTermsId           String?   @db.Uuid
+  supersededByTermsId       String?   @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // VALIDATION LÉGALE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  legalReviewRequired       Boolean   @default(false)
+  legalReviewedBy           String?   @db.Uuid
+  legalReviewedAt           DateTime? @db.Timestamptz
+  legalNotes                String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RENOUVELLEMENT (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  autoRenew                 Boolean   @default(false)
+  renewalNoticeDays         Int       @default(30)
+  renewalNoticeSentAt       DateTime? @db.Timestamptz
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTADONNÉES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  metadata                  Json      @default("{}")
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUDIT TRAIL
+  // ─────────────────────────────────────────────────────────────────────────
+  createdAt                 DateTime  @default(now()) @db.Timestamptz
+  createdBy                 String?   @db.Uuid
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz
+  deletedBy                 String?   @db.Uuid
+  deletionReason            String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RELATIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  tenant                    AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver                    RidDriver             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  termsDocument             DocDocument?          @relation(fields: [termsDocumentId], references: [id])
+  companySignatory          AdmMember?            @relation("CooperationTermCompanySignatory", fields: [companySignatoryId], references: [id])
+  legalReviewer             AdmMember?            @relation("CooperationTermLegalReviewer", fields: [legalReviewedBy], references: [id])
+  previousTerms             RidDriverCooperationTerm? @relation("TermsHistory", fields: [previousTermsId], references: [id])
+  supersededByTerms         RidDriverCooperationTerm? @relation("TermsHistory", fields: [supersededByTermsId], references: [id])
+  supersedingTerms          RidDriverCooperationTerm[] @relation("TermsHistory")
+  createdByEmployee         AdmProviderEmployee?  @relation("CooperationTermCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?  @relation("CooperationTermUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?  @relation("CooperationTermDeletedBy", fields: [deletedBy], references: [id])
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INDEXES
+  // ─────────────────────────────────────────────────────────────────────────
+  @@index([tenantId, driverId, status], name: "idx_cooperation_tenant_driver_status")
+  @@index([compensationModel], name: "idx_cooperation_model")
+  @@index([effectiveDate, expiryDate], name: "idx_cooperation_dates")
+  @@index([previousTermsId], name: "idx_cooperation_previous")
+  @@index([versionNumber], name: "idx_cooperation_version")
+  @@index([autoRenew, status], name: "idx_cooperation_auto_renew")
+  @@index([legalReviewRequired, legalReviewedAt], name: "idx_cooperation_legal_review")
+  
+  @@map("rid_driver_cooperation_terms")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TABLE 4/7: rid_driver_requests - Demandes conducteurs (NOUVELLE TABLE V2)
+// ═══════════════════════════════════════════════════════════════════════════
+// Description: Centralisation demandes conducteurs avec workflow approbation
+//              multi-niveaux, SLA, notifications automatiques
+// Création V2: Table entièrement nouvelle (100% V2)
+// Relations: driver, reviewed_by, platform, related_trip, related_expense
+// ═══════════════════════════════════════════════════════════════════════════
+model RidDriverRequest {
+  // ─────────────────────────────────────────────────────────────────────────
+  // IDENTIFIANTS & CLÉS PRIMAIRES
+  // ─────────────────────────────────────────────────────────────────────────
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  driverId                  String    @db.Uuid
+  reference                 String    @unique @db.VarChar(50) // REQ-2025-00001
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // TYPE ET CATÉGORIE
+  // ─────────────────────────────────────────────────────────────────────────
+  requestType               DriverRequestType
+  category                  String?   @db.VarChar(50)
+  priority                  RequestPriority @default(normal)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // CONTENU DEMANDE
+  // ─────────────────────────────────────────────────────────────────────────
+  subject                   String    @db.VarChar(255)
+  description               String    @db.Text
+  requestedDate             DateTime? @db.Date
+  requestedAmount           Decimal?  @db.Decimal(18, 2)
+  currency                  String?   @db.Char(3)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // PIÈCES JOINTES
+  // ─────────────────────────────────────────────────────────────────────────
+  attachmentIds             String[]  @db.Uuid // Array de FKs vers doc_documents
+  supportingDocumentsCount  Int       @default(0)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // WORKFLOW APPROBATION
+  // ─────────────────────────────────────────────────────────────────────────
+  status                    RequestStatus @default(pending)
+  submittedAt               DateTime  @default(now()) @db.Timestamptz
+  reviewedBy                String?   @db.Uuid
+  reviewedAt                DateTime? @db.Timestamptz
+  approvalLevelRequired     Int       @default(1)
+  currentApprovalLevel      Int       @default(0)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RÉSOLUTION
+  // ─────────────────────────────────────────────────────────────────────────
+  statusReason              String?   @db.Text
+  resolutionNotes           String?   @db.Text
+  resolvedAt                DateTime? @db.Timestamptz
+  resolutionTimeHours       Int?
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // NOTIFICATIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  driverNotifiedAt          DateTime? @db.Timestamptz
+  notificationMethod        String?   @db.VarChar(50)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // LIENS EXTERNES
+  // ─────────────────────────────────────────────────────────────────────────
+  platformId                String?   @db.Uuid
+  relatedTripId             String?   @db.Uuid
+  relatedExpenseId          String?   @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTADONNÉES
+  // ─────────────────────────────────────────────────────────────────────────
+  metadata                  Json      @default("{}")
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUDIT TRAIL
+  // ─────────────────────────────────────────────────────────────────────────
+  createdAt                 DateTime  @default(now()) @db.Timestamptz
+  createdBy                 String?   @db.Uuid
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz
+  deletedBy                 String?   @db.Uuid
+  deletionReason            String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RELATIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  tenant                    AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver                    RidDriver             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  reviewer                  AdmMember?            @relation("DriverRequestReviewer", fields: [reviewedBy], references: [id])
+  platform                  DirPlatform?          @relation(fields: [platformId], references: [id])
+  createdByEmployee         AdmProviderEmployee?  @relation("DriverRequestCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?  @relation("DriverRequestUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?  @relation("DriverRequestDeletedBy", fields: [deletedBy], references: [id])
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INDEXES
+  // ─────────────────────────────────────────────────────────────────────────
+  @@unique([tenantId, driverId, reference, deletedAt], name: "idx_request_tenant_driver_ref_unique")
+  @@index([tenantId, driverId, createdAt], name: "idx_request_tenant_driver_created")
+  @@index([requestType], name: "idx_request_type")
+  @@index([status, deletedAt], name: "idx_request_status")
+  @@index([priority, status], name: "idx_request_priority_status")
+  @@index([submittedAt], name: "idx_request_submitted")
+  @@index([reviewedBy], name: "idx_request_reviewer")
+  @@index([platformId], name: "idx_request_platform")
+  
+  @@map("rid_driver_requests")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TABLE 5/7: rid_driver_performances - Métriques performance
+// ═══════════════════════════════════════════════════════════════════════════
+// Description: Performance multi-dimensionnelle par plateforme, période,
+//              méthode paiement avec ranking automatique
+// Évolutions V2: +50 champs (métriques par plateforme, granularité temporelle,
+//                méthodes paiement, dimension sociale, efficacité, ranking)
+// Relations: driver, platform, verified_by
+// ═══════════════════════════════════════════════════════════════════════════
+model RidDriverPerformance {
+  // ─────────────────────────────────────────────────────────────────────────
+  // IDENTIFIANTS & CLÉS PRIMAIRES
+  // ─────────────────────────────────────────────────────────────────────────
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  driverId                  String    @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // PÉRIODE (V1 + V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  periodType                PeriodType @default(daily)
+  periodStart               DateTime  @db.Date
+  periodEnd                 DateTime? @db.Date
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // PLATEFORME SPÉCIFIQUE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  platformId                String?   @db.Uuid // NULL = agrégé toutes plateformes
+  platformName              String?   @db.VarChar(100)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // COMPTEURS COURSES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  tripsCompleted            Int       @default(0)
+  tripsCancelled            Int       @default(0)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTHODES PAIEMENT (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  paymentMethod             PaymentMethodType?
+  cashTripsCount            Int       @default(0)
+  cardTripsCount            Int       @default(0)
+  cashAmount                Decimal   @default(0) @db.Decimal(18, 2)
+  cardAmount                Decimal   @default(0) @db.Decimal(18, 2)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTRIQUES ÉTENDUES (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  acceptanceRate            Decimal?  @db.Decimal(5, 2)
+  cancellationByDriverRate  Decimal?  @db.Decimal(5, 2)
+  cancellationByRiderRate   Decimal?  @db.Decimal(5, 2)
+  onTimePercentage          Decimal?  @db.Decimal(5, 2)
+  avgTripDistanceKm         Decimal?  @db.Decimal(10, 2)
+  avgTripDurationMinutes    Int?
+  avgEarningsPerTrip        Decimal?  @db.Decimal(10, 2)
+  peakHoursPercentage       Decimal?  @db.Decimal(5, 2)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // DIMENSION SOCIALE/QUALITÉ (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  complaintsCount           Int       @default(0)
+  positiveFeedbackCount     Int       @default(0)
+  averageRating             Decimal?  @db.Decimal(3, 2)
+  tipsReceived              Decimal   @default(0) @db.Decimal(18, 2)
+  tipsCount                 Int       @default(0)
+  fiveStarRatingsCount      Int       @default(0)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // EFFICACITÉ (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  onlineHours               Decimal?  @db.Decimal(10, 2)
+  occupiedHours             Decimal?  @db.Decimal(10, 2)
+  utilizationRate           Decimal?  @db.Decimal(5, 2)
+  earningsPerHour           Decimal?  @db.Decimal(10, 2)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // COMPARAISON (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  rankInFleet               Int?
+  totalDriversInPeriod      Int?
+  percentile                Int?
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // REVENUS ET DÉDUCTIONS (V1 + V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  earningsTotal             Decimal   @default(0) @db.Decimal(18, 2)
+  platformFeesTotal         Decimal   @default(0) @db.Decimal(18, 2)
+  vehicleRentalDeducted     Decimal   @default(0) @db.Decimal(18, 2)
+  otherDeductions           Decimal   @default(0) @db.Decimal(18, 2)
+  netEarnings               Decimal   @default(0) @db.Decimal(18, 2)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INCIDENTS (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  incidentsCount            Int       @default(0)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // CALCUL ET VALIDATION (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  calculatedAt              DateTime? @db.Timestamptz
+  calculationSource         String?   @db.VarChar(50)
+  verifiedBy                String?   @db.Uuid
+  verifiedAt                DateTime? @db.Timestamptz
+  isFinal                   Boolean   @default(false)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTADONNÉES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  metadata                  Json      @default("{}")
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUDIT TRAIL
+  // ─────────────────────────────────────────────────────────────────────────
+  createdAt                 DateTime  @default(now()) @db.Timestamptz
+  createdBy                 String?   @db.Uuid
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz
+  deletedBy                 String?   @db.Uuid
+  deletionReason            String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RELATIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  tenant                    AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver                    RidDriver             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  platform                  DirPlatform?          @relation(fields: [platformId], references: [id])
+  verifier                  AdmMember?            @relation("DriverPerformanceVerifier", fields: [verifiedBy], references: [id])
+  createdByEmployee         AdmProviderEmployee?  @relation("DriverPerformanceCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?  @relation("DriverPerformanceUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?  @relation("DriverPerformanceDeletedBy", fields: [deletedBy], references: [id])
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INDEXES
+  // ─────────────────────────────────────────────────────────────────────────
+  @@unique([tenantId, driverId, periodStart, isFinal], name: "idx_perf_tenant_driver_period_final")
+  @@index([tenantId, driverId, periodType, periodStart], name: "idx_perf_tenant_driver_period")
+  @@index([periodType, periodStart], name: "idx_perf_period_type_start")
+  @@index([platformId], name: "idx_perf_platform")
+  @@index([paymentMethod], name: "idx_perf_payment_method")
+  @@index([rankInFleet], name: "idx_perf_rank")
+  @@index([percentile], name: "idx_perf_percentile")
+  @@index([isFinal], name: "idx_perf_final")
+  @@index([calculatedAt], name: "idx_perf_calculated")
+  
+  @@map("rid_driver_performances")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TABLE 6/7: rid_driver_blacklists - Liste noire
+// ═══════════════════════════════════════════════════════════════════════════
+// Description: Blacklist avec due process, catégorisation, sévérité,
+//              processus appel structuré, validation légale
+// Évolutions V2: +40 champs (catégories, sévérité, appel structuré,
+//                origine événement, validation légale, conditions réactivation)
+// Relations: driver, reported_by, decision_made_by, appeal_reviewed_by,
+//            legal_reviewed_by, revoked_by, notification_proof_document
+// ═══════════════════════════════════════════════════════════════════════════
+model RidDriverBlacklist {
+  // ─────────────────────────────────────────────────────────────────────────
+  // IDENTIFIANTS & CLÉS PRIMAIRES
+  // ─────────────────────────────────────────────────────────────────────────
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  driverId                  String    @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RAISON ET DATES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  reason                    String    @db.Text
+  startDate                 DateTime  @db.Date
+  endDate                   DateTime? @db.Date
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // CATÉGORISATION ET SÉVÉRITÉ (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  category                  BlacklistCategory
+  severity                  BlacklistSeverity @default(medium)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // ORIGINE ET CONTEXTE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  originEventId             String?   @db.Uuid
+  originEventType           String?   @db.VarChar(50)
+  reportedBy                String    @db.Uuid
+  reportedAt                DateTime  @default(now()) @db.Timestamptz
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // PROCESSUS APPEL (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  appealStatus              AppealStatus @default(not_applicable)
+  appealSubmittedAt         DateTime? @db.Timestamptz
+  appealReason              String?   @db.Text
+  appealReviewedBy          String?   @db.Uuid
+  appealReviewedAt          DateTime? @db.Timestamptz
+  appealDecisionNotes       String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // DÉCISION ET VALIDATION (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  decisionMadeBy            String    @db.Uuid
+  decisionMadeAt            DateTime  @default(now()) @db.Timestamptz
+  requiresLegalReview       Boolean   @default(false)
+  legalReviewedBy           String?   @db.Uuid
+  legalReviewedAt           DateTime? @db.Timestamptz
+  legalOpinion              String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // LEVÉE/RÉVOCATION (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  status                    BlacklistStatus @default(active)
+  revokedAt                 DateTime? @db.Timestamptz
+  revokedBy                 String?   @db.Uuid
+  revocationReason          String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // NOTIFICATIONS (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  driverNotifiedAt          DateTime? @db.Timestamptz
+  notificationMethod        String?   @db.VarChar(50)
+  notificationProofDocumentId String? @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RÉACTIVATION ÉVENTUELLE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  reactivationConditions    String?   @db.Text
+  reactivationDateEligible  DateTime? @db.Date
+  rehabilitationProgramRequired Boolean @default(false)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // DOCUMENTATION (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  supportingDocuments       String[]  @db.Uuid
+  incidentReportId          String?   @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTADONNÉES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  metadata                  Json      @default("{}")
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUDIT TRAIL
+  // ─────────────────────────────────────────────────────────────────────────
+  createdAt                 DateTime  @default(now()) @db.Timestamptz
+  createdBy                 String?   @db.Uuid
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz
+  deletedBy                 String?   @db.Uuid
+  deletionReason            String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RELATIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  tenant                    AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver                    RidDriver             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  reporter                  AdmMember             @relation("BlacklistReporter", fields: [reportedBy], references: [id])
+  decisionMaker             AdmMember             @relation("BlacklistDecisionMaker", fields: [decisionMadeBy], references: [id])
+  appealReviewer            AdmMember?            @relation("BlacklistAppealReviewer", fields: [appealReviewedBy], references: [id])
+  legalReviewer             AdmMember?            @relation("BlacklistLegalReviewer", fields: [legalReviewedBy], references: [id])
+  revoker                   AdmMember?            @relation("BlacklistRevoker", fields: [revokedBy], references: [id])
+  notificationProofDocument DocDocument?          @relation(fields: [notificationProofDocumentId], references: [id])
+  createdByEmployee         AdmProviderEmployee?  @relation("BlacklistCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?  @relation("BlacklistUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?  @relation("BlacklistDeletedBy", fields: [deletedBy], references: [id])
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INDEXES
+  // ─────────────────────────────────────────────────────────────────────────
+  @@unique([tenantId, driverId, deletedAt, status], name: "idx_blacklist_tenant_driver_active_unique")
+  @@index([tenantId, driverId], name: "idx_blacklist_tenant_driver")
+  @@index([category], name: "idx_blacklist_category")
+  @@index([severity], name: "idx_blacklist_severity")
+  @@index([status, deletedAt], name: "idx_blacklist_status")
+  @@index([appealStatus], name: "idx_blacklist_appeal_status")
+  @@index([endDate, status], name: "idx_blacklist_end_date")
+  @@index([reactivationDateEligible, status], name: "idx_blacklist_reactivation")
+  @@index([originEventId], name: "idx_blacklist_origin_event")
+  @@index([reportedBy], name: "idx_blacklist_reporter")
+  @@index([decisionMadeBy], name: "idx_blacklist_decision_maker")
+  
+  @@map("rid_driver_blacklists")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TABLE 7/7: rid_driver_training - Formations
+// ═══════════════════════════════════════════════════════════════════════════
+// Description: Formations professionnelles avec 10 types, évaluation externe,
+//              certificats traçables, prérequis et dépendances
+// Évolutions V2: +50 champs (10 types formations, organismes externes,
+//                évaluation et score, certificats, feedback, coûts, prérequis)
+// Relations: driver, evaluated_by, related_platform
+// ═══════════════════════════════════════════════════════════════════════════
+model RidDriverTraining {
+  // ─────────────────────────────────────────────────────────────────────────
+  // IDENTIFIANTS & CLÉS PRIMAIRES
+  // ─────────────────────────────────────────────────────────────────────────
+  id                        String    @id @default(uuid()) @db.Uuid
+  tenantId                  String    @db.Uuid
+  driverId                  String    @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INFORMATIONS BASIQUES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  trainingName              String    @db.VarChar(255)
+  providerName              String    @db.VarChar(255)
+  status                    TrainingStatus @default(planned)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // CATÉGORISATION DÉTAILLÉE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  trainingType              TrainingType
+  category                  String?   @db.VarChar(100)
+  isMandatory               Boolean   @default(false)
+  isRecurring               Boolean   @default(false)
+  recurrenceFrequencyMonths Int?
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // ORGANISME ET RÉFÉRENCE EXTERNE (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  providerType              ProviderType?
+  externalProviderId        String?   @db.Uuid
+  externalReference         String?   @db.VarChar(100)
+  providerContactEmail      String?   @db.VarChar(255)
+  providerContactPhone      String?   @db.VarChar(20)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // PLANIFICATION (V1 + V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  assignedAt                DateTime  @default(now()) @db.Timestamptz
+  dueAt                     DateTime? @db.Timestamptz
+  scheduledStartDate        DateTime? @db.Date
+  scheduledEndDate          DateTime? @db.Date
+  actualStartDate           DateTime? @db.Date
+  completedAt               DateTime? @db.Timestamptz
+  durationHours             Decimal?  @db.Decimal(5, 2)
+  location                  String?   @db.VarChar(255)
+  isOnline                  Boolean   @default(false)
+  platformUrl               String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // ÉVALUATION (V1 + V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  passingScore              Decimal?  @db.Decimal(5, 2)
+  maxAttempts               Int       @default(1)
+  attemptNumber             Int       @default(1)
+  score                     Decimal?  @db.Decimal(5, 2)
+  scorePercentage           Decimal?  @db.Decimal(5, 2)
+  passed                    Boolean?
+  evaluationDate            DateTime? @db.Date
+  evaluatedBy               String?   @db.Uuid
+  evaluatorNotes            String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // CERTIFICAT (V1 + V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  certificateUrl            String?   @db.Text
+  certificateNumber         String?   @db.VarChar(100)
+  certificateIssuedDate     DateTime? @db.Date
+  certificateExpiryDate     DateTime? @db.Date
+  certificateIssuingAuthority String? @db.VarChar(255)
+  digitalBadgeUrl           String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // FEEDBACK (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  trainerFeedback           String?   @db.Text
+  driverFeedback            String?   @db.Text
+  driverSatisfactionRating  Int? // CHECK 1-5
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // SUIVI ET RAPPELS (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  reminderSentAt            DateTime? @db.Timestamptz
+  lastContactAt             DateTime? @db.Timestamptz
+  completionReminderCount   Int       @default(0)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // COÛTS (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  trainingCost              Decimal?  @db.Decimal(10, 2)
+  currency                  String?   @db.Char(3)
+  paidBy                    PaidBy?
+  reimbursementRequested    Boolean   @default(false)
+  reimbursementApproved     Boolean?
+  reimbursementAmount       Decimal?  @db.Decimal(10, 2)
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // PRÉREQUIS ET DÉPENDANCES (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  prerequisiteTrainingIds   String[]  @db.Uuid
+  unlocksTrainingIds        String[]  @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // LIENS (V2)
+  // ─────────────────────────────────────────────────────────────────────────
+  relatedPlatformId         String?   @db.Uuid
+  relatedDocumentIds        String[]  @db.Uuid
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÉTADONNÉES (V1)
+  // ─────────────────────────────────────────────────────────────────────────
+  metadata                  Json      @default("{}")
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUDIT TRAIL
+  // ─────────────────────────────────────────────────────────────────────────
+  createdAt                 DateTime  @default(now()) @db.Timestamptz
+  createdBy                 String?   @db.Uuid
+  updatedAt                 DateTime  @updatedAt @db.Timestamptz
+  updatedBy                 String?   @db.Uuid
+  deletedAt                 DateTime? @db.Timestamptz
+  deletedBy                 String?   @db.Uuid
+  deletionReason            String?   @db.Text
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // RELATIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  tenant                    AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  driver                    RidDriver             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  evaluator                 AdmMember?            @relation("TrainingEvaluator", fields: [evaluatedBy], references: [id])
+  relatedPlatform           DirPlatform?          @relation(fields: [relatedPlatformId], references: [id])
+  createdByEmployee         AdmProviderEmployee?  @relation("TrainingCreatedBy", fields: [createdBy], references: [id])
+  updatedByEmployee         AdmProviderEmployee?  @relation("TrainingUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByEmployee         AdmProviderEmployee?  @relation("TrainingDeletedBy", fields: [deletedBy], references: [id])
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // INDEXES
+  // ─────────────────────────────────────────────────────────────────────────
+  @@unique([tenantId, driverId, trainingName, deletedAt], name: "idx_training_tenant_driver_name_unique")
+  @@index([tenantId, driverId], name: "idx_training_tenant_driver")
+  @@index([trainingType], name: "idx_training_type")
+  @@index([isMandatory], name: "idx_training_mandatory")
+  @@index([isRecurring], name: "idx_training_recurring")
+  @@index([status, deletedAt], name: "idx_training_status")
+  @@index([scheduledStartDate], name: "idx_training_scheduled_start")
+  @@index([dueAt, status], name: "idx_training_due_status")
+  @@index([certificateExpiryDate, passed], name: "idx_training_cert_expiry")
+  @@index([providerType], name: "idx_training_provider_type")
+  @@index([relatedPlatformId], name: "idx_training_platform")
+  
+  @@map("rid_driver_training")
+}

@@ -53,6 +53,7 @@ async function main() {
       tenant_id: dubaiOrg.id,
       clerk_user_id: "user_clerk_dubai_admin_placeholder",
       email: "admin@dubaifleet.ae",
+      phone: "+971501234567", // V2: phone is now required (NOT NULL)
       first_name: "Ahmed",
       last_name: "Al Maktoum",
       role: "admin",
@@ -71,6 +72,7 @@ async function main() {
       tenant_id: parisOrg.id,
       clerk_user_id: "user_clerk_paris_admin_placeholder",
       email: "admin@parisvtc.fr",
+      phone: "+33612345678", // V2: phone is now required (NOT NULL)
       first_name: "Marie",
       last_name: "Dubois",
       role: "admin",

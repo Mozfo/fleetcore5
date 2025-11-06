@@ -195,9 +195,9 @@ export const driverSuspensionSchema = z.object({
 export const driverDocumentSchema = z
   .object({
     document_type: z.enum([
-      "driver_license",
+      "driving_license",
       "professional_card",
-      "identity_document",
+      "national_id",
     ]),
     file_url: z.string().url("Invalid file URL"),
     issue_date: z.coerce

@@ -28,9 +28,11 @@ export const listMakesSchema = z.object({
 /**
  * Schema for creating a car make
  * POST /api/v1/directory/makes
+ * V2: code is now required (NOT NULL in DB)
  */
 export const createMakeSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name too long").trim(),
+  code: z.string().min(1, "Code is required").max(50, "Code too long").trim(),
 });
 
 // ========== CAR MODELS ==========
@@ -38,6 +40,7 @@ export const createMakeSchema = z.object({
 /**
  * Schema for creating a car model
  * POST /api/v1/directory/models
+ * V2: code is now required (NOT NULL in DB)
  */
 export const createModelSchema = z.object({
   make_id: z.string().uuid("Invalid make ID format"),
@@ -46,6 +49,7 @@ export const createModelSchema = z.object({
     .min(1, "Model name is required")
     .max(100, "Model name too long")
     .trim(),
+  code: z.string().min(1, "Code is required").max(50, "Code too long").trim(),
   vehicle_class_id: z.string().uuid("Invalid vehicle class ID").optional(),
 });
 
@@ -64,9 +68,11 @@ export const listPlatformsSchema = z.object({
 /**
  * Schema for creating a platform
  * POST /api/v1/directory/platforms
+ * V2: code is now required (NOT NULL in DB)
  */
 export const createPlatformSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name too long").trim(),
+  code: z.string().min(1, "Code is required").max(50, "Code too long").trim(),
   api_config: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -104,6 +110,7 @@ export const listVehicleClassesSchema = z.object({
 /**
  * Schema for creating a vehicle class
  * POST /api/v1/directory/vehicle-classes
+ * V2: code is now required (NOT NULL in DB)
  */
 export const createVehicleClassSchema = z.object({
   country_code: z
@@ -111,6 +118,7 @@ export const createVehicleClassSchema = z.object({
     .length(2, "Country code must be 2 characters")
     .toUpperCase(),
   name: z.string().min(1, "Name is required").max(100, "Name too long").trim(),
+  code: z.string().min(1, "Code is required").max(50, "Code too long").trim(),
   description: z.string().max(500, "Description too long").optional(),
   max_age: z
     .number()

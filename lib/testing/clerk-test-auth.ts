@@ -437,6 +437,7 @@ async function createTestMemberWithPermissions(
             tenant_id: tenantId,
             clerk_user_id: userId,
             email: email,
+            phone: "", // V2: phone is now required (NOT NULL)
             first_name: "Test",
             last_name: "FleetCore",
             status: "active",
@@ -492,6 +493,7 @@ async function createTestMemberWithPermissions(
         data: {
           tenant_id: tenantId,
           name: "test_admin_role",
+          slug: "test-admin-role", // V2: slug is now required (NOT NULL)
           permissions: {
             admin: true,
             manage_directory: true,

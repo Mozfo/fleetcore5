@@ -1,0 +1,585 @@
+// ============================================================================
+// MODULE BILLING (BIL) - GESTION FACTURATION ET ABONNEMENTS SAAS
+// ============================================================================
+// 
+// 6 tables principales + 3 tables de support
+// Dépendances: adm (tenants, employees)
+// 
+// TABLES PRINCIPALES:
+// - bil_billing_plans: Plans tarifaires et quotas
+// - bil_tenant_subscriptions: Abonnements clients  
+// - bil_tenant_usage_metrics: Métriques consommation
+// - bil_tenant_invoices: Factures SaaS
+// - bil_tenant_invoice_lines: Détail lignes factures
+// - bil_payment_methods: Moyens de paiement
+//
+// TABLES DE SUPPORT:
+// - bil_usage_metric_types: Référentiel types métriques
+// - bil_promotions: Codes promo et remises (optionnel)
+// - bil_promotion_usage: Utilisation codes promo
+//
+// ============================================================================
+
+// ============================================================================
+// ENUMS MODULE BILLING
+// ============================================================================
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 57-62, 123-131, etc.
+// Ces enums sont spécifiques au domaine Billing et restent dans ce fichier
+// ============================================================================
+
+// Status des plans tarifaires
+// Spec: lignes 57-62
+enum BillingPlanStatus {
+  draft      // Préparation, non visible clients
+  active     // Disponible souscription
+  deprecated // Plus proposé, mais existant honoré
+  archived   // Historique uniquement
+}
+
+// Intervalle de facturation
+// Spec: lignes 50, 95-96
+enum BillingInterval {
+  month
+  year
+}
+
+// Status des abonnements
+// Spec: lignes 123-131
+enum SubscriptionStatus {
+  trialing   // Période essai
+  active     // Abonnement actif et payé
+  past_due   // Paiement échoué, en attente
+  suspended  // Suspendu (impayé, violation TOS)
+  cancelling // Annulation programmée fin période
+  cancelled  // Annulé effectif
+  inactive   // Ancien abonnement archivé
+}
+
+// Type de période pour les métriques
+// Spec: lignes 202-204
+enum PeriodType {
+  day
+  week
+  month
+}
+
+// Source de la métrique
+// Spec: lignes 217-219
+enum MetricSource {
+  internal   // Calculé par le système
+  api        // Provenant d'une API externe
+  import     // Importé manuellement
+  calculated // Calculé à partir d'autres métriques
+}
+
+// Méthode d'agrégation
+// Spec: lignes 512-514
+enum AggregationMethod {
+  sum  // Somme des valeurs
+  max  // Maximum des valeurs
+  avg  // Moyenne des valeurs
+  last // Dernière valeur
+}
+
+// Status des factures
+// Spec: lignes 294-297
+enum InvoiceStatus {
+  draft          // Brouillon
+  sent           // Envoyée au client
+  paid           // Payée
+  overdue        // En retard
+  void           // Annulée (erreur)
+  uncollectible  // Irrécupérable
+}
+
+// Type de ligne de facture
+// Spec: lignes 341-347
+enum InvoiceLineType {
+  plan_fee    // Abonnement fixe mensuel/annuel
+  overage_fee // Dépassement quotas
+  tax         // Ligne TVA
+  discount    // Réduction (promo, fidélité)
+  other       // Frais divers
+}
+
+// Type de source pour traçabilité
+// Spec: lignes 376-386
+enum InvoiceLineSourceType {
+  billing_plan // Source: plan tarifaire
+  usage_metric // Source: métrique d'usage
+  manual       // Ajout manuel
+  promotion    // Source: code promo
+}
+
+// Type de moyen de paiement
+// Spec: lignes 437-439
+enum PaymentType {
+  card          // Carte bancaire
+  bank_account  // Compte bancaire (SEPA, virement)
+  paypal        // PayPal
+  apple_pay     // Apple Pay
+  google_pay    // Google Pay
+  other         // Autre
+}
+
+// Status du moyen de paiement
+// Spec: lignes 456-460
+enum PaymentMethodStatus {
+  active               // Actif et utilisable
+  inactive             // Inactif
+  expired              // Expiré (carte)
+  failed               // Échec utilisation
+  pending_verification // Vérification en cours (compte bancaire)
+}
+
+// Type de remise
+// Spec: lignes 568-570
+enum PromotionDiscountType {
+  percentage    // Remise en pourcentage (ex: 20%)
+  fixed_amount  // Montant fixe (ex: 50€)
+}
+
+// Application de la promotion
+// Spec: lignes 580-582
+enum PromotionAppliesTo {
+  first_invoice  // Uniquement première facture
+  all_invoices   // Toutes les factures
+  specific_plan  // Plan spécifique uniquement
+}
+
+// Status de la promotion
+// Spec: lignes 585-586
+enum PromotionStatus {
+  active     // Active et utilisable
+  expired    // Expirée (validité dépassée)
+  exhausted  // Épuisée (max redemptions atteint)
+  disabled   // Désactivée manuellement
+}
+
+// ============================================================================
+// TABLE 1: bil_usage_metric_types - Référentiel types métriques
+// ============================================================================
+// Référentiel centralisé des métriques autorisées
+// Évite typos et normalise les unités
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 501-527
+model BilUsageMetricType {
+  id                 String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name               String            @unique @db.VarChar(50) // active_vehicles, active_drivers, total_trips, etc.
+  unit               String            @db.VarChar(20) // count, AED, USD, EUR, MB, calls
+  description        String?           @db.Text
+  aggregationMethod  AggregationMethod // sum, max, avg, last - Comment agréger sur période
+  createdAt          DateTime          @default(now()) @db.Timestamptz(6)
+
+  // Relations
+  usageMetrics       BilTenantUsageMetric[]
+
+  @@map("bil_usage_metric_types")
+}
+
+// ============================================================================
+// TABLE 2: bil_billing_plans - Plans tarifaires et quotas
+// ============================================================================
+// Catalogue des plans avec quotas inclus et versioning
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 25-83
+model BilBillingPlan {
+  id                    String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Identifiants
+  planCode              String             @unique @db.VarChar(100) // basic-v1, pro-v2 - Stable pour intégrations
+  planName              String             @db.VarChar(200)
+  description           String?            @db.Text
+  
+  // Tarification
+  priceMonthly          Decimal?           @db.Decimal(18, 2) // Remplace monthly_fee
+  priceYearly           Decimal?           @db.Decimal(18, 2) // Remplace annual_fee
+  currency              String             @default("AED") @db.Char(3)
+  vatRate               Decimal?           @db.Decimal(5, 2) // 5% UAE, 20% FR - Auto sur factures
+  
+  // Quotas inclus (base calcul overages)
+  maxVehicles           Int? // NULL = illimité
+  maxDrivers            Int?
+  maxUsers              Int?
+  
+  // Versioning (évolutions tarifaires sans casser clients)
+  version               Int                @default(1)
+  
+  // Intégration Stripe
+  stripePriceIdMonthly  String?            @db.Text
+  stripePriceIdYearly   String?            @db.Text
+  
+  // Cycle par défaut
+  billingInterval       BillingInterval    @default(month) // month, year
+  
+  // Statut (enum)
+  status                BillingPlanStatus // draft, active, deprecated, archived
+  
+  // Features (optionnel, peut être normalisé dans bil_plan_features)
+  features              Json?              @db.JsonB
+  
+  // Metadata extensible
+  metadata              Json?              @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt             DateTime           @default(now()) @db.Timestamptz(6)
+  createdBy             String?            @db.Uuid
+  updatedAt             DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  updatedBy             String?            @db.Uuid
+  deletedAt             DateTime?          @db.Timestamptz(6)
+  deletedBy             String?            @db.Uuid
+  deletionReason        String?            @db.Text
+
+  // Relations
+  subscriptions         BilTenantSubscription[]
+  subscriptionsPrevious BilTenantSubscription[] @relation("PreviousPlan")
+  createdByEmployee     AdmProviderEmployee?    @relation("BillingPlanCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  updatedByEmployee     AdmProviderEmployee?    @relation("BillingPlanUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  deletedByEmployee     AdmProviderEmployee?    @relation("BillingPlanDeletedBy", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([planCode, version], map: "uq_billing_plans_code_version")
+  @@index([status])
+  @@index([planCode])
+  @@map("bil_billing_plans")
+}
+
+// ============================================================================
+// TABLE 3: bil_tenant_subscriptions - Abonnements clients
+// ============================================================================
+// Gestion abonnements avec périodes, trial, multi-PSP
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 84-163
+model BilTenantSubscription {
+  id                       String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Références
+  tenantId                 String              @db.Uuid
+  planId                   String              @db.Uuid
+  previousPlanId           String?             @db.Uuid // Pour upgrade/downgrade
+  planVersion              Int? // Fige tarif même si plan évolue
+  paymentMethodId          String?             @db.Uuid
+  
+  // Cycle et périodes
+  billingCycle             BillingInterval     @default(month) // monthly, yearly
+  currentPeriodStart       DateTime?           @db.Timestamptz(6)
+  currentPeriodEnd         DateTime?           @db.Timestamptz(6)
+  
+  // Trial
+  trialEnd                 DateTime?           @db.Timestamptz(6)
+  
+  // Statut (enum)
+  status                   SubscriptionStatus // trialing, active, past_due, suspended, cancelling, cancelled, inactive
+  
+  // Annulation
+  cancelAtPeriodEnd        Boolean             @default(true) // Si true: annulation fin période, false: immédiate
+  autoRenew                Boolean             @default(true)
+  
+  // Multi-PSP
+  provider                 String?             @db.VarChar(50) // stripe, adyen, paypal
+  providerSubscriptionId   String?             @db.Text
+  providerCustomerId       String?             @db.Text
+  
+  // Metadata
+  metadata                 Json?               @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt                DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime            @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt                DateTime?           @db.Timestamptz(6)
+
+  // Relations
+  tenant                   AdmTenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  plan                     BilBillingPlan           @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  previousPlan             BilBillingPlan?          @relation("PreviousPlan", fields: [previousPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  paymentMethod            BilPaymentMethod?        @relation(fields: [paymentMethodId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  invoices                 BilTenantInvoice[]
+  usageMetrics             BilTenantUsageMetric[]
+
+  @@unique([tenantId], map: "uq_subscriptions_tenant_active") // Un seul actif par tenant
+  @@index([status])
+  @@index([providerSubscriptionId])
+  @@index([currentPeriodEnd])
+  @@map("bil_tenant_subscriptions")
+}
+
+// ============================================================================
+// TABLE 4: bil_tenant_usage_metrics - Métriques consommation
+// ============================================================================
+// Enregistrement des métriques pour calcul overages
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 164-239
+model BilTenantUsageMetric {
+  id                String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Références
+  tenantId          String                   @db.Uuid
+  metricTypeId      String                   @db.Uuid // FK vers bil_usage_metric_types
+  subscriptionId    String?                  @db.Uuid
+  planVersion       Int? // Version du plan durant cette période
+  
+  // Période (timestamps pour granularité horaire + timezone)
+  periodType        PeriodType // day, week, month
+  periodStartTs     DateTime                 @db.Timestamptz(6)
+  periodEndTs       DateTime                 @db.Timestamptz(6)
+  
+  // Valeur
+  metricValue       Decimal                  @db.Decimal(20, 4) // Précision accrue
+  
+  // Source (traçabilité) - enum
+  metricSource      MetricSource? // internal, api, import, calculated
+  
+  // Metadata
+  metadata          Json?                    @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt         DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime                 @default(now()) @updatedAt @db.Timestamptz(6)
+
+  // Relations
+  tenant            AdmTenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  metricType        BilUsageMetricType       @relation(fields: [metricTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  subscription      BilTenantSubscription?   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([tenantId, metricTypeId, periodType, periodStartTs], map: "uq_usage_metrics_tenant_type_period")
+  @@index([tenantId, periodType, periodStartTs])
+  @@index([subscriptionId])
+  @@index([metricTypeId])
+  @@map("bil_tenant_usage_metrics")
+}
+
+// ============================================================================
+// TABLE 5: bil_tenant_invoices - Factures SaaS
+// ============================================================================
+// Factures avec détail montants (HT/TVA) et synchronisation PSP
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 240-329
+model BilTenantInvoice {
+  id                String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Références
+  tenantId          String         @db.Uuid
+  subscriptionId    String         @db.Uuid
+  
+  // Identification
+  invoiceNumber     String         @db.VarChar(100) // INV-2025-01-0001
+  
+  // Période facturée
+  periodStart       DateTime       @db.Timestamptz(6)
+  periodEnd         DateTime       @db.Timestamptz(6)
+  
+  // Dates
+  invoiceDate       DateTime       @db.Timestamptz(6)
+  dueDate           DateTime       @db.Timestamptz(6)
+  paidAt            DateTime?      @db.Timestamptz(6)
+  
+  // Montants détaillés
+  subtotal          Decimal        @db.Decimal(18, 2) // HT (plan + overages)
+  taxRate           Decimal?       @db.Decimal(5, 2)
+  taxAmount         Decimal?       @db.Decimal(18, 2)
+  totalAmount       Decimal        @db.Decimal(18, 2) // TTC final
+  amountPaid        Decimal        @default(0) @db.Decimal(18, 2)
+  amountDue         Decimal        @default(0) @db.Decimal(18, 2)
+  
+  // Currency
+  currency          String         @default("AED") @db.Char(3)
+  
+  // Statut (enum)
+  status            InvoiceStatus // draft, sent, paid, overdue, void, uncollectible
+  
+  // Intégration PSP
+  stripeInvoiceId   String?        @db.VarChar(255)
+  documentUrl       String?        @db.Text // URL PDF S3
+  
+  // Metadata
+  metadata          Json?          @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt         DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?      @db.Timestamptz(6)
+
+  // Relations
+  tenant            AdmTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  subscription      BilTenantSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  lines             BilTenantInvoiceLine[]
+  promotionUsages   BilPromotionUsage[]
+
+  @@unique([tenantId, invoiceNumber], map: "uq_invoices_tenant_number")
+  @@index([stripeInvoiceId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([tenantId, invoiceDate])
+  @@map("bil_tenant_invoices")
+}
+
+// ============================================================================
+// TABLE 6: bil_tenant_invoice_lines - Détail lignes factures
+// ============================================================================
+// Lignes facture avec typage et traçabilité source
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 330-407
+model BilTenantInvoiceLine {
+  id              String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Référence
+  invoiceId       String                  @db.Uuid
+  
+  // Description
+  description     String                  @db.Text
+  
+  // Type de ligne (enum)
+  lineType        InvoiceLineType // plan_fee, overage_fee, tax, discount, other
+  
+  // Montant décomposé
+  unitPrice       Decimal                 @db.Decimal(18, 2)
+  quantity        Decimal                 @default(1) @db.Decimal(18, 4)
+  amount          Decimal                 @db.Decimal(18, 2) // unitPrice * quantity (ou calculé)
+  
+  // Taxes et remises par ligne
+  taxRate         Decimal?                @db.Decimal(5, 2)
+  taxAmount       Decimal?                @db.Decimal(18, 2)
+  discountAmount  Decimal?                @db.Decimal(18, 2)
+  
+  // Traçabilité source (enum)
+  sourceType      InvoiceLineSourceType? // billing_plan, usage_metric, manual, promotion
+  sourceId        String?                 @db.Uuid
+  
+  // Audit
+  createdAt       DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime                @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt       DateTime?               @db.Timestamptz(6)
+
+  // Relations
+  invoice         BilTenantInvoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([invoiceId])
+  @@index([lineType])
+  @@index([sourceType, sourceId])
+  @@map("bil_tenant_invoice_lines")
+}
+
+// ============================================================================
+// TABLE 7: bil_payment_methods - Moyens de paiement
+// ============================================================================
+// Gestion multi-PSP avec support cartes et comptes bancaires
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 408-494
+model BilPaymentMethod {
+  id                        String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Référence
+  tenantId                  String                @db.Uuid
+  
+  // Multi-PSP
+  provider                  String                @db.VarChar(50) // stripe, adyen, paypal, checkout
+  providerPaymentMethodId   String                @db.Text // ID méthode côté PSP
+  
+  // Type (enum)
+  paymentType               PaymentType // card, bank_account, paypal, apple_pay, google_pay, other
+  
+  // Données carte (structurées pour affichage et alertes)
+  cardBrand                 String?               @db.VarChar(50) // Visa, Mastercard, Amex
+  cardLast4                 String?               @db.Char(4)
+  cardExpMonth              Int?
+  cardExpYear               Int?
+  
+  // Données compte bancaire
+  bankName                  String?               @db.VarChar(100)
+  bankAccountLast4          String?               @db.Char(4)
+  bankCountry               String?               @db.Char(2)
+  
+  // Statut (enum)
+  status                    PaymentMethodStatus   @default(active) // active, inactive, expired, failed, pending_verification
+  isDefault                 Boolean               @default(false)
+  
+  // Tracking
+  lastUsedAt                DateTime?             @db.Timestamptz(6)
+  
+  // Metadata
+  metadata                  Json?                 @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt                 DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt                 DateTime              @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt                 DateTime?             @db.Timestamptz(6)
+
+  // Relations
+  tenant                    AdmTenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  subscriptions             BilTenantSubscription[]
+
+  @@unique([tenantId, providerPaymentMethodId], map: "uq_payment_methods_tenant_provider_id")
+  @@index([tenantId, isDefault])
+  @@index([status])
+  @@index([cardExpYear, cardExpMonth]) // Pour alertes expiration
+  @@map("bil_payment_methods")
+}
+
+// ============================================================================
+// TABLE 8: bil_promotions - Codes promo et remises (OPTIONNEL/FUTUR)
+// ============================================================================
+// Gestion codes promotionnels
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 561-595
+model BilPromotion {
+  id                String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Identification
+  code              String                  @unique @db.VarChar(50) // BLACK_FRIDAY_2025
+  description       String?                 @db.Text
+  
+  // Type de remise (enum)
+  discountType      PromotionDiscountType // percentage, fixed_amount
+  discountValue     Decimal                 @db.Decimal(10, 2) // 20 (pour 20%) ou 50 (pour 50€)
+  currency          String?                 @db.Char(3) // NULL si percentage, requis si fixed_amount
+  
+  // Limites
+  maxRedemptions    Int? // Nombre max utilisations
+  redemptionsCount  Int                     @default(0)
+  
+  // Validité
+  validFrom         DateTime                @db.Timestamptz(6)
+  validUntil        DateTime                @db.Timestamptz(6)
+  
+  // Application (enum)
+  appliesTo         PromotionAppliesTo // first_invoice, all_invoices, specific_plan
+  planId            String?                 @db.Uuid // Si applies_to = specific_plan
+  
+  // Statut (enum)
+  status            PromotionStatus         @default(active) // active, expired, exhausted, disabled
+  
+  // Metadata
+  metadata          Json?                   @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt         DateTime                @default(now()) @db.Timestamptz(6)
+  createdBy         String?                 @db.Uuid
+
+  // Relations
+  usages            BilPromotionUsage[]
+  createdByEmployee AdmProviderEmployee?    @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([code])
+  @@index([validFrom, validUntil])
+  @@index([status])
+  @@map("bil_promotions")
+}
+
+// ============================================================================
+// TABLE 9: bil_promotion_usage - Utilisation codes promo
+// ============================================================================
+// Tracking utilisation codes promotionnels
+// Spec: FLEETCORE_TABLES_BIL_ONLY.md lignes 597-613
+model BilPromotionUsage {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Références
+  promotionId     String   @db.Uuid
+  tenantId        String   @db.Uuid
+  invoiceId       String?  @db.Uuid // NULL si code appliqué à subscription mais pas encore facturé
+  
+  // Tracking
+  appliedAt       DateTime @default(now()) @db.Timestamptz(6)
+  discountAmount  Decimal  @db.Decimal(18, 2) // Montant remise effectivement appliquée
+  
+  // Relations
+  promotion       BilPromotion       @relation(fields: [promotionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tenant          AdmTenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  invoice         BilTenantInvoice?  @relation(fields: [invoiceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([promotionId, tenantId, invoiceId], map: "uq_promotion_usage_promo_tenant_invoice")
+  @@index([promotionId])
+  @@index([tenantId])
+  @@map("bil_promotion_usage")
+}

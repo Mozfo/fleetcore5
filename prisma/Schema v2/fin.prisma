@@ -1,0 +1,634 @@
+// =====================================================
+// MODULE FINANCE - FleetCore V2
+// =====================================================
+// 6 tables MODIFY + 9 tables NEW
+// Generated: 2025-11-02
+// Prisma Version: 6.16.2
+// =====================================================
+
+// =====================================================
+// ENUMS - Finance Module Specific
+// =====================================================
+// Note: Ces enums sont spécifiques au module Finance et documentés dans shared.prisma
+
+/// Statuts des comptes financiers
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 78
+enum AccountStatus {
+  active
+  suspended
+  closed
+
+  @@map("account_status")
+}
+
+/// Cycles de paie (mensuel, bimensuel, hebdo, custom)
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 251
+enum PayrollCycle {
+  monthly
+  semi_monthly
+  weekly
+  custom
+
+  @@map("payroll_cycle")
+}
+
+/// Méthodes de paiement Finance (différent de TRP.PaymentMethod)
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 252, 341
+enum FinancePaymentMethod {
+  bank_transfer
+  mobile_money
+  cash
+
+  @@map("finance_payment_method")
+}
+
+/// Types de lots de paiement (WPS UAE, SEPA EU, local)
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 253
+enum BatchType {
+  WPS
+  SEPA
+  local
+
+  @@map("batch_type")
+}
+
+/// Sources des transactions de péage
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 423
+enum TollTransactionSource {
+  automatic
+  manual
+  imported
+
+  @@map("toll_transaction_source")
+}
+
+/// Statuts des transactions de péage
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 424
+enum TollTransactionStatus {
+  pending
+  charged
+  refunded
+  disputed
+
+  @@map("toll_transaction_status")
+}
+
+/// Statuts des amendes
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 516
+enum TrafficFineStatus {
+  pending
+  processing
+  disputed
+  cancelled
+  paid
+  refunded
+
+  @@map("traffic_fine_status")
+}
+
+/// Statuts des contestations d'amendes
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 740
+enum DisputeStatus {
+  pending
+  accepted
+  rejected
+
+  @@map("dispute_status")
+}
+
+/// Statuts des portiques de péage
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 669
+enum TollGateStatus {
+  active
+  inactive
+  maintenance
+
+  @@map("toll_gate_status")
+}
+
+/// Types de catégories de transactions pour P&L
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md line 600
+enum TransactionCategoryType {
+  revenue
+  expense
+  transfer
+  other
+
+  @@map("transaction_category_type")
+}
+
+// =====================================================
+// TABLES RÉFÉRENTIELLES (8 nouvelles tables)
+// =====================================================
+
+/// Types de comptes financiers extensibles
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 536-555
+model FinAccountType {
+  code        String   @id @db.Text
+  label       String   @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  accounts FinAccount[]
+
+  @@map("fin_account_types")
+}
+
+/// Types de transactions normalisés
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 557-572
+model DirTransactionType {
+  code        String   @id @db.VarChar(30)
+  description String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  transactions FinTransaction[]
+
+  @@map("dir_transaction_types")
+}
+
+/// Statuts transactions harmonisés
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 574-591
+model DirTransactionStatus {
+  code        String   @id @db.VarChar(30)
+  description String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  transactions FinTransaction[]
+
+  @@map("dir_transaction_statuses")
+}
+
+/// Catégories de transactions pour P&L
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 593-617
+model FinTransactionCategory {
+  id               String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  code             String    @unique @db.VarChar(50)
+  name             String    @db.Text
+  description      String?   @db.Text
+  categoryType     TransactionCategoryType @map("category_type")
+  parentCategoryId String?   @map("parent_category_id") @db.Uuid
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  parentCategory     FinTransactionCategory?  @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childCategories    FinTransactionCategory[] @relation("CategoryHierarchy")
+  transactions       FinTransaction[]
+
+  @@map("fin_transaction_categories")
+}
+
+/// Statuts des lots de paiement
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 619-637
+model FinPaymentBatchStatus {
+  code        String   @id @db.Text
+  label       String   @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  paymentBatches FinDriverPaymentBatch[]
+
+  @@map("fin_payment_batch_statuses")
+}
+
+/// Statuts des paiements individuels
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 639-656
+model FinPaymentStatus {
+  code        String   @id @db.Text
+  label       String   @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  driverPayments FinDriverPayment[]
+
+  @@map("fin_payment_statuses")
+}
+
+/// Portiques de péage multi-pays
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 658-688
+model DirTollGate {
+  id           String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  countryCode  String   @map("country_code") @db.Char(2)
+  gateCode     String   @map("gate_code") @db.VarChar(50)
+  gateName     String   @map("gate_name") @db.Text
+  location     String?  @db.Text // PostGIS point type stored as text in Prisma
+  baseFee      Decimal  @default(0) @map("base_fee") @db.Decimal(12, 2)
+  currency     String   @db.Char(3)
+  rateSchedule Json?    @default("{}") @map("rate_schedule") @db.JsonB
+  status       TollGateStatus @default(active)
+  activeFrom   DateTime? @map("active_from") @db.Date
+  activeTo     DateTime? @map("active_to") @db.Date
+  operator     String?  @db.VarChar(100)
+  metadata     Json     @default("{}") @db.JsonB
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  countryRegulation DirCountryRegulation @relation(fields: [countryCode], references: [countryCode], onDelete: Cascade, onUpdate: Cascade)
+  tollTransactions  FinTollTransaction[]
+
+  @@unique([countryCode, gateCode], map: "dir_toll_gates_country_gate_code_uq")
+  @@index([countryCode])
+  @@index([status])
+  @@index([operator])
+  @@map("dir_toll_gates")
+}
+
+/// Types d'amendes par juridiction
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 690-727
+model DirFineType {
+  id          String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  jurisdiction String  @db.Char(2)
+  code        String   @db.VarChar(50)
+  description String   @db.Text
+  minAmount   Decimal  @map("min_amount") @db.Decimal(14, 2)
+  maxAmount   Decimal  @map("max_amount") @db.Decimal(14, 2)
+  points      Int?     @db.Integer
+  isCriminal  Boolean  @default(false) @map("is_criminal")
+  active      Boolean  @default(true)
+  metadata    Json     @default("{}") @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  trafficFines FinTrafficFine[]
+
+  @@unique([jurisdiction, code], map: "dir_fine_types_jurisdiction_code_uq")
+  @@index([jurisdiction])
+  @@index([code])
+  @@index([active])
+  @@map("dir_fine_types")
+}
+
+// =====================================================
+// TABLES PRINCIPALES MODIFY (6 tables)
+// =====================================================
+
+/// Comptes financiers multi-types
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 16-92
+model FinAccount {
+  id                 String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  accountName        String    @map("account_name") @db.Text
+  accountType        String    @map("account_type") @db.Text
+  currency           String    @db.Char(3)
+  balance            Decimal   @default(0) @db.Decimal(18, 2)
+  provider           String?   @db.Text
+  providerAccountId  String?   @map("provider_account_id") @db.Text
+  status             AccountStatus @default(active)
+  openedAt           DateTime? @map("opened_at") @db.Timestamptz(6)
+  closedAt           DateTime? @map("closed_at") @db.Timestamptz(6)
+  maxBalance         Decimal?  @map("max_balance") @db.Decimal(18, 2)
+  minBalance         Decimal?  @map("min_balance") @db.Decimal(18, 2)
+  accountNumberLast4 String?   @map("account_number_last4") @db.Char(4)
+  bankName           String?   @map("bank_name") @db.Text
+  iban               String?   @db.Text
+  swiftBic           String?   @map("swift_bic") @db.Text
+  description        String?   @db.Text
+  metadata           Json      @default("{}") @db.JsonB
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy          String    @map("created_by") @db.Uuid
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy          String?   @map("updated_by") @db.Uuid
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy          String?   @map("deleted_by") @db.Uuid
+  deletionReason     String?   @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant                     AdmTenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  accountTypeRel             FinAccountType      @relation(fields: [accountType], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  createdByMember            AdmMember           @relation("FinAccountCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updatedByMember            AdmMember?          @relation("FinAccountUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deletedByMember            AdmMember?          @relation("FinAccountDeletedBy", fields: [deletedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  transactionsFrom           FinTransaction[]    @relation("TransactionAccount")
+  transactionsTo             FinTransaction[]    @relation("TransactionCounterparty")
+  paymentBatches             FinDriverPaymentBatch[]
+  driverPayments             FinDriverPayment[]
+
+  @@unique([tenantId, accountName], map: "fin_accounts_tenant_account_name_uq")
+  @@index([tenantId])
+  @@index([accountType])
+  @@index([status], map: "fin_accounts_status_idx", where: "deleted_at IS NULL")
+  @@index([currency])
+  @@index([provider])
+  @@index([openedAt])
+  @@index([closedAt])
+  @@index([metadata], type: Gin)
+  @@map("fin_accounts")
+}
+
+/// Grand livre enrichi avec catégorisation
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 95-178
+model FinTransaction {
+  id                    String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+  accountId             String    @map("account_id") @db.Uuid
+  counterpartyAccountId String?   @map("counterparty_account_id") @db.Uuid
+  transactionType       String    @map("transaction_type") @db.VarChar(30)
+  status                String    @db.VarChar(30)
+  amount                Decimal   @db.Decimal(18, 2)
+  currency              String    @db.Char(3)
+  netAmount             Decimal?  @map("net_amount") @db.Decimal(18, 2)
+  taxRate               Decimal?  @map("tax_rate") @db.Decimal(5, 2)
+  taxAmount             Decimal?  @map("tax_amount") @db.Decimal(18, 2)
+  exchangeRate          Decimal?  @map("exchange_rate") @db.Decimal(18, 6)
+  categoryId            String?   @map("category_id") @db.Uuid
+  entityType            String?   @map("entity_type") @db.VarChar(50)
+  entityId              String?   @map("entity_id") @db.Uuid
+  reference             String    @db.Text
+  description           String?   @db.Text
+  transactionDate       DateTime  @map("transaction_date") @db.Timestamptz(6)
+  paymentMethodId       String?   @map("payment_method_id") @db.Uuid
+  sourceSystem          String?   @map("source_system") @db.VarChar(50)
+  validatedBy           String?   @map("validated_by") @db.Uuid
+  validatedAt           DateTime? @map("validated_at") @db.Timestamptz(6)
+  metadata              Json      @default("{}") @db.JsonB
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy             String    @map("created_by") @db.Uuid
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy             String?   @map("updated_by") @db.Uuid
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy             String?   @map("deleted_by") @db.Uuid
+  deletionReason        String?   @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant                  AdmTenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  account                 FinAccount              @relation("TransactionAccount", fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  counterpartyAccount     FinAccount?             @relation("TransactionCounterparty", fields: [counterpartyAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  transactionTypeRel      DirTransactionType      @relation(fields: [transactionType], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  statusRel               DirTransactionStatus    @relation(fields: [status], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  category                FinTransactionCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  paymentMethod           BilPaymentMethod?       @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  validatedByMember       AdmMember?              @relation("TransactionValidatedBy", fields: [validatedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdByMember         AdmMember               @relation("TransactionCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updatedByMember         AdmMember?              @relation("TransactionUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deletedByMember         AdmMember?              @relation("TransactionDeletedBy", fields: [deletedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tenantId, accountId])
+  @@index([entityType, entityId])
+  @@index([transactionDate], sort: Desc)
+  @@index([status], map: "fin_transactions_status_idx", where: "deleted_at IS NULL")
+  @@index([reference])
+  @@index([categoryId])
+  @@index([paymentMethodId])
+  @@index([metadata], type: Gin)
+  @@map("fin_transactions")
+}
+
+/// Lots de paie multi-pays
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 182-264
+model FinDriverPaymentBatch {
+  id              String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  batchReference  String    @map("batch_reference") @db.Text
+  periodStart     DateTime  @map("period_start") @db.Date
+  periodEnd       DateTime  @map("period_end") @db.Date
+  payrollCycle    PayrollCycle @map("payroll_cycle")
+  paymentDate     DateTime  @map("payment_date") @db.Date
+  paymentMethod   FinancePaymentMethod @map("payment_method")
+  batchType       BatchType @map("batch_type")
+  payoutAccountId String    @map("payout_account_id") @db.Uuid
+  totalAmount     Decimal   @default(0) @map("total_amount") @db.Decimal(18, 2)
+  currency        String    @db.Char(3)
+  status          String    @db.Text
+  statusReason    String?   @map("status_reason") @db.Text
+  fileUrl         String?   @map("file_url") @db.Text
+  exportedAt      DateTime? @map("exported_at") @db.Timestamptz(6)
+  sentAt          DateTime? @map("sent_at") @db.Timestamptz(6)
+  processedAt     DateTime? @map("processed_at") @db.Timestamptz(6)
+  errorDetails    Json?     @map("error_details") @db.JsonB
+  metadata        Json      @default("{}") @db.JsonB
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy       String    @map("created_by") @db.Uuid
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy       String?   @map("updated_by") @db.Uuid
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy       String?   @map("deleted_by") @db.Uuid
+  deletionReason  String?   @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant               AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  payoutAccount        FinAccount             @relation(fields: [payoutAccountId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  statusRel            FinPaymentBatchStatus  @relation(fields: [status], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  createdByEmployee    AdmProviderEmployee    @relation("PaymentBatchCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updatedByEmployee    AdmProviderEmployee?   @relation("PaymentBatchUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deletedByEmployee    AdmProviderEmployee?   @relation("PaymentBatchDeletedBy", fields: [deletedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  driverPayments       FinDriverPayment[]
+  tollTransactions     FinTollTransaction[]
+
+  @@unique([tenantId, batchReference], map: "fin_driver_payment_batches_tenant_reference_uq")
+  @@index([tenantId])
+  @@index([payoutAccountId])
+  @@index([paymentDate])
+  @@index([status], map: "fin_driver_payment_batches_status_idx", where: "deleted_at IS NULL")
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([paymentMethod])
+  @@index([metadata], type: Gin)
+  @@map("fin_driver_payment_batches")
+}
+
+/// Paiements individuels enrichis
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 268-357
+model FinDriverPayment {
+  id                      String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  tenantId                String    @map("tenant_id") @db.Uuid
+  driverId                String    @map("driver_id") @db.Uuid
+  paymentBatchId          String    @map("payment_batch_id") @db.Uuid
+  periodStart             DateTime? @map("period_start") @db.Date
+  periodEnd               DateTime? @map("period_end") @db.Date
+  amount                  Decimal   @db.Decimal(18, 2)
+  currency                String    @db.Char(3)
+  amountInTenantCurrency  Decimal?  @map("amount_in_tenant_currency") @db.Decimal(18, 2)
+  exchangeRate            Decimal?  @map("exchange_rate") @db.Decimal(12, 6)
+  paymentDate             DateTime  @map("payment_date") @db.Date
+  paymentMethod           FinancePaymentMethod @map("payment_method")
+  payoutAccountId         String?   @map("payout_account_id") @db.Uuid
+  transactionReference    String?   @map("transaction_reference") @db.Text
+  status                  String    @db.Text
+  statusReason            String?   @map("status_reason") @db.Text
+  errorDetails            Json?     @map("error_details") @db.JsonB
+  processedAt             DateTime? @map("processed_at") @db.Timestamptz(6)
+  failedAt                DateTime? @map("failed_at") @db.Timestamptz(6)
+  cancelledAt             DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  notes                   String?   @db.Text
+  metadata                Json      @default("{}") @db.JsonB
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy               String    @map("created_by") @db.Uuid
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy               String?   @map("updated_by") @db.Uuid
+  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy               String?   @map("deleted_by") @db.Uuid
+  deletionReason          String?   @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant                 AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver                 RidDriver              @relation(fields: [driverId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  paymentBatch           FinDriverPaymentBatch  @relation(fields: [paymentBatchId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  payoutAccount          FinAccount?            @relation(fields: [payoutAccountId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  statusRel              FinPaymentStatus       @relation(fields: [status], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  createdByEmployee      AdmProviderEmployee    @relation("DriverPaymentCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updatedByEmployee      AdmProviderEmployee?   @relation("DriverPaymentUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deletedByEmployee      AdmProviderEmployee?   @relation("DriverPaymentDeletedBy", fields: [deletedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tollTransactions       FinTollTransaction[]
+  trafficFines           FinTrafficFine[]
+
+  @@unique([paymentBatchId, driverId], map: "fin_driver_payments_batch_driver_uq")
+  @@index([tenantId])
+  @@index([driverId])
+  @@index([paymentBatchId])
+  @@index([paymentMethod])
+  @@index([status], map: "fin_driver_payments_status_idx", where: "deleted_at IS NULL")
+  @@index([paymentDate], sort: Desc)
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([payoutAccountId])
+  @@index([transactionReference])
+  @@index([metadata], type: Gin)
+  @@map("fin_driver_payments")
+}
+
+/// Péages automatisés multi-pays
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 361-435
+model FinTollTransaction {
+  id               String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  driverId         String    @map("driver_id") @db.Uuid
+  vehicleId        String    @map("vehicle_id") @db.Uuid
+  tollGateId       String    @map("toll_gate_id") @db.Uuid
+  tollTimestamp    DateTime  @map("toll_timestamp") @db.Timestamptz(6)
+  amount           Decimal   @db.Decimal(14, 2)
+  currency         String    @db.Char(3)
+  source           TollTransactionSource
+  status           TollTransactionStatus
+  paymentBatchId   String?   @map("payment_batch_id") @db.Uuid
+  driverPaymentId  String?   @map("driver_payment_id") @db.Uuid
+  tripId           String?   @map("trip_id") @db.Uuid
+  metadata         Json      @default("{}") @db.JsonB
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy        String    @map("created_by") @db.Uuid
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy        String?   @map("updated_by") @db.Uuid
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy        String?   @map("deleted_by") @db.Uuid
+  deletionReason   String?   @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant          AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver          RidDriver              @relation(fields: [driverId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle         FltVehicle             @relation(fields: [vehicleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tollGate        DirTollGate            @relation(fields: [tollGateId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  paymentBatch    FinDriverPaymentBatch? @relation(fields: [paymentBatchId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  driverPayment   FinDriverPayment?      @relation(fields: [driverPaymentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  trip            TrpTrip?               @relation(fields: [tripId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdByMember AdmMember              @relation("TollTransactionCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updatedByMember AdmMember?             @relation("TollTransactionUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deletedByMember AdmMember?             @relation("TollTransactionDeletedBy", fields: [deletedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([tenantId, driverId, vehicleId, tollGateId, tollTimestamp], map: "fin_toll_transactions_uq")
+  @@index([tenantId, tollTimestamp], sort: [tenantId, Desc])
+  @@index([driverId])
+  @@index([vehicleId])
+  @@index([tollGateId])
+  @@index([status], map: "fin_toll_transactions_status_idx", where: "deleted_at IS NULL")
+  @@index([source])
+  @@index([paymentBatchId])
+  @@index([tripId])
+  @@map("fin_toll_transactions")
+}
+
+/// Amendes avec workflow complet
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 439-528
+model FinTrafficFine {
+  id                String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  driverId          String    @map("driver_id") @db.Uuid
+  vehicleId         String    @map("vehicle_id") @db.Uuid
+  fineReference     String    @map("fine_reference") @db.Text
+  fineTimestamp     DateTime  @map("fine_timestamp") @db.Timestamptz(6)
+  fineTypeId        String    @map("fine_type_id") @db.Uuid
+  location          String?   @db.Text // PostGIS point type stored as text in Prisma
+  address           String?   @db.Text
+  amount            Decimal   @db.Decimal(14, 2)
+  currency          String    @db.Char(3)
+  pointsPenalty     Int?      @map("points_penalty") @db.Integer
+  issuingAuthority  String?   @map("issuing_authority") @db.Text
+  deadlineDate      DateTime? @map("deadline_date") @db.Date
+  paidAt            DateTime? @map("paid_at") @db.Timestamptz(6)
+  status            TrafficFineStatus
+  paymentMethodId   String?   @map("payment_method_id") @db.Uuid
+  driverPaymentId   String?   @map("driver_payment_id") @db.Uuid
+  disputeId         String?   @map("dispute_id") @db.Uuid
+  metadata          Json      @default("{}") @db.JsonB
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy         String    @map("created_by") @db.Uuid
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedBy         String?   @map("updated_by") @db.Uuid
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy         String?   @map("deleted_by") @db.Uuid
+  deletionReason    String?   @map("deletion_reason") @db.Text
+
+  // Relations
+  tenant          AdmTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver          RidDriver              @relation(fields: [driverId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  vehicle         FltVehicle             @relation(fields: [vehicleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fineType        DirFineType            @relation(fields: [fineTypeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  paymentMethod   BilPaymentMethod?      @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  driverPayment   FinDriverPayment?      @relation(fields: [driverPaymentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  dispute         FinTrafficFineDispute? @relation(fields: [disputeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdByMember AdmMember              @relation("TrafficFineCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updatedByMember AdmMember?             @relation("TrafficFineUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deletedByMember AdmMember?             @relation("TrafficFineDeletedBy", fields: [deletedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([tenantId, fineReference], map: "fin_traffic_fines_tenant_reference_uq")
+  @@index([tenantId, fineTimestamp], sort: [tenantId, Desc])
+  @@index([driverId])
+  @@index([vehicleId])
+  @@index([fineTypeId])
+  @@index([status], map: "fin_traffic_fines_status_idx", where: "deleted_at IS NULL")
+  @@index([paymentMethodId])
+  @@index([driverPaymentId])
+  @@index([issuingAuthority])
+  @@index([deadlineDate])
+  @@map("fin_traffic_fines")
+}
+
+// =====================================================
+// TABLE WORKFLOW (1 nouvelle table)
+// =====================================================
+
+/// Contestations amendes
+/// Source: FLEETCORE_TABLES_FINANCE_ONLY.md lines 731-753
+model FinTrafficFineDispute {
+  id                  String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  fineId              String    @map("fine_id") @db.Uuid
+  submittedBy         String    @map("submitted_by") @db.Uuid
+  submittedAt         DateTime  @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  reason              String    @db.Text
+  supportingDocuments Json?     @map("supporting_documents") @db.JsonB
+  status              DisputeStatus @default(pending)
+  reviewedBy          String?   @map("reviewed_by") @db.Uuid
+  resolvedAt          DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolutionNotes     String?   @map("resolution_notes") @db.Text
+  metadata            Json      @default("{}") @db.JsonB
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  fine            FinTrafficFine @relation(fields: [fineId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  submittedByMember AdmMember    @relation("DisputeSubmittedBy", fields: [submittedBy], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reviewedByMember  AdmMember?   @relation("DisputeReviewedBy", fields: [reviewedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([fineId])
+  @@index([submittedBy])
+  @@index([status])
+  @@index([submittedAt])
+  @@map("fin_traffic_fine_disputes")
+}

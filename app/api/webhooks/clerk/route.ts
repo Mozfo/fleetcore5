@@ -194,6 +194,7 @@ export async function POST(req: Request) {
             tenant_id: org.id,
             clerk_user_id: evt.data.public_user_data.user_id,
             email: evt.data.public_user_data.identifier,
+            phone: "", // Required field - Clerk doesn't provide phone in webhook
             role: evt.data.role === "org:admin" ? "admin" : "member",
           },
         });

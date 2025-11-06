@@ -163,10 +163,7 @@ export class DirectoryRepository {
     sortOrder: "asc" | "desc" = "asc"
   ): Promise<CarMake[]> {
     const where: Record<string, unknown> = {
-      OR: [
-        { tenant_id: null }, // Global makes
-        { tenant_id: tenantId }, // Tenant-specific makes
-      ],
+      tenant_id: tenantId, // V2: tenant_id is now NOT NULL
     };
 
     if (search) {
@@ -191,7 +188,7 @@ export class DirectoryRepository {
     return await this.prisma.dir_car_makes.findFirst({
       where: {
         id,
-        OR: [{ tenant_id: null }, { tenant_id: tenantId }],
+        tenant_id: tenantId, // V2: tenant_id is now NOT NULL
       },
     });
   }
@@ -199,12 +196,12 @@ export class DirectoryRepository {
   /**
    * Check if a make with same name exists for tenant
    * @param name - Make name
-   * @param tenantId - Tenant ID (can be null for global makes)
+   * @param tenantId - Tenant ID (V2: now required, tenant_id is NOT NULL)
    * @returns True if duplicate exists
    */
   async makeNameExists(
     name: string,
-    tenantId: string | null
+    tenantId: string
   ): Promise<boolean> {
     const existing = await this.prisma.dir_car_makes.findFirst({
       where: {
@@ -217,17 +214,18 @@ export class DirectoryRepository {
 
   /**
    * Create a new car make
-   * @param data - Make data
-   * @param tenantId - Tenant ID (null for global makes, UUID for tenant-specific)
+   * @param data - Make data (V2: code is now required)
+   * @param tenantId - Tenant ID (V2: now required, tenant_id is NOT NULL)
    * @returns Created car make
    */
   async createMake(
-    data: { name: string },
-    tenantId: string | null
+    data: { name: string; code: string },
+    tenantId: string
   ): Promise<CarMake> {
     return await this.prisma.dir_car_makes.create({
       data: {
         name: data.name,
+        code: data.code,
         tenant_id: tenantId,
       },
     });
@@ -248,10 +246,7 @@ export class DirectoryRepository {
     return await this.prisma.dir_car_models.findMany({
       where: {
         make_id: makeId,
-        OR: [
-          { tenant_id: null }, // Global models
-          { tenant_id: tenantId }, // Tenant-specific models
-        ],
+        tenant_id: tenantId, // V2: tenant_id is now NOT NULL
       },
       orderBy: { name: "asc" },
     });
@@ -261,13 +256,13 @@ export class DirectoryRepository {
    * Check if a model with same name exists for make + tenant
    * @param makeId - Make ID
    * @param name - Model name
-   * @param tenantId - Tenant ID (can be null for global models)
+   * @param tenantId - Tenant ID (V2: now required, tenant_id is NOT NULL)
    * @returns True if duplicate exists
    */
   async modelNameExists(
     makeId: string,
     name: string,
-    tenantId: string | null
+    tenantId: string
   ): Promise<boolean> {
     const existing = await this.prisma.dir_car_models.findFirst({
       where: {
@@ -281,18 +276,19 @@ export class DirectoryRepository {
 
   /**
    * Create a new car model
-   * @param data - Model data
-   * @param tenantId - Tenant ID (null for global models, UUID for tenant-specific)
+   * @param data - Model data (V2: code is now required)
+   * @param tenantId - Tenant ID (V2: now required, tenant_id is NOT NULL)
    * @returns Created car model
    */
   async createModel(
-    data: { make_id: string; name: string; vehicle_class_id?: string },
-    tenantId: string | null
+    data: { make_id: string; name: string; code: string; vehicle_class_id?: string },
+    tenantId: string
   ): Promise<CarModel> {
     return await this.prisma.dir_car_models.create({
       data: {
         make_id: data.make_id,
         name: data.name,
+        code: data.code,
         vehicle_class_id: data.vehicle_class_id || null,
         tenant_id: tenantId,
       },
@@ -341,16 +337,18 @@ export class DirectoryRepository {
 
   /**
    * Create a new platform
-   * @param data - Platform data
+   * @param data - Platform data (V2: code is now required)
    * @returns Created platform
    */
   async createPlatform(data: {
     name: string;
+    code: string;
     api_config?: Record<string, unknown>;
   }): Promise<Platform> {
     return await this.prisma.dir_platforms.create({
       data: {
         name: data.name,
+        code: data.code,
         api_config: data.api_config ? (data.api_config as never) : undefined,
       },
     });
@@ -429,12 +427,13 @@ export class DirectoryRepository {
 
   /**
    * Create a new vehicle class
-   * @param data - Vehicle class data
+   * @param data - Vehicle class data (V2: code is now required)
    * @returns Created vehicle class
    */
   async createVehicleClass(data: {
     country_code: string;
     name: string;
+    code: string;
     description?: string;
     max_age?: number;
   }): Promise<VehicleClass> {
@@ -442,6 +441,7 @@ export class DirectoryRepository {
       data: {
         country_code: data.country_code,
         name: data.name,
+        code: data.code,
         description: data.description || null,
         max_age: data.max_age || null,
       },
