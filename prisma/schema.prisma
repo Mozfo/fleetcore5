@@ -3253,7 +3253,7 @@ model rid_drivers {
   nationality                                                                  String?                        @db.Char(2)
   hire_date                                                                    DateTime?                      @db.Date
   employment_status                                                            String                         @default("active")
-  cooperation_type                                                             String?
+  cooperation_type                                                             cooperation_type?
   emergency_contact_name                                                       String?
   emergency_contact_phone                                                      String?
   place_of_birth                                                               String?                        @db.VarChar(100)
@@ -4404,6 +4404,13 @@ enum cooperation_status {
   active
   expired
   terminated
+}
+
+enum cooperation_type {
+  employee
+  contractor
+  owner_operator
+  partner_driver
 }
 
 enum coverage_drivers {

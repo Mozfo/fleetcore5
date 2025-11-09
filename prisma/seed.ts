@@ -130,6 +130,102 @@ async function main() {
   );
 
   // ===================================
+  // ADM_PROVIDER_EMPLOYEES - FleetCore Sales Team
+  // ===================================
+  console.log("👔 Creating FleetCore sales team...");
+
+  const salesTeam = [
+    {
+      id: "990e8400-e29b-41d4-a716-446655440001",
+      clerk_user_id: "sales_uae_placeholder",
+      name: "Karim Al-Rashid",
+      email: "karim.alrashid@fleetcore.com",
+      department: "Sales",
+      title: "Sales Manager UAE",
+      status: "active",
+      permissions: { can_manage_leads: true },
+    },
+    {
+      id: "990e8400-e29b-41d4-a716-446655440002",
+      clerk_user_id: "sales_france_placeholder",
+      name: "Marie Dubois",
+      email: "marie.dubois@fleetcore.com",
+      department: "Sales",
+      title: "Sales Manager France",
+      status: "active",
+      permissions: { can_manage_leads: true },
+    },
+    {
+      id: "990e8400-e29b-41d4-a716-446655440003",
+      clerk_user_id: "sales_ksa_placeholder",
+      name: "Faisal Al-Otaibi",
+      email: "faisal.alotaibi@fleetcore.com",
+      department: "Sales",
+      title: "Sales Manager KSA",
+      status: "active",
+      permissions: { can_manage_leads: true },
+    },
+  ];
+
+  for (const employee of salesTeam) {
+    await prisma.adm_provider_employees.upsert({
+      where: { id: employee.id },
+      update: {},
+      create: employee,
+    });
+  }
+
+  console.log(`✅ Created ${salesTeam.length} FleetCore sales employees`);
+
+  // ===================================
+  // CRM_LEAD_SOURCES - Lead Sources
+  // ===================================
+  console.log("📊 Creating lead sources...");
+
+  const leadSources = [
+    {
+      id: "aa0e8400-e29b-41d4-a716-446655440001",
+      name: "Organic",
+      description: "Trafic naturel depuis fleetcore.com",
+      is_active: true,
+    },
+    {
+      id: "aa0e8400-e29b-41d4-a716-446655440002",
+      name: "Google Ads",
+      description: "Campagnes payantes Google/Bing",
+      is_active: true,
+    },
+    {
+      id: "aa0e8400-e29b-41d4-a716-446655440003",
+      name: "Facebook",
+      description: "Facebook & Instagram Ads",
+      is_active: true,
+    },
+    {
+      id: "aa0e8400-e29b-41d4-a716-446655440004",
+      name: "Referral",
+      description: "Parrainage client/partenaire",
+      is_active: true,
+    },
+    {
+      id: "aa0e8400-e29b-41d4-a716-446655440005",
+      name: "Partner",
+      description: "Intégrations plateforme (Uber, Careem)",
+      is_active: true,
+    },
+  ];
+
+  for (const source of leadSources) {
+    await prisma.crm_lead_sources.upsert({
+      where: { id: source.id },
+      update: {},
+      create: source,
+    });
+  }
+
+  console.log(`✅ Created ${leadSources.length} lead sources`);
+
+  // ===================================
   // CRM_LEADS - FleetCore Internal Leads (NO tenant_id)
   // ===================================
   console.log("📋 Creating CRM leads...");
@@ -143,7 +239,7 @@ async function main() {
       phone: "+971501234567",
       demo_company_name: "Emirates Fleet Services",
       country_code: "AE",
-      fleet_size: "20-50",
+      fleet_size: "11-50",
       current_software: "Excel",
       message:
         "Interested in fleet management solution for our Dubai operations",
@@ -163,7 +259,7 @@ async function main() {
       phone: "+33612345678",
       demo_company_name: "France VTC Premium",
       country_code: "FR",
-      fleet_size: "10-20",
+      fleet_size: "11-50",
       current_software: "Custom Solution",
       message: "Looking for VTC management platform with driver payroll",
       status: "qualified",
@@ -185,7 +281,7 @@ async function main() {
       phone: "+971509876543",
       demo_company_name: "Abu Dhabi Luxury Rides",
       country_code: "AE",
-      fleet_size: "50-100",
+      fleet_size: "51-100",
       current_software: "Outdated System",
       message: "Enterprise fleet solution needed for 80 vehicles",
       status: "qualified",
@@ -227,7 +323,7 @@ async function main() {
       email: "ahmed.hassan@driver.ae",
       phone: "+971501234567",
       driver_status: "active" as const,
-      cooperation_type: "employee",
+      cooperation_type: "employee" as const,
       license_number: "DL12345678",
       license_expiry_date: new Date("2026-12-31"),
       rating: 4.8,
@@ -244,7 +340,7 @@ async function main() {
       email: "jean.dupont@driver.fr",
       phone: "+33612345678",
       driver_status: "active" as const,
-      cooperation_type: "independent",
+      cooperation_type: "owner_operator" as const,
       license_number: "FR987654321",
       license_expiry_date: new Date("2025-06-30"),
       rating: 4.5,
@@ -261,7 +357,7 @@ async function main() {
       email: "mohammed.ali@driver.ae",
       phone: "+971509876543",
       driver_status: "inactive" as const,
-      cooperation_type: "employee",
+      cooperation_type: "employee" as const,
       license_number: "DL87654321",
       license_expiry_date: new Date("2027-03-15"),
       rating: 3.9,
@@ -1102,6 +1198,8 @@ Si vous avez reçu cet email, les webhooks sont correctement configurés.
   console.log("📊 Summary:");
   console.log("  - 2 tenants (Dubai, Paris)");
   console.log("  - 2 members (1 admin per tenant)");
+  console.log(`  - ${salesTeam.length} FleetCore sales employees`);
+  console.log(`  - ${leadSources.length} lead sources`);
   console.log(`  - ${leads.length} demo leads`);
   console.log(`  - ${drivers.length} test drivers`);
   console.log(`  - ${templates.length} notification templates (multilingual)`);

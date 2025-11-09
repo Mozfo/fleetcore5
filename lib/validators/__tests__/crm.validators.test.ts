@@ -28,7 +28,7 @@ describe("LeadCreateSchema", () => {
       phone: "+33612345678",
       first_name: "John",
       last_name: "Doe",
-      fleet_size: 25,
+      fleet_size: "51-100",
       country_code: "fr",
       gdpr_consent: true,
     };
@@ -46,30 +46,61 @@ describe("LeadCreateSchema", () => {
       phone: "123", // Too short
       first_name: "J", // Too short
       last_name: "Doe123", // Contains digits
-      fleet_size: -5, // Negative
+      fleet_size: "invalid-size", // Invalid enum value
       country_code: "FRANCE", // Too long
       gdpr_consent: false,
     };
 
     expect(() => LeadCreateSchema.parse(invalidData)).toThrow();
   });
+
+  it("should require GDPR consent for EU countries", () => {
+    const frenchLeadWithoutConsent = {
+      email: "contact@francevtc.fr",
+      phone: "+33612345678",
+      first_name: "Pierre",
+      last_name: "Durand",
+      fleet_size: "11-50",
+      country_code: "FR",
+      gdpr_consent: false, // Should fail
+    };
+
+    expect(() => LeadCreateSchema.parse(frenchLeadWithoutConsent)).toThrow(
+      "consentement RGPD"
+    );
+  });
+
+  it("should not require GDPR consent for non-EU countries", () => {
+    const uaeLead = {
+      email: "contact@dubaifleet.ae",
+      phone: "+971501234567",
+      first_name: "Ahmed",
+      last_name: "Hassan",
+      fleet_size: "51-100",
+      country_code: "AE",
+      gdpr_consent: false, // Should pass
+    };
+
+    const result = LeadCreateSchema.parse(uaeLead);
+    expect(result.gdpr_consent).toBe(false);
+  });
 });
 
 describe("LeadUpdateSchema", () => {
   it("should validate partial lead updates", () => {
     const partialUpdate = {
-      fleet_size: 30,
+      fleet_size: "11-50",
       gdpr_consent: true,
     };
 
     const result = LeadUpdateSchema.parse(partialUpdate);
-    expect(result.fleet_size).toBe(30);
+    expect(result.fleet_size).toBe("11-50");
   });
 
   it("should reject invalid partial updates", () => {
     const invalidUpdate = {
       email: "not-an-email",
-      fleet_size: 20000, // Exceeds max
+      fleet_size: "invalid-range", // Invalid enum
     };
 
     expect(() => LeadUpdateSchema.parse(invalidUpdate)).toThrow();

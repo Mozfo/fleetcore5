@@ -40,78 +40,119 @@ import { differenceInDays, differenceInYears } from "date-fns";
  * };
  * const result = LeadCreateSchema.parse(validLead);
  */
-export const LeadCreateSchema = z.object({
-  email: z
-    .string()
-    .min(1, "L'email est requis")
-    .email("Format d'email invalide")
-    .max(255, "L'email ne peut pas dépasser 255 caractères"),
+export const LeadCreateSchema = z
+  .object({
+    email: z
+      .string()
+      .min(1, "L'email est requis")
+      .email("Format d'email invalide")
+      .max(255, "L'email ne peut pas dépasser 255 caractères"),
 
-  phone: z
-    .string()
-    .min(1, "Le téléphone est requis")
-    .regex(
-      /^\+[1-9]\d{9,14}$/,
-      "Format E.164 requis (ex: +33612345678). Le numéro doit contenir 10 à 15 chiffres."
-    ),
+    phone: z
+      .string()
+      .min(1, "Le téléphone est requis")
+      .regex(
+        /^\+[1-9]\d{9,14}$/,
+        "Format E.164 requis (ex: +33612345678). Le numéro doit contenir 10 à 15 chiffres."
+      ),
 
-  first_name: z
-    .string()
-    .min(1, "Le prénom est requis")
-    .min(2, "Le prénom doit contenir au moins 2 caractères")
-    .max(50, "Le prénom ne peut pas dépasser 50 caractères")
-    .regex(/^[^0-9]*$/, "Le prénom ne doit pas contenir de chiffres"),
+    first_name: z
+      .string()
+      .min(1, "Le prénom est requis")
+      .min(2, "Le prénom doit contenir au moins 2 caractères")
+      .max(50, "Le prénom ne peut pas dépasser 50 caractères")
+      .regex(/^[^0-9]*$/, "Le prénom ne doit pas contenir de chiffres"),
 
-  last_name: z
-    .string()
-    .min(1, "Le nom est requis")
-    .min(2, "Le nom doit contenir au moins 2 caractères")
-    .max(50, "Le nom ne peut pas dépasser 50 caractères")
-    .regex(/^[^0-9]*$/, "Le nom ne doit pas contenir de chiffres"),
+    last_name: z
+      .string()
+      .min(1, "Le nom est requis")
+      .min(2, "Le nom doit contenir au moins 2 caractères")
+      .max(50, "Le nom ne peut pas dépasser 50 caractères")
+      .regex(/^[^0-9]*$/, "Le nom ne doit pas contenir de chiffres"),
 
-  demo_company_name: z
-    .string()
-    .max(100, "Le nom de l'entreprise ne peut pas dépasser 100 caractères")
-    .optional(),
+    demo_company_name: z
+      .string()
+      .max(100, "Le nom de l'entreprise ne peut pas dépasser 100 caractères")
+      .optional(),
 
-  fleet_size: z
-    .number()
-    .int("La taille de la flotte doit être un nombre entier")
-    .positive("La taille de la flotte doit être un nombre positif")
-    .min(1, "La taille de la flotte doit être d'au moins 1 véhicule")
-    .max(10000, "La taille de la flotte ne peut pas dépasser 10 000 véhicules"),
+    fleet_size: z.enum(["1-10", "11-50", "51-100", "101-500", "500+"], {
+      message:
+        "Sélectionnez une taille de flotte valide (1-10, 11-50, 51-100, 101-500, 500+)",
+    }),
 
-  country_code: z
-    .string()
-    .min(1, "Le code pays est requis")
-    .length(
-      2,
-      "Le code pays doit contenir exactement 2 caractères (ISO 3166-1)"
-    )
-    .transform((val) => val.toUpperCase()),
+    country_code: z
+      .string()
+      .min(1, "Le code pays est requis")
+      .length(
+        2,
+        "Le code pays doit contenir exactement 2 caractères (ISO 3166-1)"
+      )
+      .transform((val) => val.toUpperCase()),
 
-  message: z
-    .string()
-    .max(1000, "Le message ne peut pas dépasser 1000 caractères")
-    .optional(),
+    message: z
+      .string()
+      .max(1000, "Le message ne peut pas dépasser 1000 caractères")
+      .optional(),
 
-  utm_source: z
-    .string()
-    .max(50, "La source UTM ne peut pas dépasser 50 caractères")
-    .optional(),
+    utm_source: z
+      .string()
+      .max(50, "La source UTM ne peut pas dépasser 50 caractères")
+      .optional(),
 
-  utm_medium: z
-    .string()
-    .max(50, "Le medium UTM ne peut pas dépasser 50 caractères")
-    .optional(),
+    utm_medium: z
+      .string()
+      .max(50, "Le medium UTM ne peut pas dépasser 50 caractères")
+      .optional(),
 
-  utm_campaign: z
-    .string()
-    .max(50, "La campagne UTM ne peut pas dépasser 50 caractères")
-    .optional(),
+    utm_campaign: z
+      .string()
+      .max(50, "La campagne UTM ne peut pas dépasser 50 caractères")
+      .optional(),
 
-  gdpr_consent: z.boolean().default(false),
-});
+    gdpr_consent: z.boolean().default(false),
+  })
+  .refine(
+    (data) => {
+      const euCountries = [
+        "FR",
+        "DE",
+        "IT",
+        "ES",
+        "NL",
+        "BE",
+        "AT",
+        "PT",
+        "GR",
+        "IE",
+        "FI",
+        "SE",
+        "DK",
+        "PL",
+        "CZ",
+        "RO",
+        "BG",
+        "HR",
+        "SK",
+        "SI",
+        "LT",
+        "LV",
+        "EE",
+        "CY",
+        "LU",
+        "MT",
+        "HU",
+      ];
+      if (euCountries.includes(data.country_code)) {
+        return data.gdpr_consent === true;
+      }
+      return true;
+    },
+    {
+      message:
+        "Le consentement RGPD est obligatoire pour les pays de l'Union Européenne",
+      path: ["gdpr_consent"],
+    }
+  );
 
 export type LeadCreateInput = z.infer<typeof LeadCreateSchema>;
 
