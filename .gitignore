@@ -52,3 +52,7 @@ backup/
 archive_fleetcore_20251106/
 archive_fleetcore_*/
 
+# Integration tests SQLite database
+test-integration.db
+test-integration.db-journal
+

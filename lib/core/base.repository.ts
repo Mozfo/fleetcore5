@@ -102,6 +102,7 @@ export abstract class BaseRepository<T> {
 
   /**
    * Create a new record with audit trail
+   * @param userId - User ID for audit trail (use SYSTEM_USER_ID for automated operations)
    */
   async create(
     data: Record<string, unknown>,
@@ -174,5 +175,55 @@ export abstract class BaseRepository<T> {
         ...(reason && { deletion_reason: reason }),
       },
     });
+  }
+
+  /**
+   * Restore a soft-deleted record
+   * Clears deleted_at, deleted_by, and deletion_reason fields
+   *
+   * @param id - Entity ID to restore
+   * @param userId - User performing the restoration (for updated_by)
+   * @param tenantId - Optional tenant ID for multi-tenant filtering
+   * @returns Restored entity
+   * @throws {Error} If entity not found or not deleted
+   */
+  async restore(id: string, userId: string, tenantId?: string): Promise<T> {
+    // Build where clause
+    const where: Record<string, unknown> = {
+      id,
+    };
+
+    if (tenantId) {
+      where.tenant_id = tenantId;
+    }
+
+    // Check if entity exists and is deleted
+    const existing = (await this.model.findFirst({
+      where,
+    })) as T | null;
+
+    if (!existing) {
+      throw new Error(`Entity with id ${id} not found`);
+    }
+
+    const existingWithDeletedAt = existing as unknown as {
+      deleted_at: Date | null;
+    };
+
+    if (!existingWithDeletedAt.deleted_at) {
+      throw new Error(`Entity with id ${id} is not deleted`);
+    }
+
+    // Restore the entity
+    return (await this.model.update({
+      where: { id },
+      data: {
+        deleted_at: null,
+        deleted_by: null,
+        deletion_reason: null,
+        updated_by: userId,
+        updated_at: new Date(),
+      },
+    })) as T;
   }
 }

@@ -178,7 +178,10 @@ export class EmailService extends BaseService {
     this.fromEmail = process.env.EMAIL_FROM || "notifications@fleetcore.app";
     this.fromName = process.env.EMAIL_FROM_NAME || "FleetCore";
     this.replyTo = process.env.EMAIL_REPLY_TO || "support@fleetcore.app";
-    this.isDevelopment = process.env.NODE_ENV === "development";
+    // Allow forcing real email sending in development with FORCE_SEND_EMAILS=true
+    this.isDevelopment =
+      process.env.NODE_ENV === "development" &&
+      process.env.FORCE_SEND_EMAILS !== "true";
   }
 
   /**
@@ -1093,6 +1096,47 @@ ${t.footer}`;
   }
 
   // Public utility methods
+
+  /**
+   * Send generic email (for NotificationService and other consumers)
+   * Public wrapper around private sendEmail() method
+   */
+  async send(params: {
+    to: string | string[];
+    subject: string;
+    html: string;
+    text?: string;
+  }): Promise<EmailSendResult> {
+    try {
+      // In development, log email instead of sending
+      if (this.isDevelopment) {
+        return {
+          success: true,
+          messageId: `dev-${Date.now()}`,
+        };
+      }
+
+      // Send email via Resend
+      const result = await this.resend.emails.send({
+        from: `${this.fromName} <${this.fromEmail}>`,
+        to: Array.isArray(params.to) ? params.to : [params.to],
+        subject: params.subject,
+        html: params.html,
+        text: params.text,
+        replyTo: this.replyTo,
+      });
+
+      return {
+        success: true,
+        messageId: result.data?.id,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to send email",
+      };
+    }
+  }
 
   /**
    * Send document expiry reminder (convenience wrapper)

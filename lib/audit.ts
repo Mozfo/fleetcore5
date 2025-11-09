@@ -17,16 +17,26 @@ export type AuditAction =
   | "ip_blocked"; // Security: IP whitelist access denied (system-level, tenantId: null)
 
 export type AuditEntityType =
+  // Admin entities
+  | "tenant"
   | "organization"
   | "member"
   | "invitation"
+  | "role"
+  // CRM entities
+  | "lead"
+  | "opportunity"
+  | "contract"
+  // Fleet entities
   | "driver"
   | "vehicle"
   | "vehicle_assignment"
   | "vehicle_maintenance"
   | "vehicle_expense"
+  // Finance entities
   | "revenue_import"
   | "payment"
+  // System entities
   | "system_parameter"
   | "document"
   | "custom_field";

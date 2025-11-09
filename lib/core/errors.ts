@@ -68,6 +68,96 @@ export class ConflictError extends AppError {
 }
 
 /**
+ * Database Error - 500 Internal Server Error
+ *
+ * Wraps database-level errors (Prisma errors, connection failures, query timeouts, etc.)
+ * Stores the original error for debugging while providing a consistent error interface.
+ *
+ * @example
+ * ```typescript
+ * // Wrap Prisma error
+ * try {
+ *   await prisma.user.create({ data: invalidData })
+ * } catch (error) {
+ *   throw new DatabaseError('Failed to create user', error)
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Handle in BaseService.handleError()
+ * if (isPrismaError(error)) {
+ *   throw new DatabaseError(`Database error in ${context}`, error)
+ * }
+ * ```
+ */
+export class DatabaseError extends AppError {
+  /**
+   * @param message - Human-readable error message
+   * @param originalError - Original error object for debugging (optional)
+   */
+  constructor(
+    message: string,
+    public originalError?: unknown
+  ) {
+    super(message, 500, "DATABASE_ERROR");
+    this.name = "DatabaseError";
+  }
+}
+
+/**
+ * Business Rule Error - 422 Unprocessable Entity
+ *
+ * Thrown when a business logic validation fails (not data format validation).
+ * Use ValidationError (400) for input format issues.
+ * Use BusinessRuleError (422) for domain logic violations.
+ *
+ * @example
+ * ```typescript
+ * // Cannot delete driver with active trips
+ * const activeTrips = await driverService.getActiveTrips(driverId)
+ * if (activeTrips.length > 0) {
+ *   throw new BusinessRuleError(
+ *     'Cannot delete driver with active trips',
+ *     'driver_has_active_trips',
+ *     { driverId, activeTripCount: activeTrips.length }
+ *   )
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Insufficient balance for withdrawal
+ * if (account.balance < withdrawalAmount) {
+ *   throw new BusinessRuleError(
+ *     'Insufficient balance',
+ *     'minimum_balance_required',
+ *     {
+ *       currentBalance: account.balance,
+ *       requested: withdrawalAmount,
+ *       minimumRequired: account.minimumBalance
+ *     }
+ *   )
+ * }
+ * ```
+ */
+export class BusinessRuleError extends AppError {
+  /**
+   * @param message - Human-readable error message
+   * @param rule - Rule identifier (e.g., 'driver_has_active_trips')
+   * @param details - Additional context about the violation (optional)
+   */
+  constructor(
+    message: string,
+    public rule: string,
+    public details?: Record<string, unknown>
+  ) {
+    super(message, 422, "BUSINESS_RULE_VIOLATION");
+    this.name = "BusinessRuleError";
+  }
+}
+
+/**
  * Interface for Prisma error objects
  * Used for type-safe error handling in BaseService
  */

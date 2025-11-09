@@ -1,0 +1,160 @@
+/**
+ * Prisma Schema for INTEGRATION TESTS with SQLite
+ *
+ * Simplified schema containing only tables needed for BaseService/BaseRepository tests:
+ * - adm_tenants (for validateTenant tests)
+ * - adm_members (for soft-delete/restore tests)
+ * - adm_audit_logs (for audit logging tests)
+ * - flt_drivers (example entity for testing soft-delete/restore)
+ *
+ * Key SQLite adaptations:
+ * - provider = "sqlite"
+ * - No @db.Uuid → String with cuid() default
+ * - No ENUM types → String with validation in code
+ * - No @db.Timestamptz → DateTime
+ * - No JSONB → String (JSON serialized)
+ * - No Gin indexes → removed
+ */
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client-integration"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Tenant status: active, suspended, trialing, canceled
+model adm_tenants {
+  id                      String                @id @default(cuid())
+  name                    String
+  subdomain               String?               @unique
+  status                  String                @default("trialing") // active, suspended, trialing, canceled, cancelled
+  clerk_organization_id   String?               @unique
+  country_code            String                @default("FR")
+  default_currency        String                @default("EUR")
+  created_at              DateTime              @default(now())
+  created_by              String                @default("system")
+  updated_at              DateTime              @default(now())
+  updated_by              String                @default("system")
+  deleted_at              DateTime?
+  adm_members             adm_members[]
+  adm_audit_logs          adm_audit_logs[]
+  flt_drivers             flt_drivers[]
+}
+
+model adm_members {
+  id                      String                @id @default(cuid())
+  tenant_id               String
+  clerk_user_id           String?               @unique
+  email                   String
+  phone                   String                @default("")
+  first_name              String?
+  last_name               String?
+  status                  String                @default("active") // active, inactive, suspended
+  created_at              DateTime              @default(now())
+  updated_at              DateTime              @default(now())
+  updated_by              String                @default("system")
+  deleted_at              DateTime?
+  deleted_by              String?
+  deletion_reason         String?
+  adm_tenants             adm_tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  adm_audit_logs          adm_audit_logs[]
+}
+
+model adm_audit_logs {
+  id                      String                @id @default(cuid())
+  tenant_id               String
+  member_id               String?
+  entity                  String                // entity type: driver, vehicle, lead, etc.
+  entity_id               String
+  action                  String                // create, update, delete, restore, etc.
+  changes                 String?               // JSON serialized
+  old_values              String?               // JSON serialized
+  new_values              String?               // JSON serialized
+  timestamp               DateTime              @default(now())
+  reason                  String?
+  severity                String                @default("info") // info, warning, error, critical
+  category                String                @default("operational") // operational, security, financial, compliance
+  retention_until         DateTime?
+  tags                    String?               // JSON array serialized
+  ip_address              String?
+  user_agent              String?
+  session_id              String?
+  clerk_user_id           String?
+  adm_tenants             adm_tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  adm_members             adm_members?          @relation(fields: [member_id], references: [id])
+}
+
+// Example entity for testing soft-delete/restore
+model flt_drivers {
+  id                      String                @id @default(cuid())
+  tenant_id               String
+  first_name              String
+  last_name               String
+  email                   String
+  phone                   String?
+  license_number          String?
+  status                  String                @default("inactive") // active, inactive, suspended
+  created_at              DateTime              @default(now())
+  created_by              String
+  updated_at              DateTime              @default(now())
+  updated_by              String
+  deleted_at              DateTime?
+  deleted_by              String?
+  deletion_reason         String?
+  adm_tenants             adm_tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+}
+
+// Phase 0.3: Clerk Sync & Audit tables
+model adm_invitations {
+  id                      String                @id @default(cuid())
+  tenant_id               String
+  email                   String
+  role                    String                // member, admin, support
+  status                  String                @default("pending") // pending, accepted, expired, revoked
+  expires_at              DateTime
+  accepted_by_member_id   String?
+  accepted_at             DateTime?
+  sent_at                 DateTime              @default(now())
+  created_at              DateTime              @default(now())
+  created_by              String
+  updated_at              DateTime              @default(now())
+  updated_by              String                @default("system")
+}
+
+model adm_roles {
+  id                      String                @id @default(cuid())
+  tenant_id               String
+  slug                    String
+  name                    String
+  created_at              DateTime              @default(now())
+  adm_member_roles        adm_member_roles[]
+}
+
+model adm_member_roles {
+  id                      String                @id @default(cuid())
+  tenant_id               String
+  member_id               String
+  role_id                 String
+  is_primary              Boolean               @default(false)
+  scope_type              String                @default("global") // global, branch, team
+  valid_from              DateTime              @default(now())
+  valid_until             DateTime?
+  created_at              DateTime              @default(now())
+  created_by              String                @default("system")
+  updated_at              DateTime              @default(now())
+  updated_by              String                @default("system")
+  deleted_at              DateTime?
+  adm_roles               adm_roles             @relation(fields: [role_id], references: [id])
+}
+
+model adm_tenant_lifecycle_events {
+  id                      String                @id @default(cuid())
+  tenant_id               String
+  event_type              String                // created, deleted, suspended, etc.
+  description             String?
+  created_at              DateTime              @default(now())
+}
