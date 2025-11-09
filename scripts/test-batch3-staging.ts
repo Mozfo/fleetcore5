@@ -60,11 +60,18 @@ async function testRoute(
       headers["Authorization"] = `Bearer ${globalAuth.token}`;
     }
 
+    // Add timeout to prevent hanging on slow queries or database issues
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
     const response = await fetch(fullUrl, {
       method,
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     const duration = Date.now() - startTime;
     const data = await response.json();

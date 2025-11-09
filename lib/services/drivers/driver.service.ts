@@ -108,7 +108,11 @@ export interface DriverHistory {
   total_trips: number;
   total_revenue: number;
   average_rating: number;
-  documents: { type: driver_document_type | null; verified: boolean; expiry_date?: Date }[];
+  documents: {
+    type: driver_document_type | null;
+    verified: boolean;
+    expiry_date?: Date;
+  }[];
   recent_performances: { period: string; metrics: unknown }[];
   active_assignment?: { vehicle_id: string; start_date: Date };
 }
@@ -120,7 +124,11 @@ export interface DocumentValidationResult {
   is_valid: boolean;
   missing_documents: string[];
   expired_documents: { type: driver_document_type | null; expiry_date: Date }[];
-  expiring_soon: { type: driver_document_type | null; expiry_date: Date; days_remaining: number }[];
+  expiring_soon: {
+    type: driver_document_type | null;
+    expiry_date: Date;
+    days_remaining: number;
+  }[];
 }
 
 /**
@@ -430,7 +438,7 @@ export class DriverService extends BaseService {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 30);
 
-      where.OR = [
+      const expiringOR = [
         {
           license_expiry_date: {
             lte: futureDate,
@@ -444,6 +452,14 @@ export class DriverService extends BaseService {
           },
         },
       ];
+
+      // Combine with existing OR clause if present (e.g., from search filter)
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: expiringOR }];
+        delete where.OR;
+      } else {
+        where.OR = expiringOR;
+      }
     }
 
     // 3. Call repository

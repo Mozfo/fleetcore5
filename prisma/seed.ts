@@ -214,6 +214,74 @@ async function main() {
   console.log(`✅ Created ${leads.length} CRM leads`);
 
   // ===================================
+  // RID_DRIVERS - Test Drivers for API Tests
+  // ===================================
+  console.log("🚗 Creating test drivers...");
+
+  const drivers = [
+    {
+      id: "880e8400-e29b-41d4-a716-446655440001",
+      tenant_id: dubaiOrg.id,
+      first_name: "Ahmed",
+      last_name: "Hassan",
+      email: "ahmed.hassan@driver.ae",
+      phone: "+971501234567",
+      driver_status: "active" as const,
+      cooperation_type: "employee",
+      license_number: "DL12345678",
+      license_expiry_date: new Date("2026-12-31"),
+      rating: 4.8,
+      metadata: {
+        languages: ["ar", "en"],
+        vehicle_preference: "sedan",
+      },
+    },
+    {
+      id: "880e8400-e29b-41d4-a716-446655440002",
+      tenant_id: parisOrg.id,
+      first_name: "Jean",
+      last_name: "Dupont",
+      email: "jean.dupont@driver.fr",
+      phone: "+33612345678",
+      driver_status: "active" as const,
+      cooperation_type: "independent",
+      license_number: "FR987654321",
+      license_expiry_date: new Date("2025-06-30"),
+      rating: 4.5,
+      metadata: {
+        languages: ["fr", "en"],
+        vehicle_preference: "van",
+      },
+    },
+    {
+      id: "880e8400-e29b-41d4-a716-446655440003",
+      tenant_id: dubaiOrg.id,
+      first_name: "Mohammed",
+      last_name: "Ali",
+      email: "mohammed.ali@driver.ae",
+      phone: "+971509876543",
+      driver_status: "inactive" as const,
+      cooperation_type: "employee",
+      license_number: "DL87654321",
+      license_expiry_date: new Date("2027-03-15"),
+      rating: 3.9,
+      metadata: {
+        languages: ["ar"],
+      },
+    },
+  ];
+
+  for (const driver of drivers) {
+    await prisma.rid_drivers.upsert({
+      where: { id: driver.id },
+      update: {},
+      create: driver,
+    });
+  }
+
+  console.log(`✅ Created ${drivers.length} test drivers`);
+
+  // ===================================
   // DIR_NOTIFICATION_TEMPLATES - Step 0.4 Templates (en/fr/ar)
   // ===================================
   console.log("📧 Creating notification templates...");
@@ -1035,6 +1103,7 @@ Si vous avez reçu cet email, les webhooks sont correctement configurés.
   console.log("  - 2 tenants (Dubai, Paris)");
   console.log("  - 2 members (1 admin per tenant)");
   console.log(`  - ${leads.length} demo leads`);
+  console.log(`  - ${drivers.length} test drivers`);
   console.log(`  - ${templates.length} notification templates (multilingual)`);
   console.log(
     "\n💡 Next: Run migration for Step 1 tables (adm_roles, dir_*, etc.)"
