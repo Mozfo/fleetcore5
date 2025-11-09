@@ -64,6 +64,9 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm prisma generate
 
+      - name: Generate Integration Test Prisma Client
+        run: pnpm exec prisma generate --schema=prisma/schema.integration.prisma
+
       - name: TypeScript check
         run: pnpm typecheck
 
