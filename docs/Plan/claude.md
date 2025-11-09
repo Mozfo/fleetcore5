@@ -3,7 +3,7 @@
 **HOW TO UPDATE THIS FILE**: Use Edit tool ONLY. Update summary table + add phase section at end. NO separate completion files.
 
 **Last Updated**: November 9, 2025
-**Session**: #20 (Audit Trail Fix)
+**Session**: #21 (GitHub Actions CI/CD Fix + Database URL Configuration)
 **Status**: Phase 0 Complete (0.1 ✅ + 0.2 ✅ + 0.3 ✅ + 0.4 ✅) - Ready for Sprint 1
 
 ---
@@ -33,6 +33,85 @@
 - ✅ Documentation complète
 
 **Prêt pour** : Sprint 1 (API routes CRM + Admin)
+
+---
+
+## ⚠️ IMPORTANT: Database Migration Strategy
+
+**FleetCore utilise Supabase en production - PAS de Prisma Migrate**
+
+### Workflow de Migration
+
+**❌ NE PAS UTILISER:**
+
+- `prisma migrate dev`
+- `prisma migrate deploy`
+- `prisma db push`
+
+**✅ WORKFLOW OFFICIEL:**
+
+1. **Modifications de schéma**: Se font directement dans Supabase Dashboard SQL Editor
+2. **Synchronisation locale**: `pnpm exec prisma db pull` (pull schema depuis Supabase)
+3. **Génération client**: `pnpm exec prisma generate` (génère types TypeScript)
+4. **Tests**: Valider en local avec le schema sync
+
+### Configuration Database URLs
+
+**Supabase fournit 2 URLs différentes** (requises toutes les deux):
+
+#### 1. DATABASE_URL (Transaction Pooler - Port 6543)
+
+```bash
+# Pour: Prisma Studio, prisma db pull
+# Format: postgresql://[user]:[pass]@aws-X-region.pooler.supabase.com:6543/postgres?pgbouncer=true
+DATABASE_URL="postgresql://postgres.xxx:password@aws-1-eu-central-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
+```
+
+#### 2. DIRECT_URL (Session Mode - Port 5432)
+
+```bash
+# Pour: Prisma Client queries (runtime)
+# Format: postgresql://[user]:[pass]@aws-X-region.pooler.supabase.com:5432/postgres
+DIRECT_URL="postgresql://postgres.xxx:password@aws-1-eu-central-2.pooler.supabase.com:5432/postgres"
+```
+
+**Prisma Schema Configuration:**
+
+```prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")      // Port 6543 avec pgbouncer
+  directUrl = env("DIRECT_URL")        // Port 5432 sans pgbouncer
+}
+```
+
+### GitHub Actions Secrets
+
+**Requis dans GitHub Repository Secrets:**
+
+- `DATABASE_URL`: Transaction pooler (port 6543)
+- `DIRECT_URL`: Session mode (port 5432)
+- `CLERK_SECRET_KEY`: Nouvelle clé après rotation
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clé publique Clerk
+- `RESEND_API_KEY`: Pour EmailService
+- `TEST_USER_PASSWORD`: Pour CI/CD tests
+
+### Pourquoi cette approche?
+
+**Avantages:**
+
+- ✅ Production database toujours source de vérité
+- ✅ Pas de dérive entre migrations Prisma et production
+- ✅ Rollbacks faciles via Supabase SQL Editor
+- ✅ Historique des migrations dans Supabase Dashboard
+- ✅ Compatible avec team collaboration (multiples devs)
+
+**Risques évités:**
+
+- ❌ Conflits de migrations entre développeurs
+- ❌ État de migration désynchronisé
+- ❌ Perte de données par migrations destructives
+- ❌ Impossibilité de rollback Prisma Migrate
 
 ---
 
@@ -1116,6 +1195,68 @@ GDPR/SOC2 compliant
 
 ---
 
+## 🏆 Session #21 - GitHub Actions CI/CD Fix (November 9, 2025)
+
+**Duration**: 3h30min
+**Status**: ✅ **COMPLETE**
+
+### Issues Resolved
+
+**1. ESLint Errors (54 errors)**
+
+- Prefixed unused variables with `_`
+- Replaced `any` types with proper types
+- Added explicit null checks
+- Commit: fec915b
+
+**2. Prisma Client-Integration Missing**
+
+- Added `prisma generate --schema=prisma/schema.integration.prisma` to GitHub workflow
+- Integration tests now pass on CI
+- Commit: ad6ac76
+
+**3. Database URL Configuration**
+
+- Root cause: Missing `DIRECT_URL` in GitHub Secrets
+- Supabase requires 2 URLs: DATABASE_URL (port 6543) + DIRECT_URL (port 5432)
+- Solution: Added both secrets to GitHub Actions
+- Manual fix via GitHub Settings
+
+**4. Test Results Directory Missing**
+
+- Created `docs/test-results/.gitkeep`
+- Allows GitHub Actions to write test artifacts
+- Commit: cc460a2
+
+**5. Clerk Secret Rotation**
+
+- Updated `CLERK_SECRET_KEY` after exposure in git history
+- Updated `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- Manual fix via GitHub Settings
+
+### Final Status
+
+✅ GitHub Actions: **PASSING**
+✅ Build time: ~3min
+✅ All infrastructure tests passing
+✅ Ready for Sprint 1.1 development
+
+### Key Learnings
+
+**Database URLs for Supabase + Prisma:**
+
+- Transaction Pooler (6543 + pgbouncer) for `prisma db pull`, Studio
+- Session Mode (5432 no pgbouncer) for runtime queries
+- BOTH required in .env.local AND GitHub Secrets
+
+**GitHub Actions Optimization:**
+
+- Generate all Prisma clients before typecheck
+- Use Direct URL for runtime to avoid pooler limitations
+- Proper secret rotation after git exposure
+
+---
+
 ## 📌 Previous Achievements
 
 ### Frontend & Infrastructure (Sept 27, 2025)
@@ -1126,3 +1267,4 @@ GDPR/SOC2 compliant
 - ✅ Request Demo system
 - ✅ Responsive design + dark mode
 - ✅ Prisma 6.18.0 + PostgreSQL (101 tables)
+- ✅ Supabase production database (Direct + Pooler URLs)
