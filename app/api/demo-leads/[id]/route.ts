@@ -51,7 +51,8 @@ export async function PUT(
     const lead = await db.crm_leads.update({
       where: { id },
       data: {
-        full_name: body.full_name,
+        first_name: body.first_name,
+        last_name: body.last_name,
         email: body.email,
         demo_company_name: body.company_name,
         fleet_size: body.company_size,

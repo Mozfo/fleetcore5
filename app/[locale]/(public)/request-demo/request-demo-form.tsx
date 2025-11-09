@@ -16,7 +16,8 @@ import {
 import { logger } from "@/lib/logger";
 
 interface FormData {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   company: string;
   country: string;
@@ -29,7 +30,8 @@ interface FormData {
 export default function RequestDemoForm() {
   const { t } = useTranslation("public");
   const [formData, setFormData] = useState<FormData>({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     company: "",
     country: "",
@@ -46,8 +48,10 @@ export default function RequestDemoForm() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.fullName.trim())
-      newErrors.fullName = t("requestDemo.form.errors.required");
+    if (!formData.firstName.trim())
+      newErrors.firstName = t("requestDemo.form.errors.required");
+    if (!formData.lastName.trim())
+      newErrors.lastName = t("requestDemo.form.errors.required");
     if (!formData.email.trim())
       newErrors.email = t("requestDemo.form.errors.required");
     else if (!/\S+@\S+\.\S+/.test(formData.email))
@@ -78,7 +82,8 @@ export default function RequestDemoForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          full_name: formData.fullName,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
           email: formData.email,
           company_name: formData.company,
           company_size: formData.fleetSize,
@@ -225,29 +230,56 @@ export default function RequestDemoForm() {
               </p>
 
               <div className="space-y-4">
-                {/* Full Name */}
+                {/* First Name */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t("requestDemo.form.fullName")} *
+                    {t("requestDemo.form.firstName")} *
                   </label>
                   <div className="relative">
                     <User className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
                     <input
                       type="text"
-                      value={formData.fullName}
+                      value={formData.firstName}
                       onChange={(e) =>
-                        setFormData({ ...formData, fullName: e.target.value })
+                        setFormData({ ...formData, firstName: e.target.value })
                       }
                       className={`w-full rounded-lg border py-2.5 pr-3 pl-10 ${
-                        errors.fullName
+                        errors.firstName
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
                       } bg-white text-gray-900 focus:border-blue-600 focus:outline-none dark:bg-gray-700 dark:text-white`}
                     />
                   </div>
-                  {errors.fullName && (
+                  {errors.firstName && (
                     <p className="mt-1 text-xs text-red-500">
-                      {errors.fullName}
+                      {errors.firstName}
+                    </p>
+                  )}
+                </div>
+
+                {/* Last Name */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t("requestDemo.form.lastName")} *
+                  </label>
+                  <div className="relative">
+                    <User className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lastName: e.target.value })
+                      }
+                      className={`w-full rounded-lg border py-2.5 pr-3 pl-10 ${
+                        errors.lastName
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } bg-white text-gray-900 focus:border-blue-600 focus:outline-none dark:bg-gray-700 dark:text-white`}
+                    />
+                  </div>
+                  {errors.lastName && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.lastName}
                     </p>
                   )}
                 </div>

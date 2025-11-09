@@ -1083,7 +1083,6 @@ model crm_lead_sources {
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model crm_leads {
   id                                                                   String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  full_name                                                            String
   email                                                                String
   phone                                                                String
   demo_company_name                                                    String?
@@ -1110,8 +1109,8 @@ model crm_leads {
   deleted_by                                                           String?                 @db.Uuid
   deletion_reason                                                      String?
   lead_code                                                            String?                 @unique @db.VarChar(50)
-  first_name                                                           String?
-  last_name                                                            String?
+  first_name                                                           String
+  last_name                                                            String
   company_name                                                         String?
   industry                                                             String?
   company_size                                                         Int?
@@ -3260,7 +3259,6 @@ model rid_drivers {
   place_of_birth                                                               String?                        @db.VarChar(100)
   emirates_id                                                                  String?                        @db.VarChar(50)
   emirates_id_expiry                                                           DateTime?                      @db.Date
-  full_name                                                                    String?
   preferred_name                                                               String?                        @db.VarChar(100)
   secondary_phone                                                              String?                        @db.VarChar(20)
   emergency_contact_relation                                                   String?                        @db.VarChar(50)
@@ -5268,4 +5266,135 @@ enum verification_status {
   pending
   verified
   rejected
+}
+
+// ============================================
+// STEP 0.4 - NOTIFICATION SERVICE & TEMPLATES
+// ============================================
+// NOTE: Les colonnes audit (created_by, updated_by, deleted_by) ont des FK
+// polymorphes en base PostgreSQL (vers adm_members OU adm_provider_employees).
+// Prisma ne supportant pas ce pattern, AUCUNE relation n'est modélisée ici
+// pour ces champs. L'intégrité référentielle reste garantie par PostgreSQL.
+// Voir issue Prisma #8976 (NOT_PLANNED)
+// ============================================
+
+enum notification_channel {
+  email
+  sms
+  slack
+  webhook
+  push
+}
+
+enum notification_status {
+  pending
+  sent
+  delivered
+  bounced
+  opened
+  clicked
+  failed
+}
+
+model adm_notification_logs {
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id           String?              @db.Uuid
+  recipient_id        String?              @db.Uuid
+  recipient_email     String               @db.VarChar(255)
+  recipient_phone     String?              @db.VarChar(20)
+  template_code       String               @db.VarChar(100)
+  channel             notification_channel
+  locale_used         String               @db.VarChar(10)
+  subject             String?
+  body                String?
+  variables_data      Json?
+  status              notification_status  @default(pending)
+  sent_at             DateTime?            @db.Timestamptz(6)
+  delivered_at        DateTime?            @db.Timestamptz(6)
+  opened_at           DateTime?            @db.Timestamptz(6)
+  clicked_at          DateTime?            @db.Timestamptz(6)
+  failed_at           DateTime?            @db.Timestamptz(6)
+  error_message       String?
+  external_id         String?              @db.VarChar(255)
+  ip_address          String?              @db.VarChar(45)
+  user_agent          String?
+  session_id          String?              @db.Uuid
+  request_id          String?              @db.Uuid
+  created_at          DateTime             @default(now()) @db.Timestamptz(6)
+  created_by          String?              @db.Uuid
+  updated_at          DateTime             @default(now()) @db.Timestamptz(6)
+  updated_by          String?              @db.Uuid
+  deleted_at          DateTime?            @db.Timestamptz(6)
+  deleted_by          String?              @db.Uuid
+  deletion_reason     String?
+
+  @@index([channel], map: "idx_adm_notification_logs_channel")
+  @@index([created_at], map: "idx_adm_notification_logs_created_at")
+  @@index([deleted_at], map: "idx_adm_notification_logs_deleted_at")
+  @@index([recipient_email], map: "idx_adm_notification_logs_recipient_email")
+  @@index([recipient_id], map: "idx_adm_notification_logs_recipient_id")
+  @@index([sent_at], map: "idx_adm_notification_logs_sent_at")
+  @@index([status], map: "idx_adm_notification_logs_status")
+  @@index([template_code], map: "idx_adm_notification_logs_template_code")
+  @@index([tenant_id], map: "idx_adm_notification_logs_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model dir_country_locales {
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_code       String           @unique @db.Char(2)
+  country_name       String           @db.VarChar(100)
+  primary_locale     String           @db.VarChar(10)
+  fallback_locale    String?          @db.VarChar(10)
+  supported_locales  String[]         @default([])
+  timezone           String           @db.VarChar(50)
+  currency           String           @db.Char(3)
+  currency_symbol    String?          @db.VarChar(10)
+  currency_position  String?          @db.VarChar(10)
+  number_format      String           @default("1,234.56") @db.VarChar(20)
+  date_format        String           @db.VarChar(20)
+  time_format        String           @db.VarChar(20)
+  first_day_of_week  Int              @default(1) @db.SmallInt
+  rtl_enabled        Boolean          @default(false)
+  status             lifecycle_status @default(active)
+  created_at         DateTime         @default(now()) @db.Timestamptz(6)
+  created_by         String?          @db.Uuid
+  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
+  updated_by         String?          @db.Uuid
+  deleted_at         DateTime?        @db.Timestamptz(6)
+  deleted_by         String?          @db.Uuid
+  deletion_reason    String?
+
+  @@index([country_code], map: "idx_dir_country_locales_country")
+  @@index([deleted_at], map: "idx_dir_country_locales_deleted_at")
+  @@index([status], map: "idx_dir_country_locales_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model dir_notification_templates {
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_code        String               @db.VarChar(100)
+  template_name        String               @db.VarChar(200)
+  channel              notification_channel
+  supported_countries  String[]             @default([])
+  supported_locales    String[]             @default([])
+  subject_translations Json
+  body_translations    Json
+  variables            Json?
+  status               lifecycle_status     @default(active)
+  created_at           DateTime             @default(now()) @db.Timestamptz(6)
+  created_by           String?              @db.Uuid
+  updated_at           DateTime             @default(now()) @db.Timestamptz(6)
+  updated_by           String?              @db.Uuid
+  deleted_at           DateTime?            @db.Timestamptz(6)
+  deleted_by           String?              @db.Uuid
+  deletion_reason      String?
+
+  @@unique([template_code, channel], map: "uq_dir_notification_templates_code_channel")
+  @@index([channel], map: "idx_dir_notification_templates_channel")
+  @@index([template_code], map: "idx_dir_notification_templates_code")
+  @@index([supported_countries], map: "idx_dir_notification_templates_countries_gin", type: Gin)
+  @@index([deleted_at], map: "idx_dir_notification_templates_deleted_at")
+  @@index([supported_locales], map: "idx_dir_notification_templates_locales_gin", type: Gin)
+  @@index([status], map: "idx_dir_notification_templates_status")
 }

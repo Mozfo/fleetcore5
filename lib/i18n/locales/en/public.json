@@ -16,6 +16,8 @@
       "title": "Get Your Personalized Demo",
       "subtitle": "Our fleet experts will contact you within 24 hours",
       "fullName": "Full Name",
+      "firstName": "First Name",
+      "lastName": "Last Name",
       "email": "Business Email",
       "company": "Company Name",
       "phone": "Phone Number (Optional)",

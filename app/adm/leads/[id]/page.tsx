@@ -80,7 +80,7 @@ export default async function LeadDetailPage({
                   Full Name
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {lead.full_name}
+                  {lead.first_name} {lead.last_name}
                 </dd>
               </div>
               <div>

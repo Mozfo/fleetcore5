@@ -9,7 +9,8 @@ import { Search } from "lucide-react";
 
 type Lead = {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   demo_company_name: string | null;
   fleet_size: string | null;
@@ -159,7 +160,7 @@ export default function LeadsList({ leads }: LeadsListProps) {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">
-                          {lead.full_name}
+                          {lead.first_name} {lead.last_name}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {lead.email}

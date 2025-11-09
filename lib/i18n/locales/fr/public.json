@@ -16,6 +16,8 @@
       "title": "Obtenez votre démo personnalisée",
       "subtitle": "Nos experts flotte vous contacteront dans les 24 heures",
       "fullName": "Nom complet",
+      "firstName": "Prénom",
+      "lastName": "Nom",
       "email": "Email professionnel",
       "company": "Nom de l'entreprise",
       "phone": "Numéro de téléphone (Optionnel)",
