@@ -20,7 +20,10 @@ jobs:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
       # Database (from secret)
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # CRITICAL: Use DIRECT_URL as DATABASE_URL in CI to avoid PgBouncer prepared statement errors
+      # Prisma Client uses env("DATABASE_URL") for all queries (directUrl is only for migrations)
+      # PgBouncer transaction pooling does not support prepared statements
+      DATABASE_URL: ${{ secrets.DIRECT_URL }}
       DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       # Email Configuration (from secret)
