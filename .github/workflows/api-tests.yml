@@ -21,6 +21,7 @@ jobs:
 
       # Database (from secret)
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       # Email Configuration (from secret)
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
