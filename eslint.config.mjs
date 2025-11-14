@@ -23,6 +23,10 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "coverage/**",
+      "archive_fleetcore_20251106/**",
+      "generated-emails/**",
+      "**/*.backup-*",
     ],
   },
 
