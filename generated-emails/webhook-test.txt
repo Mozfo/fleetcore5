@@ -1,0 +1,14 @@
+--------------------------------------------------------------------------------
+
+This is a test notification from FleetCore.
+
+• Timestamp: {{timestamp}}
+• Test ID: {{test_id}}
+
+If you received this email, webhooks are configured correctly.
+
+FleetCore Engineering Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

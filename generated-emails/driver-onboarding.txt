@@ -1,0 +1,29 @@
+--------------------------------------------------------------------------------
+
+Hello {{driver_name}},
+
+Welcome to {{fleet_name}}! We're excited to have you join our team.
+
+Your driver account has been created:
+
+• Driver ID: {{driver_id}}
+• Start date: {{start_date}}
+• Fleet manager: {{fleet_manager_name}}
+
+Next steps:
+
+1. Download the driver app
+2. Upload required documents (license, insurance)
+3. Complete platform onboarding (Uber, Bolt, Careem)
+4. Review payout schedule and rates
+
+Access Driver Portal {{driver_portal_url}}
+
+Need help? Contact your fleet manager or support.
+
+Best regards,
+{{fleet_name}} Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

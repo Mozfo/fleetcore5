@@ -1,0 +1,26 @@
+--------------------------------------------------------------------------------
+
+Hello {{driver_name}},
+
+Maintenance has been scheduled for your vehicle.
+
+{{vehicle_make}} {{vehicle_model}}
+
+Plate: {{vehicle_plate}}
+
+• Date: {{maintenance_date}}
+• Time: {{maintenance_time}}
+• Location: {{maintenance_location}}
+• Type: {{maintenance_type}}
+• Estimated duration: {{estimated_duration}}
+
+Please plan accordingly and ensure the vehicle is available.
+
+View Details {{maintenance_details_url}}
+
+Best regards,
+FleetCore Maintenance Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

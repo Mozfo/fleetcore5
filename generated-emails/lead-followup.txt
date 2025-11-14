@@ -1,0 +1,23 @@
+--------------------------------------------------------------------------------
+
+Hello {{first_name}},
+
+We noticed you requested a demo of FleetCore 2 days ago. We'd love to show you
+how FleetCore can help optimize your fleet operations.
+
+Our fleet management platform helps {{company_name}} to:
+
+• Reduce fuel costs by up to 20%
+• Automate driver payouts and reporting
+• Track vehicles and drivers in real-time
+• Manage multi-platform operations (Uber, Bolt, Careem)
+
+Book Your Personalized Demo {{demo_link}}
+
+Best regards,
+{{sales_rep_name}}
+FleetCore Sales Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

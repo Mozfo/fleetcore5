@@ -150,8 +150,8 @@ process.stdout.write("\n");
 // -----------------------------------------------------------------------------
 printTestTitle(5, "Empty Whitelist Runtime Failsafe");
 try {
-  // Simulate type system bypass with `as any`
-  const EMPTY_BYPASSED = [] as any as SortFieldWhitelist;
+  // Simulate type system bypass with `as unknown`
+  const EMPTY_BYPASSED = [] as unknown as SortFieldWhitelist;
   validateSortBy("id", EMPTY_BYPASSED, TEST_TENANT_ID);
   logFail("Should have caught empty whitelist");
 } catch (error) {
@@ -268,7 +268,9 @@ if (failCount === 0) {
   process.stdout.write(
     `${COLORS.bold}1. Check audit logs in database:${COLORS.reset}\n`
   );
-  process.stdout.write(`   ${COLORS.cyan}psql -c "SELECT * FROM adm_audit_logs \n`);
+  process.stdout.write(
+    `   ${COLORS.cyan}psql -c "SELECT * FROM adm_audit_logs \n`
+  );
   process.stdout.write(`           WHERE action = 'validation_failed' \n`);
   process.stdout.write(
     `           ORDER BY timestamp DESC LIMIT 3;"${COLORS.reset}\n\n`
@@ -276,7 +278,9 @@ if (failCount === 0) {
   process.stdout.write(
     `${COLORS.bold}2. Verify metadata JSONB contains:${COLORS.reset}\n`
   );
-  process.stdout.write(`   - ${COLORS.cyan}attempted_field${COLORS.reset}: "deleted_at"\n`);
+  process.stdout.write(
+    `   - ${COLORS.cyan}attempted_field${COLORS.reset}: "deleted_at"\n`
+  );
   process.stdout.write(
     `   - ${COLORS.cyan}allowed_fields${COLORS.reset}: [array of whitelist]\n\n`
   );

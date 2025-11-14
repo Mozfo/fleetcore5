@@ -327,6 +327,7 @@ model adm_provider_employees {
   title                                                                                     String?                       @db.VarChar(50)
   permissions                                                                               Json?
   status                                                                                    String                        @default("active") @db.VarChar(50)
+  preferred_locale                                                                          String?                       @db.VarChar(10)
   created_at                                                                                DateTime                      @default(now()) @db.Timestamptz(6)
   created_by                                                                                String?                       @db.Uuid
   updated_at                                                                                DateTime                      @default(now()) @db.Timestamptz(6)
@@ -372,6 +373,9 @@ model adm_provider_employees {
   crm_leads_crm_leads_created_byToadm_provider_employees                                    crm_leads[]                   @relation("crm_leads_created_byToadm_provider_employees")
   crm_leads_crm_leads_deleted_byToadm_provider_employees                                    crm_leads[]                   @relation("crm_leads_deleted_byToadm_provider_employees")
   crm_leads_crm_leads_updated_byToadm_provider_employees                                    crm_leads[]                   @relation("crm_leads_updated_byToadm_provider_employees")
+  crm_settings_crm_settings_created_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_created_byToadm_provider_employees")
+  crm_settings_crm_settings_deleted_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_deleted_byToadm_provider_employees")
+  crm_settings_crm_settings_updated_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_updated_byToadm_provider_employees")
   crm_opportunities_crm_opportunities_assigned_toToadm_provider_employees                   crm_opportunities[]           @relation("crm_opportunities_assigned_toToadm_provider_employees")
   crm_opportunities_crm_opportunities_created_byToadm_provider_employees                    crm_opportunities[]           @relation("crm_opportunities_created_byToadm_provider_employees")
   crm_opportunities_crm_opportunities_deleted_byToadm_provider_employees                    crm_opportunities[]           @relation("crm_opportunities_deleted_byToadm_provider_employees")
@@ -1078,6 +1082,30 @@ model crm_lead_sources {
   crm_leads   crm_leads[]
 }
 
+/// Master CRM countries table - Operational (UAE/FR) + Expansion (28+ countries)
+/// Drives request-demo dropdown and email routing
+model crm_countries {
+  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_code        String      @unique @db.Char(2)
+  country_name_en     String      @db.VarChar(100)
+  country_name_fr     String      @db.VarChar(100)
+  country_name_ar     String      @db.VarChar(100)
+  flag_emoji          String      @db.VarChar(10)
+  is_operational      Boolean     @default(false)
+  is_visible          Boolean     @default(true)
+  display_order       Int
+  notification_locale String      @default("en") @db.VarChar(5)
+  created_at          DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime    @updatedAt @db.Timestamptz(6)
+
+  // Relations
+  crm_leads           crm_leads[]
+
+  @@index([is_operational], map: "idx_crm_countries_operational")
+  @@index([is_visible], map: "idx_crm_countries_visible")
+  @@index([country_code], map: "idx_crm_countries_code")
+}
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
@@ -1091,7 +1119,7 @@ model crm_leads {
   message                                                              String?
   created_at                                                           DateTime                @default(now()) @db.Timestamptz(6)
   updated_at                                                           DateTime                @default(now()) @db.Timestamptz(6)
-  country_code                                                         String?                 @db.VarChar(2)
+  country_code                                                         String?                 @db.Char(2)
   fleet_size                                                           String?                 @db.VarChar(50)
   current_software                                                     String?                 @db.VarChar(255)
   assigned_to                                                          String?                 @db.Uuid
@@ -1118,6 +1146,7 @@ model crm_leads {
   linkedin_url                                                         String?
   city                                                                 String?
   lead_stage                                                           lead_stage?
+  priority                                                             String?                 @default("medium") @db.VarChar(20)
   fit_score                                                            Decimal?                @db.Decimal(5, 2)
   engagement_score                                                     Decimal?                @db.Decimal(5, 2)
   scoring                                                              Json?
@@ -1134,11 +1163,14 @@ model crm_leads {
   crm_lead_sources                                                     crm_lead_sources?       @relation(fields: [source_id], references: [id], onUpdate: NoAction, map: "fk_crm_leads_source")
   adm_provider_employees_crm_leads_updated_byToadm_provider_employees  adm_provider_employees? @relation("crm_leads_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_updated_by")
   crm_opportunities_crm_opportunities_lead_idTocrm_leads               crm_opportunities[]     @relation("crm_opportunities_lead_idTocrm_leads")
+  crm_countries                                                        crm_countries?          @relation(fields: [country_code], references: [country_code], onDelete: Restrict, onUpdate: Cascade, map: "fk_crm_leads_country")
 
   @@index([created_at(sort: Desc)])
   @@index([deleted_at])
   @@index([status])
+  @@index([priority])
   @@index([metadata], map: "idx_crm_leads_metadata", type: Gin)
+  @@index([country_code], map: "idx_crm_leads_country_code")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -1221,6 +1253,45 @@ model crm_pipelines {
   is_active           Boolean             @default(true)
   created_at          DateTime            @default(now()) @db.Timestamptz(6)
   crm_opportunities   crm_opportunities[]
+}
+
+/// CRM Settings - Configuration centralisée module CRM
+/// Stores: scoring rules, assignment rules, workflows, SLA, notifications
+model crm_settings {
+  id                                                                         String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  setting_key                                                                String                  @unique @db.VarChar(100)
+  setting_value                                                              Json                    @db.JsonB
+  description                                                                String?
+  category                                                                   String                  @db.VarChar(50)
+  data_type                                                                  String                  @db.VarChar(20)
+  is_active                                                                  Boolean                 @default(true)
+  is_system                                                                  Boolean                 @default(false)
+  version                                                                    Int                     @default(1)
+  schema_version                                                             String?                 @db.VarChar(20)
+  display_label                                                              String?                 @db.VarChar(100)
+  display_order                                                              Int                     @default(0)
+  ui_component                                                               String?                 @db.VarChar(50)
+  help_text                                                                  String?
+  documentation_url                                                          String?                 @db.VarChar(255)
+  default_value                                                              Json?                   @db.JsonB
+  created_at                                                                 DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                                                                 DateTime                @default(now()) @db.Timestamptz(6)
+  created_by                                                                 String?                 @db.Uuid
+  updated_by                                                                 String?                 @db.Uuid
+  deleted_at                                                                 DateTime?               @db.Timestamptz(6)
+  deleted_by                                                                 String?                 @db.Uuid
+  deletion_reason                                                            String?
+  adm_provider_employees_crm_settings_created_byToadm_provider_employees     adm_provider_employees? @relation("crm_settings_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_crm_settings_created_by")
+  adm_provider_employees_crm_settings_deleted_byToadm_provider_employees     adm_provider_employees? @relation("crm_settings_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_crm_settings_deleted_by")
+  adm_provider_employees_crm_settings_updated_byToadm_provider_employees     adm_provider_employees? @relation("crm_settings_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_crm_settings_updated_by")
+
+  @@index([setting_key], map: "idx_crm_settings_key")
+  @@index([category], map: "idx_crm_settings_category")
+  @@index([deleted_at], map: "idx_crm_settings_deleted")
+  @@index([created_by], map: "idx_crm_settings_created_by")
+  @@index([updated_by], map: "idx_crm_settings_updated_by")
+  @@index([setting_value(ops: JsonbPathOps)], map: "idx_crm_settings_value", type: Gin)
+  @@index([display_order], map: "idx_crm_settings_display_order")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -4699,6 +4770,7 @@ enum lead_stage {
 
 enum lead_status {
   new
+  working
   qualified
   converted
   lost

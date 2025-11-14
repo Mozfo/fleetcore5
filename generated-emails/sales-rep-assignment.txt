@@ -1,0 +1,26 @@
+--------------------------------------------------------------------------------
+
+{{PRIORITY}}
+
+Hello {{employee_name}},
+
+A new {{priority}} priority lead has been assigned to you:
+
+{{lead_name}}
+
+{{company_name}}
+
+• Fleet size: {{fleet_size}}
+• Country: {{country_code}}
+• Qualification score: {{qualification_score}}/100
+• Fit score: {{fit_score}}/60
+• Stage: {{lead_stage}}
+
+View Lead Details {{lead_detail_url}}
+
+Best regards,
+The FleetCore Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

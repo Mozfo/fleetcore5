@@ -56,3 +56,4 @@ archive_fleetcore_*/
 test-integration.db
 test-integration.db-journal
 
+.env

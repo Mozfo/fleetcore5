@@ -1,0 +1,28 @@
+--------------------------------------------------------------------------------
+
+⚠️ URGENT
+
+Hello {{fleet_manager_name}},
+
+Vehicle insurance is expiring soon!
+
+{{vehicle_make}} {{vehicle_model}}
+
+Plate: {{vehicle_plate}}
+
+• Expiry date: {{expiry_date}}
+• Days remaining: {{days_remaining}}
+• Insurance provider: {{insurance_provider}}
+• Policy number: {{policy_number}}
+
+ACTION REQUIRED: Renew insurance immediately to maintain compliance and avoid
+service interruption.
+
+View Details {{insurance_details_url}}
+
+Best regards,
+FleetCore Compliance Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

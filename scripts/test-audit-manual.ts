@@ -18,7 +18,10 @@ async function testAuditLog() {
       );
     }
 
-    logger.info({ tenantId: tenant.id, memberId: member.id }, "Using test data");
+    logger.info(
+      { tenantId: tenant.id, memberId: member.id },
+      "Using test data"
+    );
 
     // TEST 1: CREATE avec snapshot + metadata
     logger.info("📝 Test 1: CREATE avec snapshot + metadata");
@@ -114,9 +117,15 @@ async function testAuditLog() {
     // Validation structure JSONB
     logger.info("🔍 Validation structure JSONB...");
 
-    const test1 = logs.find((l) => l.action === "create" && l.entity === "vehicle");
-    const test2 = logs.find((l) => l.action === "update" && l.entity === "driver");
-    const test3 = logs.find((l) => l.action === "delete" && l.entity === "document");
+    const test1 = logs.find(
+      (l) => l.action === "create" && l.entity === "vehicle"
+    );
+    const test2 = logs.find(
+      (l) => l.action === "update" && l.entity === "driver"
+    );
+    const test3 = logs.find(
+      (l) => l.action === "delete" && l.entity === "document"
+    );
     const test4 = logs.find(
       (l) => l.action === "create" && l.entity === "organization"
     );
@@ -136,7 +145,7 @@ async function testAuditLog() {
       const changes = test2.changes as Record<string, unknown>;
       logger.info(
         {
-          hasName: !!(changes as Record<string, unknown>).name,
+          hasName: !!changes.name,
           hasReason: !!changes._audit_reason,
         },
         "Test 2 - UPDATE validation"
@@ -176,4 +185,4 @@ async function testAuditLog() {
   }
 }
 
-testAuditLog();
+void testAuditLog();

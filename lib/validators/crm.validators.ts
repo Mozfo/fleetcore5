@@ -243,8 +243,10 @@ export const LeadQuerySchema = z.object({
 
   // Filters
   status: z
-    .enum(["new", "qualified", "converted", "lost"])
-    .describe("Le statut doit être: new, qualified, converted, ou lost")
+    .enum(["new", "working", "qualified", "converted", "lost"])
+    .describe(
+      "Le statut doit être: new, working, qualified, converted, ou lost"
+    )
     .optional(),
 
   lead_stage: z

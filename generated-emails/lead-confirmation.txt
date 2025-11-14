@@ -1,0 +1,19 @@
+--------------------------------------------------------------------------------
+
+Hello {{first_name}},
+
+Thank you for requesting a demo of FleetCore! We have received your request and
+will contact you within 24 hours.
+
+Your request details:
+
+• Company: {{company_name}}
+• Fleet size: {{fleet_size}}
+• Country: {{country_name}}
+
+Best regards,
+The FleetCore Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

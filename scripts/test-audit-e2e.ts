@@ -31,7 +31,8 @@ async function testAuditLogStructure(tenantId: string): Promise<void> {
       results.push({
         name: "CREATE logs exist",
         status: "failed",
-        error: "No CREATE logs found - run `pnpm test:audit` first to generate logs",
+        error:
+          "No CREATE logs found - run `pnpm test:audit` first to generate logs",
       });
     } else {
       const hasSnapshot = createLogs.some(
@@ -43,7 +44,9 @@ async function testAuditLogStructure(tenantId: string): Promise<void> {
       results.push({
         name: "CREATE logs have _audit_snapshot",
         status: hasSnapshot ? "passed" : "failed",
-        error: hasSnapshot ? undefined : "Some CREATE logs missing _audit_snapshot",
+        error: hasSnapshot
+          ? undefined
+          : "Some CREATE logs missing _audit_snapshot",
         logsFound: createLogs.length,
       });
     }
@@ -363,9 +366,7 @@ async function runE2ETests(): Promise<void> {
       logger.info(`${icon} ${i + 1}. ${result.name}${details}`);
     });
 
-    logger.info(
-      `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
-    );
+    logger.info(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     logger.info(
       `📈 SUMMARY: ${passed}/${total} validations passed (${((passed / total) * 100).toFixed(1)}%)`
     );
@@ -393,4 +394,4 @@ async function runE2ETests(): Promise<void> {
   }
 }
 
-runE2ETests();
+void runE2ETests();

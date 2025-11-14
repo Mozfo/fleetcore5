@@ -1,0 +1,23 @@
+--------------------------------------------------------------------------------
+
+Hello {{fleet_manager_name}},
+
+This is a reminder that vehicle inspection is due soon for:
+
+{{vehicle_make}} {{vehicle_model}}
+
+Plate: {{vehicle_plate}}
+
+• Due date: {{due_date}}
+• Days remaining: {{days_remaining}}
+
+Please schedule the inspection to avoid service disruption.
+
+Book Inspection {{booking_link}}
+
+Best regards,
+FleetCore Operations
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

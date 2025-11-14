@@ -1,8 +1,9 @@
 # FleetCore Database Schema - Complete Reference
 
 **Generated**: 2025-11-06 15:38:07
-**Source**: Supabase PostgreSQL Production Database  
-**Method**: Direct database introspection via SQL queries (NO documentation)
+**Last Updated**: 2025-11-14 (Added dir_notification_templates documentation)
+**Source**: Supabase PostgreSQL Production Database
+**Method**: Direct database introspection via SQL queries + Manual documentation for new tables
 
 ---
 
@@ -3002,7 +3003,200 @@ pending, verified, rejected
 
 ---
 
-### 35. `dir_ownership_types`
+### 35. `dir_notification_templates`
+
+**Rows**: 13 live, 0 dead
+
+**Purpose**: Multilingual notification templates for email, SMS, and push notifications. Supports 13 template types across 3 languages (EN/FR/AR) with dynamic variable replacement.
+
+#### Columns
+
+| #   | Column                 | Type                       | Nullable | Default             | PK  |
+| --- | ---------------------- | -------------------------- | -------- | ------------------- | --- |
+| 1   | `id`                   | `uuid`                     | ✗        | `gen_random_uuid()` | 🔑  |
+| 2   | `template_code`        | `varchar(100)`             | ✗        | ``                  |     |
+| 3   | `template_name`        | `varchar(200)`             | ✗        | ``                  |     |
+| 4   | `channel`              | `notification_channel`     | ✗        | ``                  |     |
+| 5   | `supported_countries`  | `text[]`                   | ✗        | `[]`                |     |
+| 6   | `supported_locales`    | `text[]`                   | ✗        | `[]`                |     |
+| 7   | `subject_translations` | `jsonb`                    | ✗        | ``                  |     |
+| 8   | `body_translations`    | `jsonb`                    | ✗        | ``                  |     |
+| 9   | `variables`            | `jsonb`                    | ✓        | ``                  |     |
+| 10  | `status`               | `lifecycle_status`         | ✗        | `active`            |     |
+| 11  | `created_at`           | `timestamp with time zone` | ✗        | `now()`             |     |
+| 12  | `created_by`           | `uuid`                     | ✓        | ``                  |     |
+| 13  | `updated_at`           | `timestamp with time zone` | ✗        | `now()`             |     |
+| 14  | `updated_by`           | `uuid`                     | ✓        | ``                  |     |
+| 15  | `deleted_at`           | `timestamp with time zone` | ✓        | ``                  |     |
+| 16  | `deleted_by`           | `uuid`                     | ✓        | ``                  |     |
+| 17  | `deletion_reason`      | `text`                     | ✓        | ``                  |     |
+
+#### JSONB Structure
+
+**`subject_translations`**: Multilingual email subjects
+
+```json
+{
+  "en": "Welcome to FleetCore",
+  "fr": "Bienvenue sur FleetCore",
+  "ar": "مرحباً بك في FleetCore"
+}
+```
+
+**`body_translations`**: Full HTML templates with variable placeholders
+
+```json
+{
+  "en": "<!DOCTYPE html>...<p>Hello {{first_name}}</p>...",
+  "fr": "<!DOCTYPE html>...<p>Bonjour {{first_name}}</p>...",
+  "ar": "<!DOCTYPE html dir=\"rtl\">...<p>مرحباً {{first_name}}</p>..."
+}
+```
+
+**`variables`**: Supported variable names for template
+
+```json
+["first_name", "company_name", "fleet_size", "country_name", "priority"]
+```
+
+#### Template Types (13 total)
+
+**CRM Templates**:
+
+1. `lead_confirmation` - Lead capture confirmation
+2. `sales_rep_assignment` - Sales rep notification
+3. `expansion_opportunity` - Non-operational country message
+4. `lead_followup` - 24h followup reminder
+
+**Admin Templates**: 5. `member_welcome` - New member onboarding 6. `member_password_reset` - Password reset link
+
+**Fleet Templates**: 7. `vehicle_inspection_reminder` - 7-day inspection alert 8. `insurance_expiry_alert` - 30-day renewal warning 9. `maintenance_scheduled` - Maintenance appointment
+
+**Driver Templates**: 10. `driver_onboarding` - Driver welcome guide
+
+**System Templates**: 11. `critical_alert` - System critical incidents 12. `webhook_test` - Integration testing 13. `integration_test_template` - Test template
+
+#### Variable Replacement Pattern
+
+**Syntax**: `{{variable_name}}`
+
+**Implementation** (NotificationService):
+
+```typescript
+const placeholder = `{{${key}}}`;
+renderedBody = renderedBody.replace(new RegExp(placeholder, "g"), stringValue);
+```
+
+**Common Variables**:
+
+- `{{first_name}}` - Recipient first name
+- `{{last_name}}` - Recipient last name
+- `{{company_name}}` - Company name
+- `{{fleet_size}}` - Fleet size (e.g., "101-200 vehicles")
+- `{{country_name}}` - Country name (localized)
+- `{{priority}}` - Lead priority (high, medium, low, urgent)
+- `{{assigned_rep}}` - Sales representative name
+
+#### RTL Support for Arabic
+
+**HTML Structure**:
+
+```html
+<html dir="rtl" lang="ar">
+  <body style="direction: rtl;">
+    <Text style="text-align: right;">مرحباً {{first_name}}</Text>
+  </body>
+</html>
+```
+
+**Features**:
+
+- Full right-to-left layout
+- Text alignment: right for paragraphs
+- Logos and buttons: centered (not mirrored)
+- Professional Arabic translations (MSA)
+
+#### Intelligent Email Routing
+
+**Country-based Language Selection**:
+
+```typescript
+// NotificationService.sendEmail()
+const locale = getLocaleFromCountry(countryCode) || fallbackLocale || "en";
+```
+
+**Country Mappings**:
+
+- **Arabic**: AE, SA, QA, KW, BH, OM
+- **French**: FR, BE, MA, TN, DZ
+- **English**: All others (default)
+
+**Operational vs Expansion Countries**:
+
+```typescript
+const templateCode = country.is_operational
+  ? "lead_confirmation" // Operational country
+  : "expansion_opportunity"; // Non-operational country
+```
+
+#### Indexes
+
+- **`dir_notification_templates_pkey`**
+  ```sql
+  CREATE UNIQUE INDEX dir_notification_templates_pkey ON public.dir_notification_templates USING btree (id)
+  ```
+- **`uq_dir_notification_templates_code_channel`**
+  ```sql
+  CREATE UNIQUE INDEX uq_dir_notification_templates_code_channel ON public.dir_notification_templates USING btree (template_code, channel)
+  ```
+
+#### Usage Example
+
+```typescript
+import { NotificationService } from "@/lib/services/notification/notification.service";
+
+const notificationService = new NotificationService();
+
+await notificationService.sendEmail({
+  recipientEmail: "user@example.com",
+  templateCode: "lead_confirmation",
+  variables: {
+    first_name: "Ahmed",
+    company_name: "FleetCore UAE",
+    fleet_size: "101-200 vehicles",
+    country_name: "United Arab Emirates",
+  },
+  leadId: "lead-uuid",
+  countryCode: "AE", // Auto-selects Arabic with RTL
+  fallbackLocale: "en",
+});
+```
+
+#### Key Lesson Learned
+
+**Critical**: React Email templates must use `{{variable}}` string props during generation, NOT default values.
+
+**Correct Pattern**:
+
+```typescript
+const props = {
+  first_name: "{{first_name}}", // ✅ Placeholder preserved
+  company_name: "{{company_name}}",
+};
+```
+
+**Wrong Pattern**:
+
+```typescript
+const props = {
+  first_name: "John", // ❌ Hardcoded value baked into HTML
+  company_name: "Test Company",
+};
+```
+
+---
+
+### 36. `dir_ownership_types`
 
 **Rows**: 0 live, 0 dead
 

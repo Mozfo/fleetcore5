@@ -1,0 +1,29 @@
+--------------------------------------------------------------------------------
+
+🚨 CRITICAL ALERT
+
+{{alert_title}}
+
+• Time: {{alert_time}}
+• Severity: {{severity}}
+• Affected: {{affected_items}}
+
+--------------------------------------------------------------------------------
+
+Description:
+{{alert_description}}
+
+--------------------------------------------------------------------------------
+
+Recommended action:
+{{recommended_action}}
+
+View Full Details {{alert_url}}
+
+This is an automated critical alert from FleetCore. Please respond immediately.
+
+FleetCore Monitoring Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

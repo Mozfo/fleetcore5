@@ -121,4 +121,4 @@ async function validateSQL() {
   }
 }
 
-validateSQL();
+void validateSQL();

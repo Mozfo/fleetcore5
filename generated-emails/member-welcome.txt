@@ -1,0 +1,29 @@
+--------------------------------------------------------------------------------
+
+Hello {{first_name}},
+
+Welcome to {{tenant_name}}! Your account has been created and you can now access
+FleetCore.
+
+Your login details:
+
+• Email: {{email}}
+• Role: {{role}}
+• Dashboard: {{dashboard_url}}
+
+Next steps:
+
+1. Complete your profile
+2. Set up your preferences
+3. Explore the dashboard
+
+Access Dashboard {{dashboard_url}}
+
+Need help? Contact your administrator or visit our Help Center.
+
+Best regards,
+The FleetCore Team
+
+--------------------------------------------------------------------------------
+
+© 2025 FleetCore. All rights reserved.

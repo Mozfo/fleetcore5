@@ -27,8 +27,27 @@ interface FormData {
   agreeToTerms: boolean;
 }
 
-export default function RequestDemoForm() {
-  const { t } = useTranslation("public");
+interface Country {
+  id: string;
+  country_code: string;
+  country_name_en: string;
+  country_name_fr: string;
+  country_name_ar: string;
+  flag_emoji: string;
+  is_operational: boolean;
+  display_order: number;
+}
+
+interface RequestDemoFormProps {
+  countries: Country[];
+  locale: string;
+}
+
+export default function RequestDemoForm({
+  countries,
+  locale: _locale,
+}: RequestDemoFormProps) {
+  const { t, i18n } = useTranslation("public");
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -357,12 +376,19 @@ export default function RequestDemoForm() {
                       <option value="">
                         {t("requestDemo.form.selectCountry")}
                       </option>
-                      <option value="AE">
-                        🇦🇪 {t("requestDemo.form.countries.uae")}
-                      </option>
-                      <option value="FR">
-                        🇫🇷 {t("requestDemo.form.countries.france")}
-                      </option>
+                      {countries.map((country) => {
+                        const countryName =
+                          i18n.language === "fr"
+                            ? country.country_name_fr
+                            : i18n.language === "ar"
+                              ? country.country_name_ar
+                              : country.country_name_en;
+                        return (
+                          <option key={country.id} value={country.country_code}>
+                            {country.flag_emoji} {countryName}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   {errors.country && (

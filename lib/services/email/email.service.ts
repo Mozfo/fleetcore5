@@ -1116,7 +1116,7 @@ ${t.footer}`;
         };
       }
 
-      // Send email via Resend
+      // Send email via Resend (logo via URL Cloudinary, no attachments)
       const result = await this.resend.emails.send({
         from: `${this.fromName} <${this.fromEmail}>`,
         to: Array.isArray(params.to) ? params.to : [params.to],
@@ -1124,7 +1124,12 @@ ${t.footer}`;
         html: params.html,
         text: params.text,
         replyTo: this.replyTo,
+        // ✅ No attachments - logo via Cloudinary URL in HTML
       });
+
+      if (result.error) {
+        throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+      }
 
       return {
         success: true,

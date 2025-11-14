@@ -21,6 +21,7 @@ import { NotFoundError, ValidationError } from "@/lib/core/errors";
 import type { PaginatedResult, PaginationOptions } from "@/lib/core/types";
 import { SYSTEM_USER_ID } from "@/lib/constants/system";
 import type { AuditEntityType } from "@/lib/audit";
+import { logger } from "@/lib/logger";
 
 /**
  * Selected template result from selectTemplate()
@@ -33,6 +34,7 @@ export interface SelectedTemplate {
   subject: string;
   body: string;
   variables: Record<string, unknown> | null;
+  metadata?: { cascadeSource?: string }; // ✅ Track CASCADE source
 }
 
 /**
@@ -51,6 +53,7 @@ export interface NotificationResult {
   messageId?: string;
   locale: string;
   error?: string;
+  metadata?: { cascadeSource?: string }; // ✅ Track CASCADE source
 }
 
 /**
@@ -63,6 +66,7 @@ export interface SelectTemplateParams {
   tenantId?: string;
   leadId?: string;
   countryCode?: string;
+  locale?: string; // OVERRIDE: Force specific locale, bypasses cascade
   fallbackLocale: string;
 }
 
@@ -78,6 +82,7 @@ export interface SendEmailParams {
   tenantId?: string;
   leadId?: string;
   countryCode?: string;
+  locale?: string; // OVERRIDE: Force specific locale, bypasses cascade
   fallbackLocale?: string;
   metadata?: {
     ipAddress?: string;
@@ -208,76 +213,146 @@ export class NotificationService extends BaseService {
    * // selected.subject => "Merci pour votre intérêt" (from subject_translations['fr'])
    * ```
    */
-  async selectTemplate(
-    params: SelectTemplateParams
-  ): Promise<SelectedTemplate> {
-    let selectedLocale: string | null = null;
 
-    // CASCADE 1 : adm_members.preferred_language
-    if (params.userId) {
+  /**
+   * CASCADE 1 HELPER: Get tenant's notification locale from settings
+   *
+   * @param tenantId - Tenant UUID
+   * @returns Locale string (e.g., 'en', 'fr', 'ar') or null if not configured
+   *
+   * @private
+   * @internal Used by selectTemplate() CASCADE 1
+   */
+  private async getTenantNotificationLocale(
+    tenantId: string
+  ): Promise<string | null> {
+    try {
+      const setting = await this.prisma.adm_tenant_settings.findFirst({
+        where: {
+          tenant_id: tenantId,
+          setting_key: "notification_locale",
+        },
+        select: { setting_value: true },
+      });
+
+      if (!setting?.setting_value) {
+        return null;
+      }
+
+      // setting_value is JSONB, expect { locale: "en" }
+      const value = setting.setting_value as { locale?: string };
+      return value.locale || null;
+    } catch (error) {
+      logger.error(
+        { error, tenantId },
+        "Failed to get tenant notification locale"
+      );
+      return null; // Fail gracefully, continue to next CASCADE level
+    }
+  }
+
+  /**
+   * CASCADE 2 HELPER: Get user's preferred locale
+   *
+   * Checks BOTH:
+   * 1. adm_members.preferred_language (for tenant members)
+   * 2. adm_provider_employees.preferred_locale (for FleetCore employees without tenant)
+   *
+   * @param userId - User UUID (can be member ID or clerk_user_id for employees)
+   * @returns Locale string or null if not configured
+   *
+   * @private
+   * @internal Used by selectTemplate() CASCADE 2
+   */
+  private async getUserPreferredLocale(userId: string): Promise<string | null> {
+    try {
+      // Check adm_members first (tenant members)
       const member = await this.prisma.adm_members.findUnique({
-        where: { id: params.userId },
+        where: { id: userId },
         select: { preferred_language: true },
       });
 
       if (member?.preferred_language) {
-        selectedLocale = member.preferred_language;
+        return member.preferred_language;
       }
-    }
 
-    // CASCADE 2 : adm_tenant_settings.default_locale (future)
-    // TODO: Phase 0.5 - Implement when tenant settings table created
-
-    // CASCADE 3 : adm_tenants.country_code → dir_country_locales.primary_locale
-    if (!selectedLocale && params.tenantId) {
-      const tenant = await this.prisma.adm_tenants.findUnique({
-        where: { id: params.tenantId },
-        select: { country_code: true },
+      // Fallback: Check adm_provider_employees (FleetCore staff without tenant)
+      const employee = await this.prisma.adm_provider_employees.findFirst({
+        where: { clerk_user_id: userId },
+        select: { preferred_locale: true },
       });
 
-      if (tenant?.country_code) {
-        const country = await this.countryRepo.findByCountryCode(
-          tenant.country_code
+      return employee?.preferred_locale || null;
+    } catch (error) {
+      logger.error({ error, userId }, "Failed to get user preferred locale");
+      return null; // Fail gracefully
+    }
+  }
+
+  async selectTemplate(
+    params: SelectTemplateParams
+  ): Promise<SelectedTemplate> {
+    let selectedLocale: string | null = null;
+    let cascadeSource: string = "";
+
+    // ==========================================
+    // CASCADE 1: Tenant Notification Locale
+    // Priority: HIGHEST (after tenant created)
+    // ==========================================
+    if (params.tenantId) {
+      selectedLocale = await this.getTenantNotificationLocale(params.tenantId);
+      if (selectedLocale) {
+        cascadeSource = "CASCADE_1_TENANT";
+        logger.debug(
+          { tenantId: params.tenantId, locale: selectedLocale },
+          "Locale from CASCADE 1: tenant.notification_locale"
         );
-        if (country?.primary_locale) {
-          selectedLocale = country.primary_locale;
-        }
       }
     }
 
-    // CASCADE 4 : crm_leads.country_code → dir_country_locales.primary_locale
-    if (!selectedLocale && params.leadId) {
-      const lead = await this.prisma.crm_leads.findUnique({
-        where: { id: params.leadId },
-        select: { country_code: true },
-      });
-
-      if (lead?.country_code) {
-        const country = await this.countryRepo.findByCountryCode(
-          lead.country_code
+    // ==========================================
+    // CASCADE 2: User Preferred Locale
+    // Use case: Employees without tenant, members without tenant override
+    // ==========================================
+    if (!selectedLocale && params.userId) {
+      selectedLocale = await this.getUserPreferredLocale(params.userId);
+      if (selectedLocale) {
+        cascadeSource = "CASCADE_2_USER";
+        logger.debug(
+          { userId: params.userId, locale: selectedLocale },
+          "Locale from CASCADE 2: user.preferred_locale"
         );
-        if (country?.primary_locale) {
-          selectedLocale = country.primary_locale;
-        }
       }
     }
 
-    // CASCADE 5 : Direct countryCode parameter
-    if (!selectedLocale && params.countryCode) {
-      const country = await this.countryRepo.findByCountryCode(
-        params.countryCode
+    // ==========================================
+    // CASCADE 3: Explicit params.locale
+    // Use case: Lead phase (homepage language), explicit API selection
+    // ==========================================
+    if (!selectedLocale && params.locale) {
+      selectedLocale = params.locale;
+      cascadeSource = "CASCADE_3_PARAMS";
+      logger.debug(
+        { locale: selectedLocale },
+        "Locale from CASCADE 3: params.locale"
       );
-      if (country?.primary_locale) {
-        selectedLocale = country.primary_locale;
-      }
     }
 
-    // CASCADE 6 : Fallback locale
+    // ==========================================
+    // CASCADE 4: Universal Fallback 'en'
+    // ==========================================
     if (!selectedLocale) {
-      selectedLocale = params.fallbackLocale;
+      selectedLocale = params.fallbackLocale || "en";
+      cascadeSource = "CASCADE_4_FALLBACK";
+      logger.debug(
+        { locale: selectedLocale },
+        "Locale from CASCADE 4: fallback"
+      );
     }
 
-    // Récupérer template
+    // ==========================================
+    // Fetch Template & Validate
+    // ==========================================
     const template = await this.templateRepo.findByTemplateCode(
       params.templateCode,
       params.channel
@@ -289,7 +364,27 @@ export class NotificationService extends BaseService {
       );
     }
 
-    // Extraire traductions JSONB
+    // Parse supported_locales from template
+    const supportedLocales = template.supported_locales || [];
+
+    // VALIDATION: Check if selected locale is supported by template
+    if (!supportedLocales.includes(selectedLocale)) {
+      logger.warn(
+        {
+          templateCode: params.templateCode,
+          selectedLocale,
+          supportedLocales,
+          cascadeSource,
+        },
+        `Selected locale "${selectedLocale}" not supported by template. Falling back to "en".`
+      );
+      selectedLocale = supportedLocales.includes("en")
+        ? "en"
+        : supportedLocales[0];
+      cascadeSource = "CASCADE_VALIDATION_FALLBACK";
+    }
+
+    // Extract subject & body from JSONB translations
     const subjectTranslations = template.subject_translations as Record<
       string,
       string
@@ -299,21 +394,28 @@ export class NotificationService extends BaseService {
       string
     >;
 
-    // Try selected locale, then fallback
     const subject =
-      subjectTranslations[selectedLocale] ||
-      subjectTranslations[params.fallbackLocale] ||
-      "";
+      subjectTranslations[selectedLocale] || subjectTranslations["en"] || "";
     const body =
-      bodyTranslations[selectedLocale] ||
-      bodyTranslations[params.fallbackLocale] ||
-      "";
+      bodyTranslations[selectedLocale] || bodyTranslations["en"] || "";
 
     if (!subject || !body) {
       throw new ValidationError(
-        `Template "${params.templateCode}" missing translations for locale "${selectedLocale}" and fallback "${params.fallbackLocale}"`
+        `Template "${params.templateCode}" missing translations for locale "${selectedLocale}"`
       );
     }
+
+    logger.info(
+      {
+        templateCode: params.templateCode,
+        selectedLocale,
+        cascadeSource,
+        tenantId: params.tenantId,
+        userId: params.userId,
+        countryCode: params.countryCode,
+      },
+      "Template selected with NEW CASCADE"
+    );
 
     return {
       templateId: template.id,
@@ -323,6 +425,9 @@ export class NotificationService extends BaseService {
       subject,
       body,
       variables: template.variables as Record<string, unknown> | null,
+      metadata: {
+        cascadeSource, // NEW: Track how locale was determined
+      },
     };
   }
 
@@ -348,11 +453,19 @@ export class NotificationService extends BaseService {
     template: SelectedTemplate,
     variables: Record<string, unknown>
   ): Promise<RenderedTemplate> {
+    // ✅ STABLE: Inject baseUrl automatically (React Email best practice)
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.com";
+    const enrichedVariables = {
+      ...variables,
+      baseUrl, // Always inject baseUrl for logo stability
+    };
+
     // Simple variable replacement: {{variable_name}}
     let renderedSubject = template.subject;
     let renderedBody = template.body;
 
-    for (const [key, value] of Object.entries(variables)) {
+    for (const [key, value] of Object.entries(enrichedVariables)) {
       const placeholder = `{{${key}}}`;
       const stringValue = String(value ?? "");
 
@@ -406,6 +519,7 @@ export class NotificationService extends BaseService {
         tenantId: params.tenantId,
         leadId: params.leadId,
         countryCode: params.countryCode,
+        locale: params.locale, // ✅ FIX: Pass explicit locale for CASCADE 3
         fallbackLocale: params.fallbackLocale || "en",
       });
 
@@ -451,6 +565,7 @@ export class NotificationService extends BaseService {
         messageId: emailResult.messageId,
         locale: selected.locale,
         error: emailResult.error,
+        metadata: selected.metadata, // ✅ Propagate CASCADE source
       };
     } catch (error) {
       // Log failed notification
