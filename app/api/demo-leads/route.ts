@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     });
 
     // 3. Send appropriate email based on operational status
-    const notificationService = new NotificationService();
+    const notificationService = new NotificationService(db);
     const templateCode = country.is_operational
       ? "lead_confirmation"
       : "expansion_opportunity";

@@ -14,6 +14,7 @@ import {
 } from "@prisma/client";
 import { BaseRepository } from "@/lib/core/base.repository";
 import type { SortFieldWhitelist } from "@/lib/core/validation";
+import { prisma as singletonPrisma } from "@/lib/prisma";
 
 /**
  * Whitelist of sortable fields for dir_country_locales table
@@ -88,7 +89,7 @@ export class CountryLocaleRepository extends BaseRepository<dir_country_locales>
    * ```
    */
   constructor(prismaClient?: PrismaClient) {
-    const prisma = prismaClient || new PrismaClient();
+    const prisma = prismaClient || singletonPrisma;
     super(prisma.dir_country_locales, prisma);
   }
 

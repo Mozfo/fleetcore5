@@ -15,6 +15,7 @@ import {
 import { BaseRepository } from "@/lib/core/base.repository";
 import type { SortFieldWhitelist } from "@/lib/core/validation";
 import type { PaginatedResult, PaginationOptions } from "@/lib/core/types";
+import { prisma as singletonPrisma } from "@/lib/prisma";
 
 /**
  * Whitelist of sortable fields for dir_notification_templates table
@@ -89,7 +90,7 @@ export class NotificationTemplateRepository extends BaseRepository<dir_notificat
    * ```
    */
   constructor(prismaClient?: PrismaClient) {
-    const prisma = prismaClient || new PrismaClient();
+    const prisma = prismaClient || singletonPrisma;
     super(prisma.dir_notification_templates, prisma);
   }
 
