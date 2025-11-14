@@ -51,7 +51,12 @@
       "errors": {
         "required": "Requis",
         "invalidEmail": "Veuillez saisir un email valide",
-        "agreeRequired": "Vous devez accepter les conditions pour continuer"
+        "agreeRequired": "Vous devez accepter les conditions pour continuer",
+        "duplicateEmail": {
+          "title": "Demande déjà soumise",
+          "message": "Votre email est déjà enregistré. Votre demande est en cours de traitement. En cas de souci, veuillez contacter {{supportEmail}}.",
+          "action": "Contacter le support"
+        }
       }
     }
   },

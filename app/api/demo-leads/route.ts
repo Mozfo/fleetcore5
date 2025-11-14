@@ -30,7 +30,35 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Create lead
+    // 2. Check if lead already exists
+    const existingLead = await db.crm_leads.findFirst({
+      where: {
+        email: body.email,
+        deleted_at: null,
+      },
+    });
+
+    if (existingLead) {
+      logger.info(
+        { email: body.email, leadId: existingLead.id },
+        "Duplicate lead submission - returning 409"
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "DUPLICATE_EMAIL",
+            message: "Email already registered",
+            params: {
+              supportEmail: "support@fleetcore.io",
+            },
+          },
+        },
+        { status: 409 }
+      );
+    }
+
+    // 3. Create lead
     const lead = await db.crm_leads.create({
       data: {
         first_name: body.first_name,
@@ -38,7 +66,7 @@ export async function POST(req: Request) {
         email: body.email,
         demo_company_name: body.company_name,
         fleet_size: body.company_size,
-        phone: body.phone,
+        phone: body.phone || "", // TODO: Schema has NOT NULL but business rule says optional - needs schema fix
         message: body.message,
         country_code: countryCode,
         status: "new",
@@ -90,8 +118,10 @@ export async function POST(req: Request) {
       });
     } catch (emailError) {
       // Lead created but email failed - log and continue
+      const emailErrorMessage =
+        emailError instanceof Error ? emailError.message : String(emailError);
       logger.error(
-        { error: emailError, leadId: lead.id },
+        { errorMessage: emailErrorMessage, leadId: lead.id },
         "Email sending failed"
       );
       return NextResponse.json({
@@ -106,7 +136,8 @@ export async function POST(req: Request) {
       });
     }
   } catch (error) {
-    logger.error({ error }, "Error creating lead");
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error({ errorMessage }, "Error creating lead");
     return NextResponse.json(
       { error: "Failed to create lead" },
       { status: 500 }
@@ -123,7 +154,8 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: leads });
   } catch (error) {
-    logger.error({ error }, "Error fetching leads");
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error({ errorMessage }, "Error fetching leads");
     return NextResponse.json(
       { error: "Failed to fetch leads" },
       { status: 500 }

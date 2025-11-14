@@ -63,6 +63,10 @@ export default function RequestDemoForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [duplicateError, setDuplicateError] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -93,6 +97,7 @@ export default function RequestDemoForm({
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setDuplicateError(null); // Reset error
 
     try {
       const response = await fetch("/api/demo-leads", {
@@ -112,14 +117,29 @@ export default function RequestDemoForm({
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
+        // Handle duplicate email error
+        if (response.status === 409 && data.error?.code === "DUPLICATE_EMAIL") {
+          setDuplicateError({
+            title: t("requestDemo.form.errors.duplicateEmail.title"),
+            message: t("requestDemo.form.errors.duplicateEmail.message", {
+              supportEmail: data.error.params.supportEmail,
+            }),
+          });
+          return;
+        }
         throw new Error("Failed to submit form");
       }
 
       setIsSuccess(true);
     } catch (error) {
       logger.error({ error }, "Error submitting form");
-      alert("Une erreur est survenue. Veuillez réessayer.");
+      alert(
+        t("requestDemo.form.errors.genericError") ||
+          "Une erreur est survenue. Veuillez réessayer."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -504,6 +524,22 @@ export default function RequestDemoForm({
                     </p>
                   )}
                 </div>
+
+                {/* Duplicate Email Error */}
+                {duplicateError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-lg border border-orange-300 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20"
+                  >
+                    <h3 className="font-semibold text-orange-800 dark:text-orange-200">
+                      {duplicateError.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-orange-700 dark:text-orange-300">
+                      {duplicateError.message}
+                    </p>
+                  </motion.div>
+                )}
 
                 {/* Submit Button */}
                 <button
