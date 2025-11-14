@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import RequestDemoForm from "./request-demo-form";
 
+// Force dynamic rendering to avoid build-time database access on Vercel
+export const dynamic = "force-dynamic";
+
 export default async function RequestDemoFormPage({
   params,
 }: {
