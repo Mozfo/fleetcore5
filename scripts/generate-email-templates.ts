@@ -64,7 +64,10 @@ async function generateTemplates() {
       first_name: "{{first_name}}",
       company_name: "{{company_name}}",
       fleet_size: "{{fleet_size}}",
+      country_preposition: "{{country_preposition}}",
       country_name: "{{country_name}}",
+      phone_row: "{{phone_row}}",
+      message_row: "{{message_row}}",
     })
   );
 
@@ -73,7 +76,10 @@ async function generateTemplates() {
       first_name: "{{first_name}}",
       company_name: "{{company_name}}",
       fleet_size: "{{fleet_size}}",
+      country_preposition: "{{country_preposition}}",
       country_name: "{{country_name}}",
+      phone_row: "{{phone_row}}",
+      message_row: "{{message_row}}",
     }),
     { plainText: true }
   );

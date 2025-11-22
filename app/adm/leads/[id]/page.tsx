@@ -104,7 +104,7 @@ export default async function LeadDetailPage({
                   Company
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {lead.demo_company_name || "-"}
+                  {lead.company_name || "-"}
                 </dd>
               </div>
               <div>

@@ -37,7 +37,7 @@ export default async function LeadsPage({
       { first_name: { contains: search, mode: "insensitive" } },
       { last_name: { contains: search, mode: "insensitive" } },
       { email: { contains: search, mode: "insensitive" } },
-      { demo_company_name: { contains: search, mode: "insensitive" } },
+      { company_name: { contains: search, mode: "insensitive" } },
     ];
   }
 

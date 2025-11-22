@@ -12,7 +12,7 @@ type Lead = {
   first_name: string;
   last_name: string;
   email: string;
-  demo_company_name: string | null;
+  company_name: string | null;
   fleet_size: string | null;
   country_code: string | null;
   status: string;
@@ -168,7 +168,7 @@ export default function LeadsList({ leads }: LeadsListProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
-                      {lead.demo_company_name || "-"}
+                      {lead.company_name || "-"}
                     </td>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
                       {lead.country_code === "AE"

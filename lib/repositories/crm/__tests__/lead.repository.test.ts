@@ -32,7 +32,6 @@ describe("LeadRepository", () => {
         phone: "+33612345678",
         first_name: "Jean",
         last_name: "Dupont",
-        demo_company_name: null,
         company_name: "Example Corp",
         industry: null,
         company_size: null,

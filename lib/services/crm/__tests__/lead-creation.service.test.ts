@@ -250,7 +250,6 @@ describe("LeadCreationService", () => {
           first_name: (data.first_name as string) ?? "Unknown",
           last_name: (data.last_name as string) ?? "User",
           company_name: (data.company_name as string | null) ?? null,
-          demo_company_name: (data.demo_company_name as string | null) ?? null,
           phone: (data.phone as string) ?? "",
           fleet_size: (data.fleet_size as string | null) ?? null,
           country_code: (data.country_code as string | null) ?? null,
@@ -315,8 +314,9 @@ describe("LeadCreationService", () => {
     it("should create SQL lead with all orchestration steps", async () => {
       const input: CreateLeadInput = {
         email: "ceo@bigfleet.com",
+        first_name: "John",
+        last_name: "Doe",
         company_name: "Big Fleet Corp",
-        contact_name: "John Doe",
         phone: "+971501234567",
         fleet_size: "500+",
         country_code: "AE",
@@ -356,6 +356,8 @@ describe("LeadCreationService", () => {
     it("should create MQL lead with medium priority", async () => {
       const input: CreateLeadInput = {
         email: "manager@mediumfleet.com",
+        first_name: "Test",
+        last_name: "Manager",
         fleet_size: "51-100",
         country_code: "FR",
         message:
@@ -378,6 +380,8 @@ describe("LeadCreationService", () => {
     it("should create TOF lead with low priority", async () => {
       const input: CreateLeadInput = {
         email: "info@smallfleet.com",
+        first_name: "Test",
+        last_name: "User",
         fleet_size: "1-10",
         country_code: "US",
         message: "Just looking",
@@ -400,6 +404,8 @@ describe("LeadCreationService", () => {
       // So we adjust expectation: This test verifies high-priority scoring logic
       const input: CreateLeadInput = {
         email: "urgent@vipfleet.com",
+        first_name: "VIP",
+        last_name: "Fleet",
         fleet_size: "500+",
         country_code: "AE",
         message:
@@ -424,6 +430,8 @@ describe("LeadCreationService", () => {
     it("should include UTM parameters in lead", async () => {
       const input: CreateLeadInput = {
         email: "campaign@fleet.com",
+        first_name: "Campaign",
+        last_name: "Test",
         fleet_size: "101-500",
         country_code: "FR",
         message: "Saw your ad on Google",
@@ -447,6 +455,8 @@ describe("LeadCreationService", () => {
     it("should calculate fit score based on fleet and country", async () => {
       const input: CreateLeadInput = {
         email: "test@test.com",
+        first_name: "Test",
+        last_name: "User",
         fleet_size: "500+",
         country_code: "AE",
         message: "Test",
@@ -461,6 +471,8 @@ describe("LeadCreationService", () => {
     it("should calculate engagement score based on message and phone", async () => {
       const input: CreateLeadInput = {
         email: "test@test.com",
+        first_name: "Test",
+        last_name: "User",
         message: "A".repeat(250), // 250 chars → detailed (30 points)
         phone: "+971501234567", // Phone provided (20 points)
         source: "website",
@@ -475,6 +487,8 @@ describe("LeadCreationService", () => {
     it("should calculate qualification score as weighted sum", async () => {
       const input: CreateLeadInput = {
         email: "test@test.com",
+        first_name: "Test",
+        last_name: "User",
         fleet_size: "500+", // fit_score = 60 (40+20)
         country_code: "AE",
         message: "A".repeat(250), // engagement_score high
@@ -504,6 +518,8 @@ describe("LeadCreationService", () => {
     it("should assign based on fleet size priority", async () => {
       const input: CreateLeadInput = {
         email: "bigfleet@test.com",
+        first_name: "Big",
+        last_name: "Fleet",
         fleet_size: "500+",
         country_code: "US", // Generic country (no geographic zone)
         message: "Test",
@@ -521,6 +537,8 @@ describe("LeadCreationService", () => {
     it("should assign based on geographic zone if no fleet priority", async () => {
       const input: CreateLeadInput = {
         email: "uae@test.com",
+        first_name: "UAE",
+        last_name: "Test",
         fleet_size: "11-50", // No specific fleet priority
         country_code: "AE",
         message: "Test",
@@ -539,6 +557,8 @@ describe("LeadCreationService", () => {
 
       const input: CreateLeadInput = {
         email: "noassign@test.com",
+        first_name: "No",
+        last_name: "Assign",
         fleet_size: "500+",
         country_code: "AE",
         message: "Test",
@@ -560,6 +580,8 @@ describe("LeadCreationService", () => {
     it("should handle minimal input (only email)", async () => {
       const input: CreateLeadInput = {
         email: "minimal@test.com",
+        first_name: "Minimal",
+        last_name: "Test",
         source: "website",
       };
 
@@ -573,6 +595,8 @@ describe("LeadCreationService", () => {
     it("should generate unique lead code for each lead", async () => {
       const input: CreateLeadInput = {
         email: "code@test.com",
+        first_name: "Code",
+        last_name: "Test",
         source: "website",
       };
 
@@ -593,6 +617,8 @@ describe("LeadCreationService", () => {
 
       const input: CreateLeadInput = {
         email: "metadata@test.com",
+        first_name: "Metadata",
+        last_name: "Test",
         source: "website",
         metadata,
       };
@@ -606,6 +632,8 @@ describe("LeadCreationService", () => {
     it("should include created_by when provided", async () => {
       const input: CreateLeadInput = {
         email: "audit@test.com",
+        first_name: "Audit",
+        last_name: "Test",
         source: "website",
       };
 

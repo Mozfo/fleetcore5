@@ -153,9 +153,7 @@ async function testCompleteCoverage() {
           });
 
           if (result.success) {
-            logger.info(
-              `         ✅ Envoyé (${result.data?.messageId || "N/A"})`
-            );
+            logger.info(`         ✅ Envoyé (${result.messageId || "N/A"})`);
             successCount++;
           } else {
             logger.error(`         ❌ Échec: ${result.error}`);
