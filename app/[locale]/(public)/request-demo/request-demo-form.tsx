@@ -66,6 +66,8 @@ export default function RequestDemoForm({
   const [duplicateError, setDuplicateError] = useState<{
     title: string;
     message: string;
+    contact: string;
+    supportEmail: string;
   } | null>(null);
 
   const validateForm = () => {
@@ -110,10 +112,11 @@ export default function RequestDemoForm({
           last_name: formData.lastName,
           email: formData.email,
           company_name: formData.company,
-          company_size: formData.fleetSize,
+          fleet_size: formData.fleetSize,
           phone: formData.phone,
           message: formData.message,
           country_code: formData.country,
+          form_locale: i18n.language,
         }),
       });
 
@@ -124,9 +127,9 @@ export default function RequestDemoForm({
         if (response.status === 409 && data.error?.code === "DUPLICATE_EMAIL") {
           setDuplicateError({
             title: t("requestDemo.form.errors.duplicateEmail.title"),
-            message: t("requestDemo.form.errors.duplicateEmail.message", {
-              supportEmail: data.error.params.supportEmail,
-            }),
+            message: t("requestDemo.form.errors.duplicateEmail.message"),
+            contact: t("requestDemo.form.errors.duplicateEmail.contact"),
+            supportEmail: data.error.params.supportEmail,
           });
           return;
         }
@@ -530,13 +533,22 @@ export default function RequestDemoForm({
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-lg border border-orange-300 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20"
+                    className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-700 dark:bg-blue-900/20"
                   >
-                    <h3 className="font-semibold text-orange-800 dark:text-orange-200">
+                    <h3 className="font-semibold text-blue-800 dark:text-blue-200">
                       {duplicateError.title}
                     </h3>
-                    <p className="mt-1 text-sm text-orange-700 dark:text-orange-300">
+                    <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
                       {duplicateError.message}
+                    </p>
+                    <p className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                      {duplicateError.contact}{" "}
+                      <a
+                        href={`mailto:${duplicateError.supportEmail}`}
+                        className="font-medium underline hover:text-blue-900 dark:hover:text-blue-100"
+                      >
+                        {duplicateError.supportEmail}
+                      </a>
                     </p>
                   </motion.div>
                 )}

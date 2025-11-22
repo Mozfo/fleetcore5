@@ -16,14 +16,20 @@ interface LeadConfirmationProps {
   first_name: string;
   company_name: string;
   fleet_size: string;
+  country_preposition: string;
   country_name: string;
+  phone_row?: string;
+  message_row?: string;
 }
 
 export const LeadConfirmation = ({
-  first_name = "John",
-  company_name = "Test Company Ltd",
-  fleet_size = "51-100 vehicles",
-  country_name = "United States",
+  first_name,
+  company_name,
+  fleet_size,
+  country_preposition,
+  country_name,
+  phone_row,
+  message_row,
 }: LeadConfirmationProps) => {
   return (
     <Html>
@@ -67,7 +73,10 @@ export const LeadConfirmation = ({
             <Text style={paragraph}>
               • Company: <strong>{company_name}</strong>
               <br />• Fleet size: <strong>{fleet_size}</strong>
-              <br />• Country: <strong>{country_name}</strong>
+              <br />• Country: {country_preposition}{" "}
+              <strong>{country_name}</strong>
+              <span dangerouslySetInnerHTML={{ __html: phone_row || "" }} />
+              <span dangerouslySetInnerHTML={{ __html: message_row || "" }} />
             </Text>
             <Text style={paragraph}>
               Best regards,

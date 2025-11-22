@@ -17,14 +17,20 @@ interface ExpansionOpportunityARProps {
   first_name: string;
   company_name: string;
   fleet_size: string;
+  country_preposition: string;
   country_name: string;
+  phone_row?: string;
+  message_row?: string;
 }
 
 export const ExpansionOpportunityAR = ({
-  first_name = "محمد",
-  company_name = "شركة الاختبار المحدودة",
-  fleet_size = "51-100 مركبة",
-  country_name = "إسبانيا",
+  first_name,
+  company_name,
+  fleet_size,
+  country_preposition: _country_preposition,
+  country_name,
+  phone_row,
+  message_row,
 }: ExpansionOpportunityARProps) => {
   return (
     <Html dir="rtl" lang="ar">
@@ -79,6 +85,8 @@ export const ExpansionOpportunityAR = ({
               • الشركة: <strong>{company_name}</strong>
               <br />• حجم الأسطول: <strong>{fleet_size}</strong>
               <br />• الدولة: <strong>{country_name}</strong>
+              <span dangerouslySetInnerHTML={{ __html: phone_row || "" }} />
+              <span dangerouslySetInnerHTML={{ __html: message_row || "" }} />
             </Text>
             <Section
               style={{

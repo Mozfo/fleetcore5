@@ -244,7 +244,10 @@ export class NotificationService extends BaseService {
       return value.locale || null;
     } catch (error) {
       logger.error(
-        { error, tenantId },
+        {
+          errorMessage: error instanceof Error ? error.message : String(error),
+          tenantId,
+        },
         "Failed to get tenant notification locale"
       );
       return null; // Fail gracefully, continue to next CASCADE level
@@ -284,7 +287,13 @@ export class NotificationService extends BaseService {
 
       return employee?.preferred_locale || null;
     } catch (error) {
-      logger.error({ error, userId }, "Failed to get user preferred locale");
+      logger.error(
+        {
+          errorMessage: error instanceof Error ? error.message : String(error),
+          userId,
+        },
+        "Failed to get user preferred locale"
+      );
       return null; // Fail gracefully
     }
   }
@@ -456,10 +465,25 @@ export class NotificationService extends BaseService {
     // ✅ STABLE: Inject baseUrl automatically (React Email best practice)
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.com";
-    const enrichedVariables = {
+    const enrichedVariables: Record<string, string> = {
       ...variables,
       baseUrl, // Always inject baseUrl for logo stability
-    };
+    } as Record<string, string>;
+
+    // ✨ FIX 3: Conditional row variables for optional fields
+    // phone_row: HTML complet ou vide
+    if (variables.phone && String(variables.phone).trim()) {
+      enrichedVariables.phone_row = `<br />• Phone: <strong>${variables.phone}</strong>`;
+    } else {
+      enrichedVariables.phone_row = "";
+    }
+
+    // message_row: HTML complet ou vide (intégré dans le même bloc)
+    if (variables.message && String(variables.message).trim()) {
+      enrichedVariables.message_row = `<br />• Message: <strong>${variables.message}</strong>`;
+    } else {
+      enrichedVariables.message_row = "";
+    }
 
     // Simple variable replacement: {{variable_name}}
     let renderedSubject = template.subject;

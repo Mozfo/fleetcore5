@@ -2,9 +2,9 @@
 
 ## Sprint 1 : Lead Management & Transition Sprint 2 : Opportunity Pipeline
 
-**Date:** 14 Novembre 2025
-**Version:** 2.2 avec Session #24 (Template Regeneration - Bug Fix Critique)  
-**Périmètre:** Sprint 1 (Lead Management) + Transition Sprint 2 (Opportunity Pipeline)  
+**Date:** 16 Novembre 2025
+**Version:** 2.3 avec Session #25 (CRM Email Dynamic Countries + French Grammar)
+**Périmètre:** Sprint 1 (Lead Management) + Transition Sprint 2 (Opportunity Pipeline)
 **Méthodologie:** Vertical Slicing - Livrables démontrables end-to-end
 
 ---
@@ -36,6 +36,8 @@ La Phase 0 a établi l'architecture technique complète permettant le développe
 **🆕 Phase 0.4 Extension (Novembre 2025):** Expansion du système de notifications de 10 templates anglais vers 33 templates multilingues. Support complet de l'anglais, français et arabe avec implémentation RTL (Right-to-Left) pour les marchés du Moyen-Orient. Tous les templates utilisent React Email + génération HTML, stockage JSONB dans base de données. Sélection automatique de langue basée sur country_code (CASCADE_4_FALLBACK). 21 emails de test envoyés avec succès. Prêt pour production.
 
 **🔧 Session #24 - Template Regeneration (14 Novembre 2025):** Correction critique d'un bug majeur découvert lors des tests - les templates avaient des valeurs hardcodées ("John", "Test Company Ltd", "United States") au lieu des placeholders dynamiques `{{variable}}`. Cause: React Email compilait les templates avec les props par défaut. Solution: Régénération complète des 11 templates (33 variations multilingues) avec props `{{variable}}`, mise à jour directe en base de données. Résultat: 39/39 templates fonctionnels (100% success rate), remplacement dynamique vérifié en FR/AR, routing intelligent validé (pays opérationnels vs expansion). Tous les emails de test envoyés avec succès (France, UAE, Espagne, Qatar). Table `dir_notification_templates` mise à jour avec les templates corrigés.
+
+**🌍 Session #25 - CRM Email Dynamic Countries + French Grammar (16 Novembre 2025):** Implémentation complète du système de capture de leads avec dropdown de pays dynamique et routing intelligent des emails. **Dynamic Countries Dropdown:** Création de l'endpoint `GET /api/countries` qui récupère 30 pays depuis la table `crm_countries` (filtrés par `is_visible`, triés par `display_order`). Frontend mis à jour pour recevoir les pays en Server-Side Rendering (pas de hardcoding). **Intelligent Email Routing:** Ajout de la logique de sélection automatique des templates selon `is_operational` - pays opérationnels (AE, FR) reçoivent "lead_confirmation" ("We'll contact you within 24h"), pays expansion (28 autres) reçoivent "expansion_opportunity" ("We'll notify you at launch"). **French Grammar Perfection:** Ajout de la colonne `country_preposition_fr` à `crm_countries` avec mapping complet des 30 pays - masculins (au: Qatar, Canada, Maroc), pluriels (aux: États-Unis, Émirats, Pays-Bas), féminins (en: France, Espagne). API route mise à jour pour construire `country_name` avec préposition grammaticalement correcte pour les emails français. Template `ExpansionOpportunityFR.tsx` corrigé (préposition "en" hardcodée supprimée). Migration SQL `add_country_preposition_fr.sql` créée et exécutée manuellement par l'utilisateur. **Message Position Fix:** Correction du layout email où le champ message apparaissait trop bas - intégration de `message_row` dans le même bloc `<Text>` que les autres détails (6 templates modifiés: LeadConfirmation + ExpansionOpportunity × 3 langues). **\_row Pattern:** Implémentation du pattern de variables conditionnelles (`phone_row`, `message_row`) dans NotificationService - génération HTML côté service uniquement si champ rempli, sinon chaîne vide. **Tests validés:** UAE lead → lead_confirmation (AR), France lead → lead_confirmation (FR), Qatar lead → expansion_opportunity (AR, "au Qatar"), USA lead → expansion_opportunity (EN). User validation: "ok c'est bien". **Résultat:** CRM Lead Capture System production-ready pour expansion globale avec 30 pays, grammaire française parfaite, routing intelligent, zero hardcoding maintenu.
 
 ---
 

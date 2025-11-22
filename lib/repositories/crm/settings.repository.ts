@@ -51,6 +51,7 @@ export const CrmSettingKey = {
   LEAD_SCORING_CONFIG: "lead_scoring_config",
   LEAD_ASSIGNMENT_RULES: "lead_assignment_rules",
   LEAD_PRIORITY_CONFIG: "lead_priority_config",
+  LOCALE_TEMPLATE_MAPPING: "locale_template_mapping",
 } as const;
 
 /**

@@ -17,14 +17,20 @@ interface ExpansionOpportunityFRProps {
   first_name: string;
   company_name: string;
   fleet_size: string;
+  country_preposition: string;
   country_name: string;
+  phone_row?: string;
+  message_row?: string;
 }
 
 export const ExpansionOpportunityFR = ({
-  first_name = "Jean",
-  company_name = "Entreprise Test SARL",
-  fleet_size = "51-100 véhicules",
-  country_name = "Espagne",
+  first_name,
+  company_name,
+  fleet_size,
+  country_preposition,
+  country_name,
+  phone_row,
+  message_row,
 }: ExpansionOpportunityFRProps) => {
   return (
     <Html>
@@ -65,7 +71,7 @@ export const ExpansionOpportunityFR = ({
               vous ayez pris le temps de demander une démonstration.
             </Text>
             <Text style={paragraph}>
-              FleetCore n&apos;est pas encore disponible en{" "}
+              FleetCore n&apos;est pas encore disponible {country_preposition}{" "}
               <strong>{country_name}</strong>, mais nous nous développons
               rapidement et votre intérêt est extrêmement précieux pour nous.
               Nous avons enregistré vos coordonnées et vous serez parmi les
@@ -77,7 +83,10 @@ export const ExpansionOpportunityFR = ({
             <Text style={paragraph}>
               • Entreprise : <strong>{company_name}</strong>
               <br />• Taille de flotte : <strong>{fleet_size}</strong>
-              <br />• Pays : <strong>{country_name}</strong>
+              <br />• Pays : {country_preposition}{" "}
+              <strong>{country_name}</strong>
+              <span dangerouslySetInnerHTML={{ __html: phone_row || "" }} />
+              <span dangerouslySetInnerHTML={{ __html: message_row || "" }} />
             </Text>
             <Section
               style={{

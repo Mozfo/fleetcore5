@@ -36,97 +36,20 @@ export function getCountryFlag(countryCode: string): string {
 }
 
 /**
- * Country code to country name mapping
+ * @deprecated This function duplicates data from crm_countries table.
+ * Use crm_countries.country_name_en/fr/ar directly from database instead.
  *
- * Returns translated country name based on locale.
- * Supports EN, FR, AR.
+ * Country names are now managed in crm_countries table with columns:
+ * - country_name_en
+ * - country_name_fr
+ * - country_name_ar
  *
- * @example
- * ```typescript
- * getCountryName('AE', 'en') // Returns: 'United Arab Emirates'
- * getCountryName('AE', 'fr') // Returns: 'Émirats Arabes Unis'
- * getCountryName('AE', 'ar') // Returns: 'الإمارات العربية المتحدة'
- * ```
+ * The notification service automatically selects the correct locale based on:
+ * 1. crm_countries.notification_locale
+ * 2. Lead country_code cascade
+ *
+ * This function will be removed in a future version.
  */
-export function getCountryName(
-  countryCode: string,
-  locale: "en" | "fr" | "ar" = "en"
-): string {
-  const countries: Record<string, { en: string; fr: string; ar: string }> = {
-    AE: {
-      en: "United Arab Emirates",
-      fr: "Émirats Arabes Unis",
-      ar: "الإمارات العربية المتحدة",
-    },
-    SA: {
-      en: "Saudi Arabia",
-      fr: "Arabie Saoudite",
-      ar: "المملكة العربية السعودية",
-    },
-    FR: {
-      en: "France",
-      fr: "France",
-      ar: "فرنسا",
-    },
-    GB: {
-      en: "United Kingdom",
-      fr: "Royaume-Uni",
-      ar: "المملكة المتحدة",
-    },
-    US: {
-      en: "United States",
-      fr: "États-Unis",
-      ar: "الولايات المتحدة",
-    },
-    BE: {
-      en: "Belgium",
-      fr: "Belgique",
-      ar: "بلجيكا",
-    },
-    MA: {
-      en: "Morocco",
-      fr: "Maroc",
-      ar: "المغرب",
-    },
-    TN: {
-      en: "Tunisia",
-      fr: "Tunisie",
-      ar: "تونس",
-    },
-    DZ: {
-      en: "Algeria",
-      fr: "Algérie",
-      ar: "الجزائر",
-    },
-    QA: {
-      en: "Qatar",
-      fr: "Qatar",
-      ar: "قطر",
-    },
-    KW: {
-      en: "Kuwait",
-      fr: "Koweït",
-      ar: "الكويت",
-    },
-    BH: {
-      en: "Bahrain",
-      fr: "Bahreïn",
-      ar: "البحرين",
-    },
-    OM: {
-      en: "Oman",
-      fr: "Oman",
-      ar: "عُمان",
-    },
-  };
-
-  const country = countries[countryCode];
-  if (!country) {
-    return countryCode; // Return code if not found
-  }
-
-  return country[locale];
-}
 
 /**
  * Construct lead detail URL

@@ -54,7 +54,8 @@
         "agreeRequired": "Vous devez accepter les conditions pour continuer",
         "duplicateEmail": {
           "title": "Demande déjà soumise",
-          "message": "Votre email est déjà enregistré. Votre demande est en cours de traitement. En cas de souci, veuillez contacter {{supportEmail}}.",
+          "message": "Votre email est déjà enregistré. Votre demande est en cours de traitement.",
+          "contact": "En cas de souci, veuillez contacter",
           "action": "Contacter le support"
         }
       }

@@ -1090,8 +1090,6 @@ model crm_countries {
   country_name_en     String      @db.VarChar(100)
   country_name_fr     String      @db.VarChar(100)
   country_name_ar     String      @db.VarChar(100)
-  country_preposition_fr String   @default("en") @db.VarChar(5)
-  country_preposition_en String   @default("in") @db.VarChar(10)
   flag_emoji          String      @db.VarChar(10)
   is_operational      Boolean     @default(false)
   is_visible          Boolean     @default(true)
@@ -1114,7 +1112,8 @@ model crm_countries {
 model crm_leads {
   id                                                                   String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   email                                                                String
-  phone                                                                String?
+  phone                                                                String
+  demo_company_name                                                    String?
   source                                                               String?
   status                                                               String                  @default("new")
   message                                                              String?

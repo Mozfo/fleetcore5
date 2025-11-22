@@ -70,9 +70,11 @@ export const LeadCreateSchema = z
       .max(50, "Le nom ne peut pas dépasser 50 caractères")
       .regex(/^[^0-9]*$/, "Le nom ne doit pas contenir de chiffres"),
 
-    demo_company_name: z
+    company_name: z
       .string()
+      .min(2, "Le nom de l'entreprise doit contenir au moins 2 caractères")
       .max(100, "Le nom de l'entreprise ne peut pas dépasser 100 caractères")
+      .trim()
       .optional(),
 
     fleet_size: z.enum(["1-10", "11-50", "51-100", "101-500", "500+"], {
@@ -88,6 +90,15 @@ export const LeadCreateSchema = z
         "Le code pays doit contenir exactement 2 caractères (ISO 3166-1)"
       )
       .transform((val) => val.toUpperCase()),
+
+    form_locale: z
+      .string()
+      .min(2, "La locale doit contenir au moins 2 caractères")
+      .max(5, "La locale ne peut pas dépasser 5 caractères")
+      .regex(
+        /^[a-z]{2}(-[A-Z]{2})?$/,
+        "Format de locale invalide (ex: 'en', 'fr', 'zh-CN')"
+      ),
 
     message: z
       .string()

@@ -6,15 +6,16 @@ import { logger } from "@/lib/logger";
  * Update seed.ts with Generated HTML Templates
  *
  * This script automatically updates prisma/seed.ts with the generated
- * HTML templates for all 11 email templates.
+ * HTML templates for all 12 email templates.
  *
  * Process:
- * 1. Read generated HTML templates (11 templates)
+ * 1. Read generated HTML templates (12 templates)
  * 2. Backup current seed.ts
  * 3. Update all templates with generated HTML
  *
  * Templates updated:
  * - lead_confirmation (CRM)
+ * - expansion_opportunity (CRM)
  * - sales_rep_assignment (CRM)
  * - lead_followup (CRM)
  * - member_welcome (ADM)
@@ -44,6 +45,12 @@ async function updateSeedTemplates() {
   const templates = {
     lead_confirmation: fs
       .readFileSync(path.join(generatedDir, "lead-confirmation.html"), "utf-8")
+      .trim(),
+    expansion_opportunity: fs
+      .readFileSync(
+        path.join(generatedDir, "expansion-opportunity.html"),
+        "utf-8"
+      )
       .trim(),
     sales_rep_assignment: fs
       .readFileSync(
@@ -92,7 +99,7 @@ async function updateSeedTemplates() {
       .trim(),
   };
 
-  logger.info("✅ Read 11 HTML templates\n");
+  logger.info("✅ Read 12 HTML templates\n");
 
   // Backup seed.ts
   const backupPath = `${seedPath}.backup-${Date.now()}`;

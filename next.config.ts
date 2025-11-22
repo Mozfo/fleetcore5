@@ -2,6 +2,18 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Externaliser les packages Pino pour éviter le bundling qui casse les worker threads
+  // Fix: "Error: the worker thread exited" lors du logging avec Pino
+  // Ref: https://github.com/pinojs/pino/issues/1429
+  serverExternalPackages: [
+    "pino",
+    "pino-pretty",
+    "pino-worker",
+    "pino-file",
+    "thread-stream",
+    "@sentry/profiling-node",
+  ],
+
   experimental: {
     turbo: {}, // Support pour Turbopack dans Next.js 15
   },

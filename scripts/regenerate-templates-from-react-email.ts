@@ -48,6 +48,10 @@ import { WebhookTest } from "@/emails/templates/WebhookTest";
 import { WebhookTestFR } from "@/emails/templates/WebhookTestFR";
 import { WebhookTestAR } from "@/emails/templates/WebhookTestAR";
 
+import { ExpansionOpportunity } from "@/emails/templates/ExpansionOpportunity";
+import { ExpansionOpportunityFR } from "@/emails/templates/ExpansionOpportunityFR";
+import { ExpansionOpportunityAR } from "@/emails/templates/ExpansionOpportunityAR";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ComponentFunction = (props: any) => ReactElement;
 
@@ -79,7 +83,27 @@ async function regenerateAllTemplates(): Promise<void> {
           first_name: "{{first_name}}",
           company_name: "{{company_name}}",
           fleet_size: "{{fleet_size}}",
+          country_preposition: "{{country_preposition}}",
           country_name: "{{country_name}}",
+          phone_row: "{{phone_row}}",
+          message_row: "{{message_row}}",
+        },
+      },
+      {
+        code: "expansion_opportunity",
+        components: {
+          en: ExpansionOpportunity,
+          fr: ExpansionOpportunityFR,
+          ar: ExpansionOpportunityAR,
+        },
+        props: {
+          first_name: "{{first_name}}",
+          company_name: "{{company_name}}",
+          fleet_size: "{{fleet_size}}",
+          country_preposition: "{{country_preposition}}",
+          country_name: "{{country_name}}",
+          phone_row: "{{phone_row}}",
+          message_row: "{{message_row}}",
         },
       },
       {
@@ -272,7 +296,7 @@ async function regenerateAllTemplates(): Promise<void> {
     logger.info("✅ RÉGÉNÉRATION TERMINÉE");
     logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     logger.info(`Fichier généré: ${outputPath}`);
-    logger.info("11 templates × 3 langues = 33 HTMLs régénérés");
+    logger.info("12 templates × 3 langues = 36 HTMLs régénérés");
     logger.info("\n💡 Maintenant: mettre à jour seed.ts avec ces HTMLs");
   } catch (error) {
     logger.error({ error }, "Erreur régénération");

@@ -189,22 +189,13 @@ export class LeadCreationService {
     );
 
     // STEP 6: Create lead in database
-    // Map contact_name to first_name/last_name for Prisma schema compatibility
-    const nameParts = input.contact_name?.split(" ") ?? ["", ""];
-    const firstName = nameParts.length > 0 ? nameParts[0] : "";
-    const lastName =
-      nameParts.length > 1
-        ? nameParts.slice(1).join(" ")
-        : (nameParts[0] ?? "");
-
     const leadData = {
       lead_code,
       email: input.email,
-      first_name: firstName || "Unknown",
-      last_name: lastName || "User",
+      first_name: input.first_name,
+      last_name: input.last_name,
       company_name: input.company_name ?? null,
-      demo_company_name: input.company_name ?? null,
-      phone: input.phone ?? "",
+      phone: input.phone ?? null,
       fleet_size: input.fleet_size ?? null,
       country_code: input.country_code ?? null,
       message: input.message ?? null,

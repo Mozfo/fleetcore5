@@ -17,14 +17,20 @@ interface ExpansionOpportunityProps {
   first_name: string;
   company_name: string;
   fleet_size: string;
+  country_preposition: string;
   country_name: string;
+  phone_row?: string;
+  message_row?: string;
 }
 
 export const ExpansionOpportunity = ({
-  first_name = "John",
-  company_name = "Test Company Ltd",
-  fleet_size = "51-100 vehicles",
-  country_name = "Spain",
+  first_name,
+  company_name,
+  fleet_size,
+  country_preposition,
+  country_name,
+  phone_row,
+  message_row,
 }: ExpansionOpportunityProps) => {
   return (
     <Html>
@@ -65,10 +71,11 @@ export const ExpansionOpportunity = ({
               the time to request a demo.
             </Text>
             <Text style={paragraph}>
-              FleetCore is not yet available in <strong>{country_name}</strong>,
-              but we&apos;re expanding rapidly and your interest is extremely
-              valuable to us. We&apos;ve recorded your details and you&apos;ll
-              be among the first to know when we launch in your market.
+              FleetCore is not yet available {country_preposition}{" "}
+              <strong>{country_name}</strong>, but we&apos;re expanding rapidly
+              and your interest is extremely valuable to us. We&apos;ve recorded
+              your details and you&apos;ll be among the first to know when we
+              launch in your market.
             </Text>
             <Text style={paragraph}>
               <strong>Your request details:</strong>
@@ -76,7 +83,10 @@ export const ExpansionOpportunity = ({
             <Text style={paragraph}>
               • Company: <strong>{company_name}</strong>
               <br />• Fleet size: <strong>{fleet_size}</strong>
-              <br />• Country: <strong>{country_name}</strong>
+              <br />• Country: {country_preposition}{" "}
+              <strong>{country_name}</strong>
+              <span dangerouslySetInnerHTML={{ __html: phone_row || "" }} />
+              <span dangerouslySetInnerHTML={{ __html: message_row || "" }} />
             </Text>
             <Section
               style={{

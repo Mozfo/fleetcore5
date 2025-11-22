@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { NotificationService } from "@/lib/services/notification/notification.service";
+import { getTemplateLocale } from "@/lib/utils/locale-mapping";
 
 // POST - Créer un nouveau lead
 export async function POST(req: Request) {
@@ -18,6 +19,8 @@ export async function POST(req: Request) {
         country_name_en: true,
         country_name_fr: true,
         country_name_ar: true,
+        country_preposition_fr: true,
+        country_preposition_en: true,
         notification_locale: true,
       },
     });
@@ -64,9 +67,9 @@ export async function POST(req: Request) {
         first_name: body.first_name,
         last_name: body.last_name,
         email: body.email,
-        demo_company_name: body.company_name,
-        fleet_size: body.company_size,
-        phone: body.phone || "", // TODO: Schema has NOT NULL but business rule says optional - needs schema fix
+        company_name: body.company_name,
+        fleet_size: body.fleet_size,
+        phone: body.phone || null,
         message: body.message,
         country_code: countryCode,
         status: "new",
@@ -80,14 +83,37 @@ export async function POST(req: Request) {
       : "expansion_opportunity";
 
     try {
+      // Map form locale to template locale using database configuration
+      const templateLocale = await getTemplateLocale(body.form_locale || "en");
+
+      // ✨ FIX: Send preposition and country name separately
+      // This allows templates to style only the country name (not the preposition)
+      const countryPreposition =
+        templateLocale === "fr"
+          ? country.country_preposition_fr
+          : templateLocale === "ar"
+            ? "" // Arabic doesn't use prepositions like EN/FR
+            : country.country_preposition_en;
+
+      const countryName =
+        templateLocale === "fr"
+          ? country.country_name_fr
+          : templateLocale === "ar"
+            ? country.country_name_ar
+            : country.country_name_en;
+
       const emailResult = await notificationService.sendEmail({
         recipientEmail: body.email,
         templateCode: templateCode,
+        locale: templateLocale, // Explicit locale from form (CASCADE_3_PARAMS)
         variables: {
           first_name: body.first_name,
           company_name: body.company_name,
-          fleet_size: body.company_size,
-          country_name: country.country_name_en, // Will use cascade for locale
+          fleet_size: body.fleet_size,
+          country_preposition: countryPreposition,
+          country_name: countryName,
+          phone: body.phone || null,
+          message: body.message || null,
         },
         leadId: lead.id,
         countryCode: countryCode,

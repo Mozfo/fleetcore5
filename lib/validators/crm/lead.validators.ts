@@ -60,13 +60,19 @@ export const CreateLeadSchema = z.object({
     .optional()
     .nullable(),
 
-  contact_name: z
+  first_name: z
     .string()
-    .min(2, "Contact name must be at least 2 characters")
-    .max(100, "Contact name too long")
-    .trim()
-    .optional()
-    .nullable(),
+    .min(2, "Le prénom doit contenir au moins 2 caractères")
+    .max(50, "Le prénom ne peut pas dépasser 50 caractères")
+    .regex(/^[^0-9]*$/, "Le prénom ne peut pas contenir de chiffres")
+    .trim(),
+
+  last_name: z
+    .string()
+    .min(2, "Le nom doit contenir au moins 2 caractères")
+    .max(50, "Le nom ne peut pas dépasser 50 caractères")
+    .regex(/^[^0-9]*$/, "Le nom ne peut pas contenir de chiffres")
+    .trim(),
 
   phone: z
     .string()

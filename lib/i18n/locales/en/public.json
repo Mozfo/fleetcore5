@@ -54,7 +54,8 @@
         "agreeRequired": "You must accept the terms to continue",
         "duplicateEmail": {
           "title": "Request Already Submitted",
-          "message": "Your email is already registered. Your request is being processed. If you have any concerns, please contact {{supportEmail}}.",
+          "message": "Your email is already registered. Your request is being processed.",
+          "contact": "If you have any concerns, please contact",
           "action": "Contact Support"
         }
       }
