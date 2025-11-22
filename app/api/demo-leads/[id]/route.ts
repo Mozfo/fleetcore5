@@ -54,7 +54,7 @@ export async function PUT(
         first_name: body.first_name,
         last_name: body.last_name,
         email: body.email,
-        demo_company_name: body.company_name,
+        company_name: body.company_name,
         fleet_size: body.company_size,
         phone: body.phone,
         message: body.message,

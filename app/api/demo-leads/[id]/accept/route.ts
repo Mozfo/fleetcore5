@@ -33,8 +33,8 @@ export async function POST(
       // 2. Créer l'organisation dans Clerk
       const clerk = await clerkClient();
       const clerkOrg = await clerk.organizations.createOrganization({
-        name: lead.demo_company_name || "Unnamed Company",
-        slug: (lead.demo_company_name || "unnamed-company")
+        name: lead.company_name || "Unnamed Company",
+        slug: (lead.company_name || "unnamed-company")
           .toLowerCase()
           .replace(/\s+/g, "-"),
         publicMetadata: {
@@ -55,7 +55,7 @@ export async function POST(
       // 4. Créer l'organisation dans notre DB
       const organization = await tx.adm_tenants.create({
         data: {
-          name: lead.demo_company_name || "Unnamed Company",
+          name: lead.company_name || "Unnamed Company",
           country_code: lead.country_code || "AE",
           default_currency: "AED",
           clerk_organization_id: clerkOrg.id,
