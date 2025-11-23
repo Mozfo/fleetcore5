@@ -22,6 +22,8 @@ import {
 } from "@/lib/repositories/crm/settings.repository";
 import { LeadScoringService } from "./lead-scoring.service";
 import { LeadAssignmentService } from "./lead-assignment.service";
+import { CountryService } from "./country.service";
+import { ValidationError } from "@/lib/core/errors";
 import type { CreateLeadInput } from "@/lib/validators/crm/lead.validators";
 import type { crm_leads } from "@prisma/client";
 
@@ -100,12 +102,14 @@ export class LeadCreationService {
   private settingsRepo: CrmSettingsRepository;
   private scoringService: LeadScoringService;
   private assignmentService: LeadAssignmentService;
+  private countryService: CountryService;
 
   constructor() {
     this.leadRepo = new LeadRepository(prisma);
     this.settingsRepo = new CrmSettingsRepository(prisma);
     this.scoringService = new LeadScoringService();
     this.assignmentService = new LeadAssignmentService();
+    this.countryService = new CountryService();
   }
 
   /**
@@ -148,6 +152,28 @@ export class LeadCreationService {
     tenantId: string,
     createdBy?: string
   ): Promise<LeadCreationResult> {
+    // STEP 0: GDPR validation (before any processing)
+    if (input.country_code) {
+      const isGdprCountry = await this.countryService.isGdprCountry(
+        input.country_code
+      );
+
+      if (isGdprCountry) {
+        // EU/EEA country → GDPR consent required
+        if (!input.gdpr_consent) {
+          throw new ValidationError(
+            `GDPR consent required for EU/EEA countries (country: ${input.country_code})`
+          );
+        }
+
+        if (!input.consent_ip) {
+          throw new ValidationError(
+            "Consent IP address required for GDPR compliance"
+          );
+        }
+      }
+    }
+
     // STEP 1: Generate unique lead code
     const currentYear = new Date().getFullYear();
     const lead_code = await this.leadRepo.generateLeadCode(currentYear);
@@ -188,6 +214,25 @@ export class LeadCreationService {
       activeEmployees as EligibleEmployee[]
     );
 
+    // STEP 5.5: Check expansion opportunity (non-operational countries)
+    let enrichedMetadata = input.metadata || {};
+
+    if (input.country_code) {
+      const isOperational = await this.countryService.isOperational(
+        input.country_code
+      );
+
+      if (!isOperational) {
+        // FleetCore not yet available → Mark as expansion opportunity
+        enrichedMetadata = {
+          ...enrichedMetadata,
+          expansion_opportunity: true,
+          expansion_country: input.country_code,
+          expansion_detected_at: new Date().toISOString(),
+        };
+      }
+    }
+
     // STEP 6: Create lead in database
     const leadData = {
       lead_code,
@@ -219,8 +264,13 @@ export class LeadCreationService {
       // Status
       status: "new",
 
-      // Metadata
-      metadata: input.metadata,
+      // GDPR fields (only for EU/EEA countries)
+      gdpr_consent: input.gdpr_consent ?? null,
+      consent_at: input.gdpr_consent ? new Date() : null,
+      consent_ip: input.consent_ip ?? null,
+
+      // Metadata (enriched with expansion flag if applicable)
+      metadata: enrichedMetadata,
     };
 
     const lead = await this.leadRepo.create(

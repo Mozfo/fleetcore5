@@ -16,6 +16,7 @@
  */
 
 import { CrmSettingsRepository } from "@/lib/repositories/crm/settings.repository";
+import { CountryService } from "./country.service";
 import { prisma } from "@/lib/prisma";
 
 // ===== TYPES & INTERFACES =====
@@ -150,9 +151,11 @@ export interface QualificationResult {
  */
 export class LeadScoringService {
   private settingsRepo: CrmSettingsRepository;
+  private countryService: CountryService;
 
   constructor() {
     this.settingsRepo = new CrmSettingsRepository(prisma);
+    this.countryService = new CountryService();
   }
 
   /**
@@ -209,20 +212,32 @@ export class LeadScoringService {
     const countryCode = input.country_code?.toUpperCase() || "";
     let countryPoints = config.country_tier_points.tier5.points; // Default
 
-    if (config.country_tier_points.tier1.countries.includes(countryCode)) {
-      countryPoints = config.country_tier_points.tier1.points;
-    } else if (
-      config.country_tier_points.tier2.countries.includes(countryCode)
-    ) {
-      countryPoints = config.country_tier_points.tier2.points;
-    } else if (
-      config.country_tier_points.tier3.countries.includes(countryCode)
-    ) {
-      countryPoints = config.country_tier_points.tier3.points;
-    } else if (
-      config.country_tier_points.tier4.countries.includes(countryCode)
-    ) {
-      countryPoints = config.country_tier_points.tier4.points;
+    if (countryCode) {
+      // Check if FleetCore is operational in this country
+      const isOperational =
+        await this.countryService.isOperational(countryCode);
+
+      if (!isOperational) {
+        // Non-operational country → Fixed 5 points (expansion opportunity)
+        countryPoints = 5;
+      } else {
+        // Operational country → Use tier-based scoring
+        if (config.country_tier_points.tier1.countries.includes(countryCode)) {
+          countryPoints = config.country_tier_points.tier1.points;
+        } else if (
+          config.country_tier_points.tier2.countries.includes(countryCode)
+        ) {
+          countryPoints = config.country_tier_points.tier2.points;
+        } else if (
+          config.country_tier_points.tier3.countries.includes(countryCode)
+        ) {
+          countryPoints = config.country_tier_points.tier3.points;
+        } else if (
+          config.country_tier_points.tier4.countries.includes(countryCode)
+        ) {
+          countryPoints = config.country_tier_points.tier4.points;
+        }
+      }
     }
 
     return fleetPoints + countryPoints;

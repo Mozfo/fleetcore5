@@ -133,6 +133,14 @@ export const CreateLeadSchema = z.object({
     .optional()
     .nullable(),
 
+  // GDPR fields (required for EU/EEA countries only)
+  gdpr_consent: z.boolean().optional().nullable(),
+  consent_ip: z
+    .string()
+    .max(45, "IP address too long (IPv4 or IPv6)")
+    .optional()
+    .nullable(),
+
   // Metadata (flexible JSON)
   metadata: z
     .object({

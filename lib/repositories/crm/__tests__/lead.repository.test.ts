@@ -58,6 +58,7 @@ describe("LeadRepository", () => {
         utm_campaign: null,
         gdpr_consent: true,
         consent_at: null,
+        consent_ip: "192.168.1.1",
         assigned_to: "emp-1",
         opportunity_id: null,
         created_at: new Date(),

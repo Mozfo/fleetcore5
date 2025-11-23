@@ -35,6 +35,14 @@ describe("LeadCreationService", () => {
   beforeEach(() => {
     service = new LeadCreationService();
 
+    // Mock CountryService methods (default: non-GDPR, operational)
+    vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+      false
+    );
+    vi.spyOn(service["countryService"], "isOperational").mockResolvedValue(
+      true
+    );
+
     // Mock the settingsRepo.getSettingValue in both scoring and assignment services
     vi.spyOn(
       service["scoringService"]["settingsRepo"],
@@ -284,6 +292,7 @@ describe("LeadCreationService", () => {
           city: null,
           gdpr_consent: null,
           consent_at: null,
+          consent_ip: null,
           source_id: null,
           opportunity_id: null,
           next_action_date: null,
@@ -574,7 +583,265 @@ describe("LeadCreationService", () => {
     });
   });
 
-  // ===== SUITE 4: Edge Cases (4 tests) =====
+  // ===== SUITE 4: GDPR Validation (4 tests) =====
+
+  describe("GDPR Validation", () => {
+    it("should reject EU lead without gdpr_consent", async () => {
+      // Mock France as GDPR country
+      vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+        true
+      );
+
+      const input: CreateLeadInput = {
+        email: "test@france-fleet.fr",
+        first_name: "Jean",
+        last_name: "Dupont",
+        fleet_size: "101-500",
+        country_code: "FR",
+        message: "We need fleet management",
+        source: "website",
+        // Missing: gdpr_consent
+      };
+
+      await expect(
+        service.createLead(input, mockTenantId, mockUserId)
+      ).rejects.toThrow(
+        "GDPR consent required for EU/EEA countries (country: FR)"
+      );
+
+      expect(service["countryService"].isGdprCountry).toHaveBeenCalledWith(
+        "FR"
+      );
+    });
+
+    it("should reject EU lead without consent_ip", async () => {
+      // Mock Germany as GDPR country
+      vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+        true
+      );
+
+      const input: CreateLeadInput = {
+        email: "test@german-fleet.de",
+        first_name: "Hans",
+        last_name: "Schmidt",
+        fleet_size: "51-100",
+        country_code: "DE",
+        message: "Interested in your solution",
+        source: "website",
+        gdpr_consent: true,
+        // Missing: consent_ip
+      };
+
+      await expect(
+        service.createLead(input, mockTenantId, mockUserId)
+      ).rejects.toThrow("Consent IP address required for GDPR compliance");
+
+      expect(service["countryService"].isGdprCountry).toHaveBeenCalledWith(
+        "DE"
+      );
+    });
+
+    it("should accept EU lead with gdpr_consent and consent_ip", async () => {
+      // Mock France as GDPR country
+      vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+        true
+      );
+      // Mock France as operational (to avoid expansion logic)
+      vi.spyOn(service["countryService"], "isOperational").mockResolvedValue(
+        true
+      );
+
+      const input: CreateLeadInput = {
+        email: "valid@france-fleet.fr",
+        first_name: "Marie",
+        last_name: "Martin",
+        fleet_size: "101-500",
+        country_code: "FR",
+        message: "We are ready to proceed with FleetCore",
+        source: "website",
+        gdpr_consent: true,
+        consent_ip: "192.168.1.1",
+      };
+
+      const result = await service.createLead(input, mockTenantId, mockUserId);
+
+      expect(result.lead.email).toBe("valid@france-fleet.fr");
+      expect(result.lead.country_code).toBe("FR");
+      expect(service["countryService"].isGdprCountry).toHaveBeenCalledWith(
+        "FR"
+      );
+    });
+
+    it("should accept non-EU lead without gdpr_consent", async () => {
+      // Mock UAE as non-GDPR country
+      vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+        false
+      );
+      // Mock UAE as operational
+      vi.spyOn(service["countryService"], "isOperational").mockResolvedValue(
+        true
+      );
+
+      const input: CreateLeadInput = {
+        email: "test@uae-fleet.ae",
+        first_name: "Ahmed",
+        last_name: "Al Maktoum",
+        fleet_size: "500+",
+        country_code: "AE",
+        message: "We need fleet management for Dubai operations",
+        source: "website",
+        // No GDPR fields required for UAE
+      };
+
+      const result = await service.createLead(input, mockTenantId, mockUserId);
+
+      expect(result.lead.email).toBe("test@uae-fleet.ae");
+      expect(result.lead.country_code).toBe("AE");
+      expect(service["countryService"].isGdprCountry).toHaveBeenCalledWith(
+        "AE"
+      );
+    });
+  });
+
+  // ===== SUITE 5: Expansion Logic (4 tests) =====
+
+  describe("Expansion Opportunity Logic", () => {
+    it("should mark non-operational country as expansion opportunity", async () => {
+      // Mock Brazil as non-GDPR country
+      vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+        false
+      );
+      // Mock Brazil as non-operational
+      vi.spyOn(service["countryService"], "isOperational").mockResolvedValue(
+        false
+      );
+
+      const input: CreateLeadInput = {
+        email: "ceo@brazil-fleet.br",
+        first_name: "Carlos",
+        last_name: "Silva",
+        fleet_size: "101-500",
+        country_code: "BR",
+        message: "Interested in FleetCore for our operations in Brazil",
+        source: "website",
+      };
+
+      const result = await service.createLead(input, mockTenantId, mockUserId);
+
+      expect(result.lead.country_code).toBe("BR");
+      expect(result.lead.metadata).toMatchObject({
+        expansion_opportunity: true,
+        expansion_country: "BR",
+      });
+      expect(result.lead.metadata).toHaveProperty("expansion_detected_at");
+      expect(service["countryService"].isOperational).toHaveBeenCalledWith(
+        "BR"
+      );
+    });
+
+    it("should NOT mark operational country as expansion", async () => {
+      // Mock UAE as non-GDPR country
+      vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+        false
+      );
+      // Mock UAE as operational
+      vi.spyOn(service["countryService"], "isOperational").mockResolvedValue(
+        true
+      );
+
+      const input: CreateLeadInput = {
+        email: "test@operational.ae",
+        first_name: "Ahmed",
+        last_name: "Hassan",
+        fleet_size: "500+",
+        country_code: "AE",
+        message: "We need FleetCore now",
+        source: "website",
+      };
+
+      const result = await service.createLead(input, mockTenantId, mockUserId);
+
+      expect(result.lead.country_code).toBe("AE");
+      expect(result.lead.metadata).not.toHaveProperty("expansion_opportunity");
+      expect(service["countryService"].isOperational).toHaveBeenCalledWith(
+        "AE"
+      );
+    });
+
+    it("should preserve existing metadata when adding expansion flags", async () => {
+      // Mock Qatar as non-GDPR and non-operational
+      vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+        false
+      );
+      vi.spyOn(service["countryService"], "isOperational").mockResolvedValue(
+        false
+      );
+
+      const input: CreateLeadInput = {
+        email: "test@expansion.qa",
+        first_name: "Mohammed",
+        last_name: "Al Thani",
+        fleet_size: "51-100",
+        country_code: "QA",
+        message: "Interested in expansion",
+        source: "event",
+        metadata: {
+          page_views: 10,
+          time_on_site: 600,
+          referrer: "linkedin",
+        },
+      };
+
+      const result = await service.createLead(input, mockTenantId, mockUserId);
+
+      expect(result.lead.metadata).toMatchObject({
+        page_views: 10,
+        time_on_site: 600,
+        referrer: "linkedin",
+        expansion_opportunity: true,
+        expansion_country: "QA",
+      });
+    });
+
+    it("should check operational status for GDPR country too", async () => {
+      // Mock Italy as GDPR country
+      vi.spyOn(service["countryService"], "isGdprCountry").mockResolvedValue(
+        true
+      );
+      // Mock Italy as non-operational (FleetCore not available yet)
+      vi.spyOn(service["countryService"], "isOperational").mockResolvedValue(
+        false
+      );
+
+      const input: CreateLeadInput = {
+        email: "test@italy-fleet.it",
+        first_name: "Marco",
+        last_name: "Rossi",
+        fleet_size: "101-500",
+        country_code: "IT",
+        message: "We need FleetCore in Italy",
+        source: "website",
+        gdpr_consent: true,
+        consent_ip: "192.168.1.100",
+      };
+
+      const result = await service.createLead(input, mockTenantId, mockUserId);
+
+      expect(result.lead.country_code).toBe("IT");
+      expect(result.lead.metadata).toMatchObject({
+        expansion_opportunity: true,
+        expansion_country: "IT",
+      });
+      expect(service["countryService"].isGdprCountry).toHaveBeenCalledWith(
+        "IT"
+      );
+      expect(service["countryService"].isOperational).toHaveBeenCalledWith(
+        "IT"
+      );
+    });
+  });
+
+  // ===== SUITE 6: Edge Cases (4 tests) =====
 
   describe("Edge Cases", () => {
     it("should handle minimal input (only email)", async () => {

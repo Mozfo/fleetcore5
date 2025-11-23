@@ -6,6 +6,14 @@ import type {
   LeadMetadata,
 } from "../lead-scoring.service";
 
+// Mock CountryService to always return operational countries
+vi.mock("../country.service", () => ({
+  CountryService: vi.fn().mockImplementation(() => ({
+    isOperational: vi.fn().mockResolvedValue(true), // All countries operational by default
+    isGdprCountry: vi.fn().mockResolvedValue(false),
+  })),
+}));
+
 // Mock CrmSettingsRepository to return lead_scoring_config
 vi.mock("@/lib/repositories/crm/settings.repository", () => ({
   CrmSettingsRepository: vi.fn().mockImplementation(() => ({
