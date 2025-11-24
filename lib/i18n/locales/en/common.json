@@ -391,5 +391,12 @@
       "legal": "Legal",
       "copyright": "© 2025 FleetCore. All rights reserved."
     }
+  },
+  "gdpr": {
+    "title": "GDPR Consent Required",
+    "explanation": "Your data will be processed in accordance with EU GDPR regulations. We are committed to protecting your privacy.",
+    "consent": "I consent to the processing of my personal data and accept the",
+    "privacyPolicy": "Privacy Policy",
+    "required": "You must accept the privacy policy to continue"
   }
 }

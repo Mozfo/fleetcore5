@@ -444,5 +444,12 @@
       "legal": "Légal",
       "copyright": "© 2025 FleetCore. Tous droits réservés."
     }
+  },
+  "gdpr": {
+    "title": "Consentement RGPD Requis",
+    "explanation": "Vos données seront traitées conformément au RGPD européen. Nous nous engageons à protéger votre vie privée.",
+    "consent": "J'accepte le traitement de mes données personnelles et la",
+    "privacyPolicy": "Politique de Confidentialité",
+    "required": "Vous devez accepter la politique de confidentialité pour continuer"
   }
 }

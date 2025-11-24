@@ -10,6 +10,9 @@ export default defineConfig({
     // Globals: true (évite imports répétés de describe, it, expect)
     globals: true,
 
+    // Setup files for jest-dom matchers
+    setupFiles: ["./vitest.setup.ts"],
+
     // Include/exclude patterns
     include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: ["node_modules", ".next", "dist"],

@@ -24,6 +24,7 @@ export default async function RequestDemoFormPage({
       country_name_ar: true,
       flag_emoji: true,
       is_operational: true,
+      country_gdpr: true, // GDPR flag for conditional consent checkbox
       display_order: true,
     },
   });

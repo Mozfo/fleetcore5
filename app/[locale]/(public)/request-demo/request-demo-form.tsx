@@ -14,6 +14,8 @@ import {
   Car,
 } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { GdprConsentField } from "@/components/forms/GdprConsentField";
+import { useGdprValidation } from "@/hooks/useGdprValidation";
 
 interface FormData {
   firstName: string;
@@ -25,6 +27,7 @@ interface FormData {
   phone: string;
   message: string;
   agreeToTerms: boolean;
+  gdprConsent: boolean; // GDPR consent for EU/EEA countries
 }
 
 interface Country {
@@ -35,6 +38,7 @@ interface Country {
   country_name_ar: string;
   flag_emoji: string;
   is_operational: boolean;
+  country_gdpr: boolean; // GDPR flag
   display_order: number;
 }
 
@@ -58,7 +62,15 @@ export default function RequestDemoForm({
     phone: "",
     message: "",
     agreeToTerms: false,
+    gdprConsent: false, // Initialize GDPR consent
   });
+
+  // GDPR validation hook
+  const { isValid: isGdprValid } = useGdprValidation(
+    countries,
+    formData.country,
+    formData.gdprConsent
+  );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,6 +129,7 @@ export default function RequestDemoForm({
           message: formData.message,
           country_code: formData.country,
           form_locale: i18n.language,
+          gdpr_consent: formData.gdprConsent, // GDPR consent
         }),
       });
 
@@ -490,6 +503,17 @@ export default function RequestDemoForm({
                   />
                 </div>
 
+                {/* GDPR Consent (conditional for EU/EEA) */}
+                <GdprConsentField
+                  countries={countries}
+                  selectedCountryCode={formData.country}
+                  value={formData.gdprConsent}
+                  onChange={(consented) =>
+                    setFormData({ ...formData, gdprConsent: consented })
+                  }
+                  locale={i18n.language}
+                />
+
                 {/* Terms */}
                 <div>
                   <label className="flex cursor-pointer items-start">
@@ -556,7 +580,7 @@ export default function RequestDemoForm({
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isGdprValid}
                   className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 py-3 font-semibold text-white transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? (
