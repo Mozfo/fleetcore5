@@ -76,7 +76,8 @@ export interface AssignmentRulesConfig {
  */
 export interface EligibleEmployee {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string | null;
   email: string;
   title: string;
   status: string;
@@ -237,7 +238,8 @@ export class LeadAssignmentService {
       if (specificEmployee) {
         return {
           assigned_to: specificEmployee.id,
-          assignment_reason: `Fallback: Specific employee (${specificEmployee.name})`,
+          assignment_reason:
+            `Fallback: Specific employee (${specificEmployee.first_name} ${specificEmployee.last_name || ""})`.trim(),
           matched_rule: "fallback_specific",
           eligible_employees: 1,
         };

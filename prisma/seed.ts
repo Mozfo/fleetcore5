@@ -138,7 +138,8 @@ async function main() {
     {
       id: "990e8400-e29b-41d4-a716-446655440001",
       clerk_user_id: "sales_uae_placeholder",
-      name: "Karim Al-Rashid",
+      first_name: "Karim",
+      last_name: "Al-Rashid",
       email: "karim.alrashid@fleetcore.com",
       department: "Sales",
       title: "Sales Manager UAE",
@@ -148,7 +149,8 @@ async function main() {
     {
       id: "990e8400-e29b-41d4-a716-446655440002",
       clerk_user_id: "sales_france_placeholder",
-      name: "Marie Dubois",
+      first_name: "Marie",
+      last_name: "Dubois",
       email: "marie.dubois@fleetcore.com",
       department: "Sales",
       title: "Sales Manager France",
@@ -158,7 +160,8 @@ async function main() {
     {
       id: "990e8400-e29b-41d4-a716-446655440003",
       clerk_user_id: "sales_ksa_placeholder",
-      name: "Faisal Al-Otaibi",
+      first_name: "Faisal",
+      last_name: "Al-Otaibi",
       email: "faisal.alotaibi@fleetcore.com",
       department: "Sales",
       title: "Sales Manager KSA",

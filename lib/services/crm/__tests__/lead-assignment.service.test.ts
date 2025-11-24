@@ -108,7 +108,8 @@ describe("LeadAssignmentService", () => {
   // Sample employees for testing
   const seniorAccountManager: EligibleEmployee = {
     id: "emp-senior-001",
-    name: "Alice Johnson",
+    first_name: "Alice",
+    last_name: "Johnson",
     email: "alice@fleetcore.com",
     title: "Senior Account Manager",
     status: "active",
@@ -116,7 +117,8 @@ describe("LeadAssignmentService", () => {
 
   const accountManager: EligibleEmployee = {
     id: "emp-account-002",
-    name: "Bob Smith",
+    first_name: "Bob",
+    last_name: "Smith",
     email: "bob@fleetcore.com",
     title: "Account Manager",
     status: "active",
@@ -124,7 +126,8 @@ describe("LeadAssignmentService", () => {
 
   const uaeSpecialist: EligibleEmployee = {
     id: "emp-uae-003",
-    name: "Fatima Al Mansouri",
+    first_name: "Fatima",
+    last_name: "Al Mansouri",
     email: "fatima@fleetcore.com",
     title: "UAE Sales Specialist",
     status: "active",
@@ -132,7 +135,8 @@ describe("LeadAssignmentService", () => {
 
   const ksaSpecialist: EligibleEmployee = {
     id: "emp-ksa-004",
-    name: "Mohammed Al Zahrani",
+    first_name: "Mohammed",
+    last_name: "Al Zahrani",
     email: "mohammed@fleetcore.com",
     title: "KSA Regional Manager",
     status: "active",
@@ -140,7 +144,8 @@ describe("LeadAssignmentService", () => {
 
   const franceSpecialist: EligibleEmployee = {
     id: "emp-france-005",
-    name: "Pierre Dubois",
+    first_name: "Pierre",
+    last_name: "Dubois",
     email: "pierre@fleetcore.com",
     title: "France Sales Manager",
     status: "active",
@@ -148,7 +153,8 @@ describe("LeadAssignmentService", () => {
 
   const salesManager: EligibleEmployee = {
     id: "emp-sales-006",
-    name: "Carlos Rodriguez",
+    first_name: "Carlos",
+    last_name: "Rodriguez",
     email: "carlos@fleetcore.com",
     title: "Sales Manager",
     status: "active",
@@ -156,7 +162,8 @@ describe("LeadAssignmentService", () => {
 
   const generalRep: EligibleEmployee = {
     id: "emp-general-007",
-    name: "Jane Doe",
+    first_name: "Jane",
+    last_name: "Doe",
     email: "jane@fleetcore.com",
     title: "Sales Representative",
     status: "active",

@@ -7,8 +7,11 @@ import { jwtDecode } from "jwt-decode";
 // Admin organization ID (FleetCore backoffice)
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
-// Allowed admin roles
+// Allowed admin roles (ADM backoffice)
 const ADMIN_ROLES = ["org:adm_admin", "org:adm_commercial", "org:adm_support"];
+
+// Allowed CRM roles (commercial users only)
+const _CRM_ROLES = ["org:adm_commercial"]; // TODO: Use for CRM route protection
 
 // Update protected routes to include locale prefix
 const isProtectedRoute = createRouteMatcher([
@@ -165,6 +168,34 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     if (!orgRole || !ADMIN_ROLES.includes(orgRole)) {
       return NextResponse.redirect(new URL("/en/unauthorized", req.url));
     }
+
+    // All checks passed - allow access
+    return NextResponse.next();
+  }
+
+  // CRM routes: commercial users only (FleetCore internal)
+  if (pathname.match(/^\/(en|fr)\/crm/)) {
+    const { userId, orgId } = await auth();
+
+    // 1. User must be authenticated
+    if (!userId) {
+      const locale = pathname.match(/^\/(en|fr)/)?.[1] || "en";
+      const loginUrl = new URL(`/${locale}/login`, req.url);
+      loginUrl.searchParams.set("redirect_url", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // 2. User must belong to FleetCore Admin organization
+    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
+      const locale = pathname.match(/^\/(en|fr)/)?.[1] || "en";
+      return NextResponse.redirect(new URL(`/${locale}/unauthorized`, req.url));
+    }
+
+    // 3. TODO: Add role check later - for now allow all FleetCore users
+    // if (!orgRole || !CRM_ROLES.includes(orgRole)) {
+    //   const locale = pathname.match(/^\/(en|fr)/)?.[1] || "en";
+    //   return NextResponse.redirect(new URL(`/${locale}/unauthorized`, req.url));
+    // }
 
     // All checks passed - allow access
     return NextResponse.next();

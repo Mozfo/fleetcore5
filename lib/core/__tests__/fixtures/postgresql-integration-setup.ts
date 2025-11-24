@@ -189,8 +189,8 @@ export class PostgresContainerManager {
 
     // Create SYSTEM provider employee (used for tenant lifecycle events)
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_provider_employees (id, clerk_user_id, name, email, status)
-      VALUES (${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, 'user_system_employee', 'System', 'system@fleetcore.internal', 'active')
+      INSERT INTO adm_provider_employees (id, clerk_user_id, first_name, last_name, email, status)
+      VALUES (${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, 'user_system_employee', 'System', NULL, 'system@fleetcore.internal', 'active')
     `;
 
     // Create test tenant
@@ -201,8 +201,8 @@ export class PostgresContainerManager {
 
     // Create test provider employee (required for sent_by in invitations)
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_provider_employees (id, clerk_user_id, name, email, status)
-      VALUES (${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, 'user_admin_test', 'Test Admin', 'admin@fleetcore.com', 'active')
+      INSERT INTO adm_provider_employees (id, clerk_user_id, first_name, last_name, email, status)
+      VALUES (${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, 'user_admin_test', 'Test', 'Admin', 'admin@fleetcore.com', 'active')
     `;
 
     // Create test member

@@ -52,7 +52,8 @@ export interface LeadCreationResult {
  */
 interface EligibleEmployee {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string | null;
   email: string;
   title: string;
   status: string;
@@ -198,7 +199,8 @@ export class LeadCreationService {
       },
       select: {
         id: true,
-        name: true,
+        first_name: true,
+        last_name: true,
         email: true,
         title: true,
         status: true,

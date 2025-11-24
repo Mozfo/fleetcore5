@@ -11,7 +11,8 @@ describe("LeadCreationService", () => {
 
   const mockEmployee = {
     id: "emp-1",
-    name: "John Senior",
+    first_name: "John",
+    last_name: "Senior",
     email: "john@fleetcore.com",
     title: "Senior Account Manager UAE",
     status: "active",
