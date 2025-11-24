@@ -321,7 +321,9 @@ model adm_members {
 model adm_provider_employees {
   id                                                                                        String                        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clerk_user_id                                                                             String                        @db.VarChar(255)
-  name                                                                                      String                        @db.VarChar(100)
+  first_name                                                                                String                        @db.VarChar(50)
+  last_name                                                                                 String?                       @db.VarChar(50)
+  phone                                                                                     String?                       @db.VarChar(20)
   email                                                                                     String                        @db.VarChar(255)
   department                                                                                String?                       @db.VarChar(50)
   title                                                                                     String?                       @db.VarChar(50)
