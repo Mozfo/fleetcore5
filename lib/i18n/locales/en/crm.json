@@ -1,0 +1,77 @@
+{
+  "leads": {
+    "title": "Leads Pipeline",
+    "description": "Manage and track your leads through the sales funnel",
+    "columns": {
+      "new": "New Leads",
+      "working": "In Progress",
+      "qualified": "Qualified",
+      "lost": "Lost"
+    },
+    "stats": {
+      "new": "NEW",
+      "working": "WORKING",
+      "qualified": "QUALIFIED",
+      "pipeline": "PIPELINE VALUE"
+    },
+    "filters": {
+      "status": "Status",
+      "lead_stage": "Stage",
+      "assigned_to": "Assigned To",
+      "country": "Country",
+      "min_score": "Min Score",
+      "search": "Search leads...",
+      "all_status": "All Status",
+      "all_stages": "All Stages",
+      "all_owners": "All Owners",
+      "all_countries": "All Countries",
+      "unassigned": "Unassigned",
+      "reset": "Reset filters",
+      "save_view": "Save view",
+      "active_filters": "{{count}} active filters"
+    },
+    "card": {
+      "score": "Score",
+      "vehicles": "vehicles",
+      "priority": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "stage": {
+        "top_of_funnel": "Discovery",
+        "marketing_qualified": "Marketing Qualified",
+        "sales_qualified": "Sales Qualified",
+        "indetermined": "Indetermined"
+      },
+      "view_details": "View details"
+    },
+    "empty": {
+      "column_new": "No new leads yet",
+      "column_new_desc": "New leads will appear here when they're created",
+      "column_working": "No leads in progress",
+      "column_working_desc": "Leads you're actively working on will appear here",
+      "column_qualified": "No qualified leads",
+      "column_qualified_desc": "Successfully qualified leads will appear here",
+      "column_lost": "No lost leads",
+      "column_lost_desc": "Leads marked as lost will appear here",
+      "no_results": "No leads found",
+      "no_results_desc": "Try adjusting your filters or search term",
+      "create_lead": "Create Lead",
+      "clear_filters": "Clear filters"
+    },
+    "actions": {
+      "new_lead": "New Lead",
+      "export": "Export",
+      "settings": "Settings"
+    },
+    "time": {
+      "just_now": "just now",
+      "minutes_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago",
+      "weeks_ago": "{{count}}w ago"
+    }
+  }
+}

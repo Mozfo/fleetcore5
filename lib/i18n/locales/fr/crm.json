@@ -1,0 +1,77 @@
+{
+  "leads": {
+    "title": "Pipeline de Leads",
+    "description": "Gérez et suivez vos leads dans l'entonnoir de vente",
+    "columns": {
+      "new": "Nouveaux Leads",
+      "working": "En Cours",
+      "qualified": "Qualifiés",
+      "lost": "Perdus"
+    },
+    "stats": {
+      "new": "NOUVEAUX",
+      "working": "EN COURS",
+      "qualified": "QUALIFIÉS",
+      "pipeline": "VALEUR PIPELINE"
+    },
+    "filters": {
+      "status": "Statut",
+      "lead_stage": "Étape",
+      "assigned_to": "Assigné à",
+      "country": "Pays",
+      "min_score": "Score Min",
+      "search": "Rechercher des leads...",
+      "all_status": "Tous les statuts",
+      "all_stages": "Toutes les étapes",
+      "all_owners": "Tous les propriétaires",
+      "all_countries": "Tous les pays",
+      "unassigned": "Non assigné",
+      "reset": "Réinitialiser",
+      "save_view": "Sauvegarder la vue",
+      "active_filters": "{{count}} filtres actifs"
+    },
+    "card": {
+      "score": "Score",
+      "vehicles": "véhicules",
+      "priority": {
+        "low": "Basse",
+        "medium": "Moyenne",
+        "high": "Haute",
+        "urgent": "Urgente"
+      },
+      "stage": {
+        "top_of_funnel": "Découverte",
+        "marketing_qualified": "Qualifié Marketing",
+        "sales_qualified": "Qualifié Vente",
+        "indetermined": "Indéterminé"
+      },
+      "view_details": "Voir détails"
+    },
+    "empty": {
+      "column_new": "Aucun nouveau lead",
+      "column_new_desc": "Les nouveaux leads apparaîtront ici",
+      "column_working": "Aucun lead en cours",
+      "column_working_desc": "Les leads sur lesquels vous travaillez apparaîtront ici",
+      "column_qualified": "Aucun lead qualifié",
+      "column_qualified_desc": "Les leads qualifiés avec succès apparaîtront ici",
+      "column_lost": "Aucun lead perdu",
+      "column_lost_desc": "Les leads marqués comme perdus apparaîtront ici",
+      "no_results": "Aucun lead trouvé",
+      "no_results_desc": "Essayez d'ajuster vos filtres ou votre recherche",
+      "create_lead": "Créer un Lead",
+      "clear_filters": "Effacer les filtres"
+    },
+    "actions": {
+      "new_lead": "Nouveau Lead",
+      "export": "Exporter",
+      "settings": "Paramètres"
+    },
+    "time": {
+      "just_now": "à l'instant",
+      "minutes_ago": "il y a {{count}}m",
+      "hours_ago": "il y a {{count}}h",
+      "days_ago": "il y a {{count}}j",
+      "weeks_ago": "il y a {{count}}sem"
+    }
+  }
+}
