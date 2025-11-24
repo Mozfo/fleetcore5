@@ -245,3 +245,97 @@ export const ErrorResponseSchema = z.object({
 });
 
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
+
+/**
+ * Lead update schema for PATCH /api/v1/crm/leads/[id]
+ *
+ * Validates partial updates to existing leads.
+ * Only includes fields that are allowed to be updated.
+ *
+ * Fields NOT allowed to update:
+ * - id, lead_code (immutable)
+ * - email (identity field, cannot change)
+ * - fit_score, engagement_score, qualification_score (auto-calculated)
+ * - created_at, created_by (audit trail)
+ * - deleted_at, deleted_by (managed by DELETE endpoint)
+ *
+ * @example
+ * const update = {
+ *   first_name: "John",
+ *   status: "working",
+ *   notes: "Called customer, very interested"
+ * };
+ * const validated = UpdateLeadSchema.parse(update);
+ */
+export const UpdateLeadSchema = z.object({
+  // Contact info
+  first_name: z
+    .string()
+    .min(2, "First name must be at least 2 characters")
+    .max(50, "First name too long")
+    .regex(/^[^0-9]*$/, "First name cannot contain digits")
+    .trim()
+    .optional(),
+
+  last_name: z
+    .string()
+    .min(2, "Last name must be at least 2 characters")
+    .max(50, "Last name too long")
+    .regex(/^[^0-9]*$/, "Last name cannot contain digits")
+    .trim()
+    .optional(),
+
+  phone: z
+    .string()
+    .regex(
+      /^\+?[1-9]\d{1,14}$/,
+      "Invalid phone format (E.164 expected, e.g., +33612345678)"
+    )
+    .nullable()
+    .optional(),
+
+  // Business context
+  company_name: z
+    .string()
+    .min(2, "Company name must be at least 2 characters")
+    .max(200, "Company name too long")
+    .trim()
+    .optional(),
+
+  fleet_size: z.enum(["1-10", "11-50", "51-100", "101-500", "500+"]).optional(),
+
+  country_code: z
+    .string()
+    .length(2, "Country code must be ISO 3166-1 alpha-2 (2 chars)")
+    .toUpperCase()
+    .optional(),
+
+  message: z
+    .string()
+    .max(5000, "Message too long")
+    .trim()
+    .nullable()
+    .optional(),
+
+  // Lead management - CORRECT ENUMS (working not contacted, no converted)
+  status: z
+    .enum(["new", "working", "qualified", "lost"])
+    .describe(
+      "Status must be: new, working, qualified, or lost. Use POST /leads/[id]/convert for converted status."
+    )
+    .optional(),
+
+  lead_stage: z
+    .enum(["top_of_funnel", "marketing_qualified", "sales_qualified"])
+    .describe("Lead stage based on qualification score")
+    .optional(),
+
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+
+  assigned_to: z.string().uuid("Invalid employee UUID").nullable().optional(),
+
+  // Notes
+  notes: z.string().max(10000, "Notes too long").nullable().optional(),
+});
+
+export type UpdateLeadInput = z.infer<typeof UpdateLeadSchema>;
