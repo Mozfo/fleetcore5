@@ -96,11 +96,36 @@ export const CreateLeadSchema = z.object({
     .optional()
     .nullable(),
 
+  city: z.string().max(100, "City name too long").trim().optional().nullable(),
+
+  website_url: z
+    .string()
+    .max(500, "Website URL too long")
+    .trim()
+    .optional()
+    .nullable(),
+
+  current_software: z
+    .string()
+    .max(200, "Current software too long")
+    .trim()
+    .optional()
+    .nullable(),
+
   message: z
     .string()
     .min(10, "Message must be at least 10 characters")
     .max(5000, "Message too long")
     .trim()
+    .optional()
+    .nullable(),
+
+  // Lead management (optional at creation, auto-assigned if not provided)
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional().nullable(),
+
+  assigned_to_id: z
+    .string()
+    .uuid("Invalid employee UUID")
     .optional()
     .nullable(),
 
@@ -247,6 +272,12 @@ export const ErrorResponseSchema = z.object({
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
 /**
+ * Helper: Convert empty strings to null (common form submission pattern)
+ * This handles the case where HTML select/input sends "" for empty values
+ */
+const emptyToNull = <T>(val: T): T | null => (val === "" ? null : val);
+
+/**
  * Lead update schema for PATCH /api/v1/crm/leads/[id]
  *
  * Validates partial updates to existing leads.
@@ -254,7 +285,6 @@ export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
  *
  * Fields NOT allowed to update:
  * - id, lead_code (immutable)
- * - email (identity field, cannot change)
  * - fit_score, engagement_score, qualification_score (auto-calculated)
  * - created_at, created_by (audit trail)
  * - deleted_at, deleted_by (managed by DELETE endpoint)
@@ -269,73 +299,142 @@ export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
  */
 export const UpdateLeadSchema = z.object({
   // Contact info
-  first_name: z
-    .string()
-    .min(2, "First name must be at least 2 characters")
-    .max(50, "First name too long")
-    .regex(/^[^0-9]*$/, "First name cannot contain digits")
-    .trim()
-    .optional(),
+  first_name: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .min(2, "First name must be at least 2 characters")
+      .max(50, "First name too long")
+      .regex(/^[^0-9]*$/, "First name cannot contain digits")
+      .trim()
+      .nullable()
+      .optional()
+  ),
 
-  last_name: z
-    .string()
-    .min(2, "Last name must be at least 2 characters")
-    .max(50, "Last name too long")
-    .regex(/^[^0-9]*$/, "Last name cannot contain digits")
-    .trim()
-    .optional(),
+  last_name: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .min(2, "Last name must be at least 2 characters")
+      .max(50, "Last name too long")
+      .regex(/^[^0-9]*$/, "Last name cannot contain digits")
+      .trim()
+      .nullable()
+      .optional()
+  ),
 
-  phone: z
-    .string()
-    .regex(
-      /^\+?[1-9]\d{1,14}$/,
-      "Invalid phone format (E.164 expected, e.g., +33612345678)"
-    )
-    .nullable()
-    .optional(),
+  email: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .email("Invalid email format")
+      .toLowerCase()
+      .trim()
+      .max(255, "Email too long")
+      .nullable()
+      .optional()
+  ),
+
+  phone: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .regex(
+        /^\+?[1-9]\d{1,14}$/,
+        "Invalid phone format (E.164 expected, e.g., +33612345678)"
+      )
+      .nullable()
+      .optional()
+  ),
 
   // Business context
-  company_name: z
-    .string()
-    .min(2, "Company name must be at least 2 characters")
-    .max(200, "Company name too long")
-    .trim()
-    .optional(),
+  company_name: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .min(2, "Company name must be at least 2 characters")
+      .max(200, "Company name too long")
+      .trim()
+      .nullable()
+      .optional()
+  ),
 
-  fleet_size: z.enum(["1-10", "11-50", "51-100", "101-500", "500+"]).optional(),
+  fleet_size: z.preprocess(
+    emptyToNull,
+    z.enum(["1-10", "11-50", "51-100", "101-500", "500+"]).nullable().optional()
+  ),
 
-  country_code: z
-    .string()
-    .length(2, "Country code must be ISO 3166-1 alpha-2 (2 chars)")
-    .toUpperCase()
-    .optional(),
+  current_software: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .max(200, "Current software too long")
+      .trim()
+      .nullable()
+      .optional()
+  ),
 
-  message: z
-    .string()
-    .max(5000, "Message too long")
-    .trim()
-    .nullable()
-    .optional(),
+  website_url: z.preprocess(
+    emptyToNull,
+    z.string().max(500, "Website URL too long").nullable().optional()
+  ),
+
+  country_code: z.preprocess(
+    emptyToNull,
+    z
+      .string()
+      .length(2, "Country code must be ISO 3166-1 alpha-2 (2 chars)")
+      .toUpperCase()
+      .nullable()
+      .optional()
+  ),
+
+  message: z.preprocess(
+    emptyToNull,
+    z.string().max(5000, "Message too long").trim().nullable().optional()
+  ),
 
   // Lead management - CORRECT ENUMS (working not contacted, no converted)
-  status: z
-    .enum(["new", "working", "qualified", "lost"])
-    .describe(
-      "Status must be: new, working, qualified, or lost. Use POST /leads/[id]/convert for converted status."
-    )
-    .optional(),
+  status: z.preprocess(
+    emptyToNull,
+    z
+      .enum(["new", "working", "qualified", "lost"])
+      .describe(
+        "Status must be: new, working, qualified, or lost. Use POST /leads/[id]/convert for converted status."
+      )
+      .nullable()
+      .optional()
+  ),
 
-  lead_stage: z
-    .enum(["top_of_funnel", "marketing_qualified", "sales_qualified"])
-    .describe("Lead stage based on qualification score")
-    .optional(),
+  lead_stage: z.preprocess(
+    emptyToNull,
+    z
+      .enum(["top_of_funnel", "marketing_qualified", "sales_qualified"])
+      .describe("Lead stage based on qualification score")
+      .nullable()
+      .optional()
+  ),
 
-  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  priority: z.preprocess(
+    emptyToNull,
+    z.enum(["low", "medium", "high", "urgent"]).nullable().optional()
+  ),
 
-  assigned_to: z.string().uuid("Invalid employee UUID").nullable().optional(),
+  // Support both assigned_to and assigned_to_id for flexibility
+  assigned_to: z.preprocess(
+    emptyToNull,
+    z.string().uuid("Invalid employee UUID").nullable().optional()
+  ),
+  assigned_to_id: z.preprocess(
+    emptyToNull,
+    z.string().uuid("Invalid employee UUID").nullable().optional()
+  ),
 
   // Notes
-  notes: z.string().max(10000, "Notes too long").nullable().optional(),
+  notes: z.preprocess(
+    emptyToNull,
+    z.string().max(10000, "Notes too long").nullable().optional()
+  ),
 });
 
 export type UpdateLeadInput = z.infer<typeof UpdateLeadSchema>;

@@ -18,6 +18,7 @@
 
 import { z } from "zod";
 import { differenceInDays, differenceInYears } from "date-fns";
+import { OPPORTUNITY_STAGE_VALUES } from "../config/opportunity-stages";
 
 // ===== LEAD VALIDATORS =====
 
@@ -328,15 +329,9 @@ export const OpportunityCreateSchema = z.object({
     .uuid("L'ID du lead doit être un UUID valide"),
 
   stage: z
-    .enum([
-      "prospecting",
-      "qualification",
-      "proposal",
-      "negotiation",
-      "closing",
-    ])
+    .enum(OPPORTUNITY_STAGE_VALUES)
     .describe(
-      "Le stage doit être: prospecting, qualification, proposal, negotiation, ou closing"
+      "Le stage doit être: qualification, demo, proposal, negotiation, ou contract_sent"
     ),
 
   status: z
@@ -406,15 +401,7 @@ export const OpportunityQuerySchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 
   // Filters
-  stage: z
-    .enum([
-      "prospecting",
-      "qualification",
-      "proposal",
-      "negotiation",
-      "closing",
-    ])
-    .optional(),
+  stage: z.enum(OPPORTUNITY_STAGE_VALUES).optional(),
 
   status: z.enum(["open", "won", "lost", "on_hold", "cancelled"]).optional(),
 

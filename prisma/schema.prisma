@@ -31,12 +31,9 @@ model adm_audit_logs {
   adm_tenants     adm_tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 
   @@index([changes], map: "adm_audit_logs_changes_gin", type: Gin)
-  @@index([changes], type: Gin)
   @@index([tenant_id, entity, entity_id], map: "adm_audit_logs_tenant_entity_entity_id_idx")
   @@index([tenant_id])
   @@index([timestamp(sort: Desc)])
-  @@index([tenant_id], map: "idx_adm_audit_logs_tenant")
-  @@index([timestamp(sort: Desc)], map: "idx_adm_audit_logs_timestamp")
 }
 
 model adm_invitations {
@@ -100,8 +97,6 @@ model adm_member_roles {
   @@index([role_id])
   @@index([tenant_id])
   @@index([updated_by])
-  @@index([member_id], map: "idx_adm_member_roles_member")
-  @@index([role_id], map: "idx_adm_member_roles_role")
 }
 
 model adm_member_sessions {
@@ -161,6 +156,10 @@ model adm_members {
   adm_members_adm_members_updated_byToadm_members                                                 adm_members?                   @relation("adm_members_updated_byToadm_members", fields: [updated_by], references: [id])
   other_adm_members_adm_members_updated_byToadm_members                                           adm_members[]                  @relation("adm_members_updated_byToadm_members")
   adm_roles_adm_members_default_role_idToadm_roles                                                adm_roles?                     @relation("adm_members_default_role_idToadm_roles", fields: [default_role_id], references: [id], map: "fk_adm_members_default_role")
+  adm_notification_logs_adm_notification_logs_created_byToadm_members                             adm_notification_logs[]        @relation("adm_notification_logs_created_byToadm_members")
+  adm_notification_logs_adm_notification_logs_deleted_byToadm_members                             adm_notification_logs[]        @relation("adm_notification_logs_deleted_byToadm_members")
+  adm_notification_logs_adm_notification_logs_recipient_idToadm_members                           adm_notification_logs[]        @relation("adm_notification_logs_recipient_idToadm_members")
+  adm_notification_logs_adm_notification_logs_updated_byToadm_members                             adm_notification_logs[]        @relation("adm_notification_logs_updated_byToadm_members")
   adm_role_versions                                                                               adm_role_versions[]
   adm_roles_adm_roles_created_byToadm_members                                                     adm_roles[]                    @relation("adm_roles_created_byToadm_members")
   adm_roles_adm_roles_deleted_byToadm_members                                                     adm_roles[]                    @relation("adm_roles_deleted_byToadm_members")
@@ -311,25 +310,100 @@ model adm_members {
   @@index([email])
   @@index([last_login_at])
   @@index([metadata], map: "adm_members_metadata_gin", type: Gin)
-  @@index([metadata], type: Gin)
   @@index([tenant_id])
   @@index([updated_by])
-  @@index([metadata], map: "idx_adm_members_metadata", type: Gin)
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model adm_notification_logs {
+  id                                                          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                                                   String?              @db.Uuid
+  recipient_id                                                String?              @db.Uuid
+  recipient_email                                             String               @db.VarChar(255)
+  recipient_phone                                             String?              @db.VarChar(20)
+  template_code                                               String               @db.VarChar(100)
+  channel                                                     notification_channel
+  locale_used                                                 String               @db.VarChar(10)
+  subject                                                     String?
+  body                                                        String?
+  variables_data                                              Json?
+  status                                                      notification_status  @default(pending)
+  sent_at                                                     DateTime?            @db.Timestamptz(6)
+  delivered_at                                                DateTime?            @db.Timestamptz(6)
+  opened_at                                                   DateTime?            @db.Timestamptz(6)
+  clicked_at                                                  DateTime?            @db.Timestamptz(6)
+  failed_at                                                   DateTime?            @db.Timestamptz(6)
+  error_message                                               String?
+  external_id                                                 String?              @db.VarChar(255)
+  ip_address                                                  String?              @db.VarChar(45)
+  user_agent                                                  String?
+  session_id                                                  String?              @db.Uuid
+  request_id                                                  String?              @db.Uuid
+  created_at                                                  DateTime             @default(now()) @db.Timestamptz(6)
+  created_by                                                  String?              @db.Uuid
+  updated_at                                                  DateTime             @default(now()) @db.Timestamptz(6)
+  updated_by                                                  String?              @db.Uuid
+  deleted_at                                                  DateTime?            @db.Timestamptz(6)
+  deleted_by                                                  String?              @db.Uuid
+  deletion_reason                                             String?
+  adm_members_adm_notification_logs_created_byToadm_members   adm_members?         @relation("adm_notification_logs_created_byToadm_members", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_created_by")
+  adm_members_adm_notification_logs_deleted_byToadm_members   adm_members?         @relation("adm_notification_logs_deleted_byToadm_members", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_deleted_by")
+  adm_members_adm_notification_logs_recipient_idToadm_members adm_members?         @relation("adm_notification_logs_recipient_idToadm_members", fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_recipient_id")
+  adm_tenants                                                 adm_tenants?         @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_adm_notification_logs_tenant")
+  adm_members_adm_notification_logs_updated_byToadm_members   adm_members?         @relation("adm_notification_logs_updated_byToadm_members", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_updated_by")
+
+  @@index([channel], map: "idx_adm_notification_logs_channel")
+  @@index([created_at], map: "idx_adm_notification_logs_created_at")
+  @@index([deleted_at], map: "idx_adm_notification_logs_deleted_at")
+  @@index([recipient_email], map: "idx_adm_notification_logs_recipient_email")
+  @@index([recipient_id], map: "idx_adm_notification_logs_recipient_id")
+  @@index([sent_at], map: "idx_adm_notification_logs_sent_at")
+  @@index([status], map: "idx_adm_notification_logs_status")
+  @@index([template_code], map: "idx_adm_notification_logs_template_code")
+  @@index([tenant_id], map: "idx_adm_notification_logs_tenant")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model adm_notification_queue {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channel           notification_channel @default(email)
+  template_code     String               @db.VarChar(100)
+  locale            String               @default("en") @db.VarChar(10)
+  recipient_email   String?              @db.VarChar(255)
+  recipient_phone   String?              @db.VarChar(50)
+  recipient_user_id String?              @db.Uuid
+  variables         Json                 @default("{}")
+  lead_id           String?              @db.Uuid
+  member_id         String?              @db.Uuid
+  tenant_id         String?              @db.Uuid
+  country_code      String?              @db.Char(2)
+  status            queue_status         @default(pending)
+  attempts          Int                  @default(0)
+  max_attempts      Int                  @default(3)
+  next_retry_at     DateTime?            @db.Timestamptz(6)
+  last_error        String?
+  created_at        DateTime             @default(now()) @db.Timestamptz(6)
+  processed_at      DateTime?            @db.Timestamptz(6)
+  idempotency_key   String?              @unique @db.VarChar(255)
+  deleted_at        DateTime?            @db.Timestamptz(6)
+  deleted_by        String?              @db.Uuid
+  deletion_reason   String?
+
+  @@index([created_at(sort: Desc)], map: "idx_adm_notification_queue_created_at")
+  @@index([status], map: "idx_adm_notification_queue_status")
+  @@index([template_code], map: "idx_adm_notification_queue_template")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model adm_provider_employees {
   id                                                                                        String                        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clerk_user_id                                                                             String                        @db.VarChar(255)
-  first_name                                                                                String                        @db.VarChar(50)
-  last_name                                                                                 String?                       @db.VarChar(50)
-  phone                                                                                     String?                       @db.VarChar(20)
   email                                                                                     String                        @db.VarChar(255)
   department                                                                                String?                       @db.VarChar(50)
   title                                                                                     String?                       @db.VarChar(50)
   permissions                                                                               Json?
   status                                                                                    String                        @default("active") @db.VarChar(50)
-  preferred_locale                                                                          String?                       @db.VarChar(10)
   created_at                                                                                DateTime                      @default(now()) @db.Timestamptz(6)
   created_by                                                                                String?                       @db.Uuid
   updated_at                                                                                DateTime                      @default(now()) @db.Timestamptz(6)
@@ -338,6 +412,9 @@ model adm_provider_employees {
   deleted_by                                                                                String?                       @db.Uuid
   deletion_reason                                                                           String?
   supervisor_id                                                                             String?                       @db.Uuid
+  preferred_locale                                                                          String?                       @db.VarChar(10)
+  first_name                                                                                String                        @db.VarChar(50)
+  last_name                                                                                 String?                       @db.VarChar(50)
   adm_invitations                                                                           adm_invitations[]
   adm_provider_employees_adm_provider_employees_created_byToadm_provider_employees          adm_provider_employees?       @relation("adm_provider_employees_created_byToadm_provider_employees", fields: [created_by], references: [id])
   other_adm_provider_employees_adm_provider_employees_created_byToadm_provider_employees    adm_provider_employees[]      @relation("adm_provider_employees_created_byToadm_provider_employees")
@@ -375,23 +452,29 @@ model adm_provider_employees {
   crm_leads_crm_leads_created_byToadm_provider_employees                                    crm_leads[]                   @relation("crm_leads_created_byToadm_provider_employees")
   crm_leads_crm_leads_deleted_byToadm_provider_employees                                    crm_leads[]                   @relation("crm_leads_deleted_byToadm_provider_employees")
   crm_leads_crm_leads_updated_byToadm_provider_employees                                    crm_leads[]                   @relation("crm_leads_updated_byToadm_provider_employees")
-  crm_settings_crm_settings_created_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_created_byToadm_provider_employees")
-  crm_settings_crm_settings_deleted_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_deleted_byToadm_provider_employees")
-  crm_settings_crm_settings_updated_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_updated_byToadm_provider_employees")
   crm_opportunities_crm_opportunities_assigned_toToadm_provider_employees                   crm_opportunities[]           @relation("crm_opportunities_assigned_toToadm_provider_employees")
   crm_opportunities_crm_opportunities_created_byToadm_provider_employees                    crm_opportunities[]           @relation("crm_opportunities_created_byToadm_provider_employees")
   crm_opportunities_crm_opportunities_deleted_byToadm_provider_employees                    crm_opportunities[]           @relation("crm_opportunities_deleted_byToadm_provider_employees")
   crm_opportunities_crm_opportunities_owner_idToadm_provider_employees                      crm_opportunities[]           @relation("crm_opportunities_owner_idToadm_provider_employees")
   crm_opportunities_crm_opportunities_updated_byToadm_provider_employees                    crm_opportunities[]           @relation("crm_opportunities_updated_byToadm_provider_employees")
+  crm_settings_crm_settings_created_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_created_byToadm_provider_employees")
+  crm_settings_crm_settings_deleted_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_deleted_byToadm_provider_employees")
+  crm_settings_crm_settings_updated_byToadm_provider_employees                              crm_settings[]                @relation("crm_settings_updated_byToadm_provider_employees")
   dir_car_makes_dir_car_makes_created_byToadm_provider_employees                            dir_car_makes[]               @relation("dir_car_makes_created_byToadm_provider_employees")
   dir_car_makes_dir_car_makes_deleted_byToadm_provider_employees                            dir_car_makes[]               @relation("dir_car_makes_deleted_byToadm_provider_employees")
   dir_car_makes_dir_car_makes_updated_byToadm_provider_employees                            dir_car_makes[]               @relation("dir_car_makes_updated_byToadm_provider_employees")
   dir_car_models_dir_car_models_created_byToadm_provider_employees                          dir_car_models[]              @relation("dir_car_models_created_byToadm_provider_employees")
   dir_car_models_dir_car_models_deleted_byToadm_provider_employees                          dir_car_models[]              @relation("dir_car_models_deleted_byToadm_provider_employees")
   dir_car_models_dir_car_models_updated_byToadm_provider_employees                          dir_car_models[]              @relation("dir_car_models_updated_byToadm_provider_employees")
+  dir_country_locales_dir_country_locales_created_byToadm_provider_employees                dir_country_locales[]         @relation("dir_country_locales_created_byToadm_provider_employees")
+  dir_country_locales_dir_country_locales_deleted_byToadm_provider_employees                dir_country_locales[]         @relation("dir_country_locales_deleted_byToadm_provider_employees")
+  dir_country_locales_dir_country_locales_updated_byToadm_provider_employees                dir_country_locales[]         @relation("dir_country_locales_updated_byToadm_provider_employees")
   dir_country_regulations_dir_country_regulations_created_byToadm_provider_employees        dir_country_regulations[]     @relation("dir_country_regulations_created_byToadm_provider_employees")
   dir_country_regulations_dir_country_regulations_deleted_byToadm_provider_employees        dir_country_regulations[]     @relation("dir_country_regulations_deleted_byToadm_provider_employees")
   dir_country_regulations_dir_country_regulations_updated_byToadm_provider_employees        dir_country_regulations[]     @relation("dir_country_regulations_updated_byToadm_provider_employees")
+  dir_notification_templates_dir_notification_templates_created_byToadm_provider_employees  dir_notification_templates[]  @relation("dir_notification_templates_created_byToadm_provider_employees")
+  dir_notification_templates_dir_notification_templates_deleted_byToadm_provider_employees  dir_notification_templates[]  @relation("dir_notification_templates_deleted_byToadm_provider_employees")
+  dir_notification_templates_dir_notification_templates_updated_byToadm_provider_employees  dir_notification_templates[]  @relation("dir_notification_templates_updated_byToadm_provider_employees")
   dir_ownership_types_dir_ownership_types_created_byToadm_provider_employees                dir_ownership_types[]         @relation("dir_ownership_types_created_byToadm_provider_employees")
   dir_ownership_types_dir_ownership_types_deleted_byToadm_provider_employees                dir_ownership_types[]         @relation("dir_ownership_types_deleted_byToadm_provider_employees")
   dir_ownership_types_dir_ownership_types_updated_byToadm_provider_employees                dir_ownership_types[]         @relation("dir_ownership_types_updated_byToadm_provider_employees")
@@ -463,6 +546,8 @@ model adm_provider_employees {
 
   @@index([created_by])
   @@index([deleted_at])
+  @@index([first_name])
+  @@index([last_name])
   @@index([permissions], map: "adm_provider_employees_permissions_gin", type: Gin)
   @@index([updated_by])
 }
@@ -609,6 +694,7 @@ model adm_tenants {
   adm_invitations              adm_invitations[]
   adm_member_roles             adm_member_roles[]
   adm_members                  adm_members[]
+  adm_notification_logs        adm_notification_logs[]
   adm_roles                    adm_roles[]
   adm_tenant_lifecycle_events  adm_tenant_lifecycle_events[]
   adm_tenant_settings          adm_tenant_settings[]
@@ -1074,6 +1160,54 @@ model crm_contracts {
   @@index([updated_by])
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model crm_countries {
+  id                     String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_code           String      @unique @db.Char(2)
+  country_name_en        String      @db.VarChar(100)
+  country_name_fr        String      @db.VarChar(100)
+  country_name_ar        String      @db.VarChar(100)
+  flag_emoji             String      @db.VarChar(10)
+  is_operational         Boolean     @default(false)
+  is_visible             Boolean     @default(true)
+  display_order          Int
+  notification_locale    String      @default("en") @db.VarChar(5)
+  created_at             DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime    @default(now()) @db.Timestamptz(6)
+  country_preposition_fr String?     @default("en") @db.VarChar(5)
+  country_preposition_en String?     @default("in") @db.VarChar(10)
+  country_gdpr           Boolean     @default(false)
+  crm_leads              crm_leads[]
+
+  @@index([country_code], map: "idx_crm_countries_code")
+  @@index([country_gdpr], map: "idx_crm_countries_gdpr")
+  @@index([is_operational], map: "idx_crm_countries_operational")
+  @@index([is_visible], map: "idx_crm_countries_visible")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model crm_lead_activities {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id           String    @db.Uuid
+  activity_type     String    @db.VarChar(50)
+  title             String?   @db.VarChar(255)
+  description       String?
+  metadata          Json?     @default("{}")
+  scheduled_at      DateTime? @db.Timestamptz(6)
+  completed_at      DateTime? @db.Timestamptz(6)
+  is_completed      Boolean?  @default(false)
+  performed_by      String?   @db.Uuid
+  performed_by_name String?   @db.VarChar(255)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  crm_leads         crm_leads @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_crm_lead_activities_created_at")
+  @@index([lead_id], map: "idx_crm_lead_activities_lead_id")
+  @@index([activity_type], map: "idx_crm_lead_activities_type")
+}
+
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model crm_lead_sources {
   id          String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
@@ -1084,35 +1218,8 @@ model crm_lead_sources {
   crm_leads   crm_leads[]
 }
 
-/// Master CRM countries table - Operational (UAE/FR) + Expansion (28+ countries)
-/// Drives request-demo dropdown and email routing
-model crm_countries {
-  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  country_code        String      @unique @db.Char(2)
-  country_name_en     String      @db.VarChar(100)
-  country_name_fr     String      @db.VarChar(100)
-  country_name_ar     String      @db.VarChar(100)
-  country_preposition_fr String   @default("en") @db.VarChar(5)
-  country_preposition_en String   @default("in") @db.VarChar(10)
-  flag_emoji          String      @db.VarChar(10)
-  is_operational      Boolean     @default(false)
-  is_visible          Boolean     @default(true)
-  display_order       Int
-  notification_locale String      @default("en") @db.VarChar(5)
-  country_gdpr        Boolean     @default(false)
-  created_at          DateTime    @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime    @updatedAt @db.Timestamptz(6)
-
-  // Relations
-  crm_leads           crm_leads[]
-
-  @@index([is_operational], map: "idx_crm_countries_operational")
-  @@index([is_visible], map: "idx_crm_countries_visible")
-  @@index([country_code], map: "idx_crm_countries_code")
-  @@index([country_gdpr], map: "idx_crm_countries_gdpr")
-}
-
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model crm_leads {
@@ -1151,32 +1258,37 @@ model crm_leads {
   linkedin_url                                                         String?
   city                                                                 String?
   lead_stage                                                           lead_stage?
-  priority                                                             String?                 @default("medium") @db.VarChar(20)
   fit_score                                                            Decimal?                @db.Decimal(5, 2)
   engagement_score                                                     Decimal?                @db.Decimal(5, 2)
   scoring                                                              Json?
   gdpr_consent                                                         Boolean?
   consent_at                                                           DateTime?               @db.Timestamptz(6)
-  consent_ip                                                           String?                 @db.VarChar(45)
   source_id                                                            String?                 @db.Uuid
   opportunity_id                                                       String?                 @db.Uuid
   next_action_date                                                     DateTime?               @db.Timestamptz(6)
+  priority                                                             String?                 @default("medium") @db.VarChar(20)
+  consent_ip                                                           String?                 @db.VarChar(45)
   crm_contracts                                                        crm_contracts[]
+  crm_lead_activities                                                  crm_lead_activities[]
   adm_provider_employees_crm_leads_assigned_toToadm_provider_employees adm_provider_employees? @relation("crm_leads_assigned_toToadm_provider_employees", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_crm_leads_assigned_to")
+  crm_countries                                                        crm_countries?          @relation(fields: [country_code], references: [country_code], onDelete: Restrict, map: "fk_crm_leads_country")
   adm_provider_employees_crm_leads_created_byToadm_provider_employees  adm_provider_employees? @relation("crm_leads_created_byToadm_provider_employees", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_created_by")
   adm_provider_employees_crm_leads_deleted_byToadm_provider_employees  adm_provider_employees? @relation("crm_leads_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_deleted_by")
   crm_opportunities_crm_leads_opportunity_idTocrm_opportunities        crm_opportunities?      @relation("crm_leads_opportunity_idTocrm_opportunities", fields: [opportunity_id], references: [id], onUpdate: NoAction, map: "fk_crm_leads_opportunity")
   crm_lead_sources                                                     crm_lead_sources?       @relation(fields: [source_id], references: [id], onUpdate: NoAction, map: "fk_crm_leads_source")
   adm_provider_employees_crm_leads_updated_byToadm_provider_employees  adm_provider_employees? @relation("crm_leads_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_updated_by")
   crm_opportunities_crm_opportunities_lead_idTocrm_leads               crm_opportunities[]     @relation("crm_opportunities_lead_idTocrm_leads")
-  crm_countries                                                        crm_countries?          @relation(fields: [country_code], references: [country_code], onDelete: Restrict, onUpdate: Cascade, map: "fk_crm_leads_country")
 
   @@index([created_at(sort: Desc)])
   @@index([deleted_at])
   @@index([status])
-  @@index([priority])
-  @@index([metadata], map: "idx_crm_leads_metadata", type: Gin)
+  @@index([assigned_to], map: "idx_crm_leads_assigned_to")
   @@index([country_code], map: "idx_crm_leads_country_code")
+  @@index([lead_stage], map: "idx_crm_leads_lead_stage")
+  @@index([metadata], map: "idx_crm_leads_metadata", type: Gin)
+  @@index([qualification_score], map: "idx_crm_leads_qualification_score")
+  @@index([deleted_at, status, lead_stage], map: "idx_crm_leads_status_stage_deleted")
+  @@index([updated_at], map: "idx_crm_leads_updated_at")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -1207,11 +1319,13 @@ model crm_opportunities {
   won_date                                                                     DateTime?                     @db.Date
   lost_date                                                                    DateTime?                     @db.Date
   owner_id                                                                     String?                       @db.Uuid
-  loss_reason_id                                                               String?                       @db.Uuid
+  loss_reason                                                                  String?                       @db.VarChar(50)
   plan_id                                                                      String?                       @db.Uuid
   contract_id                                                                  String?                       @db.Uuid
   pipeline_id                                                                  String?                       @db.Uuid
   notes                                                                        String?
+  stage_entered_at                                                             DateTime                      @default(now()) @db.Timestamptz(6)
+  max_days_in_stage                                                            Int?                          @default(14)
   crm_contracts_crm_contracts_opportunity_idTocrm_opportunities                crm_contracts[]               @relation("crm_contracts_opportunity_idTocrm_opportunities")
   crm_leads_crm_leads_opportunity_idTocrm_opportunities                        crm_leads[]                   @relation("crm_leads_opportunity_idTocrm_opportunities")
   adm_members_crm_opportunities_assigned_toToadm_members                       adm_members?                  @relation("crm_opportunities_assigned_toToadm_members", fields: [assigned_to], references: [id])
@@ -1223,7 +1337,6 @@ model crm_opportunities {
   crm_contracts_crm_opportunities_contract_idTocrm_contracts                   crm_contracts?                @relation("crm_opportunities_contract_idTocrm_contracts", fields: [contract_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_contract")
   adm_provider_employees_crm_opportunities_created_byToadm_provider_employees  adm_provider_employees?       @relation("crm_opportunities_created_byToadm_provider_employees", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_created_by")
   adm_provider_employees_crm_opportunities_deleted_byToadm_provider_employees  adm_provider_employees?       @relation("crm_opportunities_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_deleted_by")
-  crm_opportunity_loss_reasons                                                 crm_opportunity_loss_reasons? @relation(fields: [loss_reason_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_loss_reason")
   adm_provider_employees_crm_opportunities_owner_idToadm_provider_employees    adm_provider_employees?       @relation("crm_opportunities_owner_idToadm_provider_employees", fields: [owner_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_owner")
   crm_pipelines                                                                crm_pipelines?                @relation(fields: [pipeline_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_pipeline")
   bil_billing_plans                                                            bil_billing_plans?            @relation(fields: [plan_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_plan")
@@ -1239,16 +1352,6 @@ model crm_opportunities {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model crm_opportunity_loss_reasons {
-  id                String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name              String              @unique @db.VarChar(100)
-  category          String?             @db.VarChar(50)
-  description       String?
-  is_active         Boolean             @default(true)
-  crm_opportunities crm_opportunities[]
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model crm_pipelines {
   id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   name                String              @db.VarChar(100)
@@ -1261,43 +1364,41 @@ model crm_pipelines {
   crm_opportunities   crm_opportunities[]
 }
 
-/// CRM Settings - Configuration centralisée module CRM
-/// Stores: scoring rules, assignment rules, workflows, SLA, notifications
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model crm_settings {
-  id                                                                         String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  setting_key                                                                String                  @unique @db.VarChar(100)
-  setting_value                                                              Json                    @db.JsonB
-  description                                                                String?
-  category                                                                   String                  @db.VarChar(50)
-  data_type                                                                  String                  @db.VarChar(20)
-  is_active                                                                  Boolean                 @default(true)
-  is_system                                                                  Boolean                 @default(false)
-  version                                                                    Int                     @default(1)
-  schema_version                                                             String?                 @db.VarChar(20)
-  display_label                                                              String?                 @db.VarChar(100)
-  display_order                                                              Int                     @default(0)
-  ui_component                                                               String?                 @db.VarChar(50)
-  help_text                                                                  String?
-  documentation_url                                                          String?                 @db.VarChar(255)
-  default_value                                                              Json?                   @db.JsonB
-  created_at                                                                 DateTime                @default(now()) @db.Timestamptz(6)
-  updated_at                                                                 DateTime                @default(now()) @db.Timestamptz(6)
-  created_by                                                                 String?                 @db.Uuid
-  updated_by                                                                 String?                 @db.Uuid
-  deleted_at                                                                 DateTime?               @db.Timestamptz(6)
-  deleted_by                                                                 String?                 @db.Uuid
-  deletion_reason                                                            String?
-  adm_provider_employees_crm_settings_created_byToadm_provider_employees     adm_provider_employees? @relation("crm_settings_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_crm_settings_created_by")
-  adm_provider_employees_crm_settings_deleted_byToadm_provider_employees     adm_provider_employees? @relation("crm_settings_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_crm_settings_deleted_by")
-  adm_provider_employees_crm_settings_updated_byToadm_provider_employees     adm_provider_employees? @relation("crm_settings_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_crm_settings_updated_by")
+  id                                                                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  setting_key                                                            String                  @unique @db.VarChar(100)
+  setting_value                                                          Json
+  description                                                            String?
+  category                                                               String                  @db.VarChar(50)
+  data_type                                                              String                  @db.VarChar(20)
+  is_active                                                              Boolean                 @default(true)
+  is_system                                                              Boolean                 @default(false)
+  version                                                                Int                     @default(1)
+  schema_version                                                         String?                 @db.VarChar(20)
+  created_at                                                             DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                                                             DateTime                @default(now()) @db.Timestamptz(6)
+  created_by                                                             String?                 @db.Uuid
+  updated_by                                                             String?                 @db.Uuid
+  deleted_at                                                             DateTime?               @db.Timestamptz(6)
+  deleted_by                                                             String?                 @db.Uuid
+  deletion_reason                                                        String?
+  display_label                                                          String?                 @db.VarChar(100)
+  display_order                                                          Int?                    @default(0)
+  ui_component                                                           String?                 @db.VarChar(50)
+  help_text                                                              String?
+  documentation_url                                                      String?                 @db.VarChar(255)
+  default_value                                                          Json?
+  adm_provider_employees_crm_settings_created_byToadm_provider_employees adm_provider_employees? @relation("crm_settings_created_byToadm_provider_employees", fields: [created_by], references: [id])
+  adm_provider_employees_crm_settings_deleted_byToadm_provider_employees adm_provider_employees? @relation("crm_settings_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
+  adm_provider_employees_crm_settings_updated_byToadm_provider_employees adm_provider_employees? @relation("crm_settings_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
 
-  @@index([setting_key], map: "idx_crm_settings_key")
-  @@index([category], map: "idx_crm_settings_category")
-  @@index([deleted_at], map: "idx_crm_settings_deleted")
   @@index([created_by], map: "idx_crm_settings_created_by")
+  @@index([deleted_at], map: "idx_crm_settings_deleted")
   @@index([updated_by], map: "idx_crm_settings_updated_by")
-  @@index([setting_value(ops: JsonbPathOps)], map: "idx_crm_settings_value", type: Gin)
-  @@index([display_order], map: "idx_crm_settings_display_order")
+  @@index([setting_value], map: "idx_crm_settings_value", type: Gin)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1373,6 +1474,40 @@ model dir_car_models {
   @@index([tenant_id])
   @@index([updated_at])
   @@index([vehicle_class_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model dir_country_locales {
+  id                                                                            String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_code                                                                  String                  @unique @db.Char(2)
+  country_name                                                                  String                  @db.VarChar(100)
+  primary_locale                                                                String                  @db.VarChar(10)
+  fallback_locale                                                               String?                 @db.VarChar(10)
+  supported_locales                                                             String[]                @default([])
+  timezone                                                                      String                  @db.VarChar(50)
+  currency                                                                      String                  @db.Char(3)
+  currency_symbol                                                               String?                 @db.VarChar(10)
+  currency_position                                                             String?                 @db.VarChar(10)
+  number_format                                                                 String                  @default("1,234.56") @db.VarChar(20)
+  date_format                                                                   String                  @db.VarChar(20)
+  time_format                                                                   String                  @db.VarChar(20)
+  first_day_of_week                                                             Int                     @default(1) @db.SmallInt
+  rtl_enabled                                                                   Boolean                 @default(false)
+  status                                                                        lifecycle_status        @default(active)
+  created_at                                                                    DateTime                @default(now()) @db.Timestamptz(6)
+  created_by                                                                    String?                 @db.Uuid
+  updated_at                                                                    DateTime                @default(now()) @db.Timestamptz(6)
+  updated_by                                                                    String?                 @db.Uuid
+  deleted_at                                                                    DateTime?               @db.Timestamptz(6)
+  deleted_by                                                                    String?                 @db.Uuid
+  deletion_reason                                                               String?
+  adm_provider_employees_dir_country_locales_created_byToadm_provider_employees adm_provider_employees? @relation("dir_country_locales_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_country_locales_created_by")
+  adm_provider_employees_dir_country_locales_deleted_byToadm_provider_employees adm_provider_employees? @relation("dir_country_locales_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_country_locales_deleted_by")
+  adm_provider_employees_dir_country_locales_updated_byToadm_provider_employees adm_provider_employees? @relation("dir_country_locales_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_country_locales_updated_by")
+
+  @@index([country_code], map: "idx_dir_country_locales_country")
+  @@index([deleted_at], map: "idx_dir_country_locales_deleted_at")
+  @@index([status], map: "idx_dir_country_locales_status")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1462,6 +1597,38 @@ model dir_maintenance_types {
 
   @@index([category, is_mandatory], map: "idx_maintenance_types_category_mandatory")
   @@index([deleted_at], map: "idx_maintenance_types_deleted")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model dir_notification_templates {
+  id                                                                                   String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_code                                                                        String                  @db.VarChar(100)
+  template_name                                                                        String                  @db.VarChar(200)
+  channel                                                                              notification_channel
+  supported_countries                                                                  String[]                @default([])
+  supported_locales                                                                    String[]                @default([])
+  subject_translations                                                                 Json
+  body_translations                                                                    Json
+  variables                                                                            Json?
+  status                                                                               lifecycle_status        @default(active)
+  created_at                                                                           DateTime                @default(now()) @db.Timestamptz(6)
+  created_by                                                                           String?                 @db.Uuid
+  updated_at                                                                           DateTime                @default(now()) @db.Timestamptz(6)
+  updated_by                                                                           String?                 @db.Uuid
+  deleted_at                                                                           DateTime?               @db.Timestamptz(6)
+  deleted_by                                                                           String?                 @db.Uuid
+  deletion_reason                                                                      String?
+  adm_provider_employees_dir_notification_templates_created_byToadm_provider_employees adm_provider_employees? @relation("dir_notification_templates_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_notification_templates_created_by")
+  adm_provider_employees_dir_notification_templates_deleted_byToadm_provider_employees adm_provider_employees? @relation("dir_notification_templates_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_notification_templates_deleted_by")
+  adm_provider_employees_dir_notification_templates_updated_byToadm_provider_employees adm_provider_employees? @relation("dir_notification_templates_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_notification_templates_updated_by")
+
+  @@unique([template_code, channel], map: "uq_dir_notification_templates_code_channel")
+  @@index([channel], map: "idx_dir_notification_templates_channel")
+  @@index([template_code], map: "idx_dir_notification_templates_code")
+  @@index([supported_countries], map: "idx_dir_notification_templates_countries_gin", type: Gin)
+  @@index([deleted_at], map: "idx_dir_notification_templates_deleted_at")
+  @@index([supported_locales], map: "idx_dir_notification_templates_locales_gin", type: Gin)
+  @@index([status], map: "idx_dir_notification_templates_status")
 }
 
 model dir_ownership_types {
@@ -1954,7 +2121,6 @@ model fin_driver_payments {
   @@index([payment_date(sort: Desc)])
   @@index([tenant_id])
   @@index([updated_by])
-  @@index([payment_date(sort: Desc)], map: "idx_fin_driver_payments_date")
 }
 
 model fin_payment_batch_statuses {
@@ -2161,8 +2327,6 @@ model fin_transactions {
   @@index([tenant_id])
   @@index([transaction_date(sort: Desc)])
   @@index([updated_by])
-  @@index([transaction_date(sort: Desc)], map: "idx_fin_transactions_date")
-  @@index([metadata], map: "idx_fin_transactions_metadata", type: Gin)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2711,7 +2875,6 @@ model flt_vehicles {
   @@index([tenant_id])
   @@index([updated_by])
   @@index([vin])
-  @@index([metadata], map: "idx_flt_vehicles_metadata", type: Gin)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -3144,8 +3307,6 @@ model rid_driver_performances {
   adm_tenants                                                 adm_tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   adm_members_rid_driver_performances_updated_byToadm_members adm_members?   @relation("rid_driver_performances_updated_byToadm_members", fields: [updated_by], references: [id])
 
-  @@index([driver_id], map: "idx_rid_driver_performances_driver")
-  @@index([tenant_id], map: "idx_rid_driver_performances_tenant")
   @@index([created_by])
   @@index([deleted_at])
   @@index([driver_id])
@@ -3667,7 +3828,6 @@ model sch_shifts {
   adm_members_sch_shifts_deleted_byToadm_members            adm_members?     @relation("sch_shifts_deleted_byToadm_members", fields: [deleted_by], references: [id])
   adm_members_sch_shifts_updated_byToadm_members            adm_members?     @relation("sch_shifts_updated_byToadm_members", fields: [updated_by], references: [id])
 
-  @@index([metadata], map: "idx_sch_shifts_metadata", type: Gin)
   @@index([start_time(sort: Desc)], map: "idx_sch_shifts_start_time")
   @@index([check_in_at], map: "idx_shifts_checkin")
   @@index([check_out_at], map: "idx_shifts_checkout")
@@ -3946,7 +4106,6 @@ model sup_ticket_messages {
   sup_tickets                                             sup_tickets           @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
   adm_members_sup_ticket_messages_updated_byToadm_members adm_members?          @relation("sup_ticket_messages_updated_byToadm_members", fields: [updated_by], references: [id])
 
-  @@index([ticket_id], map: "idx_sup_ticket_messages_ticket")
   @@index([created_by])
   @@index([deleted_at])
   @@index([metadata], type: Gin)
@@ -4080,7 +4239,6 @@ model trp_client_invoices {
   adm_members_trp_client_invoices_updated_byToadm_members adm_members?               @relation("trp_client_invoices_updated_byToadm_members", fields: [updated_by], references: [id])
 
   @@index([client_id, status, invoice_date], map: "idx_client_invoices_client_status_date")
-  @@index([deleted_at], map: "idx_client_invoices_deleted")
   @@index([paid_at], map: "idx_client_invoices_paid_at")
   @@index([status, due_date], map: "idx_client_invoices_status_due")
   @@index([client_id], map: "idx_trp_client_invoices_client_id")
@@ -4144,7 +4302,6 @@ model trp_platform_accounts {
   trp_settlements                                           trp_settlements[]
   trp_trips                                                 trp_trips[]
 
-  @@index([deleted_at], map: "idx_platform_accounts_deleted")
   @@index([error_count], map: "idx_platform_accounts_error_count")
   @@index([status, last_sync_at], map: "idx_platform_accounts_status_sync")
   @@index([account_identifier], map: "idx_trp_platform_accounts_account_identifier")
@@ -4198,12 +4355,10 @@ model trp_settlements {
   adm_members_trp_settlements_deleted_byToadm_members adm_members?           @relation("trp_settlements_deleted_byToadm_members", fields: [deleted_by], references: [id])
   adm_members_trp_settlements_updated_byToadm_members adm_members?           @relation("trp_settlements_updated_byToadm_members", fields: [updated_by], references: [id])
 
-  @@index([deleted_at], map: "idx_settlements_deleted")
   @@index([reconciled], map: "idx_settlements_not_reconciled")
   @@index([platform_account_id, settlement_date], map: "idx_settlements_platform_account_date")
   @@index([platform_settlement_id], map: "idx_settlements_platform_settlement_id")
   @@index([status, paid_at], map: "idx_settlements_status_paid")
-  @@index([trip_id], map: "idx_settlements_trip")
   @@index([created_by], map: "idx_trp_settlements_created_by")
   @@index([deleted_at], map: "idx_trp_settlements_deleted_at")
   @@index([metadata], map: "idx_trp_settlements_metadata", type: Gin)
@@ -4767,6 +4922,13 @@ enum invoice_status {
   uncollectible
 }
 
+enum lead_priority {
+  low
+  medium
+  high
+  urgent
+}
+
 enum lead_stage {
   top_of_funnel
   marketing_qualified
@@ -4776,10 +4938,10 @@ enum lead_stage {
 
 enum lead_status {
   new
-  working
   qualified
   converted
   lost
+  working
 }
 
 enum lifecycle_event_type {
@@ -4864,6 +5026,24 @@ enum metric_source {
   api
   import
   calculated
+}
+
+enum notification_channel {
+  email
+  sms
+  slack
+  webhook
+  push
+}
+
+enum notification_status {
+  pending
+  sent
+  delivered
+  bounced
+  opened
+  clicked
+  failed
 }
 
 enum opportunity_stage {
@@ -5001,6 +5181,14 @@ enum provider_type {
   external
   online_platform
   government
+}
+
+enum queue_status {
+  pending
+  processing
+  sent
+  failed
+  cancelled
 }
 
 enum receipt_status {
@@ -5351,135 +5539,4 @@ enum verification_status {
   pending
   verified
   rejected
-}
-
-// ============================================
-// STEP 0.4 - NOTIFICATION SERVICE & TEMPLATES
-// ============================================
-// NOTE: Les colonnes audit (created_by, updated_by, deleted_by) ont des FK
-// polymorphes en base PostgreSQL (vers adm_members OU adm_provider_employees).
-// Prisma ne supportant pas ce pattern, AUCUNE relation n'est modélisée ici
-// pour ces champs. L'intégrité référentielle reste garantie par PostgreSQL.
-// Voir issue Prisma #8976 (NOT_PLANNED)
-// ============================================
-
-enum notification_channel {
-  email
-  sms
-  slack
-  webhook
-  push
-}
-
-enum notification_status {
-  pending
-  sent
-  delivered
-  bounced
-  opened
-  clicked
-  failed
-}
-
-model adm_notification_logs {
-  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id           String?              @db.Uuid
-  recipient_id        String?              @db.Uuid
-  recipient_email     String               @db.VarChar(255)
-  recipient_phone     String?              @db.VarChar(20)
-  template_code       String               @db.VarChar(100)
-  channel             notification_channel
-  locale_used         String               @db.VarChar(10)
-  subject             String?
-  body                String?
-  variables_data      Json?
-  status              notification_status  @default(pending)
-  sent_at             DateTime?            @db.Timestamptz(6)
-  delivered_at        DateTime?            @db.Timestamptz(6)
-  opened_at           DateTime?            @db.Timestamptz(6)
-  clicked_at          DateTime?            @db.Timestamptz(6)
-  failed_at           DateTime?            @db.Timestamptz(6)
-  error_message       String?
-  external_id         String?              @db.VarChar(255)
-  ip_address          String?              @db.VarChar(45)
-  user_agent          String?
-  session_id          String?              @db.Uuid
-  request_id          String?              @db.Uuid
-  created_at          DateTime             @default(now()) @db.Timestamptz(6)
-  created_by          String?              @db.Uuid
-  updated_at          DateTime             @default(now()) @db.Timestamptz(6)
-  updated_by          String?              @db.Uuid
-  deleted_at          DateTime?            @db.Timestamptz(6)
-  deleted_by          String?              @db.Uuid
-  deletion_reason     String?
-
-  @@index([channel], map: "idx_adm_notification_logs_channel")
-  @@index([created_at], map: "idx_adm_notification_logs_created_at")
-  @@index([deleted_at], map: "idx_adm_notification_logs_deleted_at")
-  @@index([recipient_email], map: "idx_adm_notification_logs_recipient_email")
-  @@index([recipient_id], map: "idx_adm_notification_logs_recipient_id")
-  @@index([sent_at], map: "idx_adm_notification_logs_sent_at")
-  @@index([status], map: "idx_adm_notification_logs_status")
-  @@index([template_code], map: "idx_adm_notification_logs_template_code")
-  @@index([tenant_id], map: "idx_adm_notification_logs_tenant")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model dir_country_locales {
-  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  country_code       String           @unique @db.Char(2)
-  country_name       String           @db.VarChar(100)
-  primary_locale     String           @db.VarChar(10)
-  fallback_locale    String?          @db.VarChar(10)
-  supported_locales  String[]         @default([])
-  timezone           String           @db.VarChar(50)
-  currency           String           @db.Char(3)
-  currency_symbol    String?          @db.VarChar(10)
-  currency_position  String?          @db.VarChar(10)
-  number_format      String           @default("1,234.56") @db.VarChar(20)
-  date_format        String           @db.VarChar(20)
-  time_format        String           @db.VarChar(20)
-  first_day_of_week  Int              @default(1) @db.SmallInt
-  rtl_enabled        Boolean          @default(false)
-  status             lifecycle_status @default(active)
-  created_at         DateTime         @default(now()) @db.Timestamptz(6)
-  created_by         String?          @db.Uuid
-  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
-  updated_by         String?          @db.Uuid
-  deleted_at         DateTime?        @db.Timestamptz(6)
-  deleted_by         String?          @db.Uuid
-  deletion_reason    String?
-
-  @@index([country_code], map: "idx_dir_country_locales_country")
-  @@index([deleted_at], map: "idx_dir_country_locales_deleted_at")
-  @@index([status], map: "idx_dir_country_locales_status")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model dir_notification_templates {
-  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  template_code        String               @db.VarChar(100)
-  template_name        String               @db.VarChar(200)
-  channel              notification_channel
-  supported_countries  String[]             @default([])
-  supported_locales    String[]             @default([])
-  subject_translations Json
-  body_translations    Json
-  variables            Json?
-  status               lifecycle_status     @default(active)
-  created_at           DateTime             @default(now()) @db.Timestamptz(6)
-  created_by           String?              @db.Uuid
-  updated_at           DateTime             @default(now()) @db.Timestamptz(6)
-  updated_by           String?              @db.Uuid
-  deleted_at           DateTime?            @db.Timestamptz(6)
-  deleted_by           String?              @db.Uuid
-  deletion_reason      String?
-
-  @@unique([template_code, channel], map: "uq_dir_notification_templates_code_channel")
-  @@index([channel], map: "idx_dir_notification_templates_channel")
-  @@index([template_code], map: "idx_dir_notification_templates_code")
-  @@index([supported_countries], map: "idx_dir_notification_templates_countries_gin", type: Gin)
-  @@index([deleted_at], map: "idx_dir_notification_templates_deleted_at")
-  @@index([supported_locales], map: "idx_dir_notification_templates_locales_gin", type: Gin)
-  @@index([status], map: "idx_dir_notification_templates_status")
 }
