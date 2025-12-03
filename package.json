@@ -32,12 +32,7 @@
     "test:phase0.2": "vitest run lib/validators lib/middleware",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:audit": "dotenv -e .env.local -- tsx scripts/test-audit-manual.ts",
-    "test:audit:e2e": "dotenv -e .env.local -- tsx scripts/test-audit-e2e.ts",
     "validate:sql": "dotenv -e .env.local -- tsx scripts/validate-sql.ts",
-    "test:batch3": "dotenv -e .env.test -- tsx scripts/test-batch3-staging.ts",
-    "test:batch3:verbose": "dotenv -e .env.test -- tsx scripts/test-batch3-staging.ts --verbose",
-    "test:batch3:ci": "tsx scripts/test-batch3-staging.ts",
     "test:critical": "vitest run __tests__/critical-paths/"
   },
   "prisma": {
