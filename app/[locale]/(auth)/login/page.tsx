@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useSignIn } from "@clerk/nextjs";
+import { useSignIn, useSession } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,7 +34,9 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showResetSuccess, setShowResetSuccess] = useState(false);
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
   const { isLoaded, signIn, setActive } = useSignIn();
+  const { session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -49,6 +51,15 @@ function LoginForm() {
       setTimeout(() => setShowResetSuccess(false), 5000);
     }
   }, [searchParams]);
+
+  // Effet pour rediriger après login (l'activation de l'org est gérée par /select-org)
+  useEffect(() => {
+    if (!pendingRedirect) return;
+
+    // Rediriger directement - le middleware va intercepter et rediriger vers /select-org si nécessaire
+    router.push(pendingRedirect);
+    setPendingRedirect(null);
+  }, [pendingRedirect, router]);
 
   const {
     register,
@@ -77,13 +88,21 @@ function LoginForm() {
 
       if (result.status === "complete") {
         setShowSuccess(true);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Set the session
+        // Activer la session
         await setActive({ session: result.createdSessionId });
 
-        // Simple redirect - middleware handles admin detection
-        router.push(localizedPath("dashboard"));
+        // Force JWT refresh to include orgId after session activation
+        // This is critical for middleware to have correct auth context
+        if (session) {
+          await session.getToken({ skipCache: true });
+        }
+
+        // Redirect to unified dashboard
+        // Middleware will redirect to /select-org if no orgId
+        const redirectUrl =
+          searchParams.get("redirect_url") || localizedPath("dashboard");
+        setPendingRedirect(redirectUrl);
       }
     } catch (err: unknown) {
       if (err && typeof err === "object" && "errors" in err) {
@@ -95,7 +114,6 @@ function LoginForm() {
       } else {
         setError(t("login.errors.invalidCredentials"));
       }
-    } finally {
       setIsLoading(false);
     }
   };
@@ -157,7 +175,7 @@ function LoginForm() {
               placeholder={t("login.emailPlaceholder")}
               className={`mt-1.5 h-11 border-[#E8DFD3] bg-gray-50 text-gray-900 placeholder:text-blue-600 focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600/20 dark:bg-gray-800 dark:text-blue-400/50 dark:text-white ${watchEmail ? "border-blue-600 bg-white" : ""}`}
               {...register("email")}
-              disabled={isLoading}
+              disabled={isLoading || !!pendingRedirect}
             />
             <AnimatePresence>
               {errors.email && (
@@ -194,7 +212,7 @@ function LoginForm() {
                 type={showPassword ? "text" : "password"}
                 className={`h-11 border-[#E8DFD3] bg-gray-50 pr-10 text-gray-900 placeholder:text-blue-600 focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600/20 dark:bg-gray-800 dark:text-blue-400/50 dark:text-white ${watchPassword ? "border-blue-600 bg-white" : ""}`}
                 {...register("password")}
-                disabled={isLoading}
+                disabled={isLoading || !!pendingRedirect}
               />
               <button
                 type="button"
@@ -244,11 +262,21 @@ function LoginForm() {
 
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !!pendingRedirect}
             className="h-12 w-full transform rounded-xl bg-gray-900 font-medium text-white transition-all duration-300 hover:scale-[1.02] hover:bg-[#2D4739] active:scale-[0.98] dark:bg-gray-700"
           >
             <AnimatePresence mode="wait">
-              {isLoading ? (
+              {pendingRedirect ? (
+                <motion.div
+                  key="activating"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center"
+                >
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Activating...
+                </motion.div>
+              ) : isLoading ? (
                 <motion.div
                   key="loading"
                   initial={{ opacity: 0 }}
@@ -285,7 +313,7 @@ function LoginForm() {
           <button
             type="button"
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#E8DFD3] font-medium text-blue-600 transition-all duration-300 hover:border-blue-600 hover:bg-[#FAF7F2] dark:text-blue-400"
-            disabled={isLoading}
+            disabled={isLoading || !!pendingRedirect}
           >
             <Scan className="h-4 w-4" />
             <span className="text-sm">{t("login.biometric")}</span>

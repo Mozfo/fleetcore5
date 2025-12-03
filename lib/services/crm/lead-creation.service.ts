@@ -236,6 +236,11 @@ export class LeadCreationService {
     }
 
     // STEP 6: Create lead in database
+    // Use provided priority/assigned_to if given, otherwise use auto-calculated values
+    const finalPriority = input.priority ?? priority;
+    const finalAssignedTo =
+      input.assigned_to_id ?? assignment.assigned_to ?? null;
+
     const leadData = {
       lead_code,
       email: input.email,
@@ -245,6 +250,9 @@ export class LeadCreationService {
       phone: input.phone ?? null,
       fleet_size: input.fleet_size ?? null,
       country_code: input.country_code ?? null,
+      city: input.city ?? null,
+      website_url: input.website_url ?? null,
+      current_software: input.current_software ?? null,
       message: input.message ?? null,
       source: input.source ?? null,
       utm_source: input.utm_source ?? null,
@@ -257,11 +265,11 @@ export class LeadCreationService {
       qualification_score: scoring.qualification_score,
       lead_stage: scoring.lead_stage,
 
-      // Assignment
-      assigned_to: assignment.assigned_to ?? null,
+      // Assignment (use provided or auto-assigned)
+      assigned_to: finalAssignedTo,
 
-      // Priority
-      priority,
+      // Priority (use provided or auto-calculated)
+      priority: finalPriority,
 
       // Status
       status: "new",

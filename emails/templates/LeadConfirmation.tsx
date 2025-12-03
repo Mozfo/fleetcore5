@@ -26,7 +26,7 @@ export const LeadConfirmation = ({
   first_name,
   company_name,
   fleet_size,
-  country_preposition,
+  country_preposition: _country_preposition,
   country_name,
   phone_row,
   message_row,
@@ -73,8 +73,7 @@ export const LeadConfirmation = ({
             <Text style={paragraph}>
               • Company: <strong>{company_name}</strong>
               <br />• Fleet size: <strong>{fleet_size}</strong>
-              <br />• Country: {country_preposition}{" "}
-              <strong>{country_name}</strong>
+              <br />• Country: <strong>{country_name}</strong>
               <span dangerouslySetInnerHTML={{ __html: phone_row || "" }} />
               <span dangerouslySetInnerHTML={{ __html: message_row || "" }} />
             </Text>

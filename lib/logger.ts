@@ -2,14 +2,17 @@
  * Structured Logger with Pino
  *
  * Replaces console.* statements for production-ready logging.
- * Supports different log levels, automatic redaction of sensitive data,
- * and pretty-printing in development.
+ * Supports different log levels, automatic redaction of sensitive data.
+ *
+ * NOTE: pino-pretty transport is DISABLED because thread-stream
+ * is incompatible with Next.js Turbopack. Using sync logging instead.
  */
 
 import pino from "pino";
 
 /**
  * Logger instance configured for development and production
+ * PERF: Disabled pino-pretty transport to avoid thread-stream crash with Turbopack
  */
 export const logger = pino({
   level: process.env.LOG_LEVEL || "info",
@@ -39,18 +42,9 @@ export const logger = pino({
     censor: "[REDACTED]",
   },
 
-  // Pretty print in development, JSON in production
-  transport:
-    process.env.NODE_ENV === "development"
-      ? {
-          target: "pino-pretty",
-          options: {
-            colorize: true,
-            translateTime: "HH:MM:ss Z",
-            ignore: "pid,hostname",
-          },
-        }
-      : undefined,
+  // DISABLED: pino-pretty uses thread-stream which crashes with Turbopack
+  // In development, logs are JSON but still readable
+  // In production, JSON format for log aggregation
 });
 
 /**

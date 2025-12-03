@@ -14,6 +14,7 @@ const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 /**
  * Container Variants - Pour grids de cards avec stagger
+ * OPTIMIZED: Stagger réduit de 100ms à 30ms, delay supprimé
  */
 export const kanbanContainerVariants: Variants = {
   hidden: {
@@ -22,28 +23,30 @@ export const kanbanContainerVariants: Variants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
+      staggerChildren: 0.03, // 30ms = rapide mais visible (was 0.1)
+      delayChildren: 0, // Pas de delay initial (was 0.2)
+      when: "beforeChildren",
     },
   },
 };
 
 /**
- * Item Variants - Cards individuelles avec blur + slide
+ * Item Variants - Cards individuelles
+ * OPTIMIZED: Blur supprimé (GPU intensive), durée réduite
  */
 export const kanbanItemVariants: Variants = {
   hidden: {
     opacity: 0,
-    y: 20,
-    filter: "blur(10px)",
+    y: 8, // Mouvement vertical réduit (was 20)
+    // REMOVED: filter: "blur(10px)" - trop coûteux GPU
   },
   visible: {
     opacity: 1,
     y: 0,
-    filter: "blur(0px)",
+    // REMOVED: filter: "blur(0px)"
     transition: {
-      duration: 0.4,
-      ease: easeOutExpo,
+      duration: 0.15, // Rapide (was 0.4)
+      ease: "easeOut",
     },
   },
 };
