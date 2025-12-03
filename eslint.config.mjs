@@ -25,6 +25,7 @@ const eslintConfig = [
       "next-env.d.ts",
       "coverage/**",
       "archive_fleetcore_20251106/**",
+      "_archive/**",
       "generated-emails/**",
       "**/*.backup-*",
     ],
