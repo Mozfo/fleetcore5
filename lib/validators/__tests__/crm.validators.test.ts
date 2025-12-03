@@ -31,6 +31,7 @@ describe("LeadCreateSchema", () => {
       fleet_size: "51-100",
       country_code: "fr",
       gdpr_consent: true,
+      form_locale: "en",
     };
 
     const result = LeadCreateSchema.parse(validData);
@@ -63,6 +64,7 @@ describe("LeadCreateSchema", () => {
       fleet_size: "11-50",
       country_code: "FR",
       gdpr_consent: false, // Should fail
+      form_locale: "fr",
     };
 
     expect(() => LeadCreateSchema.parse(frenchLeadWithoutConsent)).toThrow(
@@ -79,6 +81,7 @@ describe("LeadCreateSchema", () => {
       fleet_size: "51-100",
       country_code: "AE",
       gdpr_consent: false, // Should pass
+      form_locale: "en",
     };
 
     const result = LeadCreateSchema.parse(uaeLead);

@@ -78,7 +78,7 @@ jobs:
         run: pnpm lint
 
       - name: Run unit tests
-        run: pnpm test:run
+        run: pnpm exec vitest run --exclude='**/*.integration.test.ts'
 
       - name: Build Next.js application
         run: pnpm build

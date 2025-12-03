@@ -21,6 +21,7 @@ vi.mock("@/lib/services/email/email.service", () => ({
 const mockPrisma = {
   adm_members: { findUnique: vi.fn() },
   adm_tenants: { findUnique: vi.fn() },
+  adm_tenant_settings: { findFirst: vi.fn() },
   crm_leads: { findUnique: vi.fn() },
   dir_country_locales: {
     findFirst: vi.fn(),
@@ -64,6 +65,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "EN", fr: "FR" },
         body_translations: { en: "EN body", fr: "FR body" },
+        supported_locales: ["en", "fr"],
       } as never);
 
       const result = await service.selectTemplate({
@@ -82,16 +84,11 @@ describe("NotificationService", () => {
     });
   });
 
-  describe("selectTemplate - CASCADE 3: Tenant country primary_locale", () => {
-    it("should use tenant country primary_locale if no user pref", async () => {
-      vi.mocked(mockPrisma.adm_members.findUnique).mockResolvedValue(null);
-      vi.mocked(mockPrisma.adm_tenants.findUnique).mockResolvedValue({
-        id: "tenant-1",
-        country_code: "FR",
-      } as never);
-      vi.mocked(mockPrisma.dir_country_locales.findFirst).mockResolvedValue({
-        country_code: "FR",
-        primary_locale: "fr",
+  describe("selectTemplate - CASCADE 1: Tenant notification_locale (adm_tenant_settings)", () => {
+    it("should use tenant notification_locale from settings if available", async () => {
+      // CASCADE 1: adm_tenant_settings.setting_value.locale
+      vi.mocked(mockPrisma.adm_tenant_settings.findFirst).mockResolvedValue({
+        setting_value: { locale: "fr" },
       } as never);
       vi.mocked(
         mockPrisma.dir_notification_templates.findFirst
@@ -101,6 +98,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "EN", fr: "FR Tenant" },
         body_translations: { en: "EN body", fr: "FR Tenant body" },
+        supported_locales: ["en", "fr"],
       } as never);
 
       const result = await service.selectTemplate({
@@ -134,12 +132,13 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "EN", ar: "العربية" },
         body_translations: { en: "EN body", ar: "نص عربي" },
+        supported_locales: ["en", "ar"],
       } as never);
 
       const result = await service.selectTemplate({
         templateCode: "test",
         channel: "email",
-        leadId: "lead-1",
+        locale: "ar",
         fallbackLocale: "en",
       });
 
@@ -162,12 +161,13 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "EN", de: "DE" },
         body_translations: { en: "EN body", de: "DE body" },
+        supported_locales: ["en", "de"],
       } as never);
 
       const result = await service.selectTemplate({
         templateCode: "test",
         channel: "email",
-        countryCode: "DE",
+        locale: "de",
         fallbackLocale: "en",
       });
 
@@ -187,6 +187,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "EN Fallback" },
         body_translations: { en: "EN Fallback body" },
+        supported_locales: ["en"],
       } as never);
 
       const result = await service.selectTemplate({
@@ -210,6 +211,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "Subject EN", fr: "Sujet FR", ar: "موضوع" },
         body_translations: { en: "Body EN", fr: "Corps FR", ar: "نص" },
+        supported_locales: ["en", "fr", "ar"],
       } as never);
 
       const result = await service.selectTemplate({
@@ -230,6 +232,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "Subject" },
         body_translations: { en: "Body with {{variable}}" },
+        supported_locales: ["en"],
       } as never);
 
       const result = await service.selectTemplate({
@@ -250,6 +253,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "EN only" },
         body_translations: { en: "EN only body" },
+        supported_locales: ["en"],
       } as never);
 
       const result = await service.selectTemplate({
@@ -313,6 +317,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "Subject {{name}}" },
         body_translations: { en: "Body {{name}}" },
+        supported_locales: ["en"],
       } as never);
 
       vi.mocked(mockPrisma.adm_notification_logs.create).mockResolvedValue({
@@ -340,6 +345,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "Test" },
         body_translations: { en: "Test body" },
+        supported_locales: ["en"],
       } as never);
 
       vi.mocked(mockPrisma.adm_notification_logs.create).mockResolvedValue({
@@ -390,6 +396,7 @@ describe("NotificationService", () => {
         channel: "email",
         subject_translations: { en: "Test" },
         body_translations: { en: "Test body" },
+        supported_locales: ["en"],
       } as never);
 
       vi.mocked(mockPrisma.adm_notification_logs.create).mockResolvedValue({

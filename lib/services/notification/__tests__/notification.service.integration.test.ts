@@ -149,7 +149,7 @@ describeIntegration("NotificationService Integration Tests", () => {
         phone: "+971500000001",
         country_code: "AE",
         status: "new",
-        source: "integration_test",
+        source: "web",
       },
     });
     testLeadId = lead.id;
@@ -163,14 +163,14 @@ describeIntegration("NotificationService Integration Tests", () => {
     if (testLeadId) {
       await prisma.crm_leads.update({
         where: { id: testLeadId },
-        data: { deleted_at: new Date(), deleted_by: "integration_test" },
+        data: { deleted_at: new Date(), deleted_by: null },
       });
     }
 
     if (testUserId) {
       await prisma.adm_members.update({
         where: { id: testUserId },
-        data: { deleted_at: new Date(), deleted_by: "integration_test" },
+        data: { deleted_at: new Date(), deleted_by: null },
       });
     }
 
@@ -184,7 +184,7 @@ describeIntegration("NotificationService Integration Tests", () => {
     if (testTemplateId) {
       await prisma.dir_notification_templates.update({
         where: { id: testTemplateId },
-        data: { deleted_at: new Date(), deleted_by: "integration_test" },
+        data: { deleted_at: new Date(), deleted_by: null },
       });
     }
 
@@ -239,7 +239,7 @@ describeIntegration("NotificationService Integration Tests", () => {
       // Cleanup
       await prisma.adm_members.update({
         where: { id: memberNoLang.id },
-        data: { deleted_at: new Date(), deleted_by: "integration_test" },
+        data: { deleted_at: new Date(), deleted_by: null },
       });
     });
   });
