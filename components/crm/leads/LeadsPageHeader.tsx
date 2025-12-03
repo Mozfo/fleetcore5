@@ -1,23 +1,12 @@
 /**
- * LeadsPageHeader - Header avec titre, stats Stripe-style, et actions
- * 4 stat cards: NEW, WORKING, QUALIFIED, PIPELINE VALUE
- * Actions: New Lead, Export, Settings
+ * LeadsPageHeader - Premium header with Stripe-style stats
+ * Minimal, elegant design with clear visual hierarchy
  */
 
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  Plus,
-  Download,
-  Settings,
-  Inbox,
-  Clock,
-  CheckCircle2,
-  DollarSign,
-} from "lucide-react";
+import { Plus, Download, Settings, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StatCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 
 interface LeadsPageHeaderProps {
@@ -25,11 +14,61 @@ interface LeadsPageHeaderProps {
     newCount: number;
     workingCount: number;
     qualifiedCount: number;
-    pipelineValue: string; // Formatted currency like "$2.5M" or "2,5M €"
+    pipelineValue: string;
   };
   onNewLead?: () => void;
   onExport?: () => void;
   onSettings?: () => void;
+}
+
+interface StatCardProps {
+  value: string | number;
+  label: string;
+  trend?: number;
+  accentColor?: "blue" | "yellow" | "green" | "purple";
+}
+
+function StatCard({
+  value,
+  label,
+  trend,
+  accentColor = "blue",
+}: StatCardProps) {
+  const accentClasses = {
+    blue: "border-l-blue-500",
+    yellow: "border-l-amber-500",
+    green: "border-l-emerald-500",
+    purple: "border-l-purple-500",
+  };
+
+  return (
+    <div
+      className={`flex flex-col rounded-lg border border-l-2 border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900 ${accentClasses[accentColor]}`}
+    >
+      <div className="flex items-baseline gap-2">
+        <span className="text-2xl font-semibold text-gray-900 tabular-nums dark:text-white">
+          {value}
+        </span>
+        {trend !== undefined && trend !== 0 && (
+          <span
+            className={`flex items-center text-xs font-medium ${
+              trend > 0
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-red-600 dark:text-red-400"
+            }`}
+          >
+            <TrendingUp
+              className={`mr-0.5 h-3 w-3 ${trend < 0 ? "rotate-180" : ""}`}
+            />
+            {Math.abs(trend)}%
+          </span>
+        )}
+      </div>
+      <span className="mt-0.5 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+        {label}
+      </span>
+    </div>
+  );
 }
 
 export function LeadsPageHeader({
@@ -41,114 +80,75 @@ export function LeadsPageHeader({
   const { t } = useTranslation("crm");
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="space-y-6"
-    >
-      {/* Title + Description + Actions */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4">
+      {/* Row 1: Title + Actions */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
             {t("leads.title")}
           </h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             {t("leads.description")}
           </p>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-shrink-0 items-center gap-2">
           {onSettings && (
-            <Button variant="outline" size="sm" onClick={onSettings}>
-              <Settings className="mr-2 h-4 w-4" />
-              {t("leads.actions.settings")}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSettings}
+              className="text-gray-500"
+            >
+              <Settings className="h-4 w-4" />
             </Button>
           )}
           {onExport && (
-            <Button variant="outline" size="sm" onClick={onExport}>
-              <Download className="mr-2 h-4 w-4" />
-              {t("leads.actions.export")}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onExport}
+              className="text-gray-500"
+            >
+              <Download className="h-4 w-4" />
             </Button>
           )}
           {onNewLead && (
-            <Button size="sm" onClick={onNewLead}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button
+              size="sm"
+              onClick={onNewLead}
+              className="bg-blue-600 text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] active:shadow-inner"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
               {t("leads.actions.new_lead")}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Stats Grid - Stripe Style */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: { opacity: 0 },
-          visible: {
-            opacity: 1,
-            transition: {
-              staggerChildren: 0.1,
-              delayChildren: 0.2,
-            },
-          },
-        }}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-      >
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <StatCard
-            icon={<Inbox className="h-4 w-4" />}
-            label={t("leads.stats.new")}
-            value={stats.newCount}
-          />
-        </motion.div>
-
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <StatCard
-            icon={<Clock className="h-4 w-4" />}
-            label={t("leads.stats.working")}
-            value={stats.workingCount}
-          />
-        </motion.div>
-
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <StatCard
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            label={t("leads.stats.qualified")}
-            value={stats.qualifiedCount}
-          />
-        </motion.div>
-
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <StatCard
-            icon={<DollarSign className="h-4 w-4" />}
-            label={t("leads.stats.pipeline")}
-            value={stats.pipelineValue}
-          />
-        </motion.div>
-      </motion.div>
-    </motion.div>
+      {/* Row 2: Stats Cards - Stripe style */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard
+          value={stats.newCount}
+          label={t("leads.stats.new")}
+          accentColor="blue"
+        />
+        <StatCard
+          value={stats.workingCount}
+          label={t("leads.stats.working")}
+          accentColor="yellow"
+        />
+        <StatCard
+          value={stats.qualifiedCount}
+          label={t("leads.stats.qualified")}
+          accentColor="green"
+        />
+        <StatCard
+          value={stats.pipelineValue}
+          label={t("leads.stats.pipeline")}
+          accentColor="purple"
+        />
+      </div>
+    </div>
   );
 }

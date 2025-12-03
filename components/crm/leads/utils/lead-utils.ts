@@ -68,10 +68,13 @@ export function calculateStats(leads: Lead[]): {
   const qualifiedCount = leads.filter((l) => l.status === "qualified").length;
 
   // Pipeline value estimation (fleet_size * $500 per vehicle)
-  const pipelineValue = leads.reduce((sum, lead) => {
-    const fleetSize = parseInt(lead.fleet_size || "0");
-    return sum + fleetSize * 500;
-  }, 0);
+  // RÈGLE MÉTIER: Seuls les leads actifs (non-lost) sont comptés dans le pipeline
+  const pipelineValue = leads
+    .filter((l) => l.status !== "lost")
+    .reduce((sum, lead) => {
+      const fleetSize = parseInt(lead.fleet_size || "0");
+      return sum + fleetSize * 500;
+    }, 0);
 
   // Format pipeline value
   const formattedValue =

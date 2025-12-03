@@ -2,6 +2,8 @@
  * LeadsFilterBar - Barre de filtres avec debounce et visual feedback
  * Affiche: search, status, stage, owner, country, min_score
  * Active state: badge avec compteur + reset button
+ *
+ * Uses dynamic lead stages from crm_settings via useLeadStages hook.
  */
 
 "use client";
@@ -14,7 +16,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
+import { useParams } from "next/navigation";
+import { ViewToggle, type ViewMode } from "./ViewToggle";
+import { AdvancedFilters } from "./AdvancedFilters";
+import { SavedViews } from "./SavedViews";
+import { useLeadStages } from "@/lib/hooks/useLeadStages";
+import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
+import type {
+  FilterGroup,
+  LogicOperator,
+  FilterCondition,
+} from "@/lib/config/filter-config";
 import type { LeadStatus, LeadStage } from "@/types/crm";
+import type { SavedView, SavedViewConfig } from "@/lib/types/views";
 
 export interface LeadsFilters {
   status?: LeadStatus | "all";
@@ -34,7 +48,31 @@ interface LeadsFilterBarProps {
     flag_emoji: string;
   }>;
   owners?: Array<{ id: string; first_name: string; last_name: string | null }>;
-  viewMode?: "kanban" | "list";
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+  // Advanced filters props (E2-A)
+  advancedFilterGroup: FilterGroup;
+  advancedFiltersActive: boolean;
+  advancedConditionsCount: number;
+  onAdvancedSetLogic: (logic: LogicOperator) => void;
+  onAdvancedReset: () => void;
+  onAdvancedAddCondition: (groupId?: string) => void;
+  onAdvancedUpdateCondition: (
+    conditionId: string,
+    updates: Partial<Omit<FilterCondition, "id">>
+  ) => void;
+  onAdvancedRemoveCondition: (conditionId: string) => void;
+  onAdvancedAddGroup: (parentGroupId?: string) => void;
+  onAdvancedUpdateGroupLogic: (groupId: string, logic: LogicOperator) => void;
+  onAdvancedRemoveGroup: (groupId: string) => void;
+  // Saved Views props (E2-B)
+  savedViews: SavedView[];
+  activeViewId: string | null;
+  onSelectView: (id: string) => void;
+  onSaveView: (name: string, isDefault: boolean) => void;
+  onDeleteView: (id: string) => void;
+  onSetDefaultView: (id: string) => void;
+  getCurrentConfig: () => SavedViewConfig;
 }
 
 export function LeadsFilterBar({
@@ -42,10 +80,40 @@ export function LeadsFilterBar({
   onFiltersChange,
   countries = [],
   owners = [],
-  viewMode = "kanban",
+  viewMode,
+  onViewModeChange,
+  // Advanced filters (E2-A)
+  advancedFilterGroup,
+  advancedFiltersActive,
+  advancedConditionsCount,
+  onAdvancedSetLogic,
+  onAdvancedReset,
+  onAdvancedAddCondition,
+  onAdvancedUpdateCondition,
+  onAdvancedRemoveCondition,
+  onAdvancedAddGroup,
+  onAdvancedUpdateGroupLogic,
+  onAdvancedRemoveGroup,
+  // Saved Views (E2-B)
+  savedViews,
+  activeViewId,
+  onSelectView,
+  onSaveView,
+  onDeleteView,
+  onSetDefaultView,
+  getCurrentConfig,
 }: LeadsFilterBarProps) {
   const { t } = useTranslation("crm");
+  const params = useParams();
+  const locale = (params.locale as string) || "en";
   const [searchInput, setSearchInput] = useState(filters.search || "");
+
+  // Load stages dynamically from crm_settings
+  const { stages, getLabel } = useLeadStages();
+
+  // Load statuses dynamically from crm_settings
+  const { statuses: leadStatuses, getLabel: getStatusLabel } =
+    useLeadStatuses();
 
   // Debounced search (300ms)
   useEffect(() => {
@@ -82,7 +150,7 @@ export function LeadsFilterBar({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+      className="w-full space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
     >
       {/* Search + Active Filters Badge */}
       <div className="flex flex-wrap items-center gap-3">
@@ -132,6 +200,39 @@ export function LeadsFilterBar({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Saved Views (E2-B) */}
+        <SavedViews
+          views={savedViews}
+          activeViewId={activeViewId}
+          onSelectView={onSelectView}
+          onSaveView={onSaveView}
+          onDeleteView={onDeleteView}
+          onSetDefault={onSetDefaultView}
+          getCurrentConfig={getCurrentConfig}
+          advancedConditionsCount={advancedConditionsCount}
+        />
+
+        {/* Advanced Filters (E2-A) */}
+        <AdvancedFilters
+          filterGroup={advancedFilterGroup}
+          isActive={advancedFiltersActive}
+          conditionsCount={advancedConditionsCount}
+          onSetLogic={onAdvancedSetLogic}
+          onReset={onAdvancedReset}
+          onAddCondition={onAdvancedAddCondition}
+          onUpdateCondition={onAdvancedUpdateCondition}
+          onRemoveCondition={onAdvancedRemoveCondition}
+          onAddGroup={onAdvancedAddGroup}
+          onUpdateGroupLogic={onAdvancedUpdateGroupLogic}
+          onRemoveGroup={onAdvancedRemoveGroup}
+          countries={countries}
+        />
+
+        {/* View Toggle (Kanban/Table) */}
+        <div className="ml-auto">
+          <ViewToggle value={viewMode} onChange={onViewModeChange} />
+        </div>
       </div>
 
       {/* Filter Dropdowns */}
@@ -139,13 +240,13 @@ export function LeadsFilterBar({
         className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${viewMode === "kanban" ? "lg:grid-cols-4" : "lg:grid-cols-5"}`}
       >
         {/* Status Filter - Hidden in Kanban (columns ARE statuses) */}
-        {viewMode === "list" && (
+        {viewMode === "table" && (
           <Select
             value={filters.status || "all"}
             onChange={(e) =>
               onFiltersChange({
                 ...filters,
-                status: e.target.value as LeadStatus | "all",
+                status: e.target.value,
               })
             }
             className={
@@ -155,20 +256,23 @@ export function LeadsFilterBar({
             }
           >
             <option value="all">{t("leads.filters.all_status")}</option>
-            <option value="new">{t("leads.columns.new")}</option>
-            <option value="working">{t("leads.columns.working")}</option>
-            <option value="qualified">{t("leads.columns.qualified")}</option>
-            <option value="lost">{t("leads.columns.lost")}</option>
+            {leadStatuses
+              .filter((status) => !status.is_terminal) // Only show non-terminal statuses in filter
+              .map((status) => (
+                <option key={status.value} value={status.value}>
+                  {getStatusLabel(status.value, locale)}
+                </option>
+              ))}
           </Select>
         )}
 
-        {/* Lead Stage Filter */}
+        {/* Lead Stage Filter - Dynamic from crm_settings */}
         <Select
           value={filters.lead_stage || "all"}
           onChange={(e) =>
             onFiltersChange({
               ...filters,
-              lead_stage: e.target.value as LeadStage | "all",
+              lead_stage: e.target.value,
             })
           }
           className={
@@ -178,15 +282,13 @@ export function LeadsFilterBar({
           }
         >
           <option value="all">{t("leads.filters.all_stages")}</option>
-          <option value="top_of_funnel">
-            {t("leads.card.stage.top_of_funnel")}
-          </option>
-          <option value="marketing_qualified">
-            {t("leads.card.stage.marketing_qualified")}
-          </option>
-          <option value="sales_qualified">
-            {t("leads.card.stage.sales_qualified")}
-          </option>
+          {stages
+            .filter((stage) => stage.value !== "opportunity") // Exclude opportunity (handled separately)
+            .map((stage) => (
+              <option key={stage.value} value={stage.value}>
+                {getLabel(stage.value, locale)}
+              </option>
+            ))}
         </Select>
 
         {/* Assigned To Filter */}
