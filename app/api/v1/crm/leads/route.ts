@@ -1,37 +1,44 @@
 /**
- * POST /api/v1/crm/leads
- * Create a new lead with automatic scoring and assignment
+ * /api/v1/crm/leads
+ * Lead list and creation operations (GET, POST)
  *
- * Authentication: Required (Clerk)
- * Tenant Isolation: Required (Clerk Organizations - orgId)
+ * ═══════════════════════════════════════════════════════════════════════════
+ * INTERNAL CRM API - FleetCore Admin Backoffice
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Request Body: CreateLeadInput (validated with Zod)
- * Response 201: LeadCreationResponse
- * Response 400: Validation error
- * Response 401: Unauthorized
- * Response 409: Duplicate email
- * Response 500: Internal server error
+ * Context: This API manages prospects/leads BEFORE they become clients.
+ * Prospects do NOT have a tenantId (they're not clients yet).
+ *
+ * Authentication flow:
+ * 1. Middleware validates: userId + FleetCore Admin org membership + CRM role
+ * 2. Middleware injects: x-user-id, x-org-id headers
+ * 3. This route trusts middleware validation (no redundant tenantId check)
+ *
+ * Security: Access restricted to FleetCore Admin users with CRM roles
+ * (org:adm_admin, org:adm_commercial) - enforced at middleware level.
  *
  * @module app/api/v1/crm/leads
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { LeadCreationService } from "@/lib/services/crm/lead-creation.service";
 import { CreateLeadSchema } from "@/lib/validators/crm/lead.validators";
 import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/v1/crm/leads
  * Create a new lead with automatic scoring and assignment
  *
+ * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Tenant Isolation: N/A (CRM manages prospects without tenant)
+ *
  * Flow:
- * 1. Authenticate user (Clerk userId)
- * 2. Get tenant context (Clerk orgId)
- * 3. Parse and validate request body (Zod)
- * 4. Call LeadCreationService.createLead()
- * 5. Return 201 with lead data + scoring + assignment
+ * 1. Read auth from middleware-injected headers
+ * 2. Parse and validate request body (Zod)
+ * 3. Call LeadCreationService.createLead()
+ * 4. Return 201 with lead data + scoring + assignment
  *
  * @example
  * POST /api/v1/crm/leads
@@ -58,10 +65,17 @@ import { db } from "@/lib/prisma";
  */
 export async function POST(request: NextRequest) {
   try {
-    // STEP 1: Authentication
-    const { userId, orgId } = await auth();
+    // STEP 1: Read authentication from middleware-injected headers
+    // Security: Middleware already validated FleetCore Admin membership + CRM role
+    const userId = request.headers.get("x-user-id");
+    const orgId = request.headers.get("x-org-id");
 
-    if (!userId) {
+    // Defensive check (should never fail if middleware is correctly configured)
+    if (!userId || !orgId) {
+      logger.error(
+        { userId, orgId },
+        "[CRM Lead Create] Missing auth headers - middleware may be misconfigured"
+      );
       return NextResponse.json(
         {
           success: false,
@@ -74,33 +88,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // STEP 2: Tenant isolation (orgId from Clerk Organizations)
-    const tenantId = orgId;
-    if (!tenantId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "NO_TENANT",
-            message:
-              "No organization context found. Please select an organization.",
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // STEP 3: Parse request body
+    // STEP 2: Parse request body
     const body = await request.json();
 
-    // STEP 4: Validate with Zod
+    // STEP 3: Validate with Zod
     const validatedData = CreateLeadSchema.parse(body);
 
-    // STEP 5: Create lead (orchestrated)
+    // STEP 4: Create lead (orchestrated)
+    // Note: orgId passed as context identifier (not tenant - prospects have no tenant)
     const leadCreationService = new LeadCreationService();
     const result = await leadCreationService.createLead(
       validatedData,
-      tenantId,
+      orgId, // FleetCore Admin org context
       userId // created_by
     );
 
@@ -209,8 +208,8 @@ export async function POST(request: NextRequest) {
  * GET /api/v1/crm/leads
  * List leads with filtering, sorting, and pagination
  *
- * Authentication: Required (Clerk)
- * Tenant Isolation: Via assigned_to → employee → tenant
+ * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Tenant Isolation: N/A (CRM manages prospects without tenant)
  *
  * Query Parameters:
  * - status: Filter by status (new, contacted, qualified, converted, lost)
@@ -219,13 +218,15 @@ export async function POST(request: NextRequest) {
  * - country_code: Filter by country (2-letter ISO code)
  * - min_score: Minimum qualification score (0-100)
  * - search: Search in email, company_name, first_name, last_name
+ * - inactive_months: Filter cold leads (no update for X months)
+ * - include_cold: Include only cold leads (lost/disqualified OR inactive)
  * - page: Page number (default: 1)
  * - limit: Items per page (default: 20, max: 100)
  * - sort: Sort field (default: created_at)
  * - order: Sort order (asc/desc, default: desc)
  *
  * Response 200: Paginated list of leads
- * Response 401: Unauthorized
+ * Response 401: Unauthorized (middleware handles this)
  * Response 400: Invalid query parameters
  * Response 500: Internal server error
  *
@@ -261,10 +262,17 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    // STEP 1: Authentication
-    const { userId, orgId } = await auth();
+    // STEP 1: Read authentication from middleware-injected headers
+    // Security: Middleware already validated FleetCore Admin membership + CRM role
+    const userId = request.headers.get("x-user-id");
+    const orgId = request.headers.get("x-org-id");
 
-    if (!userId) {
+    // Defensive check (should never fail if middleware is correctly configured)
+    if (!userId || !orgId) {
+      logger.error(
+        { userId, orgId },
+        "[CRM Lead List] Missing auth headers - middleware may be misconfigured"
+      );
       return NextResponse.json(
         {
           success: false,
@@ -277,23 +285,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // STEP 2: Tenant isolation
-    const tenantId = orgId;
-    if (!tenantId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "NO_TENANT",
-            message:
-              "No organization context found. Please select an organization.",
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // STEP 3: Parse query parameters
+    // STEP 2: Parse query parameters
     const { searchParams } = new URL(request.url);
 
     // Filters
@@ -304,6 +296,13 @@ export async function GET(request: NextRequest) {
     const minScoreParam = searchParams.get("min_score");
     const min_score = minScoreParam ? parseInt(minScoreParam) : undefined;
     const search = searchParams.get("search") || undefined;
+
+    // Cold leads filters
+    const inactiveMonthsParam = searchParams.get("inactive_months");
+    const inactive_months = inactiveMonthsParam
+      ? parseInt(inactiveMonthsParam)
+      : undefined;
+    const include_cold = searchParams.get("include_cold") === "true";
 
     // Pagination
     const page = parseInt(searchParams.get("page") || "1");
@@ -335,6 +334,22 @@ export async function GET(request: NextRequest) {
         { first_name: { contains: search, mode: "insensitive" } },
         { last_name: { contains: search, mode: "insensitive" } },
       ];
+    }
+
+    // Cold leads filters
+    if (include_cold) {
+      // Include only cold leads: lost/disqualified OR inactive for X months
+      const coldThreshold = new Date();
+      coldThreshold.setMonth(coldThreshold.getMonth() - (inactive_months || 6));
+      where.OR = [
+        { status: { in: ["lost", "disqualified"] } },
+        { updated_at: { lt: coldThreshold } },
+      ];
+    } else if (inactive_months) {
+      // Filter by inactivity only
+      const coldThreshold = new Date();
+      coldThreshold.setMonth(coldThreshold.getMonth() - inactive_months);
+      where.updated_at = { lt: coldThreshold };
     }
 
     // STEP 5: Query leads directly with Prisma
@@ -388,9 +403,13 @@ export async function GET(request: NextRequest) {
           status: lead.status,
           lead_stage: lead.lead_stage,
           priority: lead.priority,
-          fit_score: lead.fit_score,
-          engagement_score: lead.engagement_score,
-          qualification_score: lead.qualification_score,
+          fit_score: lead.fit_score ? Number(lead.fit_score) : null,
+          engagement_score: lead.engagement_score
+            ? Number(lead.engagement_score)
+            : null,
+          qualification_score: lead.qualification_score
+            ? Number(lead.qualification_score)
+            : null,
           assigned_to:
             lead.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
               ? {

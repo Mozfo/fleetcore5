@@ -2,14 +2,25 @@
  * /api/v1/crm/leads/[id]
  * Lead detail operations (GET, PATCH, DELETE)
  *
- * Authentication: Required (Clerk)
- * Tenant Isolation: Required (Clerk Organizations - orgId)
+ * ═══════════════════════════════════════════════════════════════════════════
+ * INTERNAL CRM API - FleetCore Admin Backoffice
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Context: This API manages prospects/leads BEFORE they become clients.
+ * Prospects do NOT have a tenantId (they're not clients yet).
+ *
+ * Authentication flow:
+ * 1. Middleware validates: userId + FleetCore Admin org membership + CRM role
+ * 2. Middleware injects: x-user-id, x-org-id headers
+ * 3. This route trusts middleware validation (no redundant tenantId check)
+ *
+ * Security: Access restricted to FleetCore Admin users with CRM roles
+ * (org:adm_admin, org:adm_commercial) - enforced at middleware level.
  *
  * @module app/api/v1/crm/leads/[id]
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { UpdateLeadSchema } from "@/lib/validators/crm/lead.validators";
 import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
@@ -19,11 +30,11 @@ import { logger } from "@/lib/logger";
  * GET /api/v1/crm/leads/[id]
  * Retrieve detailed information for a specific lead
  *
- * Authentication: Required (Clerk)
- * Tenant Isolation: Via assigned_to → employee → tenant
+ * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Tenant Isolation: N/A (CRM manages prospects without tenant)
  *
  * Response 200: Lead with full relations (employee, country, source)
- * Response 401: Unauthorized
+ * Response 401: Unauthorized (middleware handles this)
  * Response 404: Lead not found or soft-deleted
  * Response 500: Internal server error
  */
@@ -32,11 +43,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Authentication
-    const { userId, orgId } = await auth();
+    // STEP 1: Read authentication from middleware-injected headers
+    // Security: Middleware already validated FleetCore Admin membership + CRM role
+    const userId = request.headers.get("x-user-id");
+    const orgId = request.headers.get("x-org-id");
     const { id } = await params;
 
-    if (!userId) {
+    // Defensive check (should never fail if middleware is correctly configured)
+    if (!userId || !orgId) {
+      logger.error(
+        { userId, orgId },
+        "[CRM Lead Detail] Missing auth headers - middleware may be misconfigured"
+      );
       return NextResponse.json(
         {
           success: false,
@@ -49,23 +67,7 @@ export async function GET(
       );
     }
 
-    // STEP 2: Tenant isolation
-    const tenantId = orgId;
-    if (!tenantId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "NO_TENANT",
-            message:
-              "No organization context found. Please select an organization.",
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // STEP 3: Validate ID (already extracted above)
+    // STEP 2: Validate ID format
     // Basic UUID format validation
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -142,9 +144,13 @@ export async function GET(
           status: lead.status,
           lead_stage: lead.lead_stage,
           priority: lead.priority,
-          fit_score: lead.fit_score,
-          engagement_score: lead.engagement_score,
-          qualification_score: lead.qualification_score,
+          fit_score: lead.fit_score ? Number(lead.fit_score) : null,
+          engagement_score: lead.engagement_score
+            ? Number(lead.engagement_score)
+            : null,
+          qualification_score: lead.qualification_score
+            ? Number(lead.qualification_score)
+            : null,
           assigned_to: assignedEmployee
             ? {
                 id: assignedEmployee.id,
@@ -196,13 +202,13 @@ export async function GET(
  * PATCH /api/v1/crm/leads/[id]
  * Update an existing lead
  *
- * Authentication: Required (Clerk)
- * Tenant Isolation: Via assigned_to → employee → tenant
+ * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Tenant Isolation: N/A (CRM manages prospects without tenant)
  *
  * Request Body: UpdateLeadInput (validated with Zod)
  * Response 200: Updated lead data
  * Response 400: Validation error or invalid status transition
- * Response 401: Unauthorized
+ * Response 401: Unauthorized (middleware handles this)
  * Response 404: Lead not found
  * Response 500: Internal server error
  *
@@ -219,11 +225,18 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Authentication
-    const { userId, orgId } = await auth();
+    // STEP 1: Read authentication from middleware-injected headers
+    // Security: Middleware already validated FleetCore Admin membership + CRM role
+    const userId = request.headers.get("x-user-id");
+    const orgId = request.headers.get("x-org-id");
     const { id } = await params;
 
-    if (!userId) {
+    // Defensive check (should never fail if middleware is correctly configured)
+    if (!userId || !orgId) {
+      logger.error(
+        { userId, orgId },
+        "[CRM Lead Update] Missing auth headers - middleware may be misconfigured"
+      );
       return NextResponse.json(
         {
           success: false,
@@ -236,23 +249,7 @@ export async function PATCH(
       );
     }
 
-    // STEP 2: Tenant isolation
-    const tenantId = orgId;
-    if (!tenantId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "NO_TENANT",
-            message:
-              "No organization context found. Please select an organization.",
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // STEP 3: Validate ID (already extracted above)
+    // STEP 2: Validate ID format
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
@@ -268,7 +265,7 @@ export async function PATCH(
       );
     }
 
-    // STEP 4: Parse request body
+    // STEP 3: Parse request body
     const body = await request.json();
 
     // PROTECTION #1: Forbid status="converted" (must use dedicated convert endpoint)
@@ -303,6 +300,17 @@ export async function PATCH(
 
     // STEP 5: Validate with Zod
     const validatedData = UpdateLeadSchema.parse(body);
+
+    // Handle assigned_to_id -> assigned_to mapping
+    // Frontend may send assigned_to_id, map it to assigned_to for database
+    if (
+      validatedData.assigned_to_id !== undefined &&
+      validatedData.assigned_to === undefined
+    ) {
+      validatedData.assigned_to = validatedData.assigned_to_id;
+    }
+    // Remove assigned_to_id as it's not a database field
+    delete validatedData.assigned_to_id;
 
     // STEP 6: Check lead exists and not soft-deleted
     const existingLead = await db.crm_leads.findFirst({
@@ -340,10 +348,15 @@ export async function PATCH(
       updateData.qualified_date = new Date();
     }
 
-    // STEP 8: Update lead
+    // STEP 8: Update lead with full relations for response
     const updatedLead = await db.crm_leads.update({
       where: { id },
       data: updateData,
+      include: {
+        adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: true,
+        crm_countries: true,
+        crm_lead_sources: true,
+      },
     });
 
     // STEP 9: Audit log
@@ -358,20 +371,81 @@ export async function PATCH(
       "[Lead Update] Lead modified"
     );
 
-    // STEP 10: Success response
+    // STEP 10: Success response with FULL lead data (same format as GET)
+    const assignedEmployee =
+      updatedLead.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees;
+
     return NextResponse.json(
       {
         success: true,
         data: {
           id: updatedLead.id,
           lead_code: updatedLead.lead_code,
+          email: updatedLead.email,
+          first_name: updatedLead.first_name,
+          last_name: updatedLead.last_name,
+          company_name: updatedLead.company_name,
+          phone: updatedLead.phone,
+          country_code: updatedLead.country_code,
+          country: updatedLead.crm_countries
+            ? {
+                country_code: updatedLead.crm_countries.country_code,
+                country_name_en: updatedLead.crm_countries.country_name_en,
+                country_name_fr: updatedLead.crm_countries.country_name_fr,
+                country_name_ar: updatedLead.crm_countries.country_name_ar,
+                flag_emoji: updatedLead.crm_countries.flag_emoji,
+                is_operational: updatedLead.crm_countries.is_operational,
+                country_gdpr: updatedLead.crm_countries.country_gdpr,
+              }
+            : null,
+          fleet_size: updatedLead.fleet_size,
+          current_software: updatedLead.current_software,
+          website_url: updatedLead.website_url,
+          linkedin_url: updatedLead.linkedin_url,
+          city: updatedLead.city,
+          industry: updatedLead.industry,
+          company_size: updatedLead.company_size,
           status: updatedLead.status,
           lead_stage: updatedLead.lead_stage,
           priority: updatedLead.priority,
-          assigned_to: updatedLead.assigned_to,
-          notes: updatedLead.qualification_notes,
+          fit_score: updatedLead.fit_score
+            ? Number(updatedLead.fit_score)
+            : null,
+          engagement_score: updatedLead.engagement_score
+            ? Number(updatedLead.engagement_score)
+            : null,
+          qualification_score: updatedLead.qualification_score
+            ? Number(updatedLead.qualification_score)
+            : null,
+          assigned_to: assignedEmployee
+            ? {
+                id: assignedEmployee.id,
+                first_name: assignedEmployee.first_name,
+                last_name: assignedEmployee.last_name,
+                email: assignedEmployee.email,
+                title: assignedEmployee.title,
+                department: assignedEmployee.department,
+              }
+            : null,
+          assigned_to_id: updatedLead.assigned_to,
+          source: updatedLead.crm_lead_sources
+            ? {
+                id: updatedLead.crm_lead_sources.id,
+                name: updatedLead.crm_lead_sources.name,
+                description: updatedLead.crm_lead_sources.description,
+              }
+            : null,
+          qualification_notes: updatedLead.qualification_notes,
+          message: updatedLead.message,
+          next_action_date: updatedLead.next_action_date?.toISOString() || null,
+          metadata: updatedLead.metadata as Record<string, unknown> | null,
+          gdpr_consent: updatedLead.gdpr_consent,
+          consent_ip: updatedLead.consent_ip,
+          consent_at: updatedLead.consent_at?.toISOString() || null,
+          created_at: updatedLead.created_at.toISOString(),
           updated_at: updatedLead.updated_at?.toISOString() || null,
           qualified_date: updatedLead.qualified_date?.toISOString() || null,
+          converted_date: updatedLead.converted_date?.toISOString() || null,
         },
         message: "Lead updated successfully",
       },
@@ -415,11 +489,11 @@ export async function PATCH(
  * DELETE /api/v1/crm/leads/[id]
  * Soft delete a lead (set deleted_at timestamp)
  *
- * Authentication: Required (Clerk)
- * Tenant Isolation: Via assigned_to → employee → tenant
+ * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Tenant Isolation: N/A (CRM manages prospects without tenant)
  *
  * Response 204: No Content (successful soft delete)
- * Response 401: Unauthorized
+ * Response 401: Unauthorized (middleware handles this)
  * Response 404: Lead not found or already deleted
  * Response 500: Internal server error
  *
@@ -433,11 +507,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Authentication
-    const { userId, orgId } = await auth();
+    // STEP 1: Read authentication from middleware-injected headers
+    // Security: Middleware already validated FleetCore Admin membership + CRM role
+    const userId = request.headers.get("x-user-id");
+    const orgId = request.headers.get("x-org-id");
     const { id } = await params;
 
-    if (!userId) {
+    // Defensive check (should never fail if middleware is correctly configured)
+    if (!userId || !orgId) {
+      logger.error(
+        { userId, orgId },
+        "[CRM Lead Delete] Missing auth headers - middleware may be misconfigured"
+      );
       return NextResponse.json(
         {
           success: false,
@@ -450,23 +531,7 @@ export async function DELETE(
       );
     }
 
-    // STEP 2: Tenant isolation
-    const tenantId = orgId;
-    if (!tenantId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "NO_TENANT",
-            message:
-              "No organization context found. Please select an organization.",
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // STEP 3: Validate ID (already extracted above)
+    // STEP 2: Validate ID format
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
@@ -482,7 +547,7 @@ export async function DELETE(
       );
     }
 
-    // STEP 4: Check lead exists and not already soft-deleted
+    // STEP 3: Check lead exists and not already soft-deleted
     const existingLead = await db.crm_leads.findFirst({
       where: {
         id,

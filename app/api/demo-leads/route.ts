@@ -3,6 +3,8 @@ import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { CountryService } from "@/lib/services/crm/country.service";
 import { captureConsentIp } from "@/lib/middleware/gdpr.middleware";
+import { NotificationQueueService } from "@/lib/services/notification/queue.service";
+import { getTemplateLocale } from "@/lib/utils/locale-mapping";
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,21 +25,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Vérifier si email existe déjà
+    // 2. Vérifier si email existe déjà (exclude soft-deleted)
     const existingLead = await db.crm_leads.findFirst({
-      where: { email: body.email.toLowerCase().trim() },
+      where: {
+        email: body.email.toLowerCase().trim(),
+        deleted_at: null,
+      },
     });
 
     if (existingLead) {
+      logger.info(
+        { email: body.email.toLowerCase().trim(), leadId: existingLead.id },
+        "Duplicate lead submission - returning 409"
+      );
       return NextResponse.json(
-        { error: "A demo request with this email already exists" },
+        {
+          success: false,
+          error: {
+            code: "DUPLICATE_EMAIL",
+            message: "Email already registered",
+            params: {
+              supportEmail: "support@fleetcore.io",
+            },
+          },
+        },
         { status: 409 }
       );
     }
 
-    // 3. Validation GDPR (INLINE - pas de service layer)
+    // 3. Récupérer les infos du pays (pour GDPR + email)
+    const country = await db.crm_countries.findUnique({
+      where: { country_code: body.country_code.toUpperCase().trim() },
+      select: {
+        country_code: true,
+        is_operational: true,
+        country_gdpr: true,
+        country_name_en: true,
+        country_name_fr: true,
+        country_name_ar: true,
+        country_preposition_fr: true,
+        country_preposition_en: true,
+      },
+    });
+
+    if (!country) {
+      logger.warn(
+        { countryCode: body.country_code },
+        "[Demo Lead] Country not found"
+      );
+      return NextResponse.json(
+        { error: "Country not supported" },
+        { status: 400 }
+      );
+    }
+
+    // 4. Validation GDPR (INLINE - pas de service layer)
     const countryService = new CountryService();
-    const isGdprCountry = await countryService.isGdprCountry(body.country_code);
+    const isGdprCountry =
+      country.country_gdpr ??
+      (await countryService.isGdprCountry(body.country_code));
 
     if (isGdprCountry && !body.gdpr_consent) {
       return NextResponse.json(
@@ -91,21 +137,77 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 7. Log succès
+    // 7. ⚠️ CRITICAL BUSINESS LOGIC - DO NOT REMOVE
+    // This code queues confirmation emails to leads after form submission.
+    // INCIDENT HISTORY: Session #27 (24 nov 2025) - Code accidentally removed
+    // PROTECTED BY: Critical path test + pre-commit hook
+    // ARCHITECTURE: Session #29 - Migrated to Transactional Outbox Pattern (queue)
+    const queueService = new NotificationQueueService(db);
+    const templateCode = country.is_operational
+      ? "lead_confirmation"
+      : "expansion_opportunity";
+
+    // Map form locale to template locale
+    const templateLocale = await getTemplateLocale(body.form_locale || "en");
+
+    // Get country preposition and name based on locale
+    const countryPreposition =
+      templateLocale === "fr"
+        ? country.country_preposition_fr
+        : templateLocale === "ar"
+          ? "" // Arabic doesn't use prepositions like EN/FR
+          : country.country_preposition_en;
+
+    const countryName =
+      templateLocale === "fr"
+        ? country.country_name_fr
+        : templateLocale === "ar"
+          ? country.country_name_ar
+          : country.country_name_en;
+
+    // Queue notification (will be processed by cron worker)
+    const queueResult = await queueService.queueNotification({
+      templateCode: templateCode,
+      recipientEmail: normalizedEmail,
+      locale: templateLocale,
+      variables: {
+        first_name: normalizedFirstName,
+        company_name: normalizedCompanyName,
+        fleet_size: body.fleet_size,
+        country_preposition: countryPreposition,
+        country_name: countryName,
+        phone: body.phone?.trim() || null,
+        message: body.message?.trim() || null,
+      },
+      leadId: lead.id,
+      countryCode: countryCode,
+      // Idempotency key prevents duplicate emails if form is submitted twice
+      idempotencyKey: `lead_${lead.id}_${templateCode}`,
+    });
+
     logger.info(
       {
         leadId: lead.id,
         email: normalizedEmail,
         countryCode,
+        templateCode,
+        isOperational: country.is_operational,
+        locale: templateLocale,
+        queued: queueResult.success,
+        queueId: queueResult.queueId,
       },
-      "[Demo Lead] Created successfully"
+      `[Demo Lead] Created successfully and ${templateCode} email queued`
     );
 
-    // 8. Retourner succès
     return NextResponse.json({
       success: true,
       lead_id: lead.id,
       message: "Demo request submitted successfully",
+      notification: {
+        queued: queueResult.success,
+        template: templateCode,
+        locale: templateLocale,
+      },
     });
   } catch (error) {
     logger.error({ error }, "[Demo Lead] Error creating lead");
