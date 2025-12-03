@@ -6,6 +6,48 @@ set -e
 echo "🔍 Running pre-commit checks..."
 echo ""
 
+# ============================================
+# CRITICAL CODE PROTECTION
+# Prevents accidental removal of business-critical code
+# Added after Session #27 incident (24 nov 2025) where email sending was removed
+# Updated Session #29: Support both direct and queue-based notifications
+# ============================================
+
+check_critical_pattern_or() {
+  local file="$1"
+  local pattern1="$2"
+  local pattern2="$3"
+  local message="$4"
+
+  if git diff --cached --name-only | grep -q "$file"; then
+    if [ -f "$file" ]; then
+      # Check if at least one pattern exists
+      if ! grep -q "$pattern1" "$file" && ! grep -q "$pattern2" "$file"; then
+        echo ""
+        echo "❌ CRITICAL CODE PROTECTION VIOLATION"
+        echo "   File: $file"
+        echo "   Missing: '$pattern1' OR '$pattern2'"
+        echo "   Reason: $message"
+        echo ""
+        echo "   This protection was added after Session #27 incident"
+        echo "   where email sending was accidentally removed."
+        echo ""
+        echo "   If this removal is intentional, use:"
+        echo "   git commit --no-verify -m 'CRITICAL_OVERRIDE: <reason>'"
+        echo ""
+        exit 1
+      fi
+    fi
+  fi
+}
+
+echo "🛡️ Checking critical code patterns..."
+# Accept either direct NotificationService OR queue-based NotificationQueueService
+check_critical_pattern_or "app/api/demo-leads/route.ts" "NotificationService" "NotificationQueueService" "Email/notification service is required for lead notifications"
+check_critical_pattern_or "app/api/demo-leads/route.ts" "sendEmail" "queueNotification" "Lead notification must be sent/queued after creation"
+echo "✅ Critical code patterns verified"
+echo ""
+
 # 1. Lint and format staged files
 echo "📝 Checking staged files (ESLint + Prettier)..."
 pnpm lint-staged

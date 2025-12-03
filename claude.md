@@ -1,3 +1,17 @@
+REGLE ABSOLUE - CARTON ROUGE
+
+IL EST STRICTEMENT INTERDIT DE MODIFIER OU SUPPRIMER DES REGLES METIERS POUR CORRIGER DES BUGS.
+
+Incident du 27/11/2025: Claude a tente de supprimer l audit logging dans qualify.actions.ts sous pretexte de corriger une erreur UUID. INACCEPTABLE.
+
+La bonne approche:
+
+1. Identifier la vraie cause du bug (ici: Clerk IDs vs UUIDs dans adm_audit_logs)
+2. Trouver une solution technique qui PRESERVE les regles metiers
+3. JAMAIS supprimer une fonctionnalite existante pour simplifier
+
+---
+
 ⏺ FleetCore Project Status
 
 Last Updated: September 27, 2025Next.js Version: 15.5.3 with TurbopackStatus: ✅ Production Ready

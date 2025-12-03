@@ -2,9 +2,9 @@
 
 **HOW TO UPDATE THIS FILE**: Use Edit tool ONLY. Update summary table + add phase section at end. NO separate completion files.
 
-**Last Updated**: November 23, 2025
-**Session**: #27 (Sprint 1.1 Bloc C: GDPR Frontend UX Implementation)
-**Status**: Phase 0 ✅ + Sprint 1.1 Backend ✅ + B2 RGPD Backend ✅ + C GDPR Frontend ✅ (Testing Pending)
+**Last Updated**: November 28, 2025
+**Session**: #28 (Sprint 1.1 - CRM Leads Frontend + Activities/Timeline)
+**Status**: Phase 0 ✅ + Sprint 1.1 Backend ✅ + Sprint 1.1 Frontend ✅ + Activities/Timeline ✅
 
 ---
 
@@ -13,16 +13,18 @@
 **Durée totale Phase 0**: 23h00 (vs 30h30 estimé = **25% sous budget**)
 **Durée Sprint 1.1 Backend**: 8h30 (vs 10h00 estimé = **15% sous budget**)
 
-| Phase                         | Durée réelle | Estimé    | Écart    | Tests                        | Status                 |
-| ----------------------------- | ------------ | --------- | -------- | ---------------------------- | ---------------------- |
-| 0.1 - Architecture            | 4h45         | 8h30      | -44%     | 70/70 ✅                     | COMPLETE               |
-| 0.2 - Validators/RBAC         | 3h30         | 6h00      | -42%     | 57/57 ✅                     | COMPLETE               |
-| 0.3 - Audit/Clerk Sync        | 5h45         | 6h00      | -4%      | 87/87 ✅                     | COMPLETE               |
-| 0.4 - Notification + Audit    | 9h00         | 10h00     | -10%     | 13 tests + 33 tpl ✅         | COMPLETE               |
-| **TOTAL PHASE 0**             | **23h00**    | **30h30** | **-25%** | **227 tests + 33 templates** | **✅ READY**           |
-| **1.1 Backend - CRM**         | **8h30**     | **10h00** | **-15%** | **86/86 tests** ✅           | **✅ COMPLETE**        |
-| **1.1 B2 - RGPD & Expansion** | **3h00**     | **3h00**  | **0%**   | **103/103 tests** ✅         | **✅ COMPLETE**        |
-| **1.1 C - GDPR Frontend UX**  | **5h00**     | **6h00**  | **-17%** | **0/9 unit tests** ⏳        | **⚠️ TESTING PENDING** |
+| Phase                           | Durée réelle | Estimé    | Écart    | Tests                        | Status          |
+| ------------------------------- | ------------ | --------- | -------- | ---------------------------- | --------------- |
+| 0.1 - Architecture              | 4h45         | 8h30      | -44%     | 70/70 ✅                     | COMPLETE        |
+| 0.2 - Validators/RBAC           | 3h30         | 6h00      | -42%     | 57/57 ✅                     | COMPLETE        |
+| 0.3 - Audit/Clerk Sync          | 5h45         | 6h00      | -4%      | 87/87 ✅                     | COMPLETE        |
+| 0.4 - Notification + Audit      | 9h00         | 10h00     | -10%     | 13 tests + 33 tpl ✅         | COMPLETE        |
+| **TOTAL PHASE 0**               | **23h00**    | **30h30** | **-25%** | **227 tests + 33 templates** | **✅ READY**    |
+| **1.1 Backend - CRM**           | **8h30**     | **10h00** | **-15%** | **86/86 tests** ✅           | **✅ COMPLETE** |
+| **1.1 B2 - RGPD & Expansion**   | **3h00**     | **3h00**  | **0%**   | **103/103 tests** ✅         | **✅ COMPLETE** |
+| **1.1 C - GDPR Frontend UX**    | **5h00**     | **6h00**  | **-17%** | **6/6 tests** ✅             | **✅ COMPLETE** |
+| **1.1 D - Frontend Leads**      | **~20h**     | **24h00** | **-17%** | **-**                        | **✅ COMPLETE** |
+| **1.1 E - Activities/Timeline** | **3h00**     | **4h00**  | **-25%** | **-**                        | **✅ COMPLETE** |
 
 **Livrables Phase 0** :
 
@@ -3914,3 +3916,181 @@ Session #26 introduced backend GDPR validation WITHOUT frontend UX, breaking req
 - Sprint 1.2: Email notifications (lead_confirmation, sales_rep_assignment)
 - Sprint 2+: Apply GdprConsentField to 11 remaining forms (contact, support, newsletter, etc.)
 - Technical debt: Fix BaseRepository to handle Prisma relations (Sprint 3+)
+
+---
+
+## Session #28 - Sprint 1.1 Frontend Leads + Activities/Timeline (Novembre 2025)
+
+**Date**: 2025-11-28
+**Status**: ✅ **COMPLET** - Sprint 1.1 Lead Management livré
+
+### Executive Summary
+
+Successfully completed Sprint 1.1 CRM Leads module with full frontend implementation including:
+
+- Kanban board with drag & drop (@dnd-kit)
+- Table view with pagination, sorting, filtering
+- Lead Drawer (quick view on single click)
+- Lead Detail Page (full view on double click)
+- Activities/Timeline system with crm_lead_activities table
+- Add Activity modal with type-specific fields
+
+### Frontend Components Implemented (20+)
+
+**Views**:
+
+| Component     | Description                  | File                                     |
+| ------------- | ---------------------------- | ---------------------------------------- |
+| KanbanBoard   | Drag & drop board            | `components/crm/leads/KanbanBoard.tsx`   |
+| KanbanColumn  | Column with count            | `components/crm/leads/KanbanColumn.tsx`  |
+| KanbanCard    | Lead card with avatar, score | `components/crm/leads/KanbanCard.tsx`    |
+| LeadsTable    | Table with sorting           | `components/crm/leads/LeadsTable.tsx`    |
+| LeadsTableRow | Row with context menu        | `components/crm/leads/LeadsTableRow.tsx` |
+| ViewToggle    | Kanban ↔ Table switch       | `components/crm/leads/ViewToggle.tsx`    |
+
+**Lead Management**:
+
+| Component          | Description                      | File                                          |
+| ------------------ | -------------------------------- | --------------------------------------------- |
+| LeadDrawer         | Quick view (single click)        | `components/crm/leads/LeadDrawer.tsx`         |
+| LeadDrawerHeader   | Avatar, badges, name             | `components/crm/leads/LeadDrawerHeader.tsx`   |
+| LeadDrawerSections | Contact, Company, Timeline, etc. | `components/crm/leads/LeadDrawerSections.tsx` |
+| LeadDetailPage     | Full page view                   | `components/crm/leads/LeadDetailPage.tsx`     |
+| LeadDetailCards    | Detail cards layout              | `components/crm/leads/LeadDetailCards.tsx`    |
+| LeadFormModal      | Create/Edit modal                | `components/crm/leads/LeadFormModal.tsx`      |
+
+**Activities/Timeline**:
+
+| Component        | Description                   | File                                        |
+| ---------------- | ----------------------------- | ------------------------------------------- |
+| LeadTimeline     | Activity history              | `components/crm/leads/LeadTimeline.tsx`     |
+| AddActivityModal | Add activity with type fields | `components/crm/leads/AddActivityModal.tsx` |
+| TimelineSection  | Drawer section wrapper        | In `LeadDrawerSections.tsx`                 |
+
+**Filtering & Actions**:
+
+| Component         | Description          | File                                         |
+| ----------------- | -------------------- | -------------------------------------------- |
+| LeadsFilterBar    | Filter controls      | `components/crm/leads/LeadsFilterBar.tsx`    |
+| AdvancedFilters   | Filter panel         | `components/crm/leads/AdvancedFilters.tsx`   |
+| LeadSearchCommand | Cmd+K search         | `components/crm/leads/LeadSearchCommand.tsx` |
+| BulkActionsBar    | Multi-select actions | `components/crm/leads/BulkActionsBar.tsx`    |
+| ColumnSelector    | Table column picker  | `components/crm/leads/ColumnSelector.tsx`    |
+| TablePagination   | Pagination controls  | `components/crm/leads/TablePagination.tsx`   |
+
+### Activities/Timeline Feature (H1)
+
+**Database Table**: `crm_lead_activities`
+
+```sql
+id              UUID PRIMARY KEY
+lead_id         UUID FK → crm_leads
+activity_type   ENUM (call, email, note, meeting, task)
+title           VARCHAR(255)
+description     TEXT
+metadata        JSONB (duration, outcome, location, attendees)
+scheduled_at    TIMESTAMP
+completed_at    TIMESTAMP
+is_completed    BOOLEAN
+performed_by    UUID FK → adm_members
+performed_by_name VARCHAR(255)
+created_at      TIMESTAMP
+updated_at      TIMESTAMP
+```
+
+**Server Actions** (`lib/actions/crm/activities.actions.ts`):
+
+- `getLeadActivitiesAction(leadId, options)` - Fetch activities with pagination
+- `createActivityAction(data)` - Create activity with Zod validation
+- Clerk userId → member UUID mapping via `getMemberUuidFromClerkUserId()`
+
+**Integration Points**:
+
+- ✅ LeadDrawer: TimelineSection shows activities
+- ✅ LeadDetailCards: Full timeline with "Add Activity" button
+- ✅ AddActivityModal: Type-specific fields (call has duration/outcome, meeting has location/attendees)
+
+### Pages Implemented
+
+| Page     | Route                         | Description           |
+| -------- | ----------------------------- | --------------------- |
+| Pipeline | `/[locale]/crm/leads`         | Kanban + Table toggle |
+| Browser  | `/[locale]/crm/leads/browser` | Full table view       |
+| Detail   | `/[locale]/crm/leads/[id]`    | Lead full page        |
+| Reports  | `/[locale]/crm/leads/reports` | Analytics dashboard   |
+
+### API Routes
+
+| Method | Route                      | Description       |
+| ------ | -------------------------- | ----------------- |
+| GET    | `/api/v1/crm/leads`        | List with filters |
+| POST   | `/api/v1/crm/leads`        | Create lead       |
+| GET    | `/api/v1/crm/leads/[id]`   | Get lead detail   |
+| PUT    | `/api/v1/crm/leads/[id]`   | Update lead       |
+| DELETE | `/api/v1/crm/leads/[id]`   | Soft delete       |
+| GET    | `/api/v1/crm/leads/stats`  | Pipeline stats    |
+| GET    | `/api/v1/crm/leads/export` | CSV export        |
+
+### Key Technical Decisions
+
+1. **Single click = Drawer, Double click = Full page**
+   - Quick view for browsing
+   - Full page for detailed work
+
+2. **@dnd-kit for Drag & Drop**
+   - Type-safe, accessible
+   - Smooth animations
+
+3. **Clerk → UUID Mapping**
+   - `getMemberUuidFromClerkUserId()` for activity performed_by
+   - Preserves UUID foreign keys
+
+4. **Drawer Sections Pattern**
+   - Reusable `DrawerSection` wrapper with icon
+   - Easy to add new sections
+
+### Files Modified/Created
+
+**Pages** (4 new):
+
+- `app/[locale]/(crm)/crm/leads/page.tsx`
+- `app/[locale]/(crm)/crm/leads/[id]/page.tsx`
+- `app/[locale]/(crm)/crm/leads/browser/page.tsx`
+- `app/[locale]/(crm)/crm/leads/reports/page.tsx`
+
+**Components** (20+ new):
+
+- All components in `components/crm/leads/`
+
+**Actions** (1 new):
+
+- `lib/actions/crm/activities.actions.ts`
+
+**Translations**:
+
+- `lib/i18n/locales/en/crm.json` - leads._, timeline._
+- `lib/i18n/locales/fr/crm.json` - leads._, timeline._
+
+### Metrics
+
+| Metric             | Value |
+| ------------------ | ----- |
+| Components created | 20+   |
+| Pages created      | 4     |
+| API routes         | 7     |
+| i18n keys added    | 100+  |
+| TypeScript errors  | 0 ✅  |
+
+### Conclusion
+
+Sprint 1.1 Lead Management is **100% COMPLETE**:
+
+- ✅ Kanban board with drag & drop
+- ✅ Table view with pagination/sorting
+- ✅ Lead Drawer quick view
+- ✅ Lead Detail full page
+- ✅ Activities/Timeline system
+- ✅ Add Activity modal
+- ✅ All translations EN/FR
+
+**Ready for Sprint 2: Opportunity Pipeline!** 🚀

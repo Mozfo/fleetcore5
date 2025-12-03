@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/notifications/process",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/opportunities/rotting",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

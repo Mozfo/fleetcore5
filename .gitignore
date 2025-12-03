@@ -51,9 +51,20 @@ backup/
 # Archive nettoyage projet - NE JAMAIS COMMITER
 archive_fleetcore_20251106/
 archive_fleetcore_*/
+_archive/
+
+# Backup files - NE JAMAIS COMMITER
+*.backup
+*.bak
+*.orig
+*.tmp
+*~
 
 # Integration tests SQLite database
 test-integration.db
 test-integration.db-journal
+
+# Generated emails (optional - can be regenerated)
+generated-emails/
 
 .env
