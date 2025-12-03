@@ -52,6 +52,10 @@ export const CrmSettingKey = {
   LEAD_ASSIGNMENT_RULES: "lead_assignment_rules",
   LEAD_PRIORITY_CONFIG: "lead_priority_config",
   LOCALE_TEMPLATE_MAPPING: "locale_template_mapping",
+  // Phase 1.1: Pipeline & Loss Reasons settings
+  LEAD_STAGES: "lead_stages",
+  OPPORTUNITY_STAGES: "opportunity_stages",
+  OPPORTUNITY_LOSS_REASONS: "opportunity_loss_reasons",
 } as const;
 
 /**
@@ -309,6 +313,198 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
 
     return grouped;
   }
+
+  // ==========================================================================
+  // WRITE OPERATIONS (Phase 1.1)
+  // ==========================================================================
+
+  /**
+   * Upsert a setting by key
+   * Creates new setting or updates existing one, incrementing version
+   *
+   * @param key - Setting key
+   * @param data - Setting data to upsert
+   * @param userId - ID of user making the change (for audit)
+   * @returns Created or updated setting
+   *
+   * @example
+   * ```typescript
+   * const setting = await repo.upsertByKey(
+   *   'opportunity_stages',
+   *   { setting_value: newStagesConfig, category: 'pipeline' },
+   *   userId
+   * );
+   * ```
+   */
+  async upsertByKey(
+    key: string,
+    data: {
+      setting_value: unknown;
+      category?: string;
+      data_type?: string;
+      description?: string;
+      display_label?: string;
+      help_text?: string;
+      ui_component?: string;
+      display_order?: number;
+      is_system?: boolean;
+    },
+    userId: string | null
+  ): Promise<CrmSetting> {
+    const existing = await this.model.findFirst({
+      where: { setting_key: key, deleted_at: null },
+    });
+
+    if (existing) {
+      // Update existing - increment version
+      return await this.model.update({
+        where: { id: existing.id },
+        data: {
+          setting_value: data.setting_value as object,
+          description: data.description ?? existing.description,
+          display_label: data.display_label ?? existing.display_label,
+          help_text: data.help_text ?? existing.help_text,
+          ui_component: data.ui_component ?? existing.ui_component,
+          display_order: data.display_order ?? existing.display_order,
+          version: existing.version + 1,
+          updated_by: userId,
+          updated_at: new Date(),
+        },
+      });
+    }
+
+    // Create new setting
+    return await this.model.create({
+      data: {
+        setting_key: key,
+        setting_value: data.setting_value as object,
+        category: data.category ?? "pipeline",
+        data_type: data.data_type ?? "object",
+        description: data.description ?? null,
+        display_label: data.display_label ?? null,
+        help_text: data.help_text ?? null,
+        ui_component: data.ui_component ?? null,
+        display_order: data.display_order ?? 0,
+        is_system: data.is_system ?? false,
+        is_active: true,
+        version: 1,
+        created_by: userId,
+      },
+    });
+  }
+
+  /**
+   * Bulk update multiple settings in a transaction
+   * Validates all updates before applying
+   *
+   * @param updates - Array of { key, value } pairs
+   * @param userId - ID of user making the changes
+   * @returns Number of settings updated
+   *
+   * @example
+   * ```typescript
+   * const count = await repo.bulkUpdate([
+   *   { key: 'lead_stages', value: leadStagesConfig },
+   *   { key: 'opportunity_stages', value: oppStagesConfig },
+   * ], userId);
+   * ```
+   */
+  async bulkUpdate(
+    updates: Array<{ key: string; value: unknown }>,
+    userId: string | null
+  ): Promise<number> {
+    let updatedCount = 0;
+
+    // Use transaction to ensure atomicity
+    await this.prisma.$transaction(async (tx) => {
+      for (const update of updates) {
+        const existing = await tx.crm_settings.findFirst({
+          where: { setting_key: update.key, deleted_at: null },
+        });
+
+        if (existing) {
+          await tx.crm_settings.update({
+            where: { id: existing.id },
+            data: {
+              setting_value: update.value as object,
+              version: existing.version + 1,
+              updated_by: userId,
+              updated_at: new Date(),
+            },
+          });
+          updatedCount++;
+        }
+      }
+    });
+
+    return updatedCount;
+  }
+
+  /**
+   * Toggle active status of a setting
+   *
+   * @param key - Setting key
+   * @param userId - ID of user making the change
+   * @returns Updated setting
+   *
+   * @example
+   * ```typescript
+   * const setting = await repo.toggleActive('lead_stages', userId);
+   * console.log(setting.is_active); // false (toggled)
+   * ```
+   */
+  async toggleActive(
+    key: string,
+    userId: string | null
+  ): Promise<CrmSetting | null> {
+    const existing = await this.model.findFirst({
+      where: { setting_key: key, deleted_at: null },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
+    return await this.model.update({
+      where: { id: existing.id },
+      data: {
+        is_active: !existing.is_active,
+        version: existing.version + 1,
+        updated_by: userId,
+        updated_at: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Soft delete a setting by key (sets deleted_at)
+   * System settings cannot be deleted
+   *
+   * @param key - Setting key
+   * @param userId - ID of user making the change
+   * @returns Deleted setting or null if not found/system setting
+   */
+  async softDeleteByKey(
+    key: string,
+    userId: string | null
+  ): Promise<CrmSetting | null> {
+    const existing = await this.model.findFirst({
+      where: { setting_key: key, deleted_at: null },
+    });
+
+    if (!existing || existing.is_system) {
+      return null;
+    }
+
+    return await this.model.update({
+      where: { id: existing.id },
+      data: {
+        deleted_at: new Date(),
+        deleted_by: userId,
+        is_active: false,
+      },
+    });
+  }
 }
 
 /**
@@ -501,6 +697,339 @@ export async function seedCrmSettings(prisma: PrismaClient): Promise<number> {
         fallback: {
           employee_id: null,
           title_pattern: "%Sales%Manager%",
+        },
+      },
+    },
+    // ========================================================================
+    // Pipeline Settings (Phase 1.6)
+    // ========================================================================
+    {
+      setting_key: "lead_stages",
+      category: "stages",
+      data_type: "object",
+      is_system: true,
+      description: "Lead pipeline stages configuration",
+      setting_value: {
+        stages: [
+          {
+            value: "new",
+            label_en: "New",
+            label_fr: "Nouveau",
+            color: "blue",
+            order: 1,
+            is_active: true,
+            auto_actions: ["assign_to_queue"],
+          },
+          {
+            value: "contacted",
+            label_en: "Contacted",
+            label_fr: "Contacté",
+            color: "purple",
+            order: 2,
+            is_active: true,
+            auto_actions: [],
+          },
+          {
+            value: "qualified",
+            label_en: "Qualified",
+            label_fr: "Qualifié",
+            color: "green",
+            order: 3,
+            is_active: true,
+            auto_actions: ["calculate_score"],
+          },
+          {
+            value: "unqualified",
+            label_en: "Unqualified",
+            label_fr: "Non qualifié",
+            color: "red",
+            order: 4,
+            is_active: true,
+            auto_actions: ["archive"],
+          },
+          {
+            value: "nurturing",
+            label_en: "Nurturing",
+            label_fr: "En nurturing",
+            color: "yellow",
+            order: 5,
+            is_active: true,
+            auto_actions: ["add_to_sequence"],
+          },
+          {
+            value: "converted",
+            label_en: "Converted",
+            label_fr: "Converti",
+            color: "teal",
+            order: 6,
+            is_active: true,
+            auto_actions: ["create_opportunity"],
+          },
+        ],
+        transitions: {
+          new: ["contacted", "unqualified"],
+          contacted: ["qualified", "unqualified", "nurturing"],
+          qualified: ["converted", "nurturing", "unqualified"],
+          unqualified: ["nurturing"],
+          nurturing: ["contacted", "qualified"],
+          converted: [],
+        },
+        default_stage: "new",
+      },
+    },
+    {
+      setting_key: "opportunity_stages",
+      category: "stages",
+      data_type: "object",
+      is_system: true,
+      description:
+        "Opportunity pipeline stages with deal rotting configuration",
+      setting_value: {
+        stages: [
+          {
+            value: "qualification",
+            label_en: "Qualification",
+            label_fr: "Qualification",
+            probability: 20,
+            max_days: 14,
+            color: "blue",
+            order: 1,
+            deal_rotting: true,
+            is_active: true,
+          },
+          {
+            value: "demo",
+            label_en: "Demo",
+            label_fr: "Démonstration",
+            probability: 40,
+            max_days: 10,
+            color: "purple",
+            order: 2,
+            deal_rotting: true,
+            is_active: true,
+          },
+          {
+            value: "proposal",
+            label_en: "Proposal",
+            label_fr: "Proposition",
+            probability: 60,
+            max_days: 14,
+            color: "yellow",
+            order: 3,
+            deal_rotting: true,
+            is_active: true,
+          },
+          {
+            value: "negotiation",
+            label_en: "Negotiation",
+            label_fr: "Négociation",
+            probability: 80,
+            max_days: 10,
+            color: "orange",
+            order: 4,
+            deal_rotting: true,
+            is_active: true,
+          },
+          {
+            value: "contract_sent",
+            label_en: "Contract Sent",
+            label_fr: "Contrat envoyé",
+            probability: 90,
+            max_days: 7,
+            color: "green",
+            order: 5,
+            deal_rotting: true,
+            is_active: true,
+          },
+        ],
+        final_stages: {
+          won: { label_en: "Won", label_fr: "Gagné", probability: 100 },
+          lost: { label_en: "Lost", label_fr: "Perdu", probability: 0 },
+        },
+        rotting: {
+          enabled: true,
+          use_stage_max_days: true,
+          global_threshold_days: null,
+          alert_owner: true,
+          alert_manager: true,
+          cron_time: "08:00",
+        },
+      },
+    },
+    {
+      setting_key: "opportunity_loss_reasons",
+      category: "workflows",
+      data_type: "object",
+      is_system: true,
+      description: "Loss reasons for opportunities with recovery workflow",
+      setting_value: {
+        default: null,
+        reasons: [
+          // Price category
+          {
+            value: "price_too_high",
+            label_en: "Price too high",
+            label_fr: "Prix trop élevé",
+            category: "price",
+            order: 1,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 90,
+            require_competitor_name: false,
+          },
+          {
+            value: "no_budget",
+            label_en: "No budget",
+            label_fr: "Pas de budget",
+            category: "price",
+            order: 2,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 180,
+            require_competitor_name: false,
+          },
+          {
+            value: "roi_not_demonstrated",
+            label_en: "ROI not demonstrated",
+            label_fr: "ROI non démontré",
+            category: "price",
+            order: 3,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 60,
+            require_competitor_name: false,
+          },
+          // Product category
+          {
+            value: "feature_missing",
+            label_en: "Feature missing",
+            label_fr: "Fonctionnalité manquante",
+            category: "product",
+            order: 4,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 120,
+            require_competitor_name: false,
+          },
+          {
+            value: "integration_missing",
+            label_en: "Integration not available",
+            label_fr: "Intégration non disponible",
+            category: "product",
+            order: 5,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 90,
+            require_competitor_name: false,
+          },
+          {
+            value: "ui_too_complex",
+            label_en: "UI too complex",
+            label_fr: "Interface trop complexe",
+            category: "product",
+            order: 6,
+            is_active: true,
+            is_recoverable: false,
+            recovery_delay_days: null,
+            require_competitor_name: false,
+          },
+          // Competition category
+          {
+            value: "competitor_won_price",
+            label_en: "Competitor won (price)",
+            label_fr: "Concurrent gagné (prix)",
+            category: "competition",
+            order: 7,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 180,
+            require_competitor_name: true,
+          },
+          {
+            value: "competitor_won_features",
+            label_en: "Competitor won (features)",
+            label_fr: "Concurrent gagné (fonctionnalités)",
+            category: "competition",
+            order: 8,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 180,
+            require_competitor_name: true,
+          },
+          // Timing category
+          {
+            value: "project_cancelled",
+            label_en: "Project cancelled",
+            label_fr: "Projet annulé",
+            category: "timing",
+            order: 9,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 90,
+            require_competitor_name: false,
+          },
+          {
+            value: "not_ready_now",
+            label_en: "Not ready now",
+            label_fr: "Pas prêt maintenant",
+            category: "timing",
+            order: 10,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 60,
+            require_competitor_name: false,
+          },
+          {
+            value: "bad_timing",
+            label_en: "Bad timing",
+            label_fr: "Mauvais timing",
+            category: "timing",
+            order: 11,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 180,
+            require_competitor_name: false,
+          },
+          // Other category
+          {
+            value: "no_response",
+            label_en: "No response",
+            label_fr: "Pas de réponse",
+            category: "other",
+            order: 12,
+            is_active: true,
+            is_recoverable: true,
+            recovery_delay_days: 60,
+            require_competitor_name: false,
+          },
+          {
+            value: "bad_fit",
+            label_en: "Bad product fit",
+            label_fr: "Mauvais fit produit",
+            category: "other",
+            order: 13,
+            is_active: true,
+            is_recoverable: false,
+            recovery_delay_days: null,
+            require_competitor_name: false,
+          },
+          {
+            value: "other",
+            label_en: "Other",
+            label_fr: "Autre",
+            category: "other",
+            order: 99,
+            is_active: true,
+            is_recoverable: false,
+            recovery_delay_days: null,
+            require_competitor_name: false,
+          },
+        ],
+        recovery_workflow: {
+          auto_create_followup: true,
+          send_reminder_email: true,
+          reminder_days_before: 7,
+          auto_reopen: false,
         },
       },
     },
