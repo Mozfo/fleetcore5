@@ -1,4 +1,12 @@
 {
+  "sidebar": {
+    "leads_pipeline": "Leads Pipeline",
+    "opportunities_pipeline": "Opportunity Pipeline",
+    "leads_browser": "Leads Browser",
+    "leads_detail": "Leads Detail View",
+    "leads_detail_tooltip": "Click on a lead first to enable this link",
+    "leads_reports": "Leads Reports"
+  },
   "leads": {
     "title": "Leads Pipeline",
     "description": "Manage and track your leads through the sales funnel",
@@ -28,7 +36,49 @@
       "unassigned": "Unassigned",
       "reset": "Reset filters",
       "save_view": "Save view",
-      "active_filters": "{{count}} active filters"
+      "active_filters": "{{count}} active filters",
+      "advanced": "Filters",
+      "advanced_title": "Advanced Filters",
+      "add_condition": "Add condition",
+      "add_group": "Add group",
+      "reset_all": "Reset all",
+      "select_value": "Select value",
+      "enter_value": "Enter value",
+      "and": "and",
+      "info_instant": "Filters are applied instantly as you type",
+      "fields": {
+        "first_name": "First Name",
+        "last_name": "Last Name",
+        "email": "Email",
+        "company": "Company",
+        "phone": "Phone",
+        "country": "Country",
+        "status": "Status",
+        "stage": "Stage",
+        "priority": "Priority",
+        "qualification_score": "Qualification Score",
+        "fit_score": "Fit Score",
+        "engagement_score": "Engagement Score",
+        "fleet_size": "Fleet Size",
+        "created_at": "Created At"
+      },
+      "operators": {
+        "equals": "equals",
+        "not_equals": "does not equal",
+        "contains": "contains",
+        "not_contains": "does not contain",
+        "starts_with": "starts with",
+        "ends_with": "ends with",
+        "greater_than": "greater than",
+        "less_than": "less than",
+        "greater_than_or_equals": "greater than or equals",
+        "less_than_or_equals": "less than or equals",
+        "between": "between",
+        "is_empty": "is empty",
+        "is_not_empty": "is not empty",
+        "in": "is one of",
+        "not_in": "is not one of"
+      }
     },
     "card": {
       "score": "Score",
@@ -43,6 +93,7 @@
         "top_of_funnel": "Discovery",
         "marketing_qualified": "Marketing Qualified",
         "sales_qualified": "Sales Qualified",
+        "opportunity": "Opportunity",
         "indetermined": "Indetermined"
       },
       "view_details": "View details"
@@ -64,7 +115,17 @@
     "actions": {
       "new_lead": "New Lead",
       "export": "Export",
-      "settings": "Settings"
+      "settings": "Settings",
+      "qualify_coming_soon": "Qualify feature coming soon",
+      "convert_coming_soon": "Convert to opportunity coming soon",
+      "edit_coming_soon": "Edit lead coming soon",
+      "delete_coming_soon": "Delete feature coming soon"
+    },
+    "status_change": {
+      "success": "Lead status updated successfully",
+      "lost_success": "Lead marked as lost and closed",
+      "qualified_success": "Lead qualified successfully",
+      "error": "Failed to update lead status"
     },
     "time": {
       "just_now": "just now",
@@ -72,6 +133,915 @@
       "hours_ago": "{{count}}h ago",
       "days_ago": "{{count}}d ago",
       "weeks_ago": "{{count}}w ago"
+    },
+    "modal": {
+      "title_create": "Create New Lead",
+      "title_edit": "Edit Lead",
+      "description_create": "Add a new lead to your pipeline",
+      "description_edit": "Update lead information",
+      "section_contact": "Contact Information",
+      "section_company": "Company Details",
+      "section_additional": "Additional Information",
+      "section_management": "Lead Management",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "phone": "Phone",
+      "company_name": "Company Name",
+      "country": "Country",
+      "city": "City",
+      "city_placeholder": "e.g. Dubai, Paris, London...",
+      "fleet_size": "Fleet Size",
+      "current_software": "Current Software",
+      "current_software_placeholder": "e.g. Excel, Fleet Complete, MyTaxiCRM...",
+      "website_url": "Website URL",
+      "website_url_placeholder": "https://company.com",
+      "message": "Message",
+      "select_country": "Select a country",
+      "select_fleet_size": "Select fleet size",
+      "message_placeholder": "Any additional information about this lead...",
+      "source": "Source",
+      "select_source": "Select source",
+      "validation": {
+        "first_name_min": "First name must be at least 2 characters",
+        "first_name_max": "First name too long",
+        "first_name_no_digits": "First name cannot contain digits",
+        "last_name_min": "Last name must be at least 2 characters",
+        "last_name_max": "Last name too long",
+        "last_name_no_digits": "Last name cannot contain digits",
+        "email_required": "Email is required",
+        "email_invalid": "Invalid email format",
+        "email_max": "Email too long",
+        "phone_invalid": "Invalid phone format (E.164 expected, e.g., +33612345678)",
+        "company_min": "Company name must be at least 2 characters",
+        "company_max": "Company name too long",
+        "country_required": "Please select a country",
+        "city_max": "City name too long",
+        "fleet_size_required": "Please select fleet size",
+        "software_max": "Current software name too long",
+        "website_max": "Website URL too long",
+        "employee_invalid": "Invalid employee ID",
+        "message_max": "Message too long"
+      },
+      "source_options": {
+        "website": "Website",
+        "referral": "Referral",
+        "paid_ad": "Paid Ad",
+        "social_media": "Social Media",
+        "event": "Event",
+        "cold_outreach": "Cold Outreach",
+        "partner": "Partner",
+        "other": "Other"
+      },
+      "priority": "Priority",
+      "select_priority": "Select priority",
+      "auto_calculate": "Auto-calculate",
+      "assigned_to": "Assigned To",
+      "select_assignee": "Select assignee",
+      "auto_assign": "Auto-assign",
+      "cancel": "Cancel",
+      "submit_create": "Create Lead",
+      "submit_edit": "Save Changes",
+      "submitting": "Creating..."
+    },
+    "toast": {
+      "success_created": "Lead created successfully",
+      "error_email_exists": "A lead with this email already exists",
+      "error_validation": "Please check the form fields",
+      "error_generic": "An error occurred. Please try again.",
+      "status_updated": "Lead status updated",
+      "status_update_failed": "Failed to update lead status"
+    },
+    "view_toggle": {
+      "kanban": "Kanban",
+      "table": "Table"
+    },
+    "saved_views": {
+      "title": "Saved Views",
+      "all_leads": "All Leads",
+      "save_current": "Save current view",
+      "delete": "Delete",
+      "delete_confirm": "Are you sure you want to delete this view?",
+      "set_default": "Set as default",
+      "unset_default": "Remove default",
+      "default_badge": "Default",
+      "builtin": {
+        "all-leads": "All Leads",
+        "new-this-week": "New This Week",
+        "qualified-leads": "Qualified Leads"
+      },
+      "modal": {
+        "title": "Save View",
+        "name_label": "Name",
+        "name_placeholder": "My Custom View",
+        "name_required": "Name is required",
+        "name_too_short": "Name must be at least 2 characters",
+        "name_duplicate": "A view with this name already exists",
+        "set_default": "Set as default view",
+        "will_save": "This view will save:",
+        "filters_count": "Current filters ({{count}} active)",
+        "columns_count": "Column configuration ({{count}} visible)",
+        "sort": "Sort order",
+        "view_mode": "View mode ({{mode}})",
+        "kanban": "Kanban",
+        "table": "Table"
+      }
+    },
+    "pagination": {
+      "rows_per_page": "Rows per page",
+      "showing": "{{start}}-{{end}} of {{total}}",
+      "page_of": "{{current}} / {{total}}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "columns_button": "Columns",
+    "visible_columns": "Visible Columns",
+    "unassigned": "Unassigned",
+    "status": {
+      "new": "New",
+      "working": "Working",
+      "qualified": "Qualified",
+      "lost": "Lost",
+      "contacted": "Contacted",
+      "converted": "Converted",
+      "disqualified": "Disqualified"
+    },
+    "table": {
+      "company": "Company",
+      "contact": "Contact",
+      "status": "Status",
+      "country": "Country",
+      "fleet_size": "Fleet",
+      "score": "Score",
+      "source": "Source",
+      "assigned_to": "Owner",
+      "created_at": "Created",
+      "columns": {
+        "ref": "Ref",
+        "contact": "Contact",
+        "email": "Email",
+        "phone": "Phone",
+        "company": "Company",
+        "fleet_size": "Fleet Size",
+        "country": "Country",
+        "score": "Score",
+        "fit_score": "Fit Score",
+        "engagement": "Engagement",
+        "stage": "Stage",
+        "status": "Status",
+        "priority": "Priority",
+        "assigned": "Assigned",
+        "created": "Created",
+        "actions": "Actions",
+        "source": "Source",
+        "next_action_date": "Next Action",
+        "current_software": "Current Software",
+        "city": "City",
+        "industry": "Industry",
+        "company_size": "Company Size",
+        "website_url": "Website",
+        "linkedin_url": "LinkedIn",
+        "utm_source": "UTM Source",
+        "utm_medium": "UTM Medium",
+        "utm_campaign": "UTM Campaign",
+        "qualified_date": "Qualified Date",
+        "converted_date": "Converted Date",
+        "updated_at": "Last Updated",
+        "message": "Message",
+        "qualification_notes": "Notes",
+        "gdpr_consent": "GDPR",
+        "consent_at": "Consent Date",
+        "consent_ip": "Consent IP",
+        "opportunity_id": "Opportunity"
+      },
+      "column_selector": {
+        "button": "Columns",
+        "label": "Manage columns",
+        "reset": "Reset to default",
+        "drag_hint": "Drag to reorder"
+      },
+      "select_all": "Select all",
+      "no_results": "No leads found",
+      "no_results_desc": "Try adjusting your filters or create a new lead"
+    },
+    "context_menu": {
+      "view": "View Details",
+      "edit": "Edit",
+      "call": "Call",
+      "email": "Send Email",
+      "change_status": "Change Status",
+      "convert": "Convert to Opportunity",
+      "delete": "Delete",
+      "current": "current"
+    },
+    "bulk_actions": {
+      "selected": "{{count}} selected",
+      "assign": "Assign",
+      "status": "Status",
+      "export": "Export",
+      "delete": "Delete",
+      "clear_selection": "Clear selection",
+      "assign_modal": {
+        "title": "Assign {{count}} Leads",
+        "description": "Select a team member to assign the selected leads to.",
+        "select_assignee": "Assign to",
+        "no_members": "No team members available",
+        "assigning": "Assigning..."
+      },
+      "status_modal": {
+        "title": "Change Status ({{count}} leads)",
+        "description": "Select the new status for the selected leads.",
+        "select_status": "New status",
+        "update": "Update",
+        "updating": "Updating..."
+      },
+      "delete_modal": {
+        "title": "Delete {{count}} Leads",
+        "warning": "Are you sure you want to delete {{count}} leads? This action cannot be undone.",
+        "reason_label": "Reason",
+        "reasons": {
+          "duplicate": "Duplicate entry",
+          "invalid_data": "Invalid data",
+          "request_from_lead": "Request from lead",
+          "no_longer_interested": "No longer interested",
+          "other": "Other"
+        },
+        "deleting": "Deleting..."
+      },
+      "toast": {
+        "assign_success": "{{count}} leads assigned successfully",
+        "assign_error": "Failed to assign leads",
+        "status_success": "{{count}} leads updated successfully",
+        "status_error": "Failed to update lead statuses",
+        "delete_success": "{{count}} leads deleted successfully",
+        "delete_error": "Failed to delete leads",
+        "export_success": "Export started",
+        "export_error": "Failed to export leads"
+      }
+    },
+    "navigation": {
+      "back_to_list": "Back to list",
+      "previous": "Previous lead",
+      "next": "Next lead"
+    },
+    "search": {
+      "button": "Search",
+      "title": "Search leads",
+      "placeholder": "Search by name, email, or company...",
+      "placeholder_short": "Search leads...",
+      "no_results": "No leads found",
+      "min_chars": "Type at least 2 characters",
+      "start_typing": "Start typing to search leads",
+      "hint_navigate": "↑↓ to navigate",
+      "hint_select": "↵ to select"
+    },
+    "drawer": {
+      "open_full_page": "Open full page",
+      "save": "Save",
+      "saving": "Saving...",
+      "save_success": "Lead updated successfully",
+      "save_error": "Failed to update lead",
+      "cancel": "Cancel",
+      "edit_mode": "Edit mode",
+      "sections": {
+        "contact": "Contact",
+        "company": "Company",
+        "location": "Location",
+        "scoring": "Scoring",
+        "source": "Source & Attribution",
+        "assignment": "Assignment",
+        "gdpr": "GDPR Consent",
+        "notes": "Qualification Notes",
+        "message": "Message",
+        "timeline": "Activity Timeline"
+      },
+      "fields": {
+        "email": "Email",
+        "phone": "Phone",
+        "company_name": "Company",
+        "industry": "Industry",
+        "company_size": "Company Size",
+        "employees": "employees",
+        "fleet_size": "Fleet Size",
+        "current_software": "Current Software",
+        "website": "Website",
+        "linkedin": "LinkedIn",
+        "country": "Country",
+        "city": "City",
+        "source": "Source",
+        "utm_source": "UTM Source",
+        "utm_medium": "UTM Medium",
+        "utm_campaign": "UTM Campaign",
+        "fit_score": "Fit",
+        "engagement_score": "Engagement",
+        "qualification_score": "Qualification",
+        "assigned_to": "Assigned to",
+        "next_action": "Next action",
+        "created": "Created",
+        "consent": "Consent",
+        "consent_date": "Date",
+        "consent_ip": "IP Address"
+      },
+      "actions": {
+        "copy": "Copy",
+        "copied": "copied",
+        "copy_failed": "Failed to copy",
+        "call": "Call",
+        "send": "Send",
+        "open": "Open",
+        "edit": "Edit",
+        "qualify": "Qualify",
+        "convert": "Convert",
+        "delete": "Delete"
+      },
+      "consent_status": {
+        "yes": "Given",
+        "no": "Not given",
+        "unknown": "Unknown"
+      },
+      "empty": {
+        "unassigned": "Unassigned",
+        "no_message": "No message",
+        "not_provided": "Not provided",
+        "unknown_contact": "Unknown contact",
+        "unknown_company": "Unknown company"
+      }
+    },
+    "timeline": {
+      "title": "Activity Timeline",
+      "empty": "No activities yet",
+      "empty_description": "Activities will appear here as you interact with this lead",
+      "add_first": "Add first activity",
+      "add_activity": "Add Activity",
+      "load_more": "Load more activities",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "types": {
+        "call": "Call",
+        "email": "Email",
+        "note": "Note",
+        "meeting": "Meeting",
+        "stage_change": "Stage Changed",
+        "status_change": "Status Changed",
+        "task": "Task",
+        "system": "System"
+      },
+      "performed_by": "by {{name}}",
+      "add_modal": {
+        "title": "Add Activity",
+        "select_type": "Select activity type",
+        "fields": {
+          "title": "Title",
+          "description": "Description",
+          "duration": "Duration (minutes)",
+          "outcome": "Outcome",
+          "phone": "Phone number",
+          "email_to": "To",
+          "template": "Template used",
+          "location": "Location",
+          "attendees": "Attendees",
+          "scheduled_at": "Scheduled at"
+        },
+        "outcomes": {
+          "answered": "Answered",
+          "no_answer": "No answer",
+          "voicemail": "Voicemail",
+          "busy": "Busy"
+        },
+        "placeholders": {
+          "title": "Enter activity title",
+          "description": "Add details...",
+          "location": "Meeting location"
+        },
+        "submit": "Add Activity",
+        "success": "Activity added successfully",
+        "error": "Failed to add activity"
+      }
+    },
+    "scores": {
+      "fit": "Fit Score",
+      "engagement": "Engagement",
+      "qualification": "Qualification",
+      "view_breakdown": "View breakdown",
+      "total": "Total",
+      "factors": {
+        "fleet_size_50": "Fleet size > 50 vehicles",
+        "fleet_size_100": "Fleet size > 100 vehicles",
+        "has_software": "Uses fleet software",
+        "target_country": "Target region (MENA/EU)",
+        "has_website": "Company website provided",
+        "has_linkedin": "LinkedIn profile provided",
+        "email_provided": "Email provided",
+        "phone_provided": "Phone number provided",
+        "message_provided": "Detailed message",
+        "gdpr_consent": "GDPR consent given",
+        "utm_tracked": "Campaign attribution",
+        "recent_activity": "Recent activity (< 7 days)",
+        "fit_contribution": "Fit contribution (40%)",
+        "engagement_contribution": "Engagement contribution (60%)"
+      }
+    },
+    "qualify": {
+      "title": "Qualify Lead",
+      "description": "Move {{company}} to the next qualification stage",
+      "current_stage": "Current Stage",
+      "select_stage": "Select New Stage",
+      "notes": "Notes",
+      "notes_placeholder": "Add qualification notes...",
+      "criteria_title": "Qualification Criteria",
+      "confirm": "Qualify Lead",
+      "success": "Lead qualified to {{stage}}",
+      "error": "Failed to qualify lead",
+      "cannot_qualify": "Lead is already at the maximum qualification stage. Use Convert to create an opportunity.",
+      "stages": {
+        "top_of_funnel": "Top of Funnel",
+        "marketing_qualified": "Marketing Qualified (MQL)",
+        "sales_qualified": "Sales Qualified (SQL)",
+        "opportunity": "Opportunity"
+      },
+      "criteria": {
+        "mql": {
+          "icp": "Matches Ideal Customer Profile (ICP)",
+          "engagement": "Has shown engagement (emails, website)",
+          "contact": "Has valid contact information"
+        },
+        "sql": {
+          "budget": "Has budget authority or influence",
+          "need": "Has clear need/pain point identified",
+          "timeline": "Timeline for decision is known",
+          "decision_maker": "Decision maker identified"
+        },
+        "generic": "Meets the requirements for this stage"
+      }
+    },
+    "convert": {
+      "title": "Convert to Opportunity",
+      "description": "Convert {{company}} to an active sales opportunity",
+      "not_eligible_title": "Not Eligible for Conversion",
+      "not_eligible": "This lead must be Sales Qualified to convert. Current stage: {{stage}}",
+      "opportunity_name": "Opportunity Name",
+      "estimated_value": "Estimated Value",
+      "expected_close": "Expected Close Date",
+      "pipeline_stage": "Pipeline Stage",
+      "stages": {
+        "qualification": "Qualification",
+        "demo": "Demo",
+        "proposal": "Proposal",
+        "negotiation": "Negotiation",
+        "contract_sent": "Contract Sent"
+      },
+      "notes": "Notes",
+      "notes_placeholder": "Add any relevant notes about this opportunity...",
+      "what_happens": "What happens next:",
+      "step_1": "A new opportunity will be created in the CRM",
+      "step_2": "The lead will be marked as converted",
+      "step_3": "Lead history will be linked to the opportunity",
+      "confirm": "Convert to Opportunity",
+      "success": "Lead successfully converted to opportunity",
+      "error": "Failed to convert lead to opportunity",
+      "error_name_required": "Opportunity name is required"
+    },
+    "delete": {
+      "title": "Delete Lead",
+      "warning": "This action cannot be undone. The lead will be removed from your pipeline.",
+      "reason_label": "Reason for deletion",
+      "reasons": {
+        "duplicate": "Duplicate entry",
+        "invalid_data": "Invalid or incorrect data",
+        "request_from_lead": "Request from the lead (opt-out)",
+        "no_longer_interested": "No longer interested",
+        "gdpr_erasure_request": "GDPR erasure request (Art. 17)",
+        "other": "Other reason"
+      },
+      "permanent_delete_label": "Permanently delete (cannot be recovered)",
+      "permanent_delete_warning": "This will permanently remove all data. Use for GDPR compliance.",
+      "gdpr_notice_title": "GDPR Erasure Request",
+      "gdpr_notice_description": "Data will be permanently deleted to comply with GDPR Article 17 (Right to Erasure).",
+      "confirm_label": "Type DELETE to confirm permanent deletion",
+      "confirm_placeholder": "DELETE",
+      "confirm_word": "DELETE",
+      "confirm_hint": "This action cannot be undone",
+      "button": "Delete Lead",
+      "permanent_button": "Permanently Delete",
+      "deleting": "Deleting...",
+      "success": "Lead deleted successfully",
+      "success_permanent": "Lead permanently deleted (GDPR)",
+      "error": "Failed to delete lead"
+    }
+  },
+  "reports": {
+    "title": "Leads Reports",
+    "description": "Analytics, search, and export for business intelligence",
+    "error_loading": "Failed to load statistics",
+    "search": {
+      "placeholder": "Search by name, email, or company...",
+      "copy_email": "Copy email",
+      "view_details": "View details",
+      "score_label": "Score"
+    },
+    "stats": {
+      "total_leads": "Total Leads",
+      "conversion_rate": "Conversion Rate",
+      "cold_leads": "Cold Leads",
+      "avg_score": "Avg. Score",
+      "time_to_convert": "Time to Convert",
+      "vs_previous": "vs previous period",
+      "qualified": "qualified",
+      "months_inactive": "months inactive",
+      "days": "days",
+      "avg_qualification": "avg. to qualification",
+      "fit_abbr": "Fit",
+      "engagement_abbr": "Eng"
+    },
+    "charts": {
+      "status_distribution": "Status Distribution",
+      "leads_over_time": "Leads Over Time (12 weeks)",
+      "top_sources": "Top Sources",
+      "leads": "Leads",
+      "new_leads": "New Leads"
+    },
+    "sources": {
+      "website": "Website",
+      "referral": "Referral",
+      "event": "Event",
+      "linkedin": "LinkedIn"
+    },
+    "cold_filter": {
+      "label": "Cold Leads",
+      "inactive_since": "Inactive > {{months}} months",
+      "all_cold": "All Cold",
+      "inactive_only": "Inactive Only",
+      "desc_combined": "Lost/disqualified or no activity",
+      "desc_inactive": "No activity only",
+      "desc_all": "Showing all leads"
+    },
+    "table": {
+      "company": "Company",
+      "contact": "Contact",
+      "email": "Email",
+      "phone": "Phone",
+      "status": "Status",
+      "score": "Score",
+      "created": "Created",
+      "actions": "Actions",
+      "no_results": "No leads found"
+    },
+    "export": {
+      "button": "Export",
+      "csv": "Export CSV",
+      "csv_desc": "For Excel, Power BI",
+      "json": "Export JSON",
+      "json_desc": "For developers, APIs"
+    }
+  },
+  "opportunity": {
+    "title": "Opportunities Pipeline",
+    "subtitle": "Track deals through your sales pipeline",
+    "stages": {
+      "qualification": "Qualification",
+      "demo": "Demo",
+      "proposal": "Proposal",
+      "negotiation": "Negotiation",
+      "contract_sent": "Contract Sent"
+    },
+    "stages_description": {
+      "qualification": "Initial qualification and discovery",
+      "demo": "Product demonstration scheduled",
+      "proposal": "Proposal sent to prospect",
+      "negotiation": "Negotiating terms and pricing",
+      "contract_sent": "Contract sent, awaiting signature"
+    },
+    "status": {
+      "open": "Open",
+      "won": "Won",
+      "lost": "Lost",
+      "on_hold": "On Hold",
+      "cancelled": "Cancelled"
+    },
+    "stats": {
+      "openDeals": "Open Deals",
+      "pipelineValue": "Pipeline Value",
+      "weightedValue": "Weighted Value",
+      "rottingDeals": "Rotting Deals"
+    },
+    "view": {
+      "kanban": "Kanban",
+      "table": "Table"
+    },
+    "filters": {
+      "search": "Search deals...",
+      "rotting": "Rotting",
+      "activeFilters": "{{count}} filter(s)",
+      "reset": "Reset",
+      "allStatus": "All Status",
+      "allStages": "All Stages",
+      "allOwners": "All Owners",
+      "minValue": "Min Value",
+      "maxValue": "Max Value"
+    },
+    "column": {
+      "value": "Value",
+      "empty": "No deals in this stage"
+    },
+    "card": {
+      "rotting": "Rotting",
+      "unknown": "Unknown",
+      "daysInStage": "{{count}} days in stage",
+      "closeDate": "Close"
+    },
+    "empty": {
+      "title": "No opportunities",
+      "description": "Start by converting qualified leads into opportunities"
+    },
+    "stageChanged": "Stage updated successfully",
+    "stageChangeFailed": "Stage change failed",
+    "tableViewComingSoon": "Table view coming soon...",
+    "rotting": {
+      "alert_title": "Stale Opportunity",
+      "alert_description": "This opportunity has been in {{stage}} for {{days}} days (max: {{maxDays}})",
+      "action_required": "Action required to move forward"
+    },
+    "actions": {
+      "new_opportunity": "New Opportunity",
+      "export": "Export",
+      "settings": "Settings"
+    },
+    "table": {
+      "columns": {
+        "checkbox": "",
+        "company": "Company",
+        "contact": "Contact",
+        "value": "Value",
+        "probability": "Probability",
+        "forecast": "Forecast",
+        "stage": "Stage",
+        "status": "Status",
+        "assigned": "Owner",
+        "close_date": "Close Date",
+        "days_in_stage": "Days",
+        "country": "Country",
+        "created": "Created",
+        "updated": "Updated",
+        "won_date": "Won Date",
+        "lost_date": "Lost Date",
+        "won_value": "Won Value",
+        "currency": "Currency",
+        "discount": "Discount",
+        "notes": "Notes",
+        "rotting": "Rotting",
+        "lead_id": "Lead ID",
+        "actions": "Actions"
+      },
+      "empty": "No opportunities found",
+      "empty_desc": "Try adjusting your filters or convert qualified leads"
+    },
+    "context_menu": {
+      "view": "View Details",
+      "edit": "Edit",
+      "email": "Send Email",
+      "change_stage": "Change Stage",
+      "mark_won": "Mark as Won",
+      "mark_lost": "Mark as Lost",
+      "delete": "Delete",
+      "current": "Current"
+    },
+    "drawer": {
+      "title": "Opportunity Details",
+      "open_full_page": "Open full page",
+      "sections": {
+        "value": "Deal Value",
+        "pipeline": "Pipeline",
+        "dates": "Key Dates",
+        "contact": "Contact",
+        "assignment": "Assignment",
+        "notes": "Notes"
+      },
+      "fields": {
+        "expected_value": "Expected Value",
+        "probability": "Probability",
+        "forecast_value": "Forecast Value",
+        "currency": "Currency",
+        "stage": "Stage",
+        "status": "Status",
+        "days_in_stage": "Days in Stage",
+        "max_days": "Max Days",
+        "rotting": "Rotting",
+        "expected_close_date": "Expected Close Date",
+        "created_at": "Created",
+        "updated_at": "Updated",
+        "assigned_to": "Assigned To",
+        "company": "Company",
+        "contact_name": "Contact Name",
+        "email": "Email",
+        "phone": "Phone",
+        "notes": "Notes"
+      },
+      "actions": {
+        "edit": "Edit",
+        "mark_won": "Mark as Won",
+        "mark_lost": "Mark as Lost",
+        "delete": "Delete"
+      },
+      "save": "Save",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "save_success": "Opportunity updated successfully",
+      "save_error": "Failed to update opportunity",
+      "unassigned": "Unassigned",
+      "select_owner": "Select owner",
+      "no_notes": "No notes",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "won_modal": {
+      "title": "Mark as Won",
+      "description": "Congratulations! Confirm the final deal value.",
+      "won_value": "Final Value",
+      "won_value_placeholder": "Enter final value",
+      "won_date": "Won Date",
+      "notes": "Notes (optional)",
+      "notes_placeholder": "Add any notes about this win...",
+      "confirm": "Confirm Won",
+      "confirming": "Confirming...",
+      "success": "Deal marked as won!",
+      "error": "Failed to mark as won"
+    },
+    "lost_modal": {
+      "title": "Mark as Lost",
+      "description": "Please select a reason and provide details.",
+      "loss_reason": "Loss Reason",
+      "select_reason": "Select a reason...",
+      "lost_date": "Lost Date",
+      "notes": "Notes",
+      "notes_required": "(required)",
+      "notes_placeholder": "Explain why the deal was lost...",
+      "notes_min": "Please provide at least 20 characters",
+      "confirm": "Confirm Lost",
+      "confirming": "Confirming...",
+      "success": "Deal marked as lost",
+      "error": "Failed to mark as lost"
+    },
+    "loss_reasons": {
+      "price_too_high": "Price too high",
+      "competitor_won": "Competitor won",
+      "no_budget": "No budget",
+      "project_cancelled": "Project cancelled",
+      "no_response": "No response",
+      "bad_timing": "Bad timing",
+      "feature_missing": "Feature missing",
+      "other": "Other"
+    },
+    "delete_modal": {
+      "title": "Delete Opportunity",
+      "description": "Are you sure you want to delete this opportunity? This action cannot be undone.",
+      "confirm": "Delete",
+      "deleting": "Deleting...",
+      "success": "Opportunity deleted",
+      "error": "Failed to delete opportunity"
+    }
+  },
+  "settings": {
+    "title": "CRM Settings",
+    "description": "Configure pipeline stages, loss reasons, and other CRM settings",
+    "comingSoon": "Coming in Phase {{phase}}",
+    "unsavedChanges": "Unsaved",
+    "save": "Save Changes",
+    "saved": "Saved!",
+    "saving": "Saving...",
+    "reset": "Reset",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "dismiss": "Dismiss",
+    "tabs": {
+      "pipeline": "Pipeline",
+      "loss_reasons": "Loss Reasons",
+      "scoring": "Scoring",
+      "assignment": "Assignment",
+      "notifications": "Notifications",
+      "data_quality": "Data Quality",
+      "regional": "Regional"
+    },
+    "pipeline": {
+      "leadStages": {
+        "title": "Lead Stages",
+        "description": "Configure the stages for your lead pipeline. Drag to reorder.",
+        "empty": "No lead stages configured. Add your first stage to get started."
+      },
+      "opportunityStages": {
+        "title": "Opportunity Stages",
+        "description": "Configure the stages for your sales pipeline with probability and max days.",
+        "empty": "No opportunity stages configured. Add your first stage to get started."
+      },
+      "addStage": "Add Stage",
+      "editStage": "Edit Stage",
+      "deleteStage": "Delete Stage",
+      "stageModalDescription": "Configure the stage properties.",
+      "opportunityStageModalDescription": "Configure the opportunity stage properties including probability and max days.",
+      "stageValue": "Value (ID)",
+      "labelEn": "Label (English)",
+      "labelFr": "Label (French)",
+      "color": "Color",
+      "probability": "Probability (%)",
+      "maxDays": "Max Days",
+      "preview": {
+        "lead": {
+          "title": "Lead Pipeline Preview",
+          "description": "Visual representation of your lead stages"
+        },
+        "opportunity": {
+          "title": "Opportunity Pipeline Preview",
+          "description": "Visual flow of your opportunity stages with probability"
+        }
+      },
+      "dealRotting": {
+        "title": "Deal Rotting Detection",
+        "description": "Automatically detect opportunities that have been inactive too long in a stage.",
+        "thresholdMode": "Threshold Mode",
+        "useStageMaxDays": "Use stage max days",
+        "useStageMaxDaysDesc": "Each stage has its own max days threshold (configured above)",
+        "globalThreshold": "Global threshold",
+        "globalThresholdDesc": "Apply the same threshold to all stages",
+        "days": "days",
+        "alertSettings": "Alert Settings",
+        "alertOwner": "Alert deal owner",
+        "alertOwnerDesc": "Send email notification to the opportunity owner",
+        "alertManager": "Alert manager",
+        "alertManagerDesc": "Include rotting deals in daily manager digest",
+        "checkTime": "Daily check time",
+        "timezone": "(server timezone)",
+        "cronInfo": "The system will check for rotting deals daily at this time and send alerts if any are found."
+      },
+      "errors": {
+        "valueRequired": "Value is required",
+        "valueExists": "This value already exists",
+        "labelEnRequired": "English label is required",
+        "probabilityRange": "Probability must be between 0 and 100",
+        "maxDaysMin": "Max days must be at least 1",
+        "saveFailed": "Failed to save. Please try again."
+      }
+    },
+    "lossReasons": {
+      "title": "Loss Reasons",
+      "description": "Configure reasons for lost opportunities. Group them by category to understand why deals are lost.",
+      "addReason": "Add Reason",
+      "editReason": "Edit Loss Reason",
+      "editReasonDesc": "Modify the loss reason details.",
+      "addReasonDesc": "Create a new loss reason for tracking lost opportunities.",
+      "confirmDelete": {
+        "title": "Delete Loss Reason",
+        "description": "Are you sure you want to delete this loss reason? This action cannot be undone."
+      },
+      "categories": {
+        "price": "Price",
+        "product": "Product",
+        "competition": "Competition",
+        "timing": "Timing",
+        "other": "Other"
+      },
+      "categoriesDesc": {
+        "price": "Budget and pricing related reasons",
+        "product": "Product features and capabilities",
+        "competition": "Competitor related losses",
+        "timing": "Timing and schedule issues",
+        "other": "Other miscellaneous reasons"
+      },
+      "fields": {
+        "labelEn": "Label (English)",
+        "labelFr": "Label (French)",
+        "category": "Category",
+        "isRecoverable": "Recoverable",
+        "isRecoverableDesc": "Enable follow-up after a delay to attempt recovery",
+        "recoveryDelay": "Recovery Delay",
+        "recoveryDelayDesc": "Days to wait before scheduling a follow-up",
+        "days": "days",
+        "requireCompetitor": "Require Competitor Name",
+        "requireCompetitorDesc": "Require entering competitor name when selecting this reason"
+      },
+      "recovery": {
+        "title": "Recovery Workflow",
+        "description": "Configure automatic actions for recovering lost opportunities marked as recoverable.",
+        "autoFollowup": "Auto-create follow-up task",
+        "autoFollowupDesc": "Automatically create a follow-up task when recovery date is reached",
+        "sendReminder": "Send reminder email",
+        "sendReminderDesc": "Send email notification to opportunity owner before recovery date",
+        "reminderDays": "Reminder days before",
+        "daysBefore": "days before recovery date",
+        "autoReopen": "Auto-reopen opportunity",
+        "autoReopenDesc": "Automatically reopen the opportunity when recovery date is reached",
+        "autoReopenWarning": "Use with caution - this will reopen opportunities automatically without user action",
+        "info": "These settings only apply to opportunities marked as lost with a recoverable reason. The recovery date is calculated based on each reason's recovery delay."
+      },
+      "empty": {
+        "category": "No reasons in this category",
+        "addFirst": "Add your first reason"
+      },
+      "errors": {
+        "labelEnRequired": "English label is required",
+        "labelFrRequired": "French label is required",
+        "duplicateValue": "A reason with this name already exists",
+        "invalidRecoveryDelay": "Recovery delay must be between 1 and 365 days",
+        "saveFailed": "Failed to save loss reasons"
+      }
     }
   }
 }
