@@ -11,7 +11,31 @@ const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 const ADMIN_ROLES = ["org:adm_admin", "org:adm_commercial", "org:adm_support"];
 
 // Allowed CRM roles (commercial users only)
-const _CRM_ROLES = ["org:adm_commercial"]; // TODO: Use for CRM route protection
+// Note: org:admin is the standard Clerk admin role, kept for compatibility
+// org:adm_admin and org:adm_commercial are custom FleetCore roles
+const CRM_ROLES = ["org:admin", "org:adm_admin", "org:adm_commercial"];
+
+/**
+ * API Route Classification
+ *
+ * FleetCore has two distinct API contexts:
+ *
+ * 1. INTERNAL CRM API (`/api/v1/crm/*`)
+ *    - Used by FleetCore Admin team (backoffice)
+ *    - Manages prospects/leads BEFORE they become clients
+ *    - Does NOT require tenantId (prospects have no tenant yet)
+ *    - Requires: userId + ADMIN_ORG membership + CRM role
+ *
+ * 2. CLIENT API (`/api/v1/*` excluding crm)
+ *    - Used by providers (fleet management clients)
+ *    - Requires tenantId for data isolation
+ *    - Requires: userId + orgId + tenantId
+ *
+ * Business rationale: Prospects are converted to clients (with tenant)
+ * only after contract validation via the tenant creation wizard.
+ */
+const isInternalCrmRoute = (pathname: string): boolean =>
+  pathname.startsWith("/api/v1/crm");
 
 // Update protected routes to include locale prefix
 const isProtectedRoute = createRouteMatcher([
@@ -41,7 +65,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     // Protected API routes (v1)
     if (pathname.startsWith("/api/v1")) {
       const authData = await auth();
-      const { userId, sessionClaims } = authData;
+      const { userId, sessionClaims, orgRole } = authData;
       let { orgId } = authData;
 
       // Require authentication for v1 API
@@ -72,7 +96,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
         }
       }
 
-      // Require organization membership (orgId = tenant_id in FleetCore)
+      // Require organization membership
       if (!orgId) {
         return NextResponse.json(
           { error: "No organization found for user" },
@@ -80,68 +104,121 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
         );
       }
 
-      // Read tenant UUID from JWT Custom Claim (Clerk injects org.public_metadata.tenantId)
-      // Architecture: https://clerk.com/docs/backend-requests/making/custom-session-token
-      const tenantId = sessionClaims?.tenantId as string | undefined;
+      // ═══════════════════════════════════════════════════════════════════
+      // ROUTE CLASSIFICATION: Internal CRM vs Client API
+      // ═══════════════════════════════════════════════════════════════════
 
-      if (!tenantId) {
-        return NextResponse.json(
-          { error: "Tenant not configured for organization" },
-          { status: 403 }
-        );
-      }
+      if (isInternalCrmRoute(pathname)) {
+        // ─────────────────────────────────────────────────────────────────
+        // INTERNAL CRM API: FleetCore Admin backoffice (prospect management)
+        // ─────────────────────────────────────────────────────────────────
 
-      // Check rate limit for this tenant
-      const now = Date.now();
-      const rateLimitKey = `tenant:${tenantId}`;
-      const rateLimit = rateLimitStore.get(rateLimitKey);
+        // 1. Must be FleetCore Admin organization member
+        if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
+          return NextResponse.json(
+            { error: "CRM access requires FleetCore Admin membership" },
+            { status: 403 }
+          );
+        }
 
-      if (rateLimit) {
-        // If window has passed, reset
-        if (now > rateLimit.resetTime) {
+        // 2. Must have CRM role (admin or commercial)
+        if (!orgRole || !CRM_ROLES.includes(orgRole)) {
+          return NextResponse.json(
+            { error: "CRM access requires commercial or admin role" },
+            { status: 403 }
+          );
+        }
+
+        // Rate limiting by user for internal CRM
+        const now = Date.now();
+        const rateLimitKey = `crm:${userId}`;
+        const rateLimit = rateLimitStore.get(rateLimitKey);
+
+        if (rateLimit) {
+          if (now > rateLimit.resetTime) {
+            rateLimitStore.set(rateLimitKey, {
+              count: 1,
+              resetTime: now + RATE_LIMIT_WINDOW,
+            });
+          } else if (rateLimit.count >= RATE_LIMIT) {
+            return NextResponse.json(
+              { error: "Rate limit exceeded. Try again later." },
+              { status: 429 }
+            );
+          } else {
+            rateLimit.count++;
+          }
+        } else {
           rateLimitStore.set(rateLimitKey, {
             count: 1,
             resetTime: now + RATE_LIMIT_WINDOW,
           });
-        } else if (rateLimit.count >= RATE_LIMIT) {
-          // Rate limit exceeded
-          return NextResponse.json(
-            { error: "Rate limit exceeded. Try again later." },
-            { status: 429 }
-          );
-        } else {
-          // Increment counter
-          rateLimit.count++;
         }
-      } else {
-        // First request from this tenant
-        rateLimitStore.set(rateLimitKey, {
-          count: 1,
-          resetTime: now + RATE_LIMIT_WINDOW,
-        });
-      }
 
-      // Clean up old rate limit entries periodically
-      if (Math.random() < 0.01) {
-        // 1% chance to clean up
-        for (const [key, value] of rateLimitStore.entries()) {
-          if (now > value.resetTime + RATE_LIMIT_WINDOW) {
-            rateLimitStore.delete(key);
+        // Add headers for downstream services (no tenantId for CRM)
+        const requestHeaders = new Headers(req.headers);
+        requestHeaders.set("x-user-id", userId);
+        requestHeaders.set("x-org-id", orgId);
+
+        return NextResponse.next({ request: { headers: requestHeaders } });
+      } else {
+        // ─────────────────────────────────────────────────────────────────
+        // CLIENT API: Provider access (requires tenant for data isolation)
+        // ─────────────────────────────────────────────────────────────────
+
+        // Read tenant UUID from JWT Custom Claim (Clerk injects org.public_metadata.tenantId)
+        // Architecture: https://clerk.com/docs/backend-requests/making/custom-session-token
+        const tenantId = sessionClaims?.tenantId as string | undefined;
+
+        if (!tenantId) {
+          return NextResponse.json(
+            { error: "Tenant not configured for organization" },
+            { status: 403 }
+          );
+        }
+
+        // Rate limiting by tenant for client API
+        const now = Date.now();
+        const rateLimitKey = `tenant:${tenantId}`;
+        const rateLimit = rateLimitStore.get(rateLimitKey);
+
+        if (rateLimit) {
+          if (now > rateLimit.resetTime) {
+            rateLimitStore.set(rateLimitKey, {
+              count: 1,
+              resetTime: now + RATE_LIMIT_WINDOW,
+            });
+          } else if (rateLimit.count >= RATE_LIMIT) {
+            return NextResponse.json(
+              { error: "Rate limit exceeded. Try again later." },
+              { status: 429 }
+            );
+          } else {
+            rateLimit.count++;
+          }
+        } else {
+          rateLimitStore.set(rateLimitKey, {
+            count: 1,
+            resetTime: now + RATE_LIMIT_WINDOW,
+          });
+        }
+
+        // Clean up old rate limit entries periodically (1% chance)
+        if (Math.random() < 0.01) {
+          for (const [key, value] of rateLimitStore.entries()) {
+            if (now > value.resetTime + RATE_LIMIT_WINDOW) {
+              rateLimitStore.delete(key);
+            }
           }
         }
+
+        // Add headers for downstream services
+        const requestHeaders = new Headers(req.headers);
+        requestHeaders.set("x-user-id", userId);
+        requestHeaders.set("x-tenant-id", tenantId);
+
+        return NextResponse.next({ request: { headers: requestHeaders } });
       }
-
-      // Add headers for downstream services
-      const requestHeaders = new Headers(req.headers);
-      requestHeaders.set("x-user-id", userId);
-      requestHeaders.set("x-tenant-id", tenantId);
-
-      // Continue with modified headers
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
     }
 
     // Other API routes (demo-leads, etc.) - no auth required
@@ -176,24 +253,33 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   // CRM routes: commercial users only (FleetCore internal)
   if (pathname.match(/^\/(en|fr)\/crm/)) {
     const { userId, orgId } = await auth();
+    const locale = pathname.match(/^\/(en|fr)/)?.[1] || "en";
+
+    // DEBUG - removed for ESLint compliance
 
     // 1. User must be authenticated
     if (!userId) {
-      const locale = pathname.match(/^\/(en|fr)/)?.[1] || "en";
       const loginUrl = new URL(`/${locale}/login`, req.url);
       loginUrl.searchParams.set("redirect_url", pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    // 2. User must belong to FleetCore Admin organization
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      const locale = pathname.match(/^\/(en|fr)/)?.[1] || "en";
+    // 2. User must have an active organization
+    // Official Clerk pattern: redirect to org selection page
+    // https://clerk.com/docs/organizations/force-organizations
+    if (!orgId) {
+      const selectOrgUrl = new URL(`/${locale}/select-org`, req.url);
+      selectOrgUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(selectOrgUrl);
+    }
+
+    // 3. User must belong to FleetCore Admin organization
+    if (orgId !== ADMIN_ORG_ID) {
       return NextResponse.redirect(new URL(`/${locale}/unauthorized`, req.url));
     }
 
-    // 3. TODO: Add role check later - for now allow all FleetCore users
+    // 4. TODO: Add role check later - for now allow all FleetCore users
     // if (!orgRole || !CRM_ROLES.includes(orgRole)) {
-    //   const locale = pathname.match(/^\/(en|fr)/)?.[1] || "en";
     //   return NextResponse.redirect(new URL(`/${locale}/unauthorized`, req.url));
     // }
 
@@ -201,15 +287,31 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     return NextResponse.next();
   }
 
-  // Auto-redirect FleetCore Admin users from client dashboard to admin dashboard
-  const isDashboardRoute = pathname.match(/^\/(en|fr)\/dashboard$/);
-
-  if (isDashboardRoute) {
+  // ═══════════════════════════════════════════════════════════════════
+  // APP ROUTES: Unified dashboard for all authenticated users
+  // Route group (app) doesn't appear in URLs, so we match /dashboard directly
+  // ═══════════════════════════════════════════════════════════════════
+  if (pathname.match(/^\/(en|fr)\/dashboard/)) {
     const { userId, orgId } = await auth();
+    const locale = pathname.match(/^\/(en|fr)/)?.[1] || "en";
 
-    if (userId && ADMIN_ORG_ID && orgId === ADMIN_ORG_ID) {
-      return NextResponse.redirect(new URL("/adm", req.url));
+    // 1. User must be authenticated
+    if (!userId) {
+      const loginUrl = new URL(`/${locale}/login`, req.url);
+      loginUrl.searchParams.set("redirect_url", pathname);
+      return NextResponse.redirect(loginUrl);
     }
+
+    // 2. User must have an active organization
+    if (!orgId) {
+      const selectOrgUrl = new URL(`/${locale}/select-org`, req.url);
+      selectOrgUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(selectOrgUrl);
+    }
+
+    // All authenticated users with org can access (app) routes
+    // Module-level permissions handled in components via useHasPermission
+    return NextResponse.next();
   }
 
   // Extract locale from pathname using centralized helper
