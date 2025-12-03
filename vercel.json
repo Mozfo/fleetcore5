@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/notifications/process",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/opportunities/rotting",
