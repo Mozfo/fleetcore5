@@ -9,7 +9,7 @@
 | ----------------- | ------------- | ------ | ------ |
 | Type `any`        | 2 (justified) | 0      | OK     |
 | TODOs             | 2             | 0      | OK     |
-| Debug logs (prod) | ~8            | 0      | Note   |
+| Debug logs (prod) | 0             | 0      | OK     |
 | Test files        | 33            | +E2E   | OK     |
 | Tests passing     | 530           | 530+   | OK     |
 
@@ -61,7 +61,7 @@ Production files reviewed and considered safe.
 ## Debug Logs Note
 
 ```
-lib/auth/jwt.ts: 8 occurrences (debug logging, acceptable for auth troubleshooting)
+lib/auth/jwt.ts: 0 occurrences (migrated to Pino logger - 2025-12-05)
 scripts/*.ts: Acceptable (dev tooling)
 prisma/seed.ts: Acceptable (seed output)
 ```
