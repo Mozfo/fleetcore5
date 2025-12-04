@@ -12,8 +12,17 @@ import {
   Button,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  memberWelcomeTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface MemberWelcomeProps {
+  locale?: EmailLocale;
   first_name: string;
   tenant_name: string;
   email: string;
@@ -22,14 +31,21 @@ interface MemberWelcomeProps {
 }
 
 export const MemberWelcome = ({
+  locale = "en",
   first_name = "John",
   tenant_name = "Acme Fleet",
   email = "john@example.com",
   role = "Fleet Manager",
-  dashboard_url = "https://app.fleetcore.io/dashboard", // ✅ Fixed: fleetcore.io
+  dashboard_url = "https://app.fleetcore.io/dashboard",
 }: MemberWelcomeProps) => {
+  const t = memberWelcomeTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
   return (
-    <Html>
+    <Html dir={dir} lang={locale}>
       <Head>
         <style>{`
         @media only screen and (max-width: 600px) {
@@ -39,14 +55,15 @@ export const MemberWelcome = ({
         }
       `}</style>
       </Head>
-      <Preview>Welcome to {tenant_name} on FleetCore!</Preview>
-      <Body style={main}>
+      <Preview>{t.preview.replace("{tenant_name}", tenant_name)}</Preview>
+      <Body style={main(isRtl)}>
         <Container style={container} className="container">
           <Section style={box} className="content-wrapper">
             <Link
               href="https://fleetcore.io"
               style={{
-                display: "inline-block",
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
                 textDecoration: "none",
               }}
             >
@@ -55,48 +72,52 @@ export const MemberWelcome = ({
                 width="200"
                 height="auto"
                 alt="FleetCore"
-                style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
               />
             </Link>
             <Hr style={hr} />
-            <Text style={paragraph}>Hello {first_name},</Text>
-            <Text style={paragraph}>
-              Welcome to <strong>{tenant_name}</strong>! Your account has been
-              created and you can now access FleetCore.
+            <Text style={paragraph(textAlign)}>
+              {common.greeting} {first_name},
             </Text>
-            <Text style={paragraph}>
-              <strong>Your login details:</strong>
+            <Text style={paragraph(textAlign)}>
+              {t.welcomeTo} <strong>{tenant_name}</strong>
+              {t.accountCreated}
             </Text>
-            <Text style={paragraph}>
-              • Email: <strong>{email}</strong>
-              <br />• Role: <strong>{role}</strong>
-              <br />• Dashboard: <strong>{dashboard_url}</strong>
+            <Text style={paragraph(textAlign)}>
+              <strong>{t.loginDetails}</strong>
             </Text>
-            <Text style={paragraph}>
-              <strong>Next steps:</strong>
+            <Text style={paragraph(textAlign)}>
+              • {t.email}: <strong>{email}</strong>
+              <br />• {t.role}: <strong>{role}</strong>
+              <br />• {t.dashboard}: <strong>{dashboard_url}</strong>
             </Text>
-            <Text style={paragraph}>
-              1. Complete your profile
+            <Text style={paragraph(textAlign)}>
+              <strong>{t.nextSteps}</strong>
+            </Text>
+            <Text style={paragraph(textAlign)}>
+              1. {t.step1}
               <br />
-              2. Set up your preferences
+              2. {t.step2}
               <br />
-              3. Explore the dashboard
+              3. {t.step3}
             </Text>
             <Section style={buttonContainer}>
               <Button style={button} href={dashboard_url}>
-                Access Dashboard
+                {common.accessDashboard}
               </Button>
             </Section>
-            <Text style={paragraph}>
-              Need help? Contact your administrator or visit our Help Center.
-            </Text>
-            <Text style={paragraph}>
-              Best regards,
+            <Text style={paragraph(textAlign)}>{t.needHelp}</Text>
+            <Text style={paragraph(textAlign)}>
+              {common.regards}
               <br />
-              The FleetCore Team
+              {common.team}
             </Text>
             <Hr style={hr} />
-            <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
         </Container>
       </Body>
@@ -106,11 +127,12 @@ export const MemberWelcome = ({
 
 export default MemberWelcome;
 
-const main = {
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -130,18 +152,19 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});
 
 const buttonContainer = {
   textAlign: "center" as const,

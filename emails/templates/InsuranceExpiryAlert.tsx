@@ -12,8 +12,17 @@ import {
   Button,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  insuranceExpiryAlertTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface InsuranceExpiryAlertProps {
+  locale?: EmailLocale;
   fleet_manager_name: string;
   vehicle_make: string;
   vehicle_model: string;
@@ -26,6 +35,7 @@ interface InsuranceExpiryAlertProps {
 }
 
 export const InsuranceExpiryAlert = ({
+  locale = "en",
   fleet_manager_name = "John Smith",
   vehicle_make = "Toyota",
   vehicle_model = "Camry",
@@ -36,8 +46,14 @@ export const InsuranceExpiryAlert = ({
   policy_number = "POL-123456",
   insurance_details_url = "https://app.fleetcore.com/insurance/details",
 }: InsuranceExpiryAlertProps) => {
+  const t = insuranceExpiryAlertTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
   return (
-    <Html>
+    <Html dir={dir} lang={locale}>
       <Head>
         <style>{`
         @media only screen and (max-width: 600px) {
@@ -48,14 +64,15 @@ export const InsuranceExpiryAlert = ({
         }
       `}</style>
       </Head>
-      <Preview>⚠️ Insurance expiring soon: {vehicle_plate}</Preview>
-      <Body style={main}>
+      <Preview>{t.preview.replace("{vehicle_plate}", vehicle_plate)}</Preview>
+      <Body style={main(isRtl)}>
         <Container style={container} className="container">
           <Section style={box} className="content-wrapper">
             <Link
               href="https://fleetcore.io"
               style={{
-                display: "inline-block",
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
                 textDecoration: "none",
               }}
             >
@@ -64,44 +81,50 @@ export const InsuranceExpiryAlert = ({
                 width="200"
                 height="auto"
                 alt="FleetCore"
-                style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
               />
             </Link>
             <Hr style={hr} />
-            <div style={alertBadge}>⚠️ URGENT</div>
-            <Text style={paragraph}>Hello {fleet_manager_name},</Text>
-            <Text style={paragraph}>
-              <strong>Vehicle insurance is expiring soon!</strong>
+            <div style={alertBadge}>{t.urgent}</div>
+            <Text style={paragraph(textAlign)}>
+              {common.greeting} {fleet_manager_name},
+            </Text>
+            <Text style={paragraph(textAlign)}>
+              <strong>{t.expiringTitle}</strong>
             </Text>
             <div style={alertCard} className="alert-card">
               <Text style={cardTitle}>
                 {vehicle_make} {vehicle_model}
               </Text>
-              <Text style={cardSubtitle}>Plate: {vehicle_plate}</Text>
-              <Text style={paragraph}>
-                • Expiry date: <strong>{expiry_date}</strong>
-                <br />• Days remaining: <strong>{days_remaining}</strong>
-                <br />• Insurance provider:{" "}
-                <strong>{insurance_provider}</strong>
-                <br />• Policy number: <strong>{policy_number}</strong>
+              <Text style={cardSubtitle}>
+                {t.plate}: {vehicle_plate}
+              </Text>
+              <Text style={paragraph(textAlign)}>
+                • {t.expiryDate}: <strong>{expiry_date}</strong>
+                <br />• {t.daysRemaining}: <strong>{days_remaining}</strong>
+                <br />• {t.provider}: <strong>{insurance_provider}</strong>
+                <br />• {t.policyNumber}: <strong>{policy_number}</strong>
               </Text>
             </div>
-            <Text style={paragraph}>
-              <strong>ACTION REQUIRED:</strong> Renew insurance immediately to
-              maintain compliance and avoid service interruption.
+            <Text style={paragraph(textAlign)}>
+              <strong>{t.actionRequired}</strong> {t.renewMessage}
             </Text>
             <Section style={buttonContainer}>
               <Button style={button} href={insurance_details_url}>
-                View Details
+                {common.viewDetails}
               </Button>
             </Section>
-            <Text style={paragraph}>
-              Best regards,
+            <Text style={paragraph(textAlign)}>
+              {common.regards}
               <br />
-              FleetCore Compliance Team
+              {t.compliance}
             </Text>
             <Hr style={hr} />
-            <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
         </Container>
       </Body>
@@ -111,11 +134,12 @@ export const InsuranceExpiryAlert = ({
 
 export default InsuranceExpiryAlert;
 
-const main = {
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -135,18 +159,19 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});
 
 const alertBadge = {
   display: "inline-block",

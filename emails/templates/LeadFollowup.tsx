@@ -12,8 +12,17 @@ import {
   Button,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  leadFollowupTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface LeadFollowupProps {
+  locale?: EmailLocale;
   first_name: string;
   company_name: string;
   demo_link: string;
@@ -21,13 +30,20 @@ interface LeadFollowupProps {
 }
 
 export const LeadFollowup = ({
+  locale = "en",
   first_name = "John",
   company_name = "Test Company Ltd",
   demo_link = "https://app.fleetcore.com/demo/book",
   sales_rep_name = "Sarah Johnson",
 }: LeadFollowupProps) => {
+  const t = leadFollowupTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
   return (
-    <Html>
+    <Html dir={dir} lang={locale}>
       <Head>
         <style>{`
         @media only screen and (max-width: 600px) {
@@ -37,14 +53,15 @@ export const LeadFollowup = ({
         }
       `}</style>
       </Head>
-      <Preview>Don&apos;t miss your FleetCore demo</Preview>
-      <Body style={main}>
+      <Preview>{t.preview}</Preview>
+      <Body style={main(isRtl)}>
         <Container style={container} className="container">
           <Section style={box} className="content-wrapper">
             <Link
               href="https://fleetcore.io"
               style={{
-                display: "inline-block",
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
                 textDecoration: "none",
               }}
             >
@@ -53,43 +70,43 @@ export const LeadFollowup = ({
                 width="200"
                 height="auto"
                 alt="FleetCore"
-                style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
               />
             </Link>
             <Hr style={hr} />
-            <Text style={paragraph}>Hello {first_name},</Text>
-            <Text style={paragraph}>
-              We noticed you requested a demo of FleetCore 2 days ago. We&apos;d
-              love to show you how FleetCore can help optimize your fleet
-              operations.
+            <Text style={paragraph(textAlign)}>
+              {common.greeting} {first_name},
             </Text>
-            <Text style={paragraph}>
+            <Text style={paragraph(textAlign)}>{t.noticed}</Text>
+            <Text style={paragraph(textAlign)}>
               <strong>
-                Our fleet management platform helps {company_name} to:
+                {t.helpsTo.replace("{company_name}", company_name)}
               </strong>
             </Text>
-            <Text style={paragraph}>
-              • Reduce fuel costs by up to 20%
-              <br />
-              • Automate driver payouts and reporting
-              <br />
-              • Track vehicles and drivers in real-time
-              <br />• Manage multi-platform operations (Uber, Bolt, Careem)
+            <Text style={paragraph(textAlign)}>
+              • {t.benefit1}
+              <br />• {t.benefit2}
+              <br />• {t.benefit3}
+              <br />• {t.benefit4}
             </Text>
             <Section style={buttonContainer}>
               <Button style={button} href={demo_link}>
-                Book Your Personalized Demo
+                {t.bookButton}
               </Button>
             </Section>
-            <Text style={paragraph}>
-              Best regards,
+            <Text style={paragraph(textAlign)}>
+              {common.regards}
               <br />
               {sales_rep_name}
               <br />
-              FleetCore Sales Team
+              {common.team}
             </Text>
             <Hr style={hr} />
-            <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
         </Container>
       </Body>
@@ -99,11 +116,12 @@ export const LeadFollowup = ({
 
 export default LeadFollowup;
 
-const main = {
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -123,18 +141,19 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});
 
 const buttonContainer = {
   textAlign: "center" as const,

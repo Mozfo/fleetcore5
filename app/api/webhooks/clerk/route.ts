@@ -8,6 +8,8 @@ import {
   getUserAgentFromRequest,
 } from "@/lib/audit";
 import { assertDefined } from "@/lib/core/errors";
+import { sendNotification } from "@/lib/notifications";
+import { logger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
 
@@ -215,6 +217,39 @@ export async function POST(req: Request) {
           userAgent,
           metadata: { source: "clerk_webhook", event_type: evt.type },
         });
+
+        // ⚠️ CRITICAL - Send member welcome email
+        // Extract first name from Clerk data or fallback to email prefix
+        const firstName =
+          evt.data.public_user_data.first_name || member.email.split("@")[0];
+
+        const welcomeResult = await sendNotification(
+          "admin.member.welcome",
+          member.email,
+          {
+            first_name: firstName,
+            tenant_name: org.name,
+            email: member.email,
+            role: member.role === "admin" ? "Administrator" : "Team Member",
+            dashboard_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.io"}/dashboard`,
+          },
+          {
+            memberId: member.id,
+            tenantId: org.id,
+            idempotencyKey: `member_welcome_${member.id}`,
+          }
+        );
+
+        logger.info(
+          {
+            memberId: member.id,
+            email: member.email,
+            tenantId: org.id,
+            welcomeQueued: welcomeResult.success,
+            queueId: welcomeResult.queueId,
+          },
+          "[Clerk Webhook] Member created and welcome email queued"
+        );
       }
     } catch (error: unknown) {
       return new Response(

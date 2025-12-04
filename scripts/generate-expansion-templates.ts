@@ -3,10 +3,8 @@ import fs from "fs";
 import path from "path";
 import { logger } from "@/lib/logger";
 
-// Import templates
+// Import single template with locale support
 import ExpansionOpportunity from "../emails/templates/ExpansionOpportunity";
-import ExpansionOpportunityFR from "../emails/templates/ExpansionOpportunityFR";
-import ExpansionOpportunityAR from "../emails/templates/ExpansionOpportunityAR";
 
 /**
  * Generate Expansion Opportunity Email Templates (EN/FR/AR)
@@ -21,7 +19,7 @@ import ExpansionOpportunityAR from "../emails/templates/ExpansionOpportunityAR";
  */
 
 async function generateExpansionTemplates() {
-  logger.info("🎨 Generating expansion_opportunity templates (EN/FR/AR)...\n");
+  logger.info("Generating expansion_opportunity templates (EN/FR/AR)...\n");
 
   // Output directory
   const outputDir = path.join(process.cwd(), "generated-emails");
@@ -29,19 +27,21 @@ async function generateExpansionTemplates() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
+  const templateProps = {
+    first_name: "{{first_name}}",
+    company_name: "{{company_name}}",
+    fleet_size: "{{fleet_size}}",
+    country_preposition: "{{country_preposition}}",
+    country_name: "{{country_name}}",
+    phone_row: "{{phone_row}}",
+    message_row: "{{message_row}}",
+  };
+
   // Template 1: Expansion Opportunity (EN)
-  logger.info("1️⃣  Generating expansion_opportunity (EN) template...");
+  logger.info("1/3  Generating expansion_opportunity (EN) template...");
 
   const expansionOpportunityHTML = await render(
-    ExpansionOpportunity({
-      first_name: "{{first_name}}",
-      company_name: "{{company_name}}",
-      fleet_size: "{{fleet_size}}",
-      country_preposition: "{{country_preposition}}",
-      country_name: "{{country_name}}",
-      phone_row: "{{phone_row}}",
-      message_row: "{{message_row}}",
-    })
+    ExpansionOpportunity({ ...templateProps, locale: "en" })
   );
 
   fs.writeFileSync(
@@ -49,21 +49,13 @@ async function generateExpansionTemplates() {
     expansionOpportunityHTML
   );
 
-  logger.info("   ✅ expansion-opportunity.html\n");
+  logger.info("   expansion-opportunity.html\n");
 
   // Template 2: Expansion Opportunity (FR)
-  logger.info("2️⃣  Generating expansion_opportunity (FR) template...");
+  logger.info("2/3  Generating expansion_opportunity (FR) template...");
 
   const expansionOpportunityFRHTML = await render(
-    ExpansionOpportunityFR({
-      first_name: "{{first_name}}",
-      company_name: "{{company_name}}",
-      fleet_size: "{{fleet_size}}",
-      country_preposition: "{{country_preposition}}",
-      country_name: "{{country_name}}",
-      phone_row: "{{phone_row}}",
-      message_row: "{{message_row}}",
-    })
+    ExpansionOpportunity({ ...templateProps, locale: "fr" })
   );
 
   fs.writeFileSync(
@@ -71,21 +63,13 @@ async function generateExpansionTemplates() {
     expansionOpportunityFRHTML
   );
 
-  logger.info("   ✅ expansion-opportunity-fr.html\n");
+  logger.info("   expansion-opportunity-fr.html\n");
 
   // Template 3: Expansion Opportunity (AR)
-  logger.info("3️⃣  Generating expansion_opportunity (AR) template...");
+  logger.info("3/3  Generating expansion_opportunity (AR) template...");
 
   const expansionOpportunityARHTML = await render(
-    ExpansionOpportunityAR({
-      first_name: "{{first_name}}",
-      company_name: "{{company_name}}",
-      fleet_size: "{{fleet_size}}",
-      country_preposition: "{{country_preposition}}",
-      country_name: "{{country_name}}",
-      phone_row: "{{phone_row}}",
-      message_row: "{{message_row}}",
-    })
+    ExpansionOpportunity({ ...templateProps, locale: "ar" })
   );
 
   fs.writeFileSync(
@@ -93,26 +77,26 @@ async function generateExpansionTemplates() {
     expansionOpportunityARHTML
   );
 
-  logger.info("   ✅ expansion-opportunity-ar.html\n");
+  logger.info("   expansion-opportunity-ar.html\n");
 
   // Summary
   logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  logger.info("✅ GENERATION COMPLETE");
+  logger.info("GENERATION COMPLETE");
   logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-  logger.info(`📁 Output directory: ${outputDir}\n`);
+  logger.info(`Output directory: ${outputDir}\n`);
 
-  logger.info("📄 Generated files:");
+  logger.info("Generated files:");
   logger.info("   - expansion-opportunity.html (EN)");
   logger.info("   - expansion-opportunity-fr.html (FR)");
   logger.info("   - expansion-opportunity-ar.html (AR with RTL)\n");
 
-  logger.info("🔍 Verify variables:");
+  logger.info("Verify variables:");
   logger.info("   Check that {{variable}} placeholders are present in HTML");
   logger.info(
     '   grep "{{first_name}}" generated-emails/expansion-opportunity.html\n'
   );
 
-  logger.info("📋 Next steps:");
+  logger.info("Next steps:");
   logger.info("   1. Review generated HTML files");
   logger.info("   2. Add template to prisma/seed.ts");
   logger.info("   3. Run: pnpm prisma:seed");
@@ -128,13 +112,10 @@ async function generateExpansionTemplates() {
 // Execute
 generateExpansionTemplates()
   .then(() => {
-    logger.info("✅ Script completed successfully");
+    logger.info("Script completed successfully");
     process.exit(0);
   })
   .catch((error) => {
-    logger.error(
-      { error: error.message, stack: error.stack },
-      "❌ Script failed"
-    );
+    logger.error({ error: error.message, stack: error.stack }, "Script failed");
     process.exit(1);
   });

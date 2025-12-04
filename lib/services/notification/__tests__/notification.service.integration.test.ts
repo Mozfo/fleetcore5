@@ -15,8 +15,19 @@ import type {
 } from "@prisma/client";
 
 // Check if integration test environment is configured
+// Requirements:
+// 1. DATABASE_URL must be set
+// 2. RESEND_API_KEY must be set
+// 3. Must NOT be a pooled Supabase connection (production DB)
+// 4. OR must explicitly enable with ENABLE_NOTIFICATION_INTEGRATION_TESTS=true
+const isPooledSupabase = process.env.DATABASE_URL?.includes(
+  "pooler.supabase.com"
+);
 const hasIntegrationEnv = Boolean(
-  process.env.DATABASE_URL && process.env.RESEND_API_KEY
+  process.env.DATABASE_URL &&
+    process.env.RESEND_API_KEY &&
+    (process.env.ENABLE_NOTIFICATION_INTEGRATION_TESTS === "true" ||
+      !isPooledSupabase)
 );
 
 // Skip integration tests if environment not configured

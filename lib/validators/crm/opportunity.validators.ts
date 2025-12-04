@@ -10,17 +10,7 @@
 
 import { z } from "zod";
 import { OPPORTUNITY_STAGE_VALUES } from "@/lib/config/opportunity-stages";
-
-/**
- * Valid opportunity status values
- */
-const OPPORTUNITY_STATUS_VALUES = [
-  "open",
-  "won",
-  "lost",
-  "on_hold",
-  "cancelled",
-] as const;
+import { OPPORTUNITY_STATUS_VALUES } from "@/types/crm";
 
 /**
  * Schema for creating a new opportunity

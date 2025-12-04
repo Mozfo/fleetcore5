@@ -12,8 +12,17 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  salesRepAssignmentTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface SalesRepAssignmentProps {
+  locale?: EmailLocale;
   employee_name: string;
   lead_name: string;
   company_name: string;
@@ -27,6 +36,7 @@ interface SalesRepAssignmentProps {
 }
 
 export const SalesRepAssignment = ({
+  locale = "en",
   employee_name = "Sales Rep",
   lead_name = "Test Lead",
   company_name = "Test Company",
@@ -38,6 +48,12 @@ export const SalesRepAssignment = ({
   country_code = "US",
   lead_detail_url = "https://app.fleetcore.com/crm/leads/123",
 }: SalesRepAssignmentProps) => {
+  const t = salesRepAssignmentTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
   const priorityColors = {
     urgent: "#dc2626",
     high: "#ea580c",
@@ -46,7 +62,7 @@ export const SalesRepAssignment = ({
   };
 
   return (
-    <Html>
+    <Html dir={dir} lang={locale}>
       <Head>
         <style>{`
           @media only screen and (max-width: 600px) {
@@ -57,14 +73,15 @@ export const SalesRepAssignment = ({
           }
         `}</style>
       </Head>
-      <Preview>New {priority} priority lead assigned</Preview>
-      <Body style={main}>
+      <Preview>{t.preview.replace("{priority}", priority)}</Preview>
+      <Body style={main(isRtl)}>
         <Container style={container} className="container">
           <Section style={box} className="content-wrapper">
             <Link
               href="https://fleetcore.io"
               style={{
-                display: "inline-block",
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
                 textDecoration: "none",
               }}
             >
@@ -73,42 +90,47 @@ export const SalesRepAssignment = ({
                 width="200"
                 height="auto"
                 alt="FleetCore"
-                style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
               />
             </Link>
             <Hr style={hr} />
             <div style={priorityBadge(priorityColors[priority])}>
               {priority.toUpperCase()}
             </div>
-            <Text style={paragraph}>Hello {employee_name},</Text>
-            <Text style={paragraph}>
-              A new <strong>{priority}</strong> priority lead has been assigned
-              to you:
+            <Text style={paragraph(textAlign)}>
+              {common.greeting} {employee_name},
+            </Text>
+            <Text style={paragraph(textAlign)}>
+              {t.newLead} <strong>{priority}</strong> {t.priorityLead}
             </Text>
             <div style={leadCard} className="lead-card">
               <Text style={leadName}>{lead_name}</Text>
-              <Text style={companyName}>{company_name}</Text>
-              <Text style={paragraph}>
-                • Fleet size: <strong>{fleet_size}</strong>
-                <br />• Country: <strong>{country_code}</strong>
-                <br />• Qualification score:{" "}
+              <Text style={companyNameStyle}>{company_name}</Text>
+              <Text style={paragraph(textAlign)}>
+                • {t.fleetSize}: <strong>{fleet_size}</strong>
+                <br />• {t.country}: <strong>{country_code}</strong>
+                <br />• {t.qualificationScore}:{" "}
                 <strong>{qualification_score}/100</strong>
-                <br />• Fit score: <strong>{fit_score}/60</strong>
-                <br />• Stage: <strong>{lead_stage}</strong>
+                <br />• {t.fitScore}: <strong>{fit_score}/60</strong>
+                <br />• {t.stage}: <strong>{lead_stage}</strong>
               </Text>
             </div>
             <Section style={buttonContainer}>
               <Button style={button} href={lead_detail_url}>
-                View Lead Details
+                {t.viewButton}
               </Button>
             </Section>
-            <Text style={paragraph}>
-              Best regards,
+            <Text style={paragraph(textAlign)}>
+              {common.regards}
               <br />
-              The FleetCore Team
+              {common.team}
             </Text>
             <Hr style={hr} />
-            <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
         </Container>
       </Body>
@@ -118,11 +140,12 @@ export const SalesRepAssignment = ({
 
 export default SalesRepAssignment;
 
-const main = {
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -142,18 +165,19 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});
 
 const priorityBadge = (bgColor: string) => ({
   display: "inline-block",
@@ -183,7 +207,7 @@ const leadName = {
   margin: "0 0 4px 0",
 };
 
-const companyName = {
+const companyNameStyle = {
   fontSize: "14px",
   color: "#525f7f",
   margin: "0 0 16px 0",

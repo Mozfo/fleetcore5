@@ -12,8 +12,17 @@ import {
   Button,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  vehicleInspectionReminderTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface VehicleInspectionReminderProps {
+  locale?: EmailLocale;
   fleet_manager_name: string;
   vehicle_make: string;
   vehicle_model: string;
@@ -24,6 +33,7 @@ interface VehicleInspectionReminderProps {
 }
 
 export const VehicleInspectionReminder = ({
+  locale = "en",
   fleet_manager_name = "John Smith",
   vehicle_make = "Toyota",
   vehicle_model = "Camry",
@@ -32,8 +42,14 @@ export const VehicleInspectionReminder = ({
   days_remaining = "7",
   booking_link = "https://app.fleetcore.com/inspections/book",
 }: VehicleInspectionReminderProps) => {
+  const t = vehicleInspectionReminderTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
   return (
-    <Html>
+    <Html dir={dir} lang={locale}>
       <Head>
         <style>{`
         @media only screen and (max-width: 600px) {
@@ -44,14 +60,15 @@ export const VehicleInspectionReminder = ({
         }
       `}</style>
       </Head>
-      <Preview>Vehicle inspection due soon: {vehicle_plate}</Preview>
-      <Body style={main}>
+      <Preview>{t.preview.replace("{vehicle_plate}", vehicle_plate)}</Preview>
+      <Body style={main(isRtl)}>
         <Container style={container} className="container">
           <Section style={box} className="content-wrapper">
             <Link
               href="https://fleetcore.io"
               style={{
-                display: "inline-block",
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
                 textDecoration: "none",
               }}
             >
@@ -60,39 +77,43 @@ export const VehicleInspectionReminder = ({
                 width="200"
                 height="auto"
                 alt="FleetCore"
-                style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
               />
             </Link>
             <Hr style={hr} />
-            <Text style={paragraph}>Hello {fleet_manager_name},</Text>
-            <Text style={paragraph}>
-              This is a reminder that vehicle inspection is due soon for:
+            <Text style={paragraph(textAlign)}>
+              {common.greeting} {fleet_manager_name},
             </Text>
+            <Text style={paragraph(textAlign)}>{t.reminder}</Text>
             <div style={infoCard} className="info-card">
               <Text style={cardTitle}>
                 {vehicle_make} {vehicle_model}
               </Text>
-              <Text style={cardSubtitle}>Plate: {vehicle_plate}</Text>
-              <Text style={paragraph}>
-                • Due date: <strong>{due_date}</strong>
-                <br />• Days remaining: <strong>{days_remaining}</strong>
+              <Text style={cardSubtitle}>
+                {t.plate}: {vehicle_plate}
+              </Text>
+              <Text style={paragraph(textAlign)}>
+                • {t.dueDate}: <strong>{due_date}</strong>
+                <br />• {t.daysRemaining}: <strong>{days_remaining}</strong>
               </Text>
             </div>
-            <Text style={paragraph}>
-              Please schedule the inspection to avoid service disruption.
-            </Text>
+            <Text style={paragraph(textAlign)}>{t.pleaseSchedule}</Text>
             <Section style={buttonContainer}>
               <Button style={button} href={booking_link}>
-                Book Inspection
+                {t.bookButton}
               </Button>
             </Section>
-            <Text style={paragraph}>
-              Best regards,
+            <Text style={paragraph(textAlign)}>
+              {common.regards}
               <br />
-              FleetCore Operations
+              {t.operations}
             </Text>
             <Hr style={hr} />
-            <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
         </Container>
       </Body>
@@ -102,11 +123,12 @@ export const VehicleInspectionReminder = ({
 
 export default VehicleInspectionReminder;
 
-const main = {
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -126,18 +148,19 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});
 
 const infoCard = {
   backgroundColor: "#f6f9fc",

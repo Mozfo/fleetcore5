@@ -60,20 +60,18 @@ export async function convertLeadToOpportunityAction(
   data: ConvertLeadData
 ): Promise<ConvertLeadResult> {
   // DEBUG: Log function entry
-  // eslint-disable-next-line no-console
-  console.log("[convertLeadToOpportunityAction] CALLED with:", {
-    leadId,
-    opportunityName: data.opportunityName,
-  });
+  logger.debug(
+    { leadId, opportunityName: data.opportunityName },
+    "[convertLeadToOpportunityAction] CALLED"
+  );
 
   try {
     // 1. Authentication
     const { userId, orgId } = await auth();
-    // eslint-disable-next-line no-console
-    console.log("[convertLeadToOpportunityAction] Auth result:", {
-      userId: userId?.substring(0, 15),
-      orgId: orgId?.substring(0, 15),
-    });
+    logger.debug(
+      { userId: userId?.substring(0, 15), orgId: orgId?.substring(0, 15) },
+      "[convertLeadToOpportunityAction] Auth result"
+    );
 
     if (!userId) {
       return { success: false, error: "Unauthorized" };
@@ -81,15 +79,10 @@ export async function convertLeadToOpportunityAction(
 
     // 2. Authorization - FleetCore Admin only
     if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      // Debug: log for troubleshooting
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.log("[convertLeadToOpportunityAction] Auth debug:", {
-          orgId,
-          ADMIN_ORG_ID,
-          match: orgId === ADMIN_ORG_ID,
-        });
-      }
+      logger.debug(
+        { orgId, ADMIN_ORG_ID, match: orgId === ADMIN_ORG_ID },
+        "[convertLeadToOpportunityAction] Auth debug"
+      );
       return {
         success: false,
         error: `Forbidden: Admin access required (org: ${orgId?.slice(0, 10)}...)`,
@@ -126,16 +119,14 @@ export async function convertLeadToOpportunityAction(
     }
 
     // 6. Transaction: Create opportunity + Update lead
-    // eslint-disable-next-line no-console
-    console.log(
-      "[convertLeadToOpportunityAction] Starting transaction for lead:",
-      leadId
+    logger.debug(
+      { leadId },
+      "[convertLeadToOpportunityAction] Starting transaction"
     );
 
     const result = await db.$transaction(async (tx) => {
       // Create the opportunity - using minimal fields, rely on schema defaults
-      // eslint-disable-next-line no-console
-      console.log("[convertLeadToOpportunityAction] Creating opportunity...");
+      logger.debug("[convertLeadToOpportunityAction] Creating opportunity...");
 
       // Determine stage with fallback to default
       const selectedStage = validation.data.stage || DEFAULT_OPPORTUNITY_STAGE;
@@ -175,10 +166,9 @@ export async function convertLeadToOpportunityAction(
         },
       };
 
-      // eslint-disable-next-line no-console
-      console.log(
-        "[convertLeadToOpportunityAction] Opportunity data:",
-        JSON.stringify(opportunityData, null, 2)
+      logger.debug(
+        { opportunityData },
+        "[convertLeadToOpportunityAction] Opportunity data"
       );
 
       const opportunity = await tx.crm_opportunities.create({
@@ -301,24 +291,17 @@ export async function convertLeadToOpportunityAction(
     };
   } catch (error) {
     // Log error with full details
-    // eslint-disable-next-line no-console
-    console.error("[convertLeadToOpportunityAction] Error:", error);
-    // Extract Prisma error details if available
-    if (error && typeof error === "object" && "code" in error) {
-      // eslint-disable-next-line no-console
-      console.error(
-        "[convertLeadToOpportunityAction] Prisma error code:",
-        (error as { code?: string; meta?: unknown }).code
-      );
-      // eslint-disable-next-line no-console
-      console.error(
-        "[convertLeadToOpportunityAction] Prisma error meta:",
-        JSON.stringify((error as { meta?: unknown }).meta, null, 2)
-      );
-    }
-    if (process.env.NODE_ENV === "production") {
-      logger.error({ error, leadId }, "[convertLeadToOpportunityAction] Error");
-    }
+    const prismaError =
+      error && typeof error === "object" && "code" in error
+        ? {
+            code: (error as { code?: string }).code,
+            meta: (error as { meta?: unknown }).meta,
+          }
+        : undefined;
+    logger.error(
+      { error, leadId, prismaError },
+      "[convertLeadToOpportunityAction] Error"
+    );
     const errorMessage =
       error instanceof Error
         ? error.message

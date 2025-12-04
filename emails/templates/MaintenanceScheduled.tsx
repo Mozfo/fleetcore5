@@ -12,8 +12,17 @@ import {
   Button,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  maintenanceScheduledTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface MaintenanceScheduledProps {
+  locale?: EmailLocale;
   driver_name: string;
   vehicle_make: string;
   vehicle_model: string;
@@ -27,6 +36,7 @@ interface MaintenanceScheduledProps {
 }
 
 export const MaintenanceScheduled = ({
+  locale = "en",
   driver_name = "Mohammed Ali",
   vehicle_make = "Toyota",
   vehicle_model = "Camry",
@@ -37,10 +47,17 @@ export const MaintenanceScheduled = ({
   maintenance_type = "Regular Service",
   estimated_duration = "2 hours",
   maintenance_details_url = "https://app.fleetcore.com/maintenance/details",
-}: MaintenanceScheduledProps) => (
-  <Html>
-    <Head>
-      <style>{`
+}: MaintenanceScheduledProps) => {
+  const t = maintenanceScheduledTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
+  return (
+    <Html dir={dir} lang={locale}>
+      <Head>
+        <style>{`
         @media only screen and (max-width: 600px) {
           .container { width: 100% !important; }
           .content-wrapper { padding: 0 20px !important; }
@@ -48,74 +65,83 @@ export const MaintenanceScheduled = ({
           img { max-width: 100% !important; height: auto !important; }
         }
       `}</style>
-    </Head>
-    <Preview>
-      Maintenance scheduled: {vehicle_plate} on {maintenance_date}
-    </Preview>
-    <Body style={main}>
-      <Container style={container} className="container">
-        <Section style={box} className="content-wrapper">
-          <Link
-            href="https://fleetcore.io"
-            style={{
-              display: "inline-block",
-              textDecoration: "none",
-            }}
-          >
-            <Img
-              src="https://res.cloudinary.com/dillqmyh7/image/upload/v1763024908/fleetcore-logo_ljrtyn.jpg"
-              width="200"
-              height="auto"
-              alt="FleetCore"
-              style={{ display: "block", maxWidth: "100%", height: "auto" }}
-            />
-          </Link>
-          <Hr style={hr} />
-          <Text style={paragraph}>Hello {driver_name},</Text>
-          <Text style={paragraph}>
-            Maintenance has been scheduled for your vehicle.
-          </Text>
-          <div style={infoCard} className="info-card">
-            <Text style={cardTitle}>
-              {vehicle_make} {vehicle_model}
+      </Head>
+      <Preview>
+        {t.preview
+          .replace("{vehicle_plate}", vehicle_plate)
+          .replace("{maintenance_date}", maintenance_date)}
+      </Preview>
+      <Body style={main(isRtl)}>
+        <Container style={container} className="container">
+          <Section style={box} className="content-wrapper">
+            <Link
+              href="https://fleetcore.io"
+              style={{
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
+                textDecoration: "none",
+              }}
+            >
+              <Img
+                src="https://res.cloudinary.com/dillqmyh7/image/upload/v1763024908/fleetcore-logo_ljrtyn.jpg"
+                width="200"
+                height="auto"
+                alt="FleetCore"
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
+              />
+            </Link>
+            <Hr style={hr} />
+            <Text style={paragraph(textAlign)}>
+              {common.greeting} {driver_name},
             </Text>
-            <Text style={cardSubtitle}>Plate: {vehicle_plate}</Text>
-            <Text style={paragraph}>
-              • Date: <strong>{maintenance_date}</strong>
-              <br />• Time: <strong>{maintenance_time}</strong>
-              <br />• Location: <strong>{maintenance_location}</strong>
-              <br />• Type: <strong>{maintenance_type}</strong>
-              <br />• Estimated duration: <strong>{estimated_duration}</strong>
+            <Text style={paragraph(textAlign)}>{t.scheduled}</Text>
+            <div style={infoCard} className="info-card">
+              <Text style={cardTitle}>
+                {vehicle_make} {vehicle_model}
+              </Text>
+              <Text style={cardSubtitle}>
+                {t.plate}: {vehicle_plate}
+              </Text>
+              <Text style={paragraph(textAlign)}>
+                • {t.date}: <strong>{maintenance_date}</strong>
+                <br />• {t.time}: <strong>{maintenance_time}</strong>
+                <br />• {t.location}: <strong>{maintenance_location}</strong>
+                <br />• {t.type}: <strong>{maintenance_type}</strong>
+                <br />• {t.duration}: <strong>{estimated_duration}</strong>
+              </Text>
+            </div>
+            <Text style={paragraph(textAlign)}>{t.planAccordingly}</Text>
+            <Section style={buttonContainer}>
+              <Button style={button} href={maintenance_details_url}>
+                {common.viewDetails}
+              </Button>
+            </Section>
+            <Text style={paragraph(textAlign)}>
+              {common.regards}
+              <br />
+              {t.maintenance}
             </Text>
-          </div>
-          <Text style={paragraph}>
-            Please plan accordingly and ensure the vehicle is available.
-          </Text>
-          <Section style={buttonContainer}>
-            <Button style={button} href={maintenance_details_url}>
-              View Details
-            </Button>
+            <Hr style={hr} />
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
-          <Text style={paragraph}>
-            Best regards,
-            <br />
-            FleetCore Maintenance Team
-          </Text>
-          <Hr style={hr} />
-          <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
-        </Section>
-      </Container>
-    </Body>
-  </Html>
-);
+        </Container>
+      </Body>
+    </Html>
+  );
+};
 
 export default MaintenanceScheduled;
 
-const main = {
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -135,18 +161,19 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});
 
 const infoCard = {
   backgroundColor: "#f6f9fc",

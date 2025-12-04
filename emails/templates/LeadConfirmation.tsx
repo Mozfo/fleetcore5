@@ -11,8 +11,17 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  leadConfirmationTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface LeadConfirmationProps {
+  locale?: EmailLocale;
   first_name: string;
   company_name: string;
   fleet_size: string;
@@ -23,16 +32,22 @@ interface LeadConfirmationProps {
 }
 
 export const LeadConfirmation = ({
+  locale = "en",
   first_name,
   company_name,
   fleet_size,
-  country_preposition: _country_preposition,
   country_name,
   phone_row,
   message_row,
 }: LeadConfirmationProps) => {
+  const t = leadConfirmationTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
   return (
-    <Html>
+    <Html dir={dir} lang={locale}>
       <Head>
         <style>{`
         @media only screen and (max-width: 600px) {
@@ -42,14 +57,15 @@ export const LeadConfirmation = ({
         }
       `}</style>
       </Head>
-      <Preview>We will contact you within 24 hours</Preview>
-      <Body style={main}>
+      <Preview>{t.preview}</Preview>
+      <Body style={main(isRtl)}>
         <Container style={container} className="container">
           <Section style={box} className="content-wrapper">
             <Link
               href="https://fleetcore.io"
               style={{
-                display: "inline-block",
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
                 textDecoration: "none",
               }}
             >
@@ -58,32 +74,43 @@ export const LeadConfirmation = ({
                 width="200"
                 height="auto"
                 alt="FleetCore"
-                style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
               />
             </Link>
             <Hr style={hr} />
-            <Text style={paragraph}>Hello {first_name},</Text>
-            <Text style={paragraph}>
-              Thank you for requesting a demo of FleetCore! We have received
-              your request and will contact you within 24 hours.
+            <Text style={paragraph(textAlign)}>
+              {common.greeting} {first_name},
             </Text>
-            <Text style={paragraph}>
-              <strong>Your request details:</strong>
+            <Text style={paragraph(textAlign)}>{t.thankYou}</Text>
+            <Text style={paragraph(textAlign)}>
+              <strong>{t.requestDetails}</strong>
             </Text>
-            <Text style={paragraph}>
-              • Company: <strong>{company_name}</strong>
-              <br />• Fleet size: <strong>{fleet_size}</strong>
-              <br />• Country: <strong>{country_name}</strong>
-              <span dangerouslySetInnerHTML={{ __html: phone_row || "" }} />
-              <span dangerouslySetInnerHTML={{ __html: message_row || "" }} />
+            <Text style={paragraph(textAlign)}>
+              • {t.company}: <strong>{company_name}</strong>
+              <br />• {t.fleetSize}: <strong>{fleet_size}</strong>
+              <br />• {t.country}: <strong>{country_name}</strong>
+              {phone_row && (
+                <>
+                  <br />• {t.phone}: <strong>{phone_row}</strong>
+                </>
+              )}
+              {message_row && (
+                <>
+                  <br />• {t.message}: <strong>{message_row}</strong>
+                </>
+              )}
             </Text>
-            <Text style={paragraph}>
-              Best regards,
+            <Text style={paragraph(textAlign)}>
+              {common.regards}
               <br />
-              The FleetCore Team
+              {common.team}
             </Text>
             <Hr style={hr} />
-            <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
         </Container>
       </Body>
@@ -93,11 +120,13 @@ export const LeadConfirmation = ({
 
 export default LeadConfirmation;
 
-const main = {
+// Dynamic styles based on RTL
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -117,15 +146,16 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});

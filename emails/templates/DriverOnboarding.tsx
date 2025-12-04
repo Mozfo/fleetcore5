@@ -12,8 +12,17 @@ import {
   Button,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  driverOnboardingTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface DriverOnboardingProps {
+  locale?: EmailLocale;
   driver_name: string;
   fleet_name: string;
   driver_id: string;
@@ -23,6 +32,7 @@ interface DriverOnboardingProps {
 }
 
 export const DriverOnboarding = ({
+  locale = "en",
   driver_name = "Mohammed Ali",
   fleet_name = "Dubai Fleet Operations",
   driver_id = "DRV-12345",
@@ -30,8 +40,14 @@ export const DriverOnboarding = ({
   fleet_manager_name = "Ahmed Hassan",
   driver_portal_url = "https://app.fleetcore.com/driver",
 }: DriverOnboardingProps) => {
+  const t = driverOnboardingTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
   return (
-    <Html>
+    <Html dir={dir} lang={locale}>
       <Head>
         <style>{`
         @media only screen and (max-width: 600px) {
@@ -41,14 +57,15 @@ export const DriverOnboarding = ({
         }
       `}</style>
       </Head>
-      <Preview>Welcome to {fleet_name} - Get started as a driver</Preview>
-      <Body style={main}>
+      <Preview>{t.preview.replace("{fleet_name}", fleet_name)}</Preview>
+      <Body style={main(isRtl)}>
         <Container style={container} className="container">
           <Section style={box} className="content-wrapper">
             <Link
               href="https://fleetcore.io"
               style={{
-                display: "inline-block",
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
                 textDecoration: "none",
               }}
             >
@@ -57,50 +74,54 @@ export const DriverOnboarding = ({
                 width="200"
                 height="auto"
                 alt="FleetCore"
-                style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
               />
             </Link>
             <Hr style={hr} />
-            <Text style={paragraph}>Hello {driver_name},</Text>
-            <Text style={paragraph}>
-              Welcome to <strong>{fleet_name}</strong>! We&apos;re excited to
-              have you join our team.
+            <Text style={paragraph(textAlign)}>
+              {common.greeting} {driver_name},
             </Text>
-            <Text style={paragraph}>
-              <strong>Your driver account has been created:</strong>
+            <Text style={paragraph(textAlign)}>
+              {t.welcomeTo} <strong>{fleet_name}</strong>
+              {t.excited}
             </Text>
-            <Text style={paragraph}>
-              • Driver ID: <strong>{driver_id}</strong>
-              <br />• Start date: <strong>{start_date}</strong>
-              <br />• Fleet manager: <strong>{fleet_manager_name}</strong>
+            <Text style={paragraph(textAlign)}>
+              <strong>{t.accountCreated}</strong>
             </Text>
-            <Text style={paragraph}>
-              <strong>Next steps:</strong>
+            <Text style={paragraph(textAlign)}>
+              • {t.driverId}: <strong>{driver_id}</strong>
+              <br />• {t.startDate}: <strong>{start_date}</strong>
+              <br />• {t.fleetManager}: <strong>{fleet_manager_name}</strong>
             </Text>
-            <Text style={paragraph}>
-              1. Download the driver app
+            <Text style={paragraph(textAlign)}>
+              <strong>{t.nextSteps}</strong>
+            </Text>
+            <Text style={paragraph(textAlign)}>
+              1. {t.step1}
               <br />
-              2. Upload required documents (license, insurance)
+              2. {t.step2}
               <br />
-              3. Complete platform onboarding (Uber, Bolt, Careem)
+              3. {t.step3}
               <br />
-              4. Review payout schedule and rates
+              4. {t.step4}
             </Text>
             <Section style={buttonContainer}>
               <Button style={button} href={driver_portal_url}>
-                Access Driver Portal
+                {t.accessButton}
               </Button>
             </Section>
-            <Text style={paragraph}>
-              Need help? Contact your fleet manager or support.
-            </Text>
-            <Text style={paragraph}>
-              Best regards,
+            <Text style={paragraph(textAlign)}>{t.needHelp}</Text>
+            <Text style={paragraph(textAlign)}>
+              {common.regards}
               <br />
-              {fleet_name} Team
+              {t.teamSuffix} {fleet_name}
             </Text>
             <Hr style={hr} />
-            <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
         </Container>
       </Body>
@@ -110,11 +131,12 @@ export const DriverOnboarding = ({
 
 export default DriverOnboarding;
 
-const main = {
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -134,18 +156,19 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});
 
 const buttonContainer = {
   textAlign: "center" as const,

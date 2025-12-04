@@ -178,17 +178,15 @@ export async function updateLeadAction(
   data: UpdateLeadData
 ): Promise<UpdateLeadResult> {
   // DEBUG: Log function entry
-  // eslint-disable-next-line no-console
-  console.log("[updateLeadAction] CALLED with:", { leadId, data });
+  logger.debug({ leadId, data }, "[updateLeadAction] CALLED");
 
   try {
     // 1. Authentication
     const { userId, orgId } = await auth();
-    // eslint-disable-next-line no-console
-    console.log("[updateLeadAction] Auth result:", {
-      userId: userId?.substring(0, 15),
-      orgId: orgId?.substring(0, 15),
-    });
+    logger.debug(
+      { userId: userId?.substring(0, 15), orgId: orgId?.substring(0, 15) },
+      "[updateLeadAction] Auth result"
+    );
 
     if (!userId) {
       return { success: false, error: "Unauthorized" };
@@ -368,24 +366,14 @@ export async function updateLeadAction(
     };
   } catch (error) {
     // Log error with full details
-    // eslint-disable-next-line no-console
-    console.error("[updateLeadAction] Error:", error);
-    // Extract Prisma error details if available
-    if (error && typeof error === "object" && "code" in error) {
-      // eslint-disable-next-line no-console
-      console.error(
-        "[updateLeadAction] Prisma error code:",
-        (error as { code?: string; meta?: unknown }).code
-      );
-      // eslint-disable-next-line no-console
-      console.error(
-        "[updateLeadAction] Prisma error meta:",
-        JSON.stringify((error as { meta?: unknown }).meta, null, 2)
-      );
-    }
-    if (process.env.NODE_ENV === "production") {
-      logger.error({ error, leadId }, "[updateLeadAction] Error");
-    }
+    const prismaError =
+      error && typeof error === "object" && "code" in error
+        ? {
+            code: (error as { code?: string }).code,
+            meta: (error as { meta?: unknown }).meta,
+          }
+        : undefined;
+    logger.error({ error, leadId, prismaError }, "[updateLeadAction] Error");
     const errorMessage =
       error instanceof Error ? error.message : "Failed to update lead";
     return { success: false, error: errorMessage };

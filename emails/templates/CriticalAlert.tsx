@@ -12,8 +12,17 @@ import {
   Button,
 } from "@react-email/components";
 import * as React from "react";
+import {
+  type EmailLocale,
+  getTextDirection,
+  getTextAlign,
+  isRtlLocale,
+  commonTranslations,
+  criticalAlertTranslations,
+} from "@/lib/i18n/email-translations";
 
 interface CriticalAlertProps {
+  locale?: EmailLocale;
   alert_title: string;
   alert_time: string;
   severity: string;
@@ -24,6 +33,7 @@ interface CriticalAlertProps {
 }
 
 export const CriticalAlert = ({
+  locale = "en",
   alert_title = "Database Connection Failure",
   alert_time = "2025-11-13 10:30 AM",
   severity = "CRITICAL",
@@ -31,10 +41,17 @@ export const CriticalAlert = ({
   alert_description = "The primary database connection has been lost. Services are operating in degraded mode.",
   recommended_action = "Check database server status and network connectivity immediately.",
   alert_url = "https://app.fleetcore.com/alerts/123",
-}: CriticalAlertProps) => (
-  <Html>
-    <Head>
-      <style>{`
+}: CriticalAlertProps) => {
+  const t = criticalAlertTranslations[locale];
+  const common = commonTranslations[locale];
+  const dir = getTextDirection(locale);
+  const textAlign = getTextAlign(locale);
+  const isRtl = isRtlLocale(locale);
+
+  return (
+    <Html dir={dir} lang={locale}>
+      <Head>
+        <style>{`
         @media only screen and (max-width: 600px) {
           .container { width: 100% !important; }
           .content-wrapper { padding: 0 20px !important; }
@@ -42,73 +59,77 @@ export const CriticalAlert = ({
           img { max-width: 100% !important; height: auto !important; }
         }
       `}</style>
-    </Head>
-    <Preview>🚨 CRITICAL: {alert_title}</Preview>
-    <Body style={main}>
-      <Container style={container} className="container">
-        <Section style={box} className="content-wrapper">
-          <Link
-            href="https://fleetcore.io"
-            style={{
-              display: "inline-block",
-              textDecoration: "none",
-            }}
-          >
-            <Img
-              src="https://res.cloudinary.com/dillqmyh7/image/upload/v1763024908/fleetcore-logo_ljrtyn.jpg"
-              width="200"
-              height="auto"
-              alt="FleetCore"
-              style={{ display: "block", maxWidth: "100%", height: "auto" }}
-            />
-          </Link>
-          <Hr style={hr} />
-          <div style={criticalBadge}>🚨 CRITICAL ALERT</div>
-          <Text style={alertTitle}>{alert_title}</Text>
-          <div style={alertCard} className="alert-card">
-            <Text style={paragraph}>
-              • Time: <strong>{alert_time}</strong>
-              <br />• Severity: <strong>{severity}</strong>
-              <br />• Affected: <strong>{affected_items}</strong>
-            </Text>
+      </Head>
+      <Preview>{t.preview.replace("{alert_title}", alert_title)}</Preview>
+      <Body style={main(isRtl)}>
+        <Container style={container} className="container">
+          <Section style={box} className="content-wrapper">
+            <Link
+              href="https://fleetcore.io"
+              style={{
+                display: isRtl ? "block" : "inline-block",
+                textAlign: isRtl ? "center" : undefined,
+                textDecoration: "none",
+              }}
+            >
+              <Img
+                src="https://res.cloudinary.com/dillqmyh7/image/upload/v1763024908/fleetcore-logo_ljrtyn.jpg"
+                width="200"
+                height="auto"
+                alt="FleetCore"
+                style={{
+                  display: isRtl ? "inline-block" : "block",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
+              />
+            </Link>
             <Hr style={hr} />
-            <Text style={paragraph}>
-              <strong>Description:</strong>
-              <br />
-              {alert_description}
-            </Text>
+            <div style={criticalBadge}>{t.badge}</div>
+            <Text style={alertTitle(textAlign)}>{alert_title}</Text>
+            <div style={alertCard} className="alert-card">
+              <Text style={paragraph(textAlign)}>
+                • {t.time}: <strong>{alert_time}</strong>
+                <br />• {t.severity}: <strong>{severity}</strong>
+                <br />• {t.affected}: <strong>{affected_items}</strong>
+              </Text>
+              <Hr style={hr} />
+              <Text style={paragraph(textAlign)}>
+                <strong>{t.description}</strong>
+                <br />
+                {alert_description}
+              </Text>
+              <Hr style={hr} />
+              <Text style={paragraph(textAlign)}>
+                <strong>{t.recommendedAction}</strong>
+                <br />
+                {recommended_action}
+              </Text>
+            </div>
+            <Section style={buttonContainer}>
+              <Button style={button} href={alert_url}>
+                {t.viewButton}
+              </Button>
+            </Section>
+            <Text style={paragraph(textAlign)}>{t.automated}</Text>
+            <Text style={paragraph(textAlign)}>{t.monitoring}</Text>
             <Hr style={hr} />
-            <Text style={paragraph}>
-              <strong>Recommended action:</strong>
-              <br />
-              {recommended_action}
-            </Text>
-          </div>
-          <Section style={buttonContainer}>
-            <Button style={button} href={alert_url}>
-              View Full Details
-            </Button>
+            <Text style={footer(textAlign)}>{common.footer}</Text>
           </Section>
-          <Text style={paragraph}>
-            This is an automated critical alert from FleetCore. Please respond
-            immediately.
-          </Text>
-          <Text style={paragraph}>FleetCore Monitoring Team</Text>
-          <Hr style={hr} />
-          <Text style={footer}>© 2025 FleetCore. All rights reserved.</Text>
-        </Section>
-      </Container>
-    </Body>
-  </Html>
-);
+        </Container>
+      </Body>
+    </Html>
+  );
+};
 
 export default CriticalAlert;
 
-const main = {
+const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
+  direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+});
 
 const container = {
   backgroundColor: "#ffffff",
@@ -128,18 +149,19 @@ const hr = {
   margin: "20px 0",
 };
 
-const paragraph = {
+const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
-  textAlign: "left" as const,
-};
+  textAlign,
+});
 
-const footer = {
+const footer = (textAlign: "left" | "right") => ({
   color: "#8898aa",
   fontSize: "12px",
   lineHeight: "16px",
-};
+  textAlign,
+});
 
 const criticalBadge = {
   display: "inline-block",
@@ -153,13 +175,14 @@ const criticalBadge = {
   marginBottom: "20px",
 };
 
-const alertTitle = {
+const alertTitle = (textAlign: "left" | "right") => ({
   fontSize: "24px",
   fontWeight: "700" as const,
   color: "#dc2626",
   margin: "0 0 20px 0",
   lineHeight: "32px",
-};
+  textAlign,
+});
 
 const alertCard = {
   backgroundColor: "#fef2f2",

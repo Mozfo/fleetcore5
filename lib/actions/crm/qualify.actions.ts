@@ -58,21 +58,18 @@ export async function qualifyLeadAction(
   notes?: string
 ): Promise<QualifyLeadResult> {
   // DEBUG: Log function entry
-  // eslint-disable-next-line no-console
-  console.log("[qualifyLeadAction] CALLED with:", {
-    leadId,
-    newStage,
-    notes: notes?.substring(0, 50),
-  });
+  logger.debug(
+    { leadId, newStage, notes: notes?.substring(0, 50) },
+    "[qualifyLeadAction] CALLED"
+  );
 
   try {
     // 1. Authentication
     const { userId, orgId } = await auth();
-    // eslint-disable-next-line no-console
-    console.log("[qualifyLeadAction] Auth result:", {
-      userId: userId?.substring(0, 15),
-      orgId: orgId?.substring(0, 15),
-    });
+    logger.debug(
+      { userId: userId?.substring(0, 15), orgId: orgId?.substring(0, 15) },
+      "[qualifyLeadAction] Auth result"
+    );
 
     if (!userId) {
       return { success: false, error: "Unauthorized" };
@@ -80,15 +77,10 @@ export async function qualifyLeadAction(
 
     // 2. Authorization - FleetCore Admin only
     if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      // Debug: log for troubleshooting
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.log("[qualifyLeadAction] Auth debug:", {
-          orgId,
-          ADMIN_ORG_ID,
-          match: orgId === ADMIN_ORG_ID,
-        });
-      }
+      logger.debug(
+        { orgId, ADMIN_ORG_ID, match: orgId === ADMIN_ORG_ID },
+        "[qualifyLeadAction] Auth debug"
+      );
       return {
         success: false,
         error: `Forbidden: Admin access required (org: ${orgId?.slice(0, 10)}...)`,
@@ -214,24 +206,14 @@ export async function qualifyLeadAction(
     };
   } catch (error) {
     // Log error with full details
-    // eslint-disable-next-line no-console
-    console.error("[qualifyLeadAction] Error:", error);
-    // Extract Prisma error details if available
-    if (error && typeof error === "object" && "code" in error) {
-      // eslint-disable-next-line no-console
-      console.error(
-        "[qualifyLeadAction] Prisma error code:",
-        (error as { code?: string; meta?: unknown }).code
-      );
-      // eslint-disable-next-line no-console
-      console.error(
-        "[qualifyLeadAction] Prisma error meta:",
-        JSON.stringify((error as { meta?: unknown }).meta, null, 2)
-      );
-    }
-    if (process.env.NODE_ENV === "production") {
-      logger.error({ error, leadId }, "[qualifyLeadAction] Error");
-    }
+    const prismaError =
+      error && typeof error === "object" && "code" in error
+        ? {
+            code: (error as { code?: string }).code,
+            meta: (error as { meta?: unknown }).meta,
+          }
+        : undefined;
+    logger.error({ error, leadId, prismaError }, "[qualifyLeadAction] Error");
     const errorMessage =
       error instanceof Error ? error.message : "Failed to qualify lead";
     return { success: false, error: errorMessage };

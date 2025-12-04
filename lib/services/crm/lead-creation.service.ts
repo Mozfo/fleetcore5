@@ -24,6 +24,8 @@ import { LeadScoringService } from "./lead-scoring.service";
 import { LeadAssignmentService } from "./lead-assignment.service";
 import { CountryService } from "./country.service";
 import { ValidationError } from "@/lib/core/errors";
+import { sendNotification } from "@/lib/notifications";
+import { logger } from "@/lib/logger";
 import type { CreateLeadInput } from "@/lib/validators/crm/lead.validators";
 import type { crm_leads } from "@prisma/client";
 
@@ -288,6 +290,67 @@ export class LeadCreationService {
       createdBy ?? "",
       tenantId
     );
+
+    // STEP 7: Send notification to assigned sales rep (if assigned)
+    if (assignment.assigned_to) {
+      // Find the assigned employee to get their email and name
+      const assignedEmployee = activeEmployees.find(
+        (emp) => emp.id === assignment.assigned_to
+      );
+
+      if (assignedEmployee) {
+        const leadName =
+          [input.first_name, input.last_name].filter(Boolean).join(" ") ||
+          input.email.split("@")[0];
+
+        try {
+          const notificationResult = await sendNotification(
+            "crm.sales.assignment",
+            assignedEmployee.email,
+            {
+              employee_name: assignedEmployee.first_name,
+              lead_name: leadName,
+              company_name: input.company_name || "N/A",
+              priority: finalPriority as "urgent" | "high" | "medium" | "low",
+              fit_score: scoring.fit_score,
+              qualification_score: scoring.qualification_score,
+              lead_stage: scoring.lead_stage,
+              fleet_size: input.fleet_size || "N/A",
+              country_code: input.country_code || "N/A",
+              lead_detail_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.io"}/crm/leads/${lead.id}`,
+            },
+            {
+              leadId: lead.id,
+              tenantId,
+              idempotencyKey: `sales_rep_assignment_${lead.id}`,
+            }
+          );
+
+          logger.info(
+            {
+              leadId: lead.id,
+              leadCode: lead.lead_code,
+              assignedTo: assignedEmployee.email,
+              notificationQueued: notificationResult.success,
+              queueId: notificationResult.queueId,
+            },
+            "[Lead Creation] Sales rep assignment notification queued"
+          );
+        } catch (notificationError) {
+          // Log error but don't fail lead creation
+          logger.error(
+            {
+              leadId: lead.id,
+              error:
+                notificationError instanceof Error
+                  ? notificationError.message
+                  : "Unknown",
+            },
+            "[Lead Creation] Failed to queue sales rep assignment notification"
+          );
+        }
+      }
+    }
 
     return {
       lead,
