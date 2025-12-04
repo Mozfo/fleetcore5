@@ -5,7 +5,10 @@
  * to verify that organization claims are present.
  */
 
-import { createClerkTestAuth, cleanupClerkTestAuth } from "@/lib/testing/clerk-test-auth";
+import {
+  createClerkTestAuth,
+  cleanupClerkTestAuth,
+} from "@/lib/testing/clerk-test-auth";
 import { logger } from "@/lib/logger";
 
 async function decodeJWT() {
@@ -13,11 +16,14 @@ async function decodeJWT() {
 
   const auth = await createClerkTestAuth();
 
-  logger.info({
-    userId: auth.userId,
-    orgId: auth.orgId,
-    email: auth.email,
-  }, "Test credentials created");
+  logger.info(
+    {
+      userId: auth.userId,
+      orgId: auth.orgId,
+      email: auth.email,
+    },
+    "Test credentials created"
+  );
 
   // Decode JWT token
   const parts = auth.token.split(".");
@@ -38,14 +44,17 @@ async function decodeJWT() {
   const hasOrgRole = "orgRole" in payload;
   const hasOrgSlug = "orgSlug" in payload;
 
-  logger.info({
-    hasOrgId,
-    hasOrgRole,
-    hasOrgSlug,
-    orgIdValue: payload.orgId || "NOT PRESENT",
-    orgRoleValue: payload.orgRole || "NOT PRESENT",
-    orgSlugValue: payload.orgSlug || "NOT PRESENT",
-  }, "Organization Claims Check");
+  logger.info(
+    {
+      hasOrgId,
+      hasOrgRole,
+      hasOrgSlug,
+      orgIdValue: payload.orgId || "NOT PRESENT",
+      orgRoleValue: payload.orgRole || "NOT PRESENT",
+      orgSlugValue: payload.orgSlug || "NOT PRESENT",
+    },
+    "Organization Claims Check"
+  );
 
   if (!hasOrgId) {
     logger.error("❌ CRITICAL: JWT token does not contain 'orgId' claim!");

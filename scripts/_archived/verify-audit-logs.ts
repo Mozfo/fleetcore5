@@ -25,8 +25,12 @@ async function main() {
   if (logs.length === 0) {
     console.log("⚠️  NO LOGS FOUND");
     console.log("\nPossible reasons:");
-    console.log("  1. Tests haven't been run yet (run: pnpm tsx scripts/test-validation-sortby.ts)");
-    console.log("  2. Audit logs were created in dev environment, not production");
+    console.log(
+      "  1. Tests haven't been run yet (run: pnpm tsx scripts/test-validation-sortby.ts)"
+    );
+    console.log(
+      "  2. Audit logs were created in dev environment, not production"
+    );
     console.log("  3. RLS (Row Level Security) is blocking the query");
     console.log("\nTo create test logs, run:");
     console.log("  pnpm tsx test-real-tenant.ts");
