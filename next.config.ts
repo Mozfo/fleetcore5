@@ -51,3 +51,4 @@ export default withSentryConfig(nextConfig, {
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
 });
+// deploy test Thu Dec  4 13:47:03 +04 2025
