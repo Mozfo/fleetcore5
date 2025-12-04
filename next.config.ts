@@ -52,3 +52,4 @@ export default withSentryConfig(nextConfig, {
   automaticVercelMonitors: true,
 });
 // deploy test Thu Dec  4 13:47:03 +04 2025
+// test deploy Thu Dec  4 13:56:11 +04 2025
