@@ -68,7 +68,7 @@ export class VehicleService extends BaseService {
       await this.scheduleInitialMaintenance(vehicle, tx);
 
       // 5. Envoyer les notifications
-      // Get admin email - TODO: Get from tenant settings
+      // Admin email fallback - Phase 2: resolve from tenant settings
       const adminEmail = process.env.ADMIN_EMAIL || "admin@fleetcore.app";
       await this.emailService.sendVehicleCreated(
         vehicle as flt_vehicles,
@@ -371,34 +371,16 @@ export class VehicleService extends BaseService {
     });
   }
 
-  // TODO: Implement once dir_country_regulations is accessible
+  /**
+   * Validate vehicle compliance with country regulations
+   * Phase 2: Implement when dir_country_regulations table is available
+   * Will check: max age, professional license, equipment requirements
+   */
   private async validateVehicleCompliance(
     _data: CreateVehicleDto,
     _tenantId: string
   ): Promise<void> {
-    // TODO: Implementation pending dir_country_regulations table
-    // Check country regulations for:
-    // - Vehicle max age requirements
-    // - Professional license requirements
-    // - Specific equipment requirements
-    /*
-    const regulations = await this.prisma.dir_country_regulations.findUnique({
-      where: { country_code: data.country_code }
-    });
-
-    if (!regulations) return;
-
-    const vehicleAge = new Date().getFullYear() - data.year;
-    if (regulations.vehicle_max_age && vehicleAge > regulations.vehicle_max_age) {
-      throw new ValidationError(
-        `Vehicle too old. Maximum age: ${regulations.vehicle_max_age} years`
-      );
-    }
-
-    if (regulations.requires_professional_license && !data.metadata?.professional_license) {
-      throw new ValidationError('Professional license required for this country');
-    }
-    */
+    // Stub - Phase 2 implementation pending
   }
 
   private async getRequiredDocuments(countryCode: string): Promise<string[]> {
@@ -412,34 +394,15 @@ export class VehicleService extends BaseService {
     return requirements.map((req) => req.type);
   }
 
-  // TODO: Complete implementation with proper maintenance scheduling
+  /**
+   * Schedule initial maintenance for new vehicle
+   * Phase 2: Implement full scheduling based on vehicle type and regulations
+   */
   private async scheduleInitialMaintenance(
     _vehicle: Vehicle,
     _tx: PrismaTransaction
   ): Promise<void> {
-    // TODO: Implementation pending - Create first maintenance schedule
-    // Schedule based on:
-    // - Vehicle type and class
-    // - Manufacturer recommendations
-    // - Local regulations
-    /*
-    const firstServiceKm = 5000;
-    const firstServiceDate = new Date();
-    firstServiceDate.setMonth(firstServiceDate.getMonth() + 3);
-
-    await tx.flt_vehicle_maintenance.create({
-      data: {
-        tenant_id: vehicle.tenant_id,
-        vehicle_id: vehicle.id,
-        maintenance_type: 'oil_change',
-        scheduled_date: firstServiceDate,
-        next_service_km: firstServiceKm,
-        status: 'scheduled',
-        created_by: vehicle.created_by,
-        updated_by: vehicle.created_by
-      }
-    });
-    */
+    // Stub - Phase 2 implementation pending
   }
 
   private async checkInsuranceExpiry(vehicle: Vehicle): Promise<void> {
@@ -457,7 +420,7 @@ export class VehicleService extends BaseService {
 
     // Send alerts at specific intervals
     if ([30, 15, 7, 3, 1].includes(daysUntilExpiry)) {
-      // Get admin email - TODO: Get from tenant settings
+      // Admin email fallback - Phase 2: resolve from tenant settings
       const adminEmail = process.env.ADMIN_EMAIL || "admin@fleetcore.app";
       await this.emailService.sendInsuranceExpiryAlert(
         vehicle as flt_vehicles,

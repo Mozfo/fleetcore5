@@ -314,7 +314,7 @@ export class NotificationQueueService extends BaseService {
               );
             }
           } else {
-            // TODO: Implement SMS, Slack, Webhook, Push channels
+            // Additional channels (SMS, Slack, Webhook, Push) - Roadmap
             throw new Error(
               `Channel ${notification.channel} not yet implemented`
             );

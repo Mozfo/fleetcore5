@@ -185,6 +185,18 @@ export class EmailService extends BaseService {
   }
 
   /**
+   * Get tenant name from database
+   * Falls back to "Your Fleet" if tenant not found
+   */
+  private async getTenantName(tenantId: string): Promise<string> {
+    const tenant = await this.prisma.adm_tenants.findUnique({
+      where: { id: tenantId },
+      select: { name: true },
+    });
+    return tenant?.name || "Your Fleet";
+  }
+
+  /**
    * Send vehicle created notification
    */
   async sendVehicleCreated(
@@ -194,7 +206,7 @@ export class EmailService extends BaseService {
     locale: EmailLocale = "en"
   ): Promise<EmailSendResult> {
     const t = this.translations[locale];
-    const tenantName = "Your Fleet"; // TODO: Get from tenant data
+    const tenantName = await this.getTenantName(tenantId);
 
     const template = this.getVehicleCreatedTemplate(
       vehicle,
@@ -1145,13 +1157,14 @@ ${t.footer}`;
 
   /**
    * Send document expiry reminder (convenience wrapper)
+   * Phase 2: Resolve entity details and recipient dynamically
    */
   async sendDocumentExpiryReminder(
     doc: DocumentExpiryEmailData["document"]
   ): Promise<EmailSendResult> {
-    // TODO: Get entity details and recipient email
-    const entityName = "Vehicle"; // Placeholder
-    const recipientEmail = "admin@example.com"; // Placeholder
+    // Placeholders - Phase 2: resolve from entity owner
+    const entityName = "Vehicle";
+    const recipientEmail = "admin@example.com";
 
     // Calculate days until expiry
     const daysUntilExpiry = doc.expiry_date

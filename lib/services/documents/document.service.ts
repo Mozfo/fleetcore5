@@ -102,8 +102,7 @@ export class DocumentService extends BaseService {
     }
 
     return this.executeInTransaction(async (tx) => {
-      // TODO: Implement Supabase Storage integration
-      // const fileUrl = await this.uploadToStorage(data.file, data.fileName);
+      // Phase 2: Replace placeholder with Supabase Storage upload
       const fileUrl = `https://placeholder.storage.url/${documentId}/${data.fileName}`;
 
       // Update document with file information
@@ -131,8 +130,7 @@ export class DocumentService extends BaseService {
         },
       });
 
-      // TODO: Trigger verification workflow if needed
-      // await this.triggerVerificationWorkflow(document);
+      // Phase 2: Add verification workflow trigger here
 
       return document;
     });
@@ -181,7 +179,7 @@ export class DocumentService extends BaseService {
 
     // Send notification if document was rejected
     if (!data.verified && data.rejectionReason) {
-      // Get admin email - TODO: Get from entity owner
+      // Admin email fallback - Phase 2: resolve from entity owner
       const adminEmail = process.env.ADMIN_EMAIL || "admin@fleetcore.app";
       await this.emailService.sendDocumentExpiryAlert(
         document,
@@ -197,13 +195,13 @@ export class DocumentService extends BaseService {
 
   /**
    * Get required documents by country
-   * TODO: Move to database table dir_country_regulations when available
+   * Note: Hardcoded config - Phase 2: migrate to dir_country_regulations table
    */
   async getRequiredDocumentsByCountry(
     country: string,
     entityType: "vehicle" | "driver"
   ): Promise<DocumentTypeConfig[]> {
-    // Hardcoded country requirements - TODO: Move to database
+    // Country requirements (Phase 2: migrate to database)
     const countryRequirements: Record<string, CountryDocumentRequirements> = {
       FR: {
         country: "FR",
@@ -600,14 +598,7 @@ export class DocumentService extends BaseService {
    * Documents are permanently deleted when removed
    */
 
-  // TODO: Implement Supabase Storage integration
-  // private async uploadToStorage(file: File | Buffer, fileName: string): Promise<string> {
-  //   // Implementation pending Supabase Storage setup
-  //   return `https://placeholder.url/${fileName}`;
-  // }
-
-  // TODO: Implement verification workflow
-  // private async triggerVerificationWorkflow(document: Document): Promise<void> {
-  //   // Implementation pending workflow system
-  // }
+  // Phase 2 Features (not yet implemented):
+  // - Supabase Storage integration for file uploads
+  // - Verification workflow automation
 }
