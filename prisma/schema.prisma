@@ -1268,6 +1268,7 @@ model crm_leads {
   next_action_date                                                     DateTime?               @db.Timestamptz(6)
   priority                                                             String?                 @default("medium") @db.VarChar(20)
   consent_ip                                                           String?                 @db.VarChar(45)
+  last_activity_at                                                     DateTime?               @db.Timestamptz(6)
   crm_contracts                                                        crm_contracts[]
   crm_lead_activities                                                  crm_lead_activities[]
   adm_provider_employees_crm_leads_assigned_toToadm_provider_employees adm_provider_employees? @relation("crm_leads_assigned_toToadm_provider_employees", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_crm_leads_assigned_to")
@@ -1289,6 +1290,7 @@ model crm_leads {
   @@index([qualification_score], map: "idx_crm_leads_qualification_score")
   @@index([deleted_at, status, lead_stage], map: "idx_crm_leads_status_stage_deleted")
   @@index([updated_at], map: "idx_crm_leads_updated_at")
+  @@index([last_activity_at], map: "idx_crm_leads_last_activity_at")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

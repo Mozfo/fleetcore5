@@ -67,6 +67,7 @@ describe("LeadRepository", () => {
         updated_by: null,
         deleted_at: null,
         deleted_by: null,
+        last_activity_at: null,
         deletion_reason: null,
         message: null,
         metadata: {},

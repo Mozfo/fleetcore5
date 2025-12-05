@@ -308,6 +308,7 @@ describe("LeadCreationService", () => {
           deleted_at: null,
           deleted_by: null,
           deletion_reason: null,
+          last_activity_at: null,
         };
         return lead;
       }

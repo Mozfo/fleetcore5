@@ -18,6 +18,9 @@
 import { CrmSettingsRepository } from "@/lib/repositories/crm/settings.repository";
 import { CountryService } from "./country.service";
 import { prisma } from "@/lib/prisma";
+import { NotificationQueueService } from "@/lib/services/notification/queue.service";
+import { logger } from "@/lib/logger";
+import { Prisma } from "@prisma/client";
 
 // ===== TYPES & INTERFACES =====
 
@@ -137,6 +140,63 @@ export interface QualificationResult {
   qualification_score: number; // 0-100 (rounded)
   lead_stage: LeadStage;
   breakdown: ScoringBreakdown;
+}
+
+/**
+ * Score decay configuration
+ * Loaded from crm_settings.score_decay
+ */
+export interface ScoreDecayConfig {
+  enabled: boolean;
+  inactivity_threshold_days: number;
+  decay_type: "percentage" | "fixed";
+  decay_value: number;
+  minimum_score: number;
+  apply_to: "engagement_score" | "both";
+  reactivation_detection: boolean;
+  decay_rules?: Array<{
+    days_inactive: number;
+    decay_percentage: number;
+    description: string;
+  }>;
+}
+
+/**
+ * Result of score recalculation
+ */
+export interface RecalculateScoresResult {
+  leadId: string;
+  previousScores: {
+    fit: number;
+    engagement: number;
+    qualification: number;
+  };
+  newScores: {
+    fit: number;
+    engagement: number;
+    qualification: number;
+  };
+  previousStage: LeadStage | null;
+  newStage: LeadStage;
+  stageChanged: boolean;
+  notificationQueued: boolean;
+}
+
+/**
+ * Result of score degradation batch process
+ */
+export interface DegradeScoresResult {
+  processed: number;
+  degraded: number;
+  stageChanges: number;
+  errors: number;
+  details: Array<{
+    leadId: string;
+    previousEngagement: number;
+    newEngagement: number;
+    daysInactive: number;
+    stageChanged: boolean;
+  }>;
 }
 
 // ===== SERVICE CLASS =====
@@ -425,6 +485,334 @@ export class LeadScoringService {
     });
 
     return await this.calculateQualificationScore(fit, engagement);
+  }
+
+  // ===== RECALCULATION METHODS (Sprint 1.2) =====
+
+  /**
+   * Recalculate scores for a specific lead
+   *
+   * Fetches lead data, recalculates all scores, updates the database,
+   * and queues a notification if the lead transitions to sales_qualified.
+   *
+   * Configuration loaded from crm_settings (NOT hardcoded).
+   *
+   * @param leadId - UUID of the lead to recalculate
+   * @returns Recalculation result with previous/new scores and stage change info
+   *
+   * @example
+   * ```typescript
+   * const result = await service.recalculateScores('uuid-here');
+   * if (result.stageChanged && result.newStage === 'sales_qualified') {
+   *   // Lead just became SQL!
+   * }
+   * ```
+   */
+  async recalculateScores(leadId: string): Promise<RecalculateScoresResult> {
+    // 1. Fetch lead with current scores
+    const lead = await prisma.crm_leads.findUnique({
+      where: { id: leadId },
+      select: {
+        id: true,
+        fleet_size: true,
+        country_code: true,
+        message: true,
+        phone: true,
+        metadata: true,
+        fit_score: true,
+        engagement_score: true,
+        qualification_score: true,
+        lead_stage: true,
+        assigned_to: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        company_name: true,
+      },
+    });
+
+    if (!lead) {
+      throw new Error(`Lead not found: ${leadId}`);
+    }
+
+    // 2. Store previous scores
+    const previousScores = {
+      fit: Number(lead.fit_score ?? 0),
+      engagement: Number(lead.engagement_score ?? 0),
+      qualification: lead.qualification_score ?? 0,
+    };
+    const previousStage = lead.lead_stage as LeadStage | null;
+
+    // 3. Count activities for engagement boost
+    const activityCount = await prisma.crm_lead_activities.count({
+      where: { lead_id: leadId },
+    });
+
+    // 4. Recalculate scores
+    const metadata = (lead.metadata as LeadMetadata) ?? {};
+    const result = await this.calculateLeadScores({
+      fleet_size: lead.fleet_size,
+      country_code: lead.country_code,
+      message: lead.message,
+      phone: lead.phone,
+      metadata: {
+        ...metadata,
+        activity_count: activityCount, // Bonus for activities
+      },
+    });
+
+    // 5. Update lead in database
+    await prisma.crm_leads.update({
+      where: { id: leadId },
+      data: {
+        fit_score: new Prisma.Decimal(result.fit_score),
+        engagement_score: new Prisma.Decimal(result.engagement_score),
+        qualification_score: result.qualification_score,
+        lead_stage: result.lead_stage,
+        scoring: result.breakdown as object,
+        updated_at: new Date(),
+      },
+    });
+
+    // 6. Check for stage change
+    const stageChanged = previousStage !== result.lead_stage;
+    let notificationQueued = false;
+
+    // 7. If stage changed TO sales_qualified → queue notification
+    if (
+      stageChanged &&
+      previousStage !== "sales_qualified" &&
+      result.lead_stage === "sales_qualified" &&
+      lead.assigned_to
+    ) {
+      try {
+        const notificationService = new NotificationQueueService(prisma);
+        await notificationService.queueNotification({
+          templateCode: "lead_stage_upgrade",
+          recipientUserId: lead.assigned_to,
+          locale: "en", // Default, will be overridden by user preference
+          variables: {
+            lead_name: `${lead.first_name} ${lead.last_name}`,
+            company_name: lead.company_name ?? "N/A",
+            previous_stage: previousStage ?? "unknown",
+            new_stage: result.lead_stage,
+            qualification_score: result.qualification_score,
+            lead_email: lead.email,
+          },
+          leadId,
+          idempotencyKey: `lead_sql_${leadId}_${Date.now()}`,
+          processImmediately: true, // High priority - process now
+        });
+        notificationQueued = true;
+        logger.info(
+          { leadId, assignedTo: lead.assigned_to },
+          "[recalculateScores] Notification queued for MQL→SQL transition"
+        );
+      } catch (error) {
+        logger.warn(
+          { leadId, error },
+          "[recalculateScores] Failed to queue notification"
+        );
+      }
+    }
+
+    logger.info(
+      {
+        leadId,
+        previousStage,
+        newStage: result.lead_stage,
+        stageChanged,
+        previousScore: previousScores.qualification,
+        newScore: result.qualification_score,
+      },
+      "[recalculateScores] Scores recalculated"
+    );
+
+    return {
+      leadId,
+      previousScores,
+      newScores: {
+        fit: result.fit_score,
+        engagement: result.engagement_score,
+        qualification: result.qualification_score,
+      },
+      previousStage,
+      newStage: result.lead_stage,
+      stageChanged,
+      notificationQueued,
+    };
+  }
+
+  /**
+   * Degrade scores for inactive leads
+   *
+   * Processes leads that have been inactive beyond the threshold
+   * and reduces their engagement score according to decay rules.
+   *
+   * Configuration loaded from crm_settings.score_decay (NOT hardcoded).
+   *
+   * @returns Batch processing result with statistics
+   *
+   * @example
+   * ```typescript
+   * const result = await service.degradeInactiveScores();
+   * console.log(`Processed: ${result.processed}, Degraded: ${result.degraded}`);
+   * ```
+   */
+  async degradeInactiveScores(): Promise<DegradeScoresResult> {
+    // 1. Load score_decay config from crm_settings
+    const decayConfig =
+      await this.settingsRepo.getSettingValue<ScoreDecayConfig>("score_decay");
+
+    // 2. If disabled or not configured → return early
+    if (!decayConfig?.enabled) {
+      logger.info(
+        "[degradeInactiveScores] Score decay is disabled in settings"
+      );
+      return {
+        processed: 0,
+        degraded: 0,
+        stageChanges: 0,
+        errors: 0,
+        details: [],
+      };
+    }
+
+    // 3. Load scoring config for stage thresholds (used in calculateQualificationScore)
+    // Note: loadConfig is called internally by calculateQualificationScore
+
+    // 4. Calculate threshold date from config (NOT hardcoded)
+    const thresholdDate = new Date();
+    thresholdDate.setDate(
+      thresholdDate.getDate() - decayConfig.inactivity_threshold_days
+    );
+
+    // 5. Fetch inactive leads (excluding already converted)
+    const inactiveLeads = await prisma.crm_leads.findMany({
+      where: {
+        deleted_at: null,
+        lead_stage: {
+          notIn: ["opportunity"],
+        },
+        OR: [
+          { last_activity_at: { lt: thresholdDate } },
+          {
+            last_activity_at: null,
+            created_at: { lt: thresholdDate },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        engagement_score: true,
+        fit_score: true,
+        qualification_score: true,
+        lead_stage: true,
+        last_activity_at: true,
+        created_at: true,
+      },
+    });
+
+    const result: DegradeScoresResult = {
+      processed: inactiveLeads.length,
+      degraded: 0,
+      stageChanges: 0,
+      errors: 0,
+      details: [],
+    };
+
+    // 6. Process each lead
+    for (const lead of inactiveLeads) {
+      try {
+        const currentEngagement = Number(lead.engagement_score ?? 0);
+        const lastActivity = lead.last_activity_at ?? lead.created_at;
+        const daysInactive = Math.floor(
+          (Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        // Calculate decay amount based on config
+        let decayAmount: number;
+        if (decayConfig.decay_rules && decayConfig.decay_rules.length > 0) {
+          // Use tiered decay rules
+          const applicableRule = decayConfig.decay_rules
+            .filter((r) => daysInactive >= r.days_inactive)
+            .sort((a, b) => b.days_inactive - a.days_inactive)[0];
+          decayAmount = applicableRule
+            ? (currentEngagement * applicableRule.decay_percentage) / 100
+            : 0;
+        } else {
+          // Use simple decay
+          if (decayConfig.decay_type === "percentage") {
+            decayAmount = (currentEngagement * decayConfig.decay_value) / 100;
+          } else {
+            decayAmount = decayConfig.decay_value;
+          }
+        }
+
+        // Apply decay with minimum floor from config (NOT hardcoded to 0)
+        const newEngagement = Math.max(
+          currentEngagement - decayAmount,
+          decayConfig.minimum_score
+        );
+
+        // Skip if no change needed
+        if (newEngagement >= currentEngagement) {
+          continue;
+        }
+
+        // Recalculate qualification score
+        const fitScore = Number(lead.fit_score ?? 0);
+        const qualResult = await this.calculateQualificationScore(
+          fitScore,
+          newEngagement
+        );
+        const stageChanged = lead.lead_stage !== qualResult.lead_stage;
+
+        // Update lead
+        await prisma.crm_leads.update({
+          where: { id: lead.id },
+          data: {
+            engagement_score: new Prisma.Decimal(newEngagement),
+            qualification_score: qualResult.qualification_score,
+            lead_stage: qualResult.lead_stage,
+            scoring: qualResult.breakdown as object,
+            updated_at: new Date(),
+          },
+        });
+
+        result.degraded++;
+        if (stageChanged) {
+          result.stageChanges++;
+        }
+
+        result.details.push({
+          leadId: lead.id,
+          previousEngagement: currentEngagement,
+          newEngagement,
+          daysInactive,
+          stageChanged,
+        });
+      } catch (error) {
+        logger.error(
+          { leadId: lead.id, error },
+          "[degradeInactiveScores] Error processing lead"
+        );
+        result.errors++;
+      }
+    }
+
+    logger.info(
+      {
+        processed: result.processed,
+        degraded: result.degraded,
+        stageChanges: result.stageChanges,
+        errors: result.errors,
+        thresholdDays: decayConfig.inactivity_threshold_days,
+      },
+      "[degradeInactiveScores] Batch processing complete"
+    );
+
+    return result;
   }
 
   // ===== PRIVATE HELPER METHODS =====

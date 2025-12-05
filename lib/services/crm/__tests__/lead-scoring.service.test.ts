@@ -4,7 +4,9 @@ import type {
   FitScoreInput,
   EngagementScoreInput,
   LeadMetadata,
+  ScoreDecayConfig,
 } from "../lead-scoring.service";
+import { Prisma } from "@prisma/client";
 
 // Mock CountryService to always return operational countries
 vi.mock("../country.service", () => ({
@@ -14,86 +16,140 @@ vi.mock("../country.service", () => ({
   })),
 }));
 
-// Mock CrmSettingsRepository to return lead_scoring_config
+// Mock config data
+const mockScoringConfig = {
+  fleet_size_points: {
+    "500+": { vehicles: 600, points: 40 },
+    "101-500": { vehicles: 250, points: 35 },
+    "51-100": { vehicles: 75, points: 30 },
+    "11-50": { vehicles: 30, points: 20 },
+    "1-10": { vehicles: 5, points: 5 },
+    unknown: { vehicles: 30, points: 10 },
+  },
+  country_tier_points: {
+    tier1: { countries: ["AE", "SA", "QA"], points: 20 },
+    tier2: { countries: ["FR"], points: 18 },
+    tier3: { countries: ["KW", "BH", "OM"], points: 15 },
+    tier4: {
+      countries: [
+        "DE",
+        "IT",
+        "ES",
+        "BE",
+        "NL",
+        "PT",
+        "AT",
+        "IE",
+        "DK",
+        "SE",
+        "FI",
+        "GR",
+        "PL",
+        "CZ",
+        "HU",
+        "RO",
+        "BG",
+        "HR",
+        "SI",
+        "SK",
+        "LT",
+        "LV",
+        "EE",
+        "CY",
+        "LU",
+        "MT",
+      ],
+      points: 12,
+    },
+    tier5: { points: 5 },
+  },
+  message_length_thresholds: {
+    detailed: { min: 200, points: 30 },
+    substantial: { min: 100, points: 20 },
+    minimal: { min: 20, points: 10 },
+    none: { points: 0 },
+  },
+  phone_points: { provided: 20, missing: 0 },
+  page_views_thresholds: {
+    very_engaged: { min: 10, points: 30 },
+    interested: { min: 5, points: 20 },
+    curious: { min: 2, points: 10 },
+    normal: { points: 5 },
+  },
+  time_on_site_thresholds: {
+    deep_read: { min: 600, points: 20 },
+    moderate: { min: 300, points: 15 },
+    brief: { min: 120, points: 10 },
+    quick: { points: 5 },
+  },
+  qualification_stage_thresholds: {
+    sales_qualified: 70,
+    marketing_qualified: 40,
+    top_of_funnel: 0,
+  },
+  qualification_weights: {
+    fit: 0.6,
+    engagement: 0.4,
+  },
+};
+
+const mockScoreDecayConfig: ScoreDecayConfig = {
+  enabled: true,
+  inactivity_threshold_days: 30,
+  decay_type: "percentage",
+  decay_value: 20,
+  minimum_score: 5,
+  apply_to: "engagement_score",
+  reactivation_detection: true,
+};
+
+// Mock CrmSettingsRepository to return configs
 vi.mock("@/lib/repositories/crm/settings.repository", () => ({
   CrmSettingsRepository: vi.fn().mockImplementation(() => ({
-    getSettingValue: vi.fn().mockResolvedValue({
-      fleet_size_points: {
-        "500+": { vehicles: 600, points: 40 },
-        "101-500": { vehicles: 250, points: 35 },
-        "51-100": { vehicles: 75, points: 30 },
-        "11-50": { vehicles: 30, points: 20 },
-        "1-10": { vehicles: 5, points: 5 },
-        unknown: { vehicles: 30, points: 10 },
-      },
-      country_tier_points: {
-        tier1: { countries: ["AE", "SA", "QA"], points: 20 },
-        tier2: { countries: ["FR"], points: 18 },
-        tier3: { countries: ["KW", "BH", "OM"], points: 15 },
-        tier4: {
-          countries: [
-            "DE",
-            "IT",
-            "ES",
-            "BE",
-            "NL",
-            "PT",
-            "AT",
-            "IE",
-            "DK",
-            "SE",
-            "FI",
-            "GR",
-            "PL",
-            "CZ",
-            "HU",
-            "RO",
-            "BG",
-            "HR",
-            "SI",
-            "SK",
-            "LT",
-            "LV",
-            "EE",
-            "CY",
-            "LU",
-            "MT",
-          ],
-          points: 12,
-        },
-        tier5: { points: 5 },
-      },
-      message_length_thresholds: {
-        detailed: { min: 200, points: 30 },
-        substantial: { min: 100, points: 20 },
-        minimal: { min: 20, points: 10 },
-        none: { points: 0 },
-      },
-      phone_points: { provided: 20, missing: 0 },
-      page_views_thresholds: {
-        very_engaged: { min: 10, points: 30 },
-        interested: { min: 5, points: 20 },
-        curious: { min: 2, points: 10 },
-        normal: { points: 5 },
-      },
-      time_on_site_thresholds: {
-        deep_read: { min: 600, points: 20 },
-        moderate: { min: 300, points: 15 },
-        brief: { min: 120, points: 10 },
-        quick: { points: 5 },
-      },
-      qualification_stage_thresholds: {
-        sales_qualified: 70,
-        marketing_qualified: 40,
-        top_of_funnel: 0,
-      },
-      qualification_weights: {
-        fit: 0.6,
-        engagement: 0.4,
-      },
+    getSettingValue: vi.fn().mockImplementation((key: string) => {
+      if (key === "lead_scoring_config")
+        return Promise.resolve(mockScoringConfig);
+      if (key === "score_decay") return Promise.resolve(mockScoreDecayConfig);
+      return Promise.resolve(null);
     }),
   })),
 }));
+
+// Mock prisma - use hoisted mock
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    crm_leads: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
+    crm_lead_activities: {
+      count: vi.fn(),
+    },
+  },
+}));
+
+// Mock NotificationQueueService
+vi.mock("@/lib/services/notification/queue.service", () => ({
+  NotificationQueueService: vi.fn().mockImplementation(() => ({
+    queueNotification: vi
+      .fn()
+      .mockResolvedValue({ success: true, queueId: "queue-123" }),
+  })),
+}));
+
+// Mock logger
+vi.mock("@/lib/logger", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+// Import mocked modules after vi.mock declarations
+import { prisma } from "@/lib/prisma";
+import { NotificationQueueService as _NotificationQueueService } from "@/lib/services/notification/queue.service";
 
 describe("LeadScoringService", () => {
   let service: LeadScoringService;
@@ -461,6 +517,172 @@ describe("LeadScoringService", () => {
       expect(result.engagement_score).toBe(20); // 10 (24 chars) + 0 + 5 (2 pages) + 5 (90s)
       expect(result.qualification_score).toBe(14); // (10*0.6) + (20*0.4) = 6 + 8 = 14
       expect(result.lead_stage).toBe("top_of_funnel");
+    });
+  });
+
+  // ===== TEST SUITE 5: recalculateScores() - 4 tests =====
+
+  describe("recalculateScores", () => {
+    const mockLeadMQL = {
+      id: "lead-uuid-123",
+      fleet_size: "500+",
+      country_code: "AE",
+      // Message must be 200+ chars for 30 points (currently 215 chars)
+      message:
+        "We need fleet management for 600 vehicles across UAE. Looking for comprehensive solution with driver tracking and maintenance scheduling. Our fleet operates across Dubai, Abu Dhabi and Sharjah regions.",
+      phone: "+971501234567",
+      metadata: { page_views: 15, time_on_site: 800 },
+      fit_score: new Prisma.Decimal(40),
+      engagement_score: new Prisma.Decimal(50),
+      qualification_score: 44,
+      lead_stage: "marketing_qualified",
+      assigned_to: "emp-uuid-456",
+      email: "contact@example.com",
+      first_name: "Ahmed",
+      last_name: "Hassan",
+      company_name: "Fleet Corp",
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.crm_leads.update).mockResolvedValue({
+        ...mockLeadMQL,
+      } as never);
+      vi.mocked(prisma.crm_lead_activities.count).mockResolvedValue(5);
+    });
+
+    it("should recalculate scores and update lead in database", async () => {
+      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(
+        mockLeadMQL as never
+      );
+
+      const result = await service.recalculateScores("lead-uuid-123");
+
+      expect(result.leadId).toBe("lead-uuid-123");
+      expect(result.previousScores.qualification).toBe(44);
+      expect(result.newScores.fit).toBe(60); // 40 (500+) + 20 (AE)
+      expect(result.newScores.engagement).toBe(100); // Max engagement
+      expect(result.newScores.qualification).toBe(76); // (60*0.6) + (100*0.4)
+      expect(prisma.crm_leads.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "lead-uuid-123" },
+        })
+      );
+    });
+
+    it("should queue notification when lead transitions to sales_qualified", async () => {
+      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(
+        mockLeadMQL as never
+      );
+
+      const result = await service.recalculateScores("lead-uuid-123");
+
+      expect(result.stageChanged).toBe(true);
+      expect(result.previousStage).toBe("marketing_qualified");
+      expect(result.newStage).toBe("sales_qualified");
+      expect(result.notificationQueued).toBe(true);
+    });
+
+    it("should NOT queue notification when already sales_qualified", async () => {
+      const alreadySQLLead = {
+        ...mockLeadMQL,
+        lead_stage: "sales_qualified",
+        qualification_score: 76,
+      };
+      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(
+        alreadySQLLead as never
+      );
+
+      const result = await service.recalculateScores("lead-uuid-123");
+
+      expect(result.stageChanged).toBe(false);
+      expect(result.notificationQueued).toBe(false);
+    });
+
+    it("should throw error for non-existent lead", async () => {
+      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(null);
+
+      await expect(
+        service.recalculateScores("non-existent-uuid")
+      ).rejects.toThrow("Lead not found: non-existent-uuid");
+    });
+  });
+
+  // ===== TEST SUITE 6: degradeInactiveScores() - 4 tests =====
+
+  describe("degradeInactiveScores", () => {
+    const thirtyOneDaysAgo = new Date();
+    thirtyOneDaysAgo.setDate(thirtyOneDaysAgo.getDate() - 31);
+
+    const mockInactiveLead = {
+      id: "inactive-lead-123",
+      engagement_score: new Prisma.Decimal(50),
+      fit_score: new Prisma.Decimal(40),
+      qualification_score: 44,
+      lead_stage: "marketing_qualified",
+      last_activity_at: thirtyOneDaysAgo,
+      created_at: thirtyOneDaysAgo,
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.crm_leads.update).mockResolvedValue({} as never);
+    });
+
+    it("should degrade scores for inactive leads", async () => {
+      vi.mocked(prisma.crm_leads.findMany).mockResolvedValue([
+        mockInactiveLead,
+      ] as never);
+
+      const result = await service.degradeInactiveScores();
+
+      expect(result.processed).toBe(1);
+      expect(result.degraded).toBe(1);
+      expect(prisma.crm_leads.update).toHaveBeenCalled();
+    });
+
+    it("should respect minimum_score from config (not hardcoded)", async () => {
+      const lowScoreLead = {
+        ...mockInactiveLead,
+        engagement_score: new Prisma.Decimal(10), // Low score
+      };
+      vi.mocked(prisma.crm_leads.findMany).mockResolvedValue([
+        lowScoreLead,
+      ] as never);
+
+      const result = await service.degradeInactiveScores();
+
+      // Should degrade but not below minimum_score (5)
+      expect(result.details[0].newEngagement).toBeGreaterThanOrEqual(5);
+    });
+
+    it("should track stage changes when score drops below threshold", async () => {
+      // Lead at MQL threshold - will drop to TOF after decay
+      const borderlineLead = {
+        ...mockInactiveLead,
+        engagement_score: new Prisma.Decimal(60),
+        fit_score: new Prisma.Decimal(30),
+        qualification_score: 42, // Just above MQL threshold (40)
+        lead_stage: "marketing_qualified",
+      };
+      vi.mocked(prisma.crm_leads.findMany).mockResolvedValue([
+        borderlineLead,
+      ] as never);
+
+      const result = await service.degradeInactiveScores();
+
+      expect(result.stageChanges).toBeGreaterThanOrEqual(0);
+      // After 20% decay: 60 -> 48, qualification = (30*0.6) + (48*0.4) = 37.2 -> TOF
+    });
+
+    it("should return empty result when no inactive leads found", async () => {
+      vi.mocked(prisma.crm_leads.findMany).mockResolvedValue([]);
+
+      const result = await service.degradeInactiveScores();
+
+      expect(result.processed).toBe(0);
+      expect(result.degraded).toBe(0);
+      expect(result.stageChanges).toBe(0);
     });
   });
 });

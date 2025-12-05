@@ -19,6 +19,7 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
+import { LeadScoringService } from "@/lib/services/crm/lead-scoring.service";
 
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
@@ -231,7 +232,38 @@ export async function createActivityAction(
       },
     });
 
-    // 7. Revalidate lead detail page
+    // 7. Update last_activity_at on lead and trigger score recalculation
+    try {
+      // 7a. Update last_activity_at
+      await db.crm_leads.update({
+        where: { id: validated.data.lead_id },
+        data: { last_activity_at: new Date() },
+      });
+
+      // 7b. Recalculate scores (async, non-blocking for UX)
+      const scoringService = new LeadScoringService();
+      const scoreResult = await scoringService.recalculateScores(
+        validated.data.lead_id
+      );
+
+      logger.info(
+        {
+          leadId: validated.data.lead_id,
+          activityType: validated.data.activity_type,
+          stageChanged: scoreResult.stageChanged,
+          newStage: scoreResult.newStage,
+        },
+        "[createActivityAction] Score recalculated after activity"
+      );
+    } catch (scoreError) {
+      // Log but don't fail the activity creation
+      logger.warn(
+        { leadId: validated.data.lead_id, error: scoreError },
+        "[createActivityAction] Score recalculation failed (non-blocking)"
+      );
+    }
+
+    // 8. Revalidate lead detail page
     revalidatePath(`/[locale]/(crm)/crm/leads/${validated.data.lead_id}`);
 
     // Log success
@@ -240,7 +272,7 @@ export async function createActivityAction(
       "[createActivityAction] Activity created"
     );
 
-    // 8. Serialize and return
+    // 9. Serialize and return
     return {
       success: true,
       activity: {
