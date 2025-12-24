@@ -128,18 +128,16 @@ describe("Constants", () => {
 
   describe("BILLING_INTERVALS", () => {
     it("matches Prisma billing_interval enum exactly", () => {
-      // These are the CORRECT Prisma values
-      expect(BILLING_INTERVALS).toEqual([
-        "month",
-        "quarterly",
-        "semi_annual",
-        "year",
-      ]);
+      // Prisma schema.prisma:5405-5408
+      // enum billing_interval { month, year }
+      expect(BILLING_INTERVALS).toEqual(["month", "year"]);
     });
 
-    it("does NOT contain incorrect values from order.validators.ts", () => {
+    it("does NOT contain incorrect values", () => {
       expect(BILLING_INTERVALS).not.toContain("monthly");
       expect(BILLING_INTERVALS).not.toContain("annual");
+      expect(BILLING_INTERVALS).not.toContain("quarterly");
+      expect(BILLING_INTERVALS).not.toContain("semi_annual");
     });
   });
 
@@ -248,12 +246,12 @@ describe("Base Schemas", () => {
       expect(() => billingIntervalSchema.parse("year")).not.toThrow();
     });
 
-    it("accepts 'quarterly'", () => {
-      expect(() => billingIntervalSchema.parse("quarterly")).not.toThrow();
+    it("rejects 'quarterly' (not in Prisma enum)", () => {
+      expect(() => billingIntervalSchema.parse("quarterly")).toThrow();
     });
 
-    it("accepts 'semi_annual'", () => {
-      expect(() => billingIntervalSchema.parse("semi_annual")).not.toThrow();
+    it("rejects 'semi_annual' (not in Prisma enum)", () => {
+      expect(() => billingIntervalSchema.parse("semi_annual")).toThrow();
     });
 
     it("rejects 'monthly' (incorrect value)", () => {
@@ -1237,13 +1235,9 @@ describe("QuoteStatusUpdateSchema", () => {
 
 describe("Prisma ENUM alignment", () => {
   it("BILLING_INTERVALS matches Prisma billing_interval enum exactly", () => {
-    // Prisma schema.prisma:5056-5061
-    expect(BILLING_INTERVALS).toEqual([
-      "month",
-      "quarterly",
-      "semi_annual",
-      "year",
-    ]);
+    // Prisma schema.prisma:5405-5408
+    // enum billing_interval { month, year }
+    expect(BILLING_INTERVALS).toEqual(["month", "year"]);
   });
 
   it("billingIntervalSchema accepts 'month' (not 'monthly')", () => {

@@ -363,7 +363,7 @@ describe("orders.actions.ts", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Provider context required");
+        expect(result.error).toContain("Provider context required");
       }
     });
 

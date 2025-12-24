@@ -258,12 +258,13 @@ describe("OrderCreateSchema", () => {
       start_date: startDate,
       end_date: endDate,
       total_value: 60000,
-      billing_cycle: "monthly",
+      billing_cycle: "month", // Prisma enum: "month" | "year"
       auto_renew: true,
     };
 
     const result = OrderCreateSchema.parse(validData);
     expect(result.total_value).toBe(60000);
+    expect(result.billing_cycle).toBe("month");
     expect(result.auto_renew).toBe(true);
   });
 
@@ -332,13 +333,14 @@ describe("OrderQuerySchema", () => {
     const query = {
       page: "1",
       status: "active",
-      billing_cycle: "monthly",
+      billing_cycle: "month", // Prisma enum: "month" | "year"
       auto_renew: "true",
     };
 
     const result = OrderQuerySchema.parse(query);
 
     expect(result.status).toBe("active");
+    expect(result.billing_cycle).toBe("month");
     expect(result.auto_renew).toBe(true); // Coerced to boolean
   });
 
