@@ -2,6 +2,7 @@
   "sidebar": {
     "leads_pipeline": "Leads Pipeline",
     "opportunities_pipeline": "Opportunity Pipeline",
+    "quotes_pipeline": "Quotes",
     "leads_browser": "Leads Browser",
     "leads_detail": "Leads Detail View",
     "leads_detail_tooltip": "Click on a lead first to enable this link",
@@ -278,6 +279,7 @@
       "created_at": "Created",
       "columns": {
         "ref": "Ref",
+        "code": "Code",
         "contact": "Contact",
         "email": "Email",
         "phone": "Phone",
@@ -850,21 +852,47 @@
       "unassigned": "Unassigned",
       "select_owner": "Select owner",
       "no_notes": "No notes",
+      "notes_placeholder": "Add notes about this opportunity...",
+      "mark_won_stage_required": "Move to Negotiation or Contract Sent stage first",
       "yes": "Yes",
       "no": "No"
     },
     "won_modal": {
       "title": "Mark as Won",
       "description": "Congratulations! Confirm the final deal value.",
+      "description_quote_to_cash": "This will create a new order in the Quote-to-Cash system.",
       "won_value": "Final Value",
       "won_value_placeholder": "Enter final value",
       "won_date": "Won Date",
+      "total_value": "Contract Total Value",
+      "total_value_placeholder": "Enter contract value",
+      "monthly_value_preview": "≈ {{value}} {{currency}}/month",
+      "billing_cycle": "Billing Cycle",
+      "billing_monthly": "Monthly",
+      "billing_quarterly": "Quarterly",
+      "billing_semi_annual": "Semi-Annual",
+      "billing_annual": "Annual",
+      "duration": "Duration",
+      "duration_6m": "6 months",
+      "duration_12m": "12 months",
+      "duration_24m": "24 months",
+      "duration_36m": "36 months",
+      "effective_date": "Effective Date",
+      "auto_renew": "Auto-Renew",
+      "notice_period": "Notice Period",
+      "notice_none": "No notice",
+      "notice_30": "30 days",
+      "notice_60": "60 days",
+      "notice_90": "90 days",
       "notes": "Notes (optional)",
       "notes_placeholder": "Add any notes about this win...",
       "confirm": "Confirm Won",
       "confirming": "Confirming...",
       "success": "Deal marked as won!",
-      "error": "Failed to mark as won"
+      "success_with_order": "Order {{orderRef}} created successfully!",
+      "error": "Failed to mark as won",
+      "error_min_value": "Minimum contract value is 100",
+      "error_date_required": "Effective date is required"
     },
     "lost_modal": {
       "title": "Mark as Lost",
@@ -881,6 +909,47 @@
       "success": "Deal marked as lost",
       "error": "Failed to mark as lost"
     },
+    "modal": {
+      "title_create": "Create Opportunity",
+      "description_create": "Create a new opportunity from a qualified lead",
+      "fields": {
+        "lead": "Lead",
+        "name": "Name",
+        "expected_value": "Expected Value",
+        "currency": "Currency",
+        "stage": "Stage",
+        "expected_close_date": "Expected Close Date",
+        "assigned_to": "Assigned To",
+        "notes": "Notes"
+      },
+      "placeholders": {
+        "name": "e.g., Fleet expansion - ACME Corp",
+        "expected_value": "e.g., 50000",
+        "notes": "Add any relevant notes..."
+      },
+      "validation": {
+        "name_required": "Name is required",
+        "name_min": "Name must be at least 3 characters",
+        "name_max": "Name must be less than 200 characters",
+        "lead_required": "Please select a lead",
+        "value_required": "Expected value is required",
+        "value_positive": "Value must be positive",
+        "stage_required": "Stage is required",
+        "date_required": "Expected close date is required",
+        "notes_max": "Notes must be less than 5000 characters"
+      },
+      "select_lead": "Select a lead...",
+      "search_lead": "Search leads...",
+      "selected": "Selected",
+      "no_leads_found": "No leads found",
+      "unassigned": "Unassigned",
+      "cancel": "Cancel",
+      "create": "Create Opportunity",
+      "creating": "Creating...",
+      "success_created": "Opportunity created successfully",
+      "error_generic": "Failed to create opportunity"
+    },
+    "created_success": "Opportunity created successfully",
     "loss_reasons": {
       "price_too_high": "Price too high",
       "competitor_won": "Competitor won",
@@ -1042,6 +1111,332 @@
         "invalidRecoveryDelay": "Recovery delay must be between 1 and 365 days",
         "saveFailed": "Failed to save loss reasons"
       }
+    }
+  },
+  "quotes": {
+    "title": "Quotes",
+    "description": "Manage quotes and proposals for your opportunities",
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "viewed": "Viewed",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "converted": "Converted"
+    },
+    "stats": {
+      "draft": "Drafts",
+      "sent": "Sent",
+      "accepted": "Accepted",
+      "total_value": "Total Value"
+    },
+    "filters": {
+      "search": "Search quotes...",
+      "all_status": "All Status"
+    },
+    "view": {
+      "kanban": "Kanban",
+      "table": "Table"
+    },
+    "actions": {
+      "new_quote": "New Quote",
+      "send": "Send",
+      "convert": "Convert to Order",
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "export": "Export"
+    },
+    "columns": {
+      "button": "Columns",
+      "title": "Table Columns",
+      "reset": "Reset",
+      "drag_hint": "Drag to reorder columns",
+      "showing": "Showing {{count}} of {{total}} columns"
+    },
+    "table": {
+      "empty": "No quotes found",
+      "columns": {
+        "checkbox": "",
+        "quote_reference": "Reference",
+        "quote_code": "Code",
+        "company": "Company",
+        "contact": "Contact",
+        "total_value": "Total Value",
+        "monthly_value": "Monthly",
+        "annual_value": "Annual",
+        "status": "Status",
+        "valid_until": "Valid Until",
+        "valid_from": "Valid From",
+        "billing_cycle": "Billing",
+        "currency": "Currency",
+        "view_count": "Views",
+        "sent_at": "Sent At",
+        "accepted_at": "Accepted At",
+        "created_at": "Created",
+        "updated_at": "Updated",
+        "actions": "Actions"
+      }
+    },
+    "billing": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "annually": "Annually",
+      "one_time": "One Time"
+    },
+    "card": {
+      "views": "views",
+      "expiring_soon": "Expiring soon"
+    },
+    "empty": {
+      "column": "No quotes"
+    },
+    "drawer": {
+      "reference_copied": "Reference copied",
+      "view_full": "Full view",
+      "sections": {
+        "value": "Value",
+        "dates": "Dates",
+        "customer": "Customer",
+        "items": "Line Items",
+        "reference": "Reference",
+        "notes": "Notes"
+      },
+      "fields": {
+        "total_value": "Total Value",
+        "monthly_value": "Monthly Value",
+        "annual_value": "Annual Value",
+        "billing_cycle": "Billing Cycle",
+        "valid_from": "Valid From",
+        "valid_until": "Valid Until",
+        "contract_start": "Contract Start",
+        "contract_duration": "Contract Duration",
+        "sent_at": "Sent At",
+        "accepted_at": "Accepted At",
+        "company": "Company",
+        "contact": "Contact",
+        "email": "Email",
+        "reference": "Quote Reference",
+        "created_at": "Created",
+        "updated_at": "Last Updated"
+      },
+      "months": "months",
+      "more_items": "more items"
+    },
+    "detail": {
+      "reference_copied": "Reference copied",
+      "order_created": "Order created",
+      "value": "Value",
+      "total_value": "Total Value",
+      "monthly_value": "Monthly",
+      "annual_value": "Annual",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "tax": "Tax",
+      "line_items": "Line Items",
+      "items": "items",
+      "no_items": "No line items",
+      "notes": "Notes",
+      "terms": "Terms & Conditions",
+      "dates": "Dates",
+      "valid_from": "Valid From",
+      "valid_until": "Valid Until",
+      "contract_start": "Contract Start",
+      "contract_duration": "Contract Duration",
+      "months": "months",
+      "sent_at": "Sent",
+      "accepted_at": "Accepted",
+      "customer": "Customer",
+      "company": "Company",
+      "contact": "Contact",
+      "email": "Email",
+      "tracking": "Tracking",
+      "views": "Views",
+      "first_viewed": "First Viewed",
+      "last_viewed": "Last Viewed",
+      "reference": "Reference",
+      "quote_ref": "Quote Ref",
+      "created": "Created",
+      "updated": "Last Updated"
+    },
+    "form": {
+      "title_create": "Create Quote",
+      "title_edit": "Edit Quote",
+      "section_opportunity": "Opportunity",
+      "opportunity": "Opportunity",
+      "select_opportunity": "Select an opportunity",
+      "section_dates": "Dates",
+      "valid_from": "Valid From",
+      "valid_until": "Valid Until",
+      "contract_start_date": "Contract Start Date",
+      "contract_duration": "Contract Duration (months)",
+      "section_billing": "Billing",
+      "billing_cycle": "Billing Cycle",
+      "currency": "Currency",
+      "section_items": "Line Items",
+      "section_discount": "Discount & Tax",
+      "discount_type": "Discount Type",
+      "no_discount": "No Discount",
+      "percentage": "Percentage",
+      "fixed": "Fixed Amount",
+      "discount_value": "Discount Value",
+      "tax_rate": "Tax Rate (%)",
+      "section_notes": "Notes & Terms",
+      "notes": "Notes",
+      "notes_placeholder": "Internal notes...",
+      "terms_conditions": "Terms & Conditions",
+      "terms_placeholder": "Terms and conditions...",
+      "create_button": "Create Quote",
+      "save_button": "Save Changes",
+      "success_created": "Quote created successfully",
+      "success_updated": "Quote updated successfully",
+      "error": "Failed to save quote",
+      "validation": {
+        "opportunity_required": "Please select an opportunity",
+        "valid_from_required": "Valid from date is required",
+        "valid_until_required": "Valid until date is required",
+        "currency_required": "Currency is required",
+        "items_required": "At least one line item is required"
+      }
+    },
+    "items": {
+      "empty": "No line items yet",
+      "add_first": "Add First Item",
+      "add": "Add Line Item",
+      "description": "Description",
+      "description_placeholder": "Item description...",
+      "type": "Type",
+      "type_plan": "Plan",
+      "type_addon": "Add-on",
+      "type_service": "Service",
+      "type_custom": "Custom",
+      "recurrence": "Recurrence",
+      "recurrence_recurring": "Recurring",
+      "recurrence_one_time": "One-time",
+      "quantity": "Quantity",
+      "unit_price": "Unit Price",
+      "line_discount": "Line Discount (%)",
+      "total": "Total",
+      "untitled": "Untitled item"
+    },
+    "calculations": {
+      "title": "Quote Summary",
+      "items": "Items",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "tax": "Tax",
+      "total": "Total",
+      "recurring": "Recurring Revenue",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "one_time_items": "{{count}} one-time item(s)",
+      "add_items": "Add line items to see calculations"
+    },
+    "send_modal": {
+      "title": "Send Quote",
+      "description": "Send this quote to the customer via email",
+      "recipient_email": "Recipient Email",
+      "personal_message": "Personal Message (Optional)",
+      "message_placeholder": "Add a personal message to the email...",
+      "warning": "Once sent, the quote status will change to 'Sent' and cannot be edited.",
+      "invalid_email": "Please enter a valid email address",
+      "send_button": "Send Quote",
+      "success": "Quote sent successfully",
+      "error": "Failed to send quote"
+    },
+    "convert_modal": {
+      "title": "Convert to Order",
+      "description": "Create an order from this accepted quote",
+      "total_value": "Total Value",
+      "monthly_value": "Monthly",
+      "contract_duration": "Contract Duration",
+      "months": "months",
+      "effective_date": "Effective Date",
+      "effective_date_hint": "The date when the order becomes effective",
+      "what_happens": "What happens next:",
+      "order_created": "A new order will be created",
+      "quote_converted": "This quote status will change to 'Converted'",
+      "items_copied": "All line items will be copied to the order",
+      "convert_button": "Convert to Order",
+      "success": "Quote converted to order successfully",
+      "error": "Failed to convert quote"
+    },
+    "delete_modal": {
+      "title": "Delete Quote",
+      "description": "Are you sure you want to delete this quote? This action cannot be undone.",
+      "items_warning": "This will also delete {{count}} line item(s).",
+      "delete_button": "Delete Quote",
+      "success": "Quote deleted successfully",
+      "error": "Failed to delete quote"
+    },
+    "summary": {
+      "title": "Quote Summary",
+      "total_quotes": "Total Quotes",
+      "total_value": "Total Value",
+      "accepted_value": "Accepted Value",
+      "acceptance_rate": "Acceptance Rate"
+    },
+    "toast": {
+      "sent": "Quote sent successfully",
+      "send_error": "Failed to send quote",
+      "converted": "Order created from quote",
+      "convert_error": "Failed to convert quote",
+      "deleted": "Quote deleted",
+      "delete_error": "Failed to delete quote"
+    }
+  },
+  "activities": {
+    "timeline": {
+      "title": "Activity Timeline",
+      "empty": "No activities yet",
+      "empty_description": "Activities will appear here as interactions occur",
+      "no_entity": "No lead or opportunity selected",
+      "add_first": "Add first activity",
+      "add_activity": "Add Activity",
+      "load_more": "Load more",
+      "loading": "Loading...",
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "types": {
+      "call": "Call",
+      "email": "Email",
+      "note": "Note",
+      "meeting": "Meeting",
+      "stage_change": "Stage Changed",
+      "status_change": "Status Changed",
+      "task": "Task",
+      "system": "System"
+    },
+    "outcomes": {
+      "answered": "Answered",
+      "no_answer": "No answer",
+      "voicemail": "Voicemail",
+      "busy": "Busy"
+    },
+    "performed_by": "by {{name}}",
+    "completed": "Completed",
+    "modal": {
+      "title": "Add Activity",
+      "for_lead": "for Lead",
+      "for_opportunity": "for Opportunity",
+      "select_type": "Select activity type",
+      "select_outcome": "Select outcome",
+      "fields": {
+        "subject": "Subject",
+        "description": "Description",
+        "duration": "Duration (minutes)",
+        "outcome": "Outcome",
+        "scheduled_at": "Scheduled at"
+      },
+      "placeholders": {
+        "subject": "Enter activity subject",
+        "description": "Add details about this activity..."
+      },
+      "submit": "Add Activity",
+      "success": "Activity added successfully",
+      "error": "Failed to add activity"
     }
   }
 }

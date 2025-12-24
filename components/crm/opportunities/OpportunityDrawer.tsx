@@ -5,6 +5,7 @@
  *
  * Opens on opportunity click (single click = drawer)
  * Features:
+ * - Edit Mode: inline editing for key fields
  * - Read-only sections displaying opportunity data
  * - Mark as Won/Lost actions
  * - Delete action
@@ -26,6 +27,9 @@ import {
   Clock,
   AlertTriangle,
   Loader2,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react";
 import {
   Sheet,
@@ -35,6 +39,10 @@ import {
 } from "@/components/ui/sheet";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
@@ -49,9 +57,14 @@ import {
 } from "@/lib/animations/drawer-variants";
 import { useOpportunityStages } from "@/lib/hooks/useOpportunityStages";
 import { useOpportunityLossReasons } from "@/lib/hooks/useOpportunityLossReasons";
-import { deleteOpportunityAction } from "@/lib/actions/crm/opportunity.actions";
+import { ActivityTimeline } from "@/components/crm/shared";
+import {
+  deleteOpportunityAction,
+  updateOpportunityAction,
+} from "@/lib/actions/crm/opportunity.actions";
 import type { Opportunity } from "@/types/crm";
 import type { LucideIcon } from "lucide-react";
+import type { UpdateOpportunityData } from "@/lib/actions/crm/opportunity.actions";
 
 interface OpportunityDrawerProps {
   opportunity:
@@ -214,6 +227,146 @@ function InfoRow({
 }
 
 // ============================================================================
+// EDITABLE INFO ROW (Edit Mode)
+// ============================================================================
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface EditableInfoRowProps {
+  label: string;
+  field: string;
+  value: string | number | null | undefined;
+  editedValue?: string | number | null;
+  isEditing: boolean;
+  onChange: (field: string, value: string | number | null) => void;
+  type?: "text" | "number" | "date" | "textarea" | "select";
+  options?: SelectOption[];
+  placeholder?: string;
+  emptyText?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  suffix?: string;
+}
+
+function EditableInfoRow({
+  label,
+  field,
+  value,
+  editedValue,
+  isEditing,
+  onChange,
+  type = "text",
+  options,
+  placeholder,
+  emptyText = "—",
+  min,
+  max,
+  step,
+  suffix,
+}: EditableInfoRowProps) {
+  // Use edited value if available, otherwise original value
+  const currentValue = editedValue !== undefined ? editedValue : value;
+  const displayValue = currentValue?.toString() || emptyText;
+  const isEmpty = !currentValue && currentValue !== 0;
+
+  // Read mode
+  if (!isEditing) {
+    return (
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-muted-foreground text-xs">{label}</p>
+          <p
+            className={cn(
+              "truncate text-sm font-medium",
+              isEmpty && "text-muted-foreground italic"
+            )}
+          >
+            {displayValue}
+            {suffix && !isEmpty && ` ${suffix}`}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Edit mode
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-muted-foreground text-xs">{label}</Label>
+      {type === "select" && options ? (
+        <Select
+          value={currentValue?.toString() || ""}
+          onChange={(e) => onChange(field, e.target.value || null)}
+          className="h-9"
+        >
+          <option value="">{placeholder || "Select..."}</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
+      ) : type === "textarea" ? (
+        <Textarea
+          value={currentValue?.toString() || ""}
+          onChange={(e) => onChange(field, e.target.value || null)}
+          placeholder={placeholder}
+          rows={3}
+          className="resize-none"
+        />
+      ) : type === "number" ? (
+        <div className="relative">
+          <Input
+            type="number"
+            value={currentValue?.toString() || ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              onChange(field, val ? parseFloat(val) : null);
+            }}
+            placeholder={placeholder}
+            min={min}
+            max={max}
+            step={step}
+            className={cn("h-9", suffix && "pr-12")}
+          />
+          {suffix && (
+            <span className="absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500">
+              {suffix}
+            </span>
+          )}
+        </div>
+      ) : type === "date" ? (
+        <Input
+          type="date"
+          value={
+            currentValue
+              ? new Date(currentValue.toString()).toISOString().split("T")[0]
+              : ""
+          }
+          onChange={(e) => {
+            const val = e.target.value;
+            onChange(field, val ? new Date(val).toISOString() : null);
+          }}
+          className="h-9"
+        />
+      ) : (
+        <Input
+          type="text"
+          value={currentValue?.toString() || ""}
+          onChange={(e) => onChange(field, e.target.value || null)}
+          placeholder={placeholder}
+          className="h-9"
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
 // HELPERS
 // ============================================================================
 
@@ -269,6 +422,13 @@ export function OpportunityDrawer({
   const [isLostModalOpen, setIsLostModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Edit Mode states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedOpportunity, setEditedOpportunity] = useState<
+    Partial<UpdateOpportunityData>
+  >({});
+  const [isSaving, setIsSaving] = useState(false);
+
   // Sync current opportunity with prop
   useEffect(() => {
     setCurrentOpportunity(opportunity);
@@ -280,23 +440,37 @@ export function OpportunityDrawer({
       setIsWonModalOpen(false);
       setIsLostModalOpen(false);
       setIsDeleting(false);
+      setIsEditing(false);
+      setEditedOpportunity({});
     }
   }, [isOpen]);
 
-  // Handle Won success
+  // Handle Won success (Quote-to-Cash: returns both opportunity and order)
   const handleWonSuccess = useCallback(
     (data: {
-      id: string;
-      status: string;
-      won_date?: string;
-      won_value?: number;
+      opportunity: {
+        id: string;
+        status: string;
+        won_date: string;
+        won_value: number;
+      };
+      order: {
+        id: string;
+        order_reference: string;
+        order_code: string;
+        total_value: number;
+        monthly_value: number;
+        annual_value: number;
+        effective_date: string;
+        expiry_date: string;
+      };
     }) => {
       if (currentOpportunity) {
         const updated = {
           ...currentOpportunity,
-          status: data.status,
-          won_date: data.won_date || null,
-          won_value: data.won_value ?? null,
+          status: data.opportunity.status,
+          won_date: data.opportunity.won_date || null,
+          won_value: data.opportunity.won_value ?? null,
         };
         setCurrentOpportunity(updated);
         onOpportunityUpdated?.(updated as Opportunity);
@@ -347,6 +521,91 @@ export function OpportunityDrawer({
     }
   }, [currentOpportunity, t, onDelete, onClose]);
 
+  // ============================================================================
+  // EDIT MODE HANDLERS
+  // ============================================================================
+
+  // Enter edit mode
+  const handleEdit = useCallback(() => {
+    setIsEditing(true);
+    setEditedOpportunity({});
+  }, []);
+
+  // Cancel edit mode
+  const handleCancel = useCallback(() => {
+    setIsEditing(false);
+    setEditedOpportunity({});
+  }, []);
+
+  // Handle field change in edit mode
+  const handleFieldChange = useCallback(
+    (field: string, value: string | number | null) => {
+      setEditedOpportunity((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
+
+  // Save changes
+  const handleSave = useCallback(async () => {
+    if (!currentOpportunity) return;
+
+    // No changes to save
+    if (Object.keys(editedOpportunity).length === 0) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Prepare update data
+      const updateData: UpdateOpportunityData = {};
+
+      // Map edited fields to update data
+      if (editedOpportunity.expected_value !== undefined) {
+        updateData.expected_value = editedOpportunity.expected_value;
+      }
+      if (editedOpportunity.probability_percent !== undefined) {
+        updateData.probability_percent = editedOpportunity.probability_percent;
+      }
+      if (editedOpportunity.expected_close_date !== undefined) {
+        updateData.expected_close_date = editedOpportunity.expected_close_date;
+      }
+      if (editedOpportunity.assigned_to !== undefined) {
+        updateData.assigned_to = editedOpportunity.assigned_to;
+      }
+      if (editedOpportunity.notes !== undefined) {
+        updateData.notes = editedOpportunity.notes;
+      }
+
+      const result = await updateOpportunityAction(
+        currentOpportunity.id,
+        updateData
+      );
+
+      if (result.success) {
+        toast.success(t("opportunity.drawer.save_success"));
+        setIsEditing(false);
+        setEditedOpportunity({});
+
+        // Update local state with returned data
+        if (result.opportunity) {
+          const updated = {
+            ...currentOpportunity,
+            ...result.opportunity,
+          };
+          setCurrentOpportunity(updated);
+          onOpportunityUpdated?.(updated as Opportunity);
+        }
+      } else {
+        toast.error(result.error ?? t("opportunity.drawer.save_error"));
+      }
+    } catch {
+      toast.error(t("opportunity.drawer.save_error"));
+    } finally {
+      setIsSaving(false);
+    }
+  }, [currentOpportunity, editedOpportunity, t, onOpportunityUpdated]);
+
   // Copy email to clipboard
   const handleCopyEmail = useCallback(() => {
     if (currentOpportunity?.lead?.email) {
@@ -365,9 +624,22 @@ export function OpportunityDrawer({
       ? `${ownerFromList.first_name} ${ownerFromList.last_name || ""}`.trim()
       : null;
 
+  // Build owner options for select dropdown
+  const ownerOptions: SelectOption[] = owners.map((o) => ({
+    value: o.id,
+    label: `${o.first_name} ${o.last_name || ""}`.trim(),
+  }));
+
   const isOpen_ = currentOpportunity?.status === "open";
   const isWon = currentOpportunity?.status === "won";
   const isLost = currentOpportunity?.status === "lost";
+
+  // Mark as Won is only allowed for contract_sent or negotiation stages
+  const MARK_WON_ALLOWED_STAGES = ["contract_sent", "negotiation"];
+  const canMarkAsWon =
+    isOpen_ &&
+    currentOpportunity?.stage &&
+    MARK_WON_ALLOWED_STAGES.includes(currentOpportunity.stage);
 
   return (
     <>
@@ -415,20 +687,31 @@ export function OpportunityDrawer({
                   icon={DollarSign}
                   title={t("opportunity.drawer.sections.value")}
                 >
-                  <InfoRow
+                  <EditableInfoRow
                     label={t("opportunity.drawer.fields.expected_value")}
-                    value={formatCurrency(
-                      currentOpportunity.expected_value,
-                      currentOpportunity.currency || "EUR"
-                    )}
+                    field="expected_value"
+                    value={currentOpportunity.expected_value}
+                    editedValue={editedOpportunity.expected_value}
+                    isEditing={isEditing && isOpen_}
+                    onChange={handleFieldChange}
+                    type="number"
+                    min={0}
+                    step={100}
+                    suffix={currentOpportunity.currency || "EUR"}
+                    emptyText={formatCurrency(null)}
                   />
-                  <InfoRow
+                  <EditableInfoRow
                     label={t("opportunity.drawer.fields.probability")}
-                    value={
-                      currentOpportunity.probability_percent !== null
-                        ? `${currentOpportunity.probability_percent}%`
-                        : null
-                    }
+                    field="probability_percent"
+                    value={currentOpportunity.probability_percent}
+                    editedValue={editedOpportunity.probability_percent}
+                    isEditing={isEditing && isOpen_}
+                    onChange={handleFieldChange}
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={5}
+                    suffix="%"
                   />
                   <InfoRow
                     label={t("opportunity.drawer.fields.forecast_value")}
@@ -493,9 +776,15 @@ export function OpportunityDrawer({
                   icon={Calendar}
                   title={t("opportunity.drawer.sections.dates")}
                 >
-                  <InfoRow
+                  <EditableInfoRow
                     label={t("opportunity.drawer.fields.expected_close_date")}
-                    value={formatDate(currentOpportunity.expected_close_date)}
+                    field="expected_close_date"
+                    value={currentOpportunity.expected_close_date}
+                    editedValue={editedOpportunity.expected_close_date}
+                    isEditing={isEditing && isOpen_}
+                    onChange={handleFieldChange}
+                    type="date"
+                    emptyText={formatDate(null)}
                   />
                   <InfoRow
                     label={t("opportunity.drawer.fields.created_at")}
@@ -561,10 +850,17 @@ export function OpportunityDrawer({
                   icon={Clock}
                   title={t("opportunity.drawer.sections.assignment")}
                 >
-                  <InfoRow
+                  <EditableInfoRow
                     label={t("opportunity.drawer.fields.assigned_to")}
-                    value={ownerName}
-                    emptyText={t("opportunity.drawer.unassigned")}
+                    field="assigned_to"
+                    value={currentOpportunity.assigned_to}
+                    editedValue={editedOpportunity.assigned_to}
+                    isEditing={isEditing && isOpen_}
+                    onChange={handleFieldChange}
+                    type="select"
+                    options={ownerOptions}
+                    placeholder={t("opportunity.drawer.unassigned")}
+                    emptyText={ownerName || t("opportunity.drawer.unassigned")}
                   />
                 </DrawerSection>
 
@@ -572,12 +868,33 @@ export function OpportunityDrawer({
                 <DrawerSection
                   icon={FileText}
                   title={t("opportunity.drawer.sections.notes")}
-                  visible={!!currentOpportunity.notes}
+                  visible={!!currentOpportunity.notes || isEditing}
                 >
-                  <p className="text-sm whitespace-pre-wrap">
-                    {currentOpportunity.notes ||
-                      t("opportunity.drawer.no_notes")}
-                  </p>
+                  <EditableInfoRow
+                    label={t("opportunity.drawer.fields.notes")}
+                    field="notes"
+                    value={currentOpportunity.notes}
+                    editedValue={editedOpportunity.notes}
+                    isEditing={isEditing && isOpen_}
+                    onChange={handleFieldChange}
+                    type="textarea"
+                    placeholder={t("opportunity.drawer.notes_placeholder")}
+                    emptyText={t("opportunity.drawer.no_notes")}
+                  />
+                </DrawerSection>
+
+                {/* Activity Timeline Section */}
+                <DrawerSection
+                  icon={Clock}
+                  title={t("activities.timeline.title")}
+                >
+                  <ActivityTimeline
+                    opportunityId={currentOpportunity.id}
+                    email={currentOpportunity.lead?.email}
+                    phone={currentOpportunity.lead?.phone}
+                    showAddButton={isOpen_}
+                    maxHeight="300px"
+                  />
                 </DrawerSection>
               </motion.div>
             ) : null}
@@ -586,47 +903,94 @@ export function OpportunityDrawer({
           {/* Footer with action buttons */}
           {currentOpportunity && !isLoading && (
             <div className="mt-auto border-t pt-4">
-              <div className="flex flex-wrap gap-2">
-                {/* Mark as Won - Only for open opportunities */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-950"
-                  onClick={() => setIsWonModalOpen(true)}
-                  disabled={!isOpen_}
-                >
-                  <Trophy className="h-4 w-4" />
-                  {t("opportunity.drawer.actions.mark_won")}
-                </Button>
-
-                {/* Mark as Lost - Only for open opportunities */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 text-orange-600 hover:bg-orange-50 hover:text-orange-700 dark:text-orange-400 dark:hover:bg-orange-950"
-                  onClick={() => setIsLostModalOpen(true)}
-                  disabled={!isOpen_}
-                >
-                  <XCircle className="h-4 w-4" />
-                  {t("opportunity.drawer.actions.mark_lost")}
-                </Button>
-
-                {/* Delete */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4" />
+              {isEditing ? (
+                /* Edit Mode Footer: Save / Cancel */
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    {t("opportunity.drawer.cancel")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    {t("opportunity.drawer.save")}
+                  </Button>
+                </div>
+              ) : (
+                /* Read Mode Footer: Edit / Won / Lost / Delete */
+                <div className="flex flex-wrap gap-2">
+                  {/* Edit - Only for open opportunities */}
+                  {isOpen_ && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-950"
+                      onClick={handleEdit}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      {t("opportunity.drawer.actions.edit")}
+                    </Button>
                   )}
-                  {t("opportunity.drawer.actions.delete")}
-                </Button>
-              </div>
+
+                  {/* Mark as Won - Only for contract_sent/negotiation stages */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 text-green-600 hover:bg-green-50 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-950"
+                    onClick={() => setIsWonModalOpen(true)}
+                    disabled={!canMarkAsWon}
+                    title={
+                      isOpen_ && !canMarkAsWon
+                        ? t("opportunity.drawer.mark_won_stage_required")
+                        : undefined
+                    }
+                  >
+                    <Trophy className="h-4 w-4" />
+                    {t("opportunity.drawer.actions.mark_won")}
+                  </Button>
+
+                  {/* Mark as Lost - Only for open opportunities */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 text-orange-600 hover:bg-orange-50 hover:text-orange-700 dark:text-orange-400 dark:hover:bg-orange-950"
+                    onClick={() => setIsLostModalOpen(true)}
+                    disabled={!isOpen_}
+                  >
+                    <XCircle className="h-4 w-4" />
+                    {t("opportunity.drawer.actions.mark_lost")}
+                  </Button>
+
+                  {/* Delete */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4" />
+                    )}
+                    {t("opportunity.drawer.actions.delete")}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </SheetContent>

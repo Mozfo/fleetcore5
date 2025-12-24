@@ -28,6 +28,7 @@ let service: LeadScoringService;
 const testLeadIds: string[] = [];
 let testEmployeeId: string;
 let testSourceId: string;
+let testProviderId: string;
 
 describeIntegration("LeadScoringService Integration Tests", () => {
   beforeAll(async () => {
@@ -39,6 +40,19 @@ describeIntegration("LeadScoringService Integration Tests", () => {
     // Ensure required settings exist
     await ensureTestSettings();
 
+    // Create or get a test provider for employee assignment
+    const provider = await prisma.adm_providers.upsert({
+      where: { code: "TEST_SCORING" },
+      update: {},
+      create: {
+        code: "TEST_SCORING",
+        name: "Test Scoring Provider",
+        is_internal: true,
+        status: "active",
+      },
+    });
+    testProviderId = provider.id;
+
     // Create test employee for assignment
     const employee = await prisma.adm_provider_employees.create({
       data: {
@@ -47,19 +61,25 @@ describeIntegration("LeadScoringService Integration Tests", () => {
         last_name: "Employee",
         clerk_user_id: `test_clerk_${Date.now()}`,
         status: "active",
+        provider_id: testProviderId,
       },
     });
     testEmployeeId = employee.id;
 
-    // Create test lead source
-    const source = await prisma.crm_lead_sources.upsert({
-      where: { name: "Integration Test" },
-      update: {},
-      create: {
-        name: "Integration Test",
-        is_active: true,
+    // Find existing test lead source (seeded in database)
+    const source = await prisma.crm_lead_sources.findFirst({
+      where: {
+        name_translations: {
+          path: ["en"],
+          equals: "Integration Test",
+        },
       },
     });
+    if (!source) {
+      throw new Error(
+        "Integration Test lead source not found. Ensure seed data exists."
+      );
+    }
     testSourceId = source.id;
   });
 

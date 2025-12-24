@@ -60,7 +60,10 @@ export const CrmSettingKey = {
 
 /**
  * Repository for CRM settings
- * Manages global CRM configuration as key-value pairs
+ *
+ * NOTE: crm_settings is a GLOBAL table (no provider_id).
+ * All settings are globally accessible. The is_system flag indicates
+ * whether a setting is system-provided (true) or custom (false).
  *
  * @example
  * ```typescript
@@ -133,7 +136,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    * Get settings by category
    *
    * @param category - Category name
-   * @returns Array of settings
+   * @returns Array of settings in the category
    *
    * @example
    * ```typescript
@@ -159,7 +162,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
   /**
    * Get all active settings
    *
-   * @returns Array of all settings
+   * @returns Array of all active settings
    *
    * @example
    * ```typescript
@@ -221,7 +224,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
   async getSettingMetadata(key: string): Promise<{
     setting_key: string;
     display_label: string | null;
-    display_order: number;
+    display_order: number | null;
     ui_component: string | null;
     help_text: string | null;
     documentation_url: string | null;
@@ -270,7 +273,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
       Array<{
         setting_key: string;
         display_label: string | null;
-        display_order: number;
+        display_order: number | null;
         ui_component: string | null;
         help_text: string | null;
         documentation_url: string | null;
@@ -450,7 +453,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    * @example
    * ```typescript
    * const setting = await repo.toggleActive('lead_stages', userId);
-   * console.log(setting.is_active); // false (toggled)
+   * // setting.is_active is now toggled
    * ```
    */
   async toggleActive(

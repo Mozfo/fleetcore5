@@ -420,16 +420,16 @@ export const OpportunityQuerySchema = z.object({
 
 export type OpportunityQueryInput = z.infer<typeof OpportunityQuerySchema>;
 
-// ===== CONTRACT VALIDATORS =====
+// ===== ORDER VALIDATORS =====
 
 /**
- * Contract creation validation schema
+ * Order creation validation schema
  *
- * Validates contract creation with cross-field validation for dates and duration.
- * Enforces minimum contract duration (30 days) and logical date ordering.
+ * Validates order creation with cross-field validation for dates and duration.
+ * Enforces minimum order duration (30 days) and logical date ordering.
  *
  * @example
- * const contract = {
+ * const order = {
  *   opportunity_id: "123e4567-e89b-12d3-a456-426614174000",
  *   start_date: new Date("2025-01-01"),
  *   end_date: new Date("2026-01-01"),
@@ -438,7 +438,7 @@ export type OpportunityQueryInput = z.infer<typeof OpportunityQuerySchema>;
  *   auto_renew: true
  * };
  */
-export const ContractCreateSchema = z
+export const OrderCreateSchema = z
   .object({
     opportunity_id: z
       .string()
@@ -457,10 +457,8 @@ export const ContractCreateSchema = z
       .min(100, "La valeur totale doit être d'au moins 100"),
 
     billing_cycle: z
-      .enum(["monthly", "quarterly", "yearly"])
-      .describe(
-        "Le cycle de facturation doit être: monthly, quarterly, ou yearly"
-      ),
+      .enum(["month", "year"])
+      .describe("Le cycle de facturation doit être: month ou year"),
 
     auto_renew: z.boolean(),
   })
@@ -469,30 +467,30 @@ export const ContractCreateSchema = z
     path: ["end_date"],
   })
   .refine((data) => differenceInDays(data.end_date, data.start_date) >= 30, {
-    message: "Le contrat doit avoir une durée minimale de 30 jours",
+    message: "La commande doit avoir une durée minimale de 30 jours",
     path: ["end_date"],
   });
 
-export type ContractCreateInput = z.infer<typeof ContractCreateSchema>;
+export type OrderCreateInput = z.infer<typeof OrderCreateSchema>;
 
 /**
- * Contract update validation schema
+ * Order update validation schema
  *
  * All fields optional for partial updates.
  */
-export const ContractUpdateSchema = ContractCreateSchema.partial();
+export const OrderUpdateSchema = OrderCreateSchema.partial();
 
-export type ContractUpdateInput = z.infer<typeof ContractUpdateSchema>;
+export type OrderUpdateInput = z.infer<typeof OrderUpdateSchema>;
 
 /**
- * Contract query/filter validation schema
+ * Order query/filter validation schema
  *
- * Validates GET /api/v1/crm/contracts query parameters.
+ * Validates GET /api/v1/crm/orders query parameters.
  *
  * @example
  * // Query: ?status=active&billing_cycle=monthly&renewal_date_within_days=30
  */
-export const ContractQuerySchema = z.object({
+export const OrderQuerySchema = z.object({
   // Pagination
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -522,7 +520,7 @@ export const ContractQuerySchema = z.object({
     ])
     .optional(),
 
-  billing_cycle: z.enum(["monthly", "quarterly", "yearly"]).optional(),
+  billing_cycle: z.enum(["month", "year"]).optional(),
 
   auto_renew: z.coerce.boolean().optional(),
 
@@ -541,4 +539,4 @@ export const ContractQuerySchema = z.object({
     .optional(),
 });
 
-export type ContractQueryInput = z.infer<typeof ContractQuerySchema>;
+export type OrderQueryInput = z.infer<typeof OrderQuerySchema>;

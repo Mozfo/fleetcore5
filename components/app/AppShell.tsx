@@ -63,7 +63,7 @@ export function AppShell({ children }: AppShellProps) {
         />
 
         {/* Page Content */}
-        <main className="relative flex-1 overflow-hidden p-6">{children}</main>
+        <main className="relative flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );

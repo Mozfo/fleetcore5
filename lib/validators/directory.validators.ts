@@ -1,5 +1,26 @@
 import { z } from "zod";
 
+// ========== JSONB TRANSLATIONS SCHEMA ==========
+
+/**
+ * Schema for JSONB translations
+ * Requires at least 'en' key, allows 'fr' and 'ar'
+ * Pattern: {"en": "English", "fr": "French", "ar": "Arabic"}
+ */
+export const translationsSchema = z
+  .record(z.string(), z.string().min(1).max(500))
+  .refine(
+    (obj): obj is Record<string, string> & { en: string } =>
+      typeof obj.en === "string" && obj.en.length > 0,
+    { message: "English (en) translation is required" }
+  );
+
+/**
+ * Schema for optional JSONB translations
+ * Same as translationsSchema but allows undefined
+ */
+export const optionalTranslationsSchema = translationsSchema.optional();
+
 // ========== COUNTRIES ==========
 
 /**
@@ -58,21 +79,28 @@ export const createModelSchema = z.object({
 /**
  * Schema for platforms query parameters
  * GET /api/v1/directory/platforms
+ *
+ * NOTE: sortBy uses 'code' not 'name' (name is now JSONB translations)
  */
 export const listPlatformsSchema = z.object({
   search: z.string().min(1).max(100).optional(),
-  sortBy: z.enum(["name", "created_at"]).default("name"),
+  sortBy: z.enum(["code", "created_at"]).default("code"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });
 
 /**
  * Schema for creating a platform
  * POST /api/v1/directory/platforms
- * V2: code is now required (NOT NULL in DB)
+ *
+ * V3: Uses JSONB translations for name/description
+ * Body: { code, name_translations: {"en": "...", "fr": "..."}, description_translations?: {...} }
  */
 export const createPlatformSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name too long").trim(),
   code: z.string().min(1, "Code is required").max(50, "Code too long").trim(),
+  name: z.string().min(1, "Name is required").max(255, "Name too long").trim(),
+  name_translations: translationsSchema,
+  description: z.string().max(1000, "Description too long").trim().optional(),
+  description_translations: optionalTranslationsSchema,
   api_config: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -95,6 +123,8 @@ export const listRegulationsSchema = z.object({
 /**
  * Schema for vehicle classes query parameters
  * GET /api/v1/directory/vehicle-classes
+ *
+ * NOTE: sortBy uses 'code' not 'name' (name is now JSONB translations)
  */
 export const listVehicleClassesSchema = z.object({
   country_code: z
@@ -103,23 +133,27 @@ export const listVehicleClassesSchema = z.object({
     .toUpperCase()
     .optional(),
   search: z.string().min(1).max(100).optional(),
-  sortBy: z.enum(["name", "created_at"]).default("name"),
+  sortBy: z.enum(["code", "created_at"]).default("code"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });
 
 /**
  * Schema for creating a vehicle class
  * POST /api/v1/directory/vehicle-classes
- * V2: code is now required (NOT NULL in DB)
+ *
+ * V3: Uses JSONB translations for name/description
+ * Body: { country_code, code, name_translations: {"en": "...", "fr": "..."}, description_translations?: {...} }
  */
 export const createVehicleClassSchema = z.object({
   country_code: z
     .string()
     .length(2, "Country code must be 2 characters")
     .toUpperCase(),
-  name: z.string().min(1, "Name is required").max(100, "Name too long").trim(),
   code: z.string().min(1, "Code is required").max(50, "Code too long").trim(),
-  description: z.string().max(500, "Description too long").optional(),
+  name: z.string().min(1, "Name is required").max(255, "Name too long").trim(),
+  name_translations: translationsSchema,
+  description: z.string().max(1000, "Description too long").trim().optional(),
+  description_translations: optionalTranslationsSchema,
   max_age: z
     .number()
     .int("Max age must be an integer")

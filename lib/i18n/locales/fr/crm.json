@@ -2,6 +2,7 @@
   "sidebar": {
     "leads_pipeline": "Pipeline de leads",
     "opportunities_pipeline": "Pipeline d'opportunités",
+    "quotes_pipeline": "Offres",
     "leads_browser": "Recherche Leads",
     "leads_detail": "Vue Détaillée",
     "leads_detail_tooltip": "Cliquez d'abord sur un lead pour activer ce lien",
@@ -278,6 +279,7 @@
       "created_at": "Créé le",
       "columns": {
         "ref": "Réf",
+        "code": "Code",
         "contact": "Contact",
         "email": "Email",
         "phone": "Téléphone",
@@ -850,21 +852,47 @@
       "unassigned": "Non assigné",
       "select_owner": "Sélectionner un commercial",
       "no_notes": "Aucune note",
+      "notes_placeholder": "Ajouter des notes sur cette opportunité...",
+      "mark_won_stage_required": "Passez à l'étape Négociation ou Contrat Envoyé d'abord",
       "yes": "Oui",
       "no": "Non"
     },
     "won_modal": {
       "title": "Marquer comme Gagnée",
       "description": "Félicitations ! Confirmez la valeur finale de l'affaire.",
+      "description_quote_to_cash": "Cela créera une nouvelle commande dans le système Quote-to-Cash.",
       "won_value": "Valeur Finale",
       "won_value_placeholder": "Entrez la valeur finale",
       "won_date": "Date de Gain",
+      "total_value": "Valeur Totale du Contrat",
+      "total_value_placeholder": "Entrez la valeur du contrat",
+      "monthly_value_preview": "≈ {{value}} {{currency}}/mois",
+      "billing_cycle": "Cycle de Facturation",
+      "billing_monthly": "Mensuel",
+      "billing_quarterly": "Trimestriel",
+      "billing_semi_annual": "Semestriel",
+      "billing_annual": "Annuel",
+      "duration": "Durée",
+      "duration_6m": "6 mois",
+      "duration_12m": "12 mois",
+      "duration_24m": "24 mois",
+      "duration_36m": "36 mois",
+      "effective_date": "Date d'Effet",
+      "auto_renew": "Renouvellement Auto",
+      "notice_period": "Préavis",
+      "notice_none": "Aucun préavis",
+      "notice_30": "30 jours",
+      "notice_60": "60 jours",
+      "notice_90": "90 jours",
       "notes": "Notes (optionnel)",
       "notes_placeholder": "Ajoutez des notes sur cette victoire...",
       "confirm": "Confirmer le Gain",
       "confirming": "Confirmation...",
       "success": "Affaire marquée comme gagnée !",
-      "error": "Échec du marquage comme gagnée"
+      "success_with_order": "Commande {{orderRef}} créée avec succès !",
+      "error": "Échec du marquage comme gagnée",
+      "error_min_value": "La valeur minimale du contrat est de 100",
+      "error_date_required": "La date d'effet est obligatoire"
     },
     "lost_modal": {
       "title": "Marquer comme Perdue",
@@ -881,6 +909,47 @@
       "success": "Affaire marquée comme perdue",
       "error": "Échec du marquage comme perdue"
     },
+    "modal": {
+      "title_create": "Créer une Opportunité",
+      "description_create": "Créer une nouvelle opportunité à partir d'un lead qualifié",
+      "fields": {
+        "lead": "Lead",
+        "name": "Nom",
+        "expected_value": "Valeur Attendue",
+        "currency": "Devise",
+        "stage": "Étape",
+        "expected_close_date": "Date de Clôture Prévue",
+        "assigned_to": "Assigné à",
+        "notes": "Notes"
+      },
+      "placeholders": {
+        "name": "ex: Expansion flotte - ACME Corp",
+        "expected_value": "ex: 50000",
+        "notes": "Ajoutez des notes pertinentes..."
+      },
+      "validation": {
+        "name_required": "Le nom est obligatoire",
+        "name_min": "Le nom doit contenir au moins 3 caractères",
+        "name_max": "Le nom doit contenir moins de 200 caractères",
+        "lead_required": "Veuillez sélectionner un lead",
+        "value_required": "La valeur attendue est obligatoire",
+        "value_positive": "La valeur doit être positive",
+        "stage_required": "L'étape est obligatoire",
+        "date_required": "La date de clôture prévue est obligatoire",
+        "notes_max": "Les notes doivent contenir moins de 5000 caractères"
+      },
+      "select_lead": "Sélectionner un lead...",
+      "search_lead": "Rechercher des leads...",
+      "selected": "Sélectionné",
+      "no_leads_found": "Aucun lead trouvé",
+      "unassigned": "Non assigné",
+      "cancel": "Annuler",
+      "create": "Créer l'Opportunité",
+      "creating": "Création...",
+      "success_created": "Opportunité créée avec succès",
+      "error_generic": "Échec de la création de l'opportunité"
+    },
+    "created_success": "Opportunité créée avec succès",
     "loss_reasons": {
       "price_too_high": "Prix trop élevé",
       "competitor_won": "Concurrent a gagné",
@@ -1042,6 +1111,59 @@
         "invalidRecoveryDelay": "Le délai de récupération doit être entre 1 et 365 jours",
         "saveFailed": "Échec de l'enregistrement des raisons de perte"
       }
+    }
+  },
+  "activities": {
+    "timeline": {
+      "title": "Historique des activités",
+      "empty": "Aucune activité",
+      "empty_description": "Les activités apparaîtront ici au fur et à mesure des interactions",
+      "no_entity": "Aucun lead ou opportunité sélectionné",
+      "add_first": "Ajouter la première activité",
+      "add_activity": "Ajouter une activité",
+      "load_more": "Charger plus",
+      "loading": "Chargement...",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier"
+    },
+    "types": {
+      "call": "Appel",
+      "email": "Email",
+      "note": "Note",
+      "meeting": "Réunion",
+      "stage_change": "Changement d'étape",
+      "status_change": "Changement de statut",
+      "task": "Tâche",
+      "system": "Système"
+    },
+    "outcomes": {
+      "answered": "Répondu",
+      "no_answer": "Pas de réponse",
+      "voicemail": "Messagerie vocale",
+      "busy": "Occupé"
+    },
+    "performed_by": "par {{name}}",
+    "completed": "Terminée",
+    "modal": {
+      "title": "Ajouter une activité",
+      "for_lead": "pour le Lead",
+      "for_opportunity": "pour l'Opportunité",
+      "select_type": "Sélectionner le type d'activité",
+      "select_outcome": "Sélectionner le résultat",
+      "fields": {
+        "subject": "Sujet",
+        "description": "Description",
+        "duration": "Durée (minutes)",
+        "outcome": "Résultat",
+        "scheduled_at": "Planifié pour"
+      },
+      "placeholders": {
+        "subject": "Entrez le sujet de l'activité",
+        "description": "Ajoutez des détails sur cette activité..."
+      },
+      "submit": "Ajouter l'activité",
+      "success": "Activité ajoutée avec succès",
+      "error": "Échec de l'ajout de l'activité"
     }
   }
 }

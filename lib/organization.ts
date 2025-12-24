@@ -1,15 +1,20 @@
 import { prisma } from "./prisma";
 
 /**
- * Get organization currency based on country_code
- * UAE (AE) → AED, France (FR) → EUR
+ * Get organization currency from adm_tenants.default_currency
+ *
+ * Reads the configured default_currency for the tenant.
+ * This is the source of truth for all CRM currency operations.
+ *
+ * @param tenantId - UUID of the tenant
+ * @returns Currency code (e.g., "EUR", "AED", "USD")
  */
-export async function getOrgCurrency(tenantId: string): Promise<"AED" | "EUR"> {
+export async function getOrgCurrency(tenantId: string): Promise<string> {
   const org = await prisma.adm_tenants.findUniqueOrThrow({
     where: { id: tenantId },
-    select: { country_code: true },
+    select: { default_currency: true },
   });
-  return org.country_code === "AE" ? "AED" : "EUR";
+  return org.default_currency;
 }
 
 /**
@@ -27,6 +32,8 @@ export async function getOrgCountryCode(
 
 /**
  * Get complete organization with country/currency info
+ *
+ * Returns tenant details including the configured default_currency.
  */
 export async function getOrgWithCountry(tenantId: string) {
   const org = await prisma.adm_tenants.findUniqueOrThrow({
@@ -36,11 +43,12 @@ export async function getOrgWithCountry(tenantId: string) {
       name: true,
       country_code: true,
       subdomain: true,
+      default_currency: true,
     },
   });
 
   return {
     ...org,
-    currency: org.country_code === "AE" ? ("AED" as const) : ("EUR" as const),
+    currency: org.default_currency,
   };
 }

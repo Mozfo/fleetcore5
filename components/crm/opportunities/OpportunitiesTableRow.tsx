@@ -633,7 +633,12 @@ export const OpportunitiesTableRow = memo(
                     onMarkWon?.(opportunity.id);
                   }}
                   className="text-green-600 focus:text-green-600"
-                  disabled={opportunity.status !== "open"}
+                  disabled={
+                    opportunity.status !== "open" ||
+                    !["contract_sent", "negotiation"].includes(
+                      opportunity.stage
+                    )
+                  }
                 >
                   <Trophy className="mr-2 h-4 w-4" />
                   {t("opportunity.context_menu.mark_won", "Mark as Won")}

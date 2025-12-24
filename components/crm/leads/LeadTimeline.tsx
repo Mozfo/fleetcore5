@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ActivityItem } from "./ActivityItem";
 import { AddActivityModal } from "./AddActivityModal";
-import { getLeadActivitiesAction } from "@/lib/actions/crm/activities.actions";
-import type { LeadActivity } from "@/lib/types/activities";
+import { getActivitiesAction } from "@/lib/actions/crm/activities.actions";
+import type { Activity } from "@/lib/types/activities";
 
 interface LeadTimelineProps {
   leadId: string;
@@ -68,7 +68,7 @@ export function LeadTimeline({
   leadPhone,
 }: LeadTimelineProps) {
   const { t } = useTranslation("crm");
-  const [activities, setActivities] = useState<LeadActivity[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -83,13 +83,14 @@ export function LeadTimeline({
         setIsLoadingMore(true);
       }
 
-      const result = await getLeadActivitiesAction(leadId, {
+      const result = await getActivitiesAction({
+        leadId,
         limit: 20,
         offset,
       });
 
       if (result.success) {
-        const newActivities = result.activities as LeadActivity[];
+        const newActivities = result.activities;
         if (append) {
           setActivities((prev) => [...prev, ...newActivities]);
         } else {
@@ -117,9 +118,9 @@ export function LeadTimeline({
 
   // Group activities by date
   const groupedActivities = useMemo(() => {
-    const groups: Record<string, LeadActivity[]> = {};
+    const groups: Record<string, Activity[]> = {};
     activities.forEach((activity) => {
-      const dateKey = new Date(activity.created_at).toDateString();
+      const dateKey = new Date(activity.activity_date).toDateString();
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(activity);
     });
@@ -183,7 +184,7 @@ export function LeadTimeline({
         {Object.entries(groupedActivities).map(([dateKey, dayActivities]) => (
           <div key={dateKey}>
             <h4 className="text-muted-foreground bg-background sticky top-0 mb-3 py-1 text-xs font-medium">
-              {formatDateGroup(dayActivities[0].created_at, t)}
+              {formatDateGroup(dayActivities[0].activity_date, t)}
             </h4>
             <div className="space-y-4 pl-1">
               {dayActivities.map((activity) => (

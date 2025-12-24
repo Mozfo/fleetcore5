@@ -13,15 +13,17 @@ import { handleApiError } from "@/lib/api/error-handler";
  * List all platforms (global data)
  *
  * Query Parameters:
- * - search (string, optional) - Search by platform name
- * - sortBy (enum: name|created_at, default: name)
+ * - search (string, optional) - Search by platform code
+ * - sortBy (enum: code|created_at, default: code)
  * - sortOrder (enum: asc|desc, default: asc)
  *
- * Response: Array of platforms
+ * Response: Array of platforms with JSONB translations
  * [
  *   {
  *     id: "uuid",
- *     name: "Uber",
+ *     code: "uber",
+ *     name_translations: {"en": "Uber", "fr": "Uber", "ar": "أوبر"},
+ *     description_translations: {...},
  *     api_config: { ... },
  *     created_at: "2025-01-01T00:00:00Z",
  *     updated_at: "2025-01-01T00:00:00Z"
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     const queryParams = {
       search: searchParams.get("search") || undefined,
-      sortBy: searchParams.get("sortBy") || "name",
+      sortBy: searchParams.get("sortBy") || "code",
       sortOrder: searchParams.get("sortOrder") || "asc",
     };
 
@@ -75,16 +77,20 @@ export async function GET(request: NextRequest) {
  * POST /api/v1/directory/platforms
  * Create a new platform (requires manage_directory or admin permission)
  *
- * Body:
+ * Body (V3 - JSONB translations):
  * {
- *   name: "Bolt",
+ *   code: "bolt",
+ *   name_translations: {"en": "Bolt", "fr": "Bolt", "ar": "بولت"},
+ *   description_translations: {"en": "Ride-sharing platform", ...} (optional),
  *   api_config: { ... } (optional)
  * }
  *
- * Response: Created platform
+ * Response: Created platform with JSONB translations
  * {
  *   id: "uuid",
- *   name: "Bolt",
+ *   code: "bolt",
+ *   name_translations: {"en": "Bolt", ...},
+ *   description_translations: {...},
  *   api_config: { ... },
  *   created_at: "2025-01-01T00:00:00Z",
  *   updated_at: "2025-01-01T00:00:00Z"

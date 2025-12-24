@@ -18,6 +18,10 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import {
+  getCurrentProviderId,
+  buildProviderFilter,
+} from "@/lib/utils/provider-context";
 import type { LeadStatus } from "@/types/crm";
 
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
@@ -105,9 +109,12 @@ export async function bulkAssignLeadsAction(
       };
     }
 
-    // 5. Bulk update with Prisma
+    // 5. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 6. Bulk update with Prisma (with provider filter)
     const result = await db.crm_leads.updateMany({
-      where: { id: { in: leadIds } },
+      where: { id: { in: leadIds }, ...buildProviderFilter(providerId) },
       data: {
         assigned_to: assigneeId,
         updated_at: new Date(),
@@ -180,9 +187,12 @@ export async function bulkUpdateStatusAction(
       };
     }
 
-    // 4. Bulk update with Prisma
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Bulk update with Prisma (with provider filter)
     const result = await db.crm_leads.updateMany({
-      where: { id: { in: leadIds } },
+      where: { id: { in: leadIds }, ...buildProviderFilter(providerId) },
       data: {
         status,
         updated_at: new Date(),
@@ -255,11 +265,15 @@ export async function bulkDeleteLeadsAction(
       };
     }
 
-    // 4. Soft delete with Prisma (set deleted_at timestamp)
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Soft delete with Prisma (with provider filter)
     const result = await db.crm_leads.updateMany({
       where: {
         id: { in: leadIds },
         deleted_at: null, // Only delete non-deleted leads
+        ...buildProviderFilter(providerId),
       },
       data: {
         deleted_at: new Date(),

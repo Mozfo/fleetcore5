@@ -94,7 +94,7 @@ interface PriorityConfig {
  *     message: "We need fleet management...",
  *     source: "website"
  *   },
- *   "tenant-uuid",
+ *   "provider-uuid",
  *   "user-uuid"
  * );
  * // Returns: { lead, scoring, assignment }
@@ -128,7 +128,7 @@ export class LeadCreationService {
    * - Create lead in database
    *
    * @param input - Validated lead creation input
-   * @param tenantId - Tenant UUID (from Clerk organization context)
+   * @param providerId - Provider UUID (FleetCore division for data isolation)
    * @param createdBy - Employee UUID who created lead (optional, for internal leads)
    * @returns Complete lead creation result
    *
@@ -141,7 +141,7 @@ export class LeadCreationService {
    * ```typescript
    * const result = await service.createLead(
    *   { email: "test@example.com", source: "website" },
-   *   "tenant-123",
+   *   "provider-123",
    *   "user-456"
    * );
    *
@@ -152,7 +152,7 @@ export class LeadCreationService {
    */
   async createLead(
     input: CreateLeadInput,
-    tenantId: string,
+    providerId: string,
     createdBy?: string
   ): Promise<LeadCreationResult> {
     // STEP 0: GDPR validation (before any processing)
@@ -288,7 +288,7 @@ export class LeadCreationService {
     const lead = await this.leadRepo.create(
       leadData,
       createdBy ?? "",
-      tenantId
+      providerId
     );
 
     // STEP 7: Send notification to assigned sales rep (if assigned)
@@ -321,7 +321,7 @@ export class LeadCreationService {
             },
             {
               leadId: lead.id,
-              tenantId,
+              providerId,
               idempotencyKey: `sales_rep_assignment_${lead.id}`,
             }
           );

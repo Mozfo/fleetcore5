@@ -91,58 +91,85 @@ const fetchAllOpportunities = cache(
       Opportunity & { days_in_stage: number; is_rotting: boolean }
     >;
     owners: Array<{ id: string; first_name: string; last_name: string | null }>;
+    leads: Array<{
+      id: string;
+      company_name: string | null;
+      first_name: string | null;
+      last_name: string | null;
+      email: string;
+      phone: string | null;
+    }>;
   }> => {
     const now = new Date();
 
-    const [rawOpportunities, salesTeamMembers] = await Promise.all([
-      db.crm_opportunities.findMany({
-        where: {
-          deleted_at: null,
-        },
-        include: {
-          crm_leads_crm_opportunities_lead_idTocrm_leads: {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-              email: true,
-              company_name: true,
-              country_code: true,
-              crm_countries: {
-                select: {
-                  country_code: true,
-                  country_name_en: true,
-                  flag_emoji: true,
+    const [rawOpportunities, salesTeamMembers, qualifiedLeads] =
+      await Promise.all([
+        db.crm_opportunities.findMany({
+          where: {
+            deleted_at: null,
+          },
+          include: {
+            crm_leads_crm_opportunities_lead_idTocrm_leads: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                email: true,
+                phone: true,
+                company_name: true,
+                country_code: true,
+                crm_countries: {
+                  select: {
+                    country_code: true,
+                    country_name_en: true,
+                    flag_emoji: true,
+                  },
                 },
               },
             },
-          },
-          adm_members_crm_opportunities_assigned_toToadm_members: {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-              email: true,
+            adm_members_crm_opportunities_assigned_toToadm_members: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                email: true,
+              },
             },
           },
-        },
-        orderBy: { created_at: "desc" },
-        take: 200,
-      }),
-      db.adm_provider_employees.findMany({
-        where: {
-          department: "Sales",
-          status: "active",
-          deleted_at: null,
-        },
-        orderBy: { first_name: "asc" },
-        select: {
-          id: true,
-          first_name: true,
-          last_name: true,
-        },
-      }),
-    ]);
+          orderBy: { created_at: "desc" },
+          take: 200,
+        }),
+        db.adm_provider_employees.findMany({
+          where: {
+            department: "Sales",
+            status: "active",
+            deleted_at: null,
+          },
+          orderBy: { first_name: "asc" },
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+          },
+        }),
+        // Fetch qualified leads for manual opportunity creation
+        db.crm_leads.findMany({
+          where: {
+            status: "qualified",
+            deleted_at: null,
+          },
+          orderBy: { company_name: "asc" },
+          select: {
+            id: true,
+            company_name: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            phone: true,
+          },
+          take: 500, // Limit for performance
+        }),
+      ]);
 
     const opportunities: Array<
       Opportunity & { days_in_stage: number; is_rotting: boolean }
@@ -218,6 +245,7 @@ const fetchAllOpportunities = cache(
     return {
       opportunities,
       owners: salesTeamMembers,
+      leads: qualifiedLeads,
     };
   }
 );
@@ -243,7 +271,7 @@ export default async function OpportunitiesPage({
     currentUserMemberUuid
   );
 
-  const { opportunities, owners } = await fetchAllOpportunities();
+  const { opportunities, owners, leads } = await fetchAllOpportunities();
 
   return (
     <div className="h-full">
@@ -266,6 +294,7 @@ export default async function OpportunitiesPage({
         <OpportunitiesPageClient
           allOpportunities={opportunities}
           owners={owners}
+          leads={leads}
           initialFilters={initialFilters}
         />
       </Suspense>

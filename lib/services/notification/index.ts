@@ -3,6 +3,7 @@
  * Centralized exports for notification services
  *
  * Session #29: Added NotificationQueueService for Transactional Outbox Pattern
+ * Session #XX: Added Order notifications for Quote-to-Cash
  */
 
 // Core notification service (direct sending)
@@ -23,3 +24,6 @@ export type {
   QueueResult,
   ProcessQueueResult,
 } from "./queue.service";
+
+// Order notifications (Quote-to-Cash)
+export { sendOrderCreatedNotification } from "./order-notifications";

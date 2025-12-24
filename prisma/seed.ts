@@ -130,6 +130,25 @@ async function main() {
   );
 
   // ===================================
+  // ADM_PROVIDERS - FleetCore Provider
+  // ===================================
+  console.log("🏢 Creating FleetCore provider...");
+
+  const fleetcoreProvider = await prisma.adm_providers.upsert({
+    where: { code: "FLEETCORE" },
+    update: {},
+    create: {
+      id: "880e8400-e29b-41d4-a716-446655440001",
+      code: "FLEETCORE",
+      name: "FleetCore",
+      is_internal: true,
+      status: "active",
+    },
+  });
+
+  console.log(`✅ Created FleetCore provider: ${fleetcoreProvider.name}`);
+
+  // ===================================
   // ADM_PROVIDER_EMPLOYEES - FleetCore Sales Team
   // ===================================
   console.log("👔 Creating FleetCore sales team...");
@@ -137,6 +156,7 @@ async function main() {
   const salesTeam = [
     {
       id: "990e8400-e29b-41d4-a716-446655440001",
+      provider_id: fleetcoreProvider.id,
       clerk_user_id: "sales_uae_placeholder",
       first_name: "Karim",
       last_name: "Al-Rashid",
@@ -148,6 +168,7 @@ async function main() {
     },
     {
       id: "990e8400-e29b-41d4-a716-446655440002",
+      provider_id: fleetcoreProvider.id,
       clerk_user_id: "sales_france_placeholder",
       first_name: "Marie",
       last_name: "Dubois",
@@ -159,6 +180,7 @@ async function main() {
     },
     {
       id: "990e8400-e29b-41d4-a716-446655440003",
+      provider_id: fleetcoreProvider.id,
       clerk_user_id: "sales_ksa_placeholder",
       first_name: "Faisal",
       last_name: "Al-Otaibi",
@@ -188,32 +210,60 @@ async function main() {
   const leadSources = [
     {
       id: "aa0e8400-e29b-41d4-a716-446655440001",
-      name: "Organic",
-      description: "Trafic naturel depuis fleetcore.com",
+      name_translations: { en: "Organic", fr: "Organique", ar: "عضوي" },
+      description_translations: {
+        en: "Natural website traffic",
+        fr: "Trafic naturel du site web",
+        ar: "حركة المرور الطبيعية للموقع",
+      },
       is_active: true,
     },
     {
       id: "aa0e8400-e29b-41d4-a716-446655440002",
-      name: "Google Ads",
-      description: "Campagnes payantes Google/Bing",
+      name_translations: {
+        en: "Paid Search",
+        fr: "Recherche payante",
+        ar: "البحث المدفوع",
+      },
+      description_translations: {
+        en: "Paid search campaigns",
+        fr: "Campagnes de recherche payantes",
+        ar: "حملات البحث المدفوعة",
+      },
       is_active: true,
     },
     {
       id: "aa0e8400-e29b-41d4-a716-446655440003",
-      name: "Facebook",
-      description: "Facebook & Instagram Ads",
+      name_translations: {
+        en: "Social Media",
+        fr: "Réseaux sociaux",
+        ar: "وسائل التواصل الاجتماعي",
+      },
+      description_translations: {
+        en: "Social media advertising",
+        fr: "Publicité sur les réseaux sociaux",
+        ar: "إعلانات وسائل التواصل الاجتماعي",
+      },
       is_active: true,
     },
     {
       id: "aa0e8400-e29b-41d4-a716-446655440004",
-      name: "Referral",
-      description: "Parrainage client/partenaire",
+      name_translations: { en: "Referral", fr: "Parrainage", ar: "إحالة" },
+      description_translations: {
+        en: "Customer or partner referral",
+        fr: "Recommandation client ou partenaire",
+        ar: "توصية عميل أو شريك",
+      },
       is_active: true,
     },
     {
       id: "aa0e8400-e29b-41d4-a716-446655440005",
-      name: "Partner",
-      description: "Intégrations plateforme (Uber, Careem)",
+      name_translations: { en: "Partner", fr: "Partenaire", ar: "شريك" },
+      description_translations: {
+        en: "Platform integration lead",
+        fr: "Prospect via intégration partenaire",
+        ar: "عميل محتمل عبر تكامل الشركاء",
+      },
       is_active: true,
     },
   ];

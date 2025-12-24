@@ -277,6 +277,7 @@ export interface Opportunity {
     first_name: string;
     last_name: string;
     email: string;
+    phone: string | null;
     company_name: string | null;
     country_code: string | null;
     country?: {

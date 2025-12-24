@@ -72,6 +72,7 @@ describe("LeadRepository", () => {
         message: null,
         metadata: {},
         country_code: "FR",
+        provider_id: "7ad8173c-68c5-41d3-9918-686e4e941cc0",
         adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
           id: "emp-1",
           first_name: "Marie",
@@ -80,7 +81,7 @@ describe("LeadRepository", () => {
         },
         crm_lead_sources: {
           id: "source-1",
-          name: "Website",
+          name_translations: { en: "Organic", fr: "Organique", ar: "عضوي" },
         },
       };
 
@@ -189,7 +190,11 @@ describe("LeadRepository", () => {
         },
         crm_lead_sources: {
           id: "source-1",
-          name: "Google Ads",
+          name_translations: {
+            en: "Paid Search",
+            fr: "Recherche payante",
+            ar: "البحث المدفوع",
+          },
         },
       };
 
@@ -206,7 +211,9 @@ describe("LeadRepository", () => {
           ?.first_name
       ).toBe("Marie");
       expect(result?.crm_lead_sources).toBeDefined();
-      expect(result?.crm_lead_sources?.name).toBe("Google Ads");
+      expect(result?.crm_lead_sources?.name_translations?.en).toBe(
+        "Paid Search"
+      );
     });
   });
 

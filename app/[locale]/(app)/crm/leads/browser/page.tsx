@@ -109,13 +109,13 @@ const fetchAllLeads = cache(
             }
           : null,
         gdpr_consent: lead.gdpr_consent,
-        consent_at: lead.consent_at,
+        consent_at: lead.consent_at?.toISOString() || null,
         consent_ip: lead.consent_ip,
         created_at: lead.created_at.toISOString(),
         updated_at: lead.updated_at?.toISOString() || null,
-        qualified_date: lead.qualified_date,
-        converted_date: lead.converted_date,
-        next_action_date: lead.next_action_date,
+        qualified_date: lead.qualified_date?.toISOString() || null,
+        converted_date: lead.converted_date?.toISOString() || null,
+        next_action_date: lead.next_action_date?.toISOString() || null,
         opportunity_id: lead.opportunity_id,
         metadata: lead.metadata as Record<string, unknown> | null,
       };

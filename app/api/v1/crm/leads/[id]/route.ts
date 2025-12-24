@@ -164,8 +164,9 @@ export async function GET(
           source: lead.crm_lead_sources
             ? {
                 id: lead.crm_lead_sources.id,
-                name: lead.crm_lead_sources.name,
-                description: lead.crm_lead_sources.description,
+                name_translations: lead.crm_lead_sources.name_translations,
+                description_translations:
+                  lead.crm_lead_sources.description_translations,
               }
             : null,
           notes: lead.qualification_notes,
@@ -431,8 +432,10 @@ export async function PATCH(
           source: updatedLead.crm_lead_sources
             ? {
                 id: updatedLead.crm_lead_sources.id,
-                name: updatedLead.crm_lead_sources.name,
-                description: updatedLead.crm_lead_sources.description,
+                name_translations:
+                  updatedLead.crm_lead_sources.name_translations,
+                description_translations:
+                  updatedLead.crm_lead_sources.description_translations,
               }
             : null,
           qualification_notes: updatedLead.qualification_notes,

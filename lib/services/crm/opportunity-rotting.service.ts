@@ -17,6 +17,10 @@ import {
   OPPORTUNITY_STAGES,
 } from "@/lib/config/opportunity-stages";
 import { NotificationQueueService } from "@/lib/services/notification/queue.service";
+import {
+  getCurrentProviderId,
+  buildProviderFilter,
+} from "@/lib/utils/provider-context";
 
 /**
  * Result of rotting detection
@@ -60,12 +64,20 @@ export class OpportunityRottingService {
    * An opportunity is "rotting" when:
    * - status is 'open' (not won/lost)
    * - days since stage_entered_at > max_days_in_stage
+   *
+   * Applies provider filter for multi-division isolation:
+   * - Regular employees see only their division's opportunities
+   * - CEO (providerId = null) sees all opportunities
    */
   async detectRottingOpportunities(): Promise<RottingOpportunity[]> {
+    const providerId = await getCurrentProviderId();
+
     // Fetch all open opportunities with stage timing data
+    // Filter by provider_id for multi-division isolation
     const opportunities = await db.crm_opportunities.findMany({
       where: {
         status: "open",
+        ...buildProviderFilter(providerId),
       },
       select: {
         id: true,
@@ -118,8 +130,12 @@ export class OpportunityRottingService {
    *
    * This is the main entry point called by the cron job.
    * It detects rotting opportunities and can create notifications.
+   *
+   * Applies provider filter for multi-division isolation.
    */
   async processRottingOpportunities(): Promise<RottingDetectionResult> {
+    const providerId = await getCurrentProviderId();
+
     const result: RottingDetectionResult = {
       checked: 0,
       rotting: 0,
@@ -129,9 +145,9 @@ export class OpportunityRottingService {
     };
 
     try {
-      // Count total open opportunities
+      // Count total open opportunities (filtered by provider)
       const totalOpen = await db.crm_opportunities.count({
-        where: { status: "open" },
+        where: { status: "open", ...buildProviderFilter(providerId) },
       });
       result.checked = totalOpen;
 
@@ -238,14 +254,20 @@ export class OpportunityRottingService {
 
   /**
    * Get summary statistics for dashboard
+   *
+   * Applies provider filter for multi-division isolation:
+   * - Regular employees see only their division's statistics
+   * - CEO (providerId = null) sees global statistics
    */
   async getRottingSummary(): Promise<{
     total: number;
     rotting: number;
     byStage: Record<string, { total: number; rotting: number }>;
   }> {
+    const providerId = await getCurrentProviderId();
+
     const opportunities = await db.crm_opportunities.findMany({
-      where: { status: "open" },
+      where: { status: "open", ...buildProviderFilter(providerId) },
       select: {
         id: true,
         stage: true,
@@ -294,10 +316,13 @@ export class OpportunityRottingService {
    * Check if rotting notifications are enabled
    * Reads from crm_settings: opportunity_stages.rotting.alert_owner
    *
+   * Applies hybrid filter for crm_settings (system + custom per division).
+   *
    * @returns true if notifications should be sent
    */
   private async areNotificationsEnabled(): Promise<boolean> {
     try {
+      // crm_settings is a GLOBAL table (no provider_id filter needed)
       const setting = await db.crm_settings.findFirst({
         where: {
           setting_key: "opportunity_stages",

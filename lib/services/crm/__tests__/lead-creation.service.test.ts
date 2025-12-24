@@ -27,10 +27,11 @@ describe("LeadCreationService", () => {
     department: null,
     hire_date: null,
     avatar_url: null,
-    clerk_user_id: "clerk_user_123", // ✅ Fix: Cannot be null (required for Clerk integration)
+    clerk_user_id: "clerk_user_123",
     permissions: [],
     supervisor_id: null,
     preferred_locale: null,
+    provider_id: "provider-1", // FleetCore division
   };
 
   beforeEach(() => {
@@ -251,7 +252,11 @@ describe("LeadCreationService", () => {
 
     // Mock LeadRepository.create
     vi.spyOn(service["leadRepo"], "create").mockImplementation(
-      async (data: Record<string, unknown>, createdBy: string) => {
+      async (
+        data: Record<string, unknown>,
+        createdBy: string,
+        _providerId?: string
+      ) => {
         const lead = {
           id: "lead-uuid-123",
           lead_code: data.lead_code as string,
@@ -309,6 +314,7 @@ describe("LeadCreationService", () => {
           deleted_by: null,
           deletion_reason: null,
           last_activity_at: null,
+          provider_id: _providerId ?? null,
         };
         return lead;
       }

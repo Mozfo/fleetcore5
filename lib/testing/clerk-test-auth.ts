@@ -483,7 +483,7 @@ async function createTestMemberWithPermissions(
     let role = await prisma.adm_roles.findFirst({
       where: {
         tenant_id: tenantId,
-        name: "test_admin_role",
+        slug: "test-admin-role",
         deleted_at: null,
       },
     });
@@ -492,8 +492,13 @@ async function createTestMemberWithPermissions(
       role = await prisma.adm_roles.create({
         data: {
           tenant_id: tenantId,
-          name: "test_admin_role",
-          slug: "test-admin-role", // V2: slug is now required (NOT NULL)
+          name: "Test Admin Role",
+          name_translations: {
+            en: "Test Admin Role",
+            fr: "Rôle Admin Test",
+            ar: "دور المسؤول الاختباري",
+          },
+          slug: "test-admin-role",
           permissions: {
             admin: true,
             manage_directory: true,

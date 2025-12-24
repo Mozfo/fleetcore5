@@ -92,7 +92,7 @@ describe("ClerkSyncService - Unit Tests", () => {
         id: "role-789",
         tenant_id: "tenant-456",
         slug: "member",
-        name: "Member",
+        name_translations: { en: "Member", fr: "Membre", ar: "عضو" },
       };
       vi.mocked(mockPrisma.adm_roles.findFirst).mockResolvedValue(
         mockRole as never

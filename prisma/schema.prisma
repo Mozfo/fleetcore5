@@ -303,6 +303,10 @@ model adm_members {
   trp_settlements_trp_settlements_created_byToadm_members                                         trp_settlements[]              @relation("trp_settlements_created_byToadm_members")
   trp_settlements_trp_settlements_deleted_byToadm_members                                         trp_settlements[]              @relation("trp_settlements_deleted_byToadm_members")
   trp_settlements_trp_settlements_updated_byToadm_members                                         trp_settlements[]              @relation("trp_settlements_updated_byToadm_members")
+  // Quote-to-Cash relations
+  crm_orders_created                                                                              crm_orders[]                   @relation("crm_orders_created_byToadm_members")
+  crm_orders_updated                                                                              crm_orders[]                   @relation("crm_orders_updated_byToadm_members")
+  crm_orders_deleted                                                                              crm_orders[]                   @relation("crm_orders_deleted_byToadm_members")
 
   @@index([clerk_user_id])
   @@index([created_by])
@@ -415,7 +419,10 @@ model adm_provider_employees {
   preferred_locale                                                                          String?                       @db.VarChar(10)
   first_name                                                                                String                        @db.VarChar(50)
   last_name                                                                                 String?                       @db.VarChar(50)
+  provider_id                                                                               String?                       @db.Uuid
   adm_invitations                                                                           adm_invitations[]
+  adm_providers                                                                             adm_providers?                @relation(fields: [provider_id], references: [id])
+  crm_activities                                                                            crm_activities[]
   adm_provider_employees_adm_provider_employees_created_byToadm_provider_employees          adm_provider_employees?       @relation("adm_provider_employees_created_byToadm_provider_employees", fields: [created_by], references: [id])
   other_adm_provider_employees_adm_provider_employees_created_byToadm_provider_employees    adm_provider_employees[]      @relation("adm_provider_employees_created_byToadm_provider_employees")
   adm_provider_employees_adm_provider_employees_deleted_byToadm_provider_employees          adm_provider_employees?       @relation("adm_provider_employees_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
@@ -543,6 +550,21 @@ model adm_provider_employees {
   sup_ticket_sla_rules_sup_ticket_sla_rules_updated_byToadm_provider_employees              sup_ticket_sla_rules[]        @relation("sup_ticket_sla_rules_updated_byToadm_provider_employees")
   sup_tickets                                                                               sup_tickets[]
   trp_platform_account_keys                                                                 trp_platform_account_keys[]
+  // Quote-to-Cash relations
+  bil_plans_created                                                                         bil_plans[]                   @relation("bil_plans_created_byToadm_provider_employees")
+  bil_plans_updated                                                                         bil_plans[]                   @relation("bil_plans_updated_byToadm_provider_employees")
+  bil_plans_deleted                                                                         bil_plans[]                   @relation("bil_plans_deleted_byToadm_provider_employees")
+  bil_addons_created                                                                        bil_addons[]                  @relation("bil_addons_created_byToadm_provider_employees")
+  bil_addons_updated                                                                        bil_addons[]                  @relation("bil_addons_updated_byToadm_provider_employees")
+  bil_addons_deleted                                                                        bil_addons[]                  @relation("bil_addons_deleted_byToadm_provider_employees")
+  bil_services_created                                                                      bil_services[]                @relation("bil_services_created_byToadm_provider_employees")
+  bil_services_updated                                                                      bil_services[]                @relation("bil_services_updated_byToadm_provider_employees")
+  bil_services_deleted                                                                      bil_services[]                @relation("bil_services_deleted_byToadm_provider_employees")
+  crm_orders_approved                                                                       crm_orders[]                  @relation("crm_orders_approved_byToadm_provider_employees")
+  crm_orders_created                                                                        crm_orders[]                  @relation("crm_orders_created_byToadm_provider_employees")
+  crm_orders_updated                                                                        crm_orders[]                  @relation("crm_orders_updated_byToadm_provider_employees")
+  crm_orders_deleted                                                                        crm_orders[]                  @relation("crm_orders_deleted_byToadm_provider_employees")
+  crm_agreements                                                                            crm_agreements[]
 
   @@index([created_by])
   @@index([deleted_at])
@@ -550,6 +572,52 @@ model adm_provider_employees {
   @@index([last_name])
   @@index([permissions], map: "adm_provider_employees_permissions_gin", type: Gin)
   @@index([updated_by])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model adm_providers {
+  id                     String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  code                   String                   @unique @db.VarChar(50)
+  name                   String                   @db.VarChar(200)
+  country_code           String?                  @db.Char(2)
+  is_internal            Boolean                  @default(true)
+  settings               Json                     @default("{}")
+  metadata               Json                     @default("{}")
+  status                 String                   @default("active") @db.VarChar(50)
+  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  created_by             String?                  @db.Uuid
+  updated_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_by             String?                  @db.Uuid
+  deleted_at             DateTime?                @db.Timestamptz(6)
+  deleted_by             String?                  @db.Uuid
+  deletion_reason        String?
+  adm_provider_employees adm_provider_employees[]
+  crm_activities         crm_activities[]
+  crm_addresses          crm_addresses[]          @relation("crm_addresses_provider")
+  crm_countries          crm_countries[]          @relation("crm_countries_provider")
+  crm_lead_sources       crm_lead_sources[]       @relation("crm_lead_sources_provider")
+  crm_leads              crm_leads[]              @relation("crm_leads_provider")
+  crm_opportunities      crm_opportunities[]      @relation("crm_opportunities_provider")
+  crm_pipelines          crm_pipelines[]          @relation("crm_pipelines_provider")
+  crm_settings           crm_settings[]           @relation("crm_settings_provider")
+  // Quote-to-Cash relations
+  bil_plans              bil_plans[]              @relation("bil_plans_provider")
+  bil_addons             bil_addons[]             @relation("bil_addons_provider")
+  bil_services           bil_services[]           @relation("bil_services_provider")
+  bil_offer_rules        bil_offer_rules[]        @relation("bil_offer_rules_provider")
+  bil_amendments         bil_amendments[]         @relation("bil_amendments_provider")
+  bil_subscription_schedules bil_subscription_schedules[] @relation("bil_subscription_schedules_provider")
+  bil_subscription_schedule_phases bil_subscription_schedule_phases[] @relation("bil_subscription_schedule_phases_provider")
+  crm_quotes             crm_quotes[]             @relation("crm_quotes_provider")
+  crm_quote_items        crm_quote_items[]        @relation("crm_quote_items_provider")
+  crm_agreements         crm_agreements[]         @relation("crm_agreements_provider")
+  crm_orders             crm_orders[]             @relation("crm_orders_provider")
+
+  @@index([code], map: "idx_adm_providers_code")
+  @@index([country_code], map: "idx_adm_providers_country")
+  @@index([is_internal], map: "idx_adm_providers_internal")
+  @@index([status], map: "idx_adm_providers_status")
 }
 
 model adm_role_permissions {
@@ -597,6 +665,8 @@ model adm_roles {
   valid_from                                         DateTime?              @db.Timestamptz(6)
   valid_until                                        DateTime?              @db.Timestamptz(6)
   approval_required                                  Boolean                @default(false)
+  name_translations                                  Json
+  description_translations                           Json?
   adm_member_roles                                   adm_member_roles[]
   adm_members_adm_members_default_role_idToadm_roles adm_members[]          @relation("adm_members_default_role_idToadm_roles")
   adm_role_permissions                               adm_role_permissions[]
@@ -663,6 +733,8 @@ model adm_tenant_vehicle_classes {
   deleted_at                                                     DateTime?            @db.Timestamptz(6)
   deleted_by                                                     String?              @db.Uuid
   deletion_reason                                                String?
+  name_translations                                              Json
+  description_translations                                       Json?
   dir_vehicle_classes                                            dir_vehicle_classes? @relation(fields: [based_on_class_id], references: [id], onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_based_on")
   adm_members_adm_tenant_vehicle_classes_created_byToadm_members adm_members          @relation("adm_tenant_vehicle_classes_created_byToadm_members", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_created_by")
   adm_members_adm_tenant_vehicle_classes_deleted_byToadm_members adm_members?         @relation("adm_tenant_vehicle_classes_deleted_byToadm_members", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_deleted_by")
@@ -690,6 +762,7 @@ model adm_tenants {
   primary_contact_email        String?                        @db.VarChar(255)
   primary_contact_phone        String?                        @db.VarChar(50)
   billing_email                String?                        @db.VarChar(255)
+  tenant_code                  String?                        @db.VarChar(50)
   adm_audit_logs               adm_audit_logs[]
   adm_invitations              adm_invitations[]
   adm_member_roles             adm_member_roles[]
@@ -752,6 +825,10 @@ model adm_tenants {
   trp_platform_accounts        trp_platform_accounts[]
   trp_settlements              trp_settlements[]
   trp_trips                    trp_trips[]
+  // Quote-to-Cash relations
+  bil_amendments               bil_amendments[]
+  bil_subscription_schedules   bil_subscription_schedules[]
+  crm_orders                   crm_orders[]
 
   @@index([clerk_organization_id])
   @@index([country_code])
@@ -790,6 +867,7 @@ model bil_billing_plans {
   stripe_price_id_yearly                                                                String?
   billing_interval                                                                      billing_interval?          @default(month)
   status                                                                                billing_plan_status?
+  description_translations                                                              Json?
   adm_provider_employees_bil_billing_plans_created_byToadm_provider_employees           adm_provider_employees?    @relation("bil_billing_plans_created_byToadm_provider_employees", fields: [created_by], references: [id])
   adm_provider_employees_bil_billing_plans_deleted_byToadm_provider_employees           adm_provider_employees?    @relation("bil_billing_plans_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
   adm_provider_employees_bil_billing_plans_updated_byToadm_provider_employees           adm_provider_employees?    @relation("bil_billing_plans_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
@@ -798,6 +876,11 @@ model bil_billing_plans {
   bil_tenant_subscriptions_bil_tenant_subscriptions_previous_plan_idTobil_billing_plans bil_tenant_subscriptions[] @relation("bil_tenant_subscriptions_previous_plan_idTobil_billing_plans")
   crm_contracts                                                                         crm_contracts[]
   crm_opportunities                                                                     crm_opportunities[]
+  // Quote-to-Cash relations
+  bil_amendments_new_plan                                                               bil_amendments[]           @relation("bil_amendments_new_plan")
+  bil_amendments_old_plan                                                               bil_amendments[]           @relation("bil_amendments_old_plan")
+  bil_subscription_schedule_phases                                                      bil_subscription_schedule_phases[]
+  crm_orders                                                                            crm_orders[]
 
   @@index([created_by])
   @@index([deleted_at])
@@ -881,6 +964,7 @@ model bil_promotions {
   metadata               Json?                   @default("{}")
   created_at             DateTime                @default(now()) @db.Timestamptz(6)
   created_by             String?                 @db.Uuid
+  description_translations Json?
   bil_promotion_usage    bil_promotion_usage[]
   adm_provider_employees adm_provider_employees? @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_bil_promotions_created_by")
   bil_billing_plans      bil_billing_plans?      @relation(fields: [plan_id], references: [id], onUpdate: NoAction, map: "fk_bil_promotions_plan")
@@ -1012,6 +1096,9 @@ model bil_tenant_subscriptions {
   bil_billing_plans_bil_tenant_subscriptions_previous_plan_idTobil_billing_plans     bil_billing_plans?         @relation("bil_tenant_subscriptions_previous_plan_idTobil_billing_plans", fields: [previous_plan_id], references: [id], onUpdate: NoAction, map: "fk_bil_subscriptions_previous_plan")
   bil_tenant_usage_metrics                                                           bil_tenant_usage_metrics[]
   crm_contracts                                                                      crm_contracts[]
+  // Quote-to-Cash relations
+  bil_amendments                                                                     bil_amendments[]
+  crm_orders                                                                         crm_orders[]
 
   @@index([created_by])
   @@index([deleted_at])
@@ -1073,7 +1160,310 @@ model bil_usage_metric_types {
   description              String?
   aggregation_method       aggregation_method
   created_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  name_translations        Json
+  description_translations Json?
   bil_tenant_usage_metrics bil_tenant_usage_metrics[]
+}
+
+/// Quote-to-Cash: bil_plans
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bil_plans {
+  id                       String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_id              String?                 @db.Uuid
+  code                     String                  @db.VarChar(50)
+  billing_interval         billing_interval
+  max_vehicles             Int?
+  max_drivers              Int?
+  max_users                Int?
+  features                 Json?                   @default("[]")
+  display_order            Int?                    @default(0)
+  is_popular               Boolean?                @default(false)
+  is_active                Boolean                 @default(true)
+  metadata                 Json?                   @default("{}")
+  created_at               DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at               DateTime?               @db.Timestamptz(6)
+  created_by               String?                 @db.Uuid
+  updated_by               String?                 @db.Uuid
+  deleted_by               String?                 @db.Uuid
+  deletion_reason          String?
+  name_translations        Json
+  description_translations Json
+  crm_quote_items          crm_quote_items[]
+  adm_providers            adm_providers?          @relation("bil_plans_provider", fields: [provider_id], references: [id], onDelete: Cascade, map: "bil_plans_provider_id_fkey")
+  adm_provider_employees_created_by adm_provider_employees? @relation("bil_plans_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, map: "fk_bil_plans_created_by")
+  adm_provider_employees_deleted_by adm_provider_employees? @relation("bil_plans_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, map: "fk_bil_plans_deleted_by")
+  adm_provider_employees_updated_by adm_provider_employees? @relation("bil_plans_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: Restrict, map: "fk_bil_plans_updated_by")
+
+  @@unique([code, provider_id], map: "uq_bil_plans_code_provider")
+  @@index([is_active], map: "idx_bil_plans_active")
+  @@index([provider_id], map: "idx_bil_plans_provider")
+}
+
+/// Quote-to-Cash: bil_addons
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bil_addons {
+  id                       String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_id              String?                 @db.Uuid
+  code                     String                  @db.VarChar(50)
+  is_recurring             Boolean
+  billing_interval         billing_interval?
+  compatible_plan_ids      String[]                @db.Uuid
+  category                 String?                 @db.VarChar(50)
+  is_active                Boolean
+  metadata                 Json?
+  created_at               DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at               DateTime?               @db.Timestamptz(6)
+  created_by               String?                 @db.Uuid
+  updated_by               String?                 @db.Uuid
+  deleted_by               String?                 @db.Uuid
+  deletion_reason          String?
+  name_translations        Json
+  description_translations Json
+  crm_quote_approvals      crm_quote_approvals[]
+  bil_offer_rules          bil_offer_rules[]
+  adm_providers            adm_providers?          @relation("bil_addons_provider", fields: [provider_id], references: [id], onDelete: Cascade, map: "bil_addons_provider_id_fkey")
+  adm_provider_employees_created_by adm_provider_employees? @relation("bil_addons_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, map: "fk_bil_addons_created_by")
+  adm_provider_employees_deleted_by adm_provider_employees? @relation("bil_addons_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, map: "fk_bil_addons_deleted_by")
+  adm_provider_employees_updated_by adm_provider_employees? @relation("bil_addons_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: Restrict, map: "fk_bil_addons_updated_by")
+
+  @@unique([code, provider_id], map: "uq_bil_addons_code_provider")
+  @@index([category], map: "idx_bil_addons_category")
+  @@index([provider_id], map: "idx_bil_addons_provider")
+}
+
+/// Quote-to-Cash: bil_services
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bil_services {
+  id                       String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_id              String?                 @db.Uuid
+  code                     String                  @db.VarChar(50)
+  service_type             String                  @db.VarChar(30)
+  billing_interval         billing_interval?
+  hourly_rate              Decimal?                @db.Decimal(10, 2)
+  min_hours                Decimal?                @db.Decimal(5, 2)
+  category                 String?                 @db.VarChar(50)
+  is_active                Boolean
+  metadata                 Json?
+  created_at               DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at               DateTime?               @db.Timestamptz(6)
+  created_by               String?                 @db.Uuid
+  updated_by               String?                 @db.Uuid
+  deleted_by               String?                 @db.Uuid
+  deletion_reason          String?
+  name_translations        Json
+  description_translations Json
+  adm_providers            adm_providers?          @relation("bil_services_provider", fields: [provider_id], references: [id], onDelete: Cascade, map: "bil_services_provider_id_fkey")
+  adm_provider_employees_created_by adm_provider_employees? @relation("bil_services_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, map: "fk_bil_services_created_by")
+  adm_provider_employees_deleted_by adm_provider_employees? @relation("bil_services_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, map: "fk_bil_services_deleted_by")
+  adm_provider_employees_updated_by adm_provider_employees? @relation("bil_services_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: Restrict, map: "fk_bil_services_updated_by")
+
+  @@unique([code, provider_id], map: "uq_bil_services_code_provider")
+  @@index([service_type], map: "idx_bil_services_type")
+  @@index([provider_id], map: "idx_bil_services_provider")
+}
+
+/// Quote-to-Cash: bil_offer_rules
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bil_offer_rules {
+  id                         String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_id                String                  @db.Uuid
+  code                       String                  @db.VarChar(50)
+  name_translations          Json
+  description_translations   Json?
+  offer_type                 String                  @db.VarChar(30)
+  free_months                Int?
+  free_addon_id              String?                 @db.Uuid
+  max_adjustment_percent     Decimal?                @db.Decimal(5, 2)
+  volume_min_vehicles        Int?
+  volume_price_per_vehicle   Decimal?                @db.Decimal(10, 2)
+  min_vehicles               Int?
+  max_vehicles               Int?
+  min_contract_months        Int?
+  country_codes              String[]
+  requires_approval          Boolean                 @default(false)
+  approval_threshold_percent Decimal?                @db.Decimal(5, 2)
+  approval_role              String?                 @db.VarChar(50)
+  visible_to_sales_rep       Boolean                 @default(true)
+  effective_from             DateTime?               @db.Date
+  effective_to               DateTime?               @db.Date
+  is_active                  Boolean                 @default(true)
+  display_order              Int?                    @default(0)
+  metadata                   Json?
+  created_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  created_by                 String?                 @db.Uuid
+  updated_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  updated_by                 String?                 @db.Uuid
+  deleted_at                 DateTime?               @db.Timestamptz(6)
+  deleted_by                 String?                 @db.Uuid
+  crm_quote_approvals        crm_quote_approvals[]
+  adm_providers              adm_providers           @relation("bil_offer_rules_provider", fields: [provider_id], references: [id], onDelete: Cascade, map: "bil_offer_rules_provider_id_fkey")
+  bil_addons                 bil_addons?             @relation(fields: [free_addon_id], references: [id], map: "bil_offer_rules_free_addon_id_fkey")
+
+  @@unique([code, provider_id], map: "uq_bil_offer_rules_code_provider")
+  @@index([is_active], map: "idx_bil_offer_rules_active")
+  @@index([provider_id], map: "idx_bil_offer_rules_provider")
+  @@index([offer_type], map: "idx_bil_offer_rules_type")
+}
+
+/// Quote-to-Cash: bil_catalog_prices
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bil_catalog_prices {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  catalog_type String   @db.VarChar(20)
+  catalog_id   String   @db.Uuid
+  country_code String   @db.VarChar(2)
+  currency     String   @db.VarChar(3)
+  base_price   Decimal  @db.Decimal(12, 2)
+  min_price    Decimal? @db.Decimal(12, 2)
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([catalog_type, catalog_id, country_code], map: "uq_catalog_price_per_country")
+  @@index([catalog_type, catalog_id, country_code], map: "idx_bil_catalog_prices_lookup")
+}
+
+/// Quote-to-Cash: bil_amendments
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bil_amendments {
+  id                   String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amendment_reference  String                    @unique @db.VarChar(50)
+  tenant_id            String                    @db.Uuid
+  subscription_id      String                    @db.Uuid
+  schedule_id          String?                   @db.Uuid
+  provider_id          String                    @db.Uuid
+  amendment_type       amendment_type
+  status               amendment_status          @default(draft)
+  old_plan_id          String?                   @db.Uuid
+  new_plan_id          String?                   @db.Uuid
+  old_quantity         Int?
+  new_quantity         Int?
+  old_price            Decimal?                  @db.Decimal(15, 2)
+  new_price            Decimal?                  @db.Decimal(15, 2)
+  old_billing_cycle    billing_interval?
+  new_billing_cycle    billing_interval?
+  requested_at         DateTime                  @default(now()) @db.Timestamptz(6)
+  effective_date       DateTime                  @db.Date
+  applied_at           DateTime?                 @db.Timestamptz(6)
+  proration_behavior   proration_behavior        @default(create_prorations)
+  proration_amount     Decimal?                  @db.Decimal(15, 2)
+  proration_invoice_id String?                   @db.VarChar(100)
+  requires_approval    Boolean?                  @default(false)
+  approved_by          String?                   @db.Uuid
+  approved_at          DateTime?                 @db.Timestamptz(6)
+  rejected_by          String?                   @db.Uuid
+  rejected_at          DateTime?                 @db.Timestamptz(6)
+  rejection_reason     String?
+  stripe_amendment_id  String?                   @db.VarChar(100)
+  stripe_invoice_id    String?                   @db.VarChar(100)
+  reason               String?
+  internal_notes       String?
+  metadata             Json?                     @default("{}")
+  created_by           String?                   @db.Uuid
+  updated_by           String?                   @db.Uuid
+  created_at           DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                  @default(now()) @db.Timestamptz(6)
+  deleted_at           DateTime?                 @db.Timestamptz(6)
+  deleted_by           String?                   @db.Uuid
+  bil_billing_plans_new bil_billing_plans?       @relation("bil_amendments_new_plan", fields: [new_plan_id], references: [id], onDelete: SetNull, map: "bil_amendments_new_plan_id_fkey")
+  bil_billing_plans_old bil_billing_plans?       @relation("bil_amendments_old_plan", fields: [old_plan_id], references: [id], onDelete: SetNull, map: "bil_amendments_old_plan_id_fkey")
+  adm_providers         adm_providers            @relation("bil_amendments_provider", fields: [provider_id], references: [id], onDelete: Cascade, map: "bil_amendments_provider_id_fkey")
+  bil_subscription_schedules bil_subscription_schedules? @relation(fields: [schedule_id], references: [id], onDelete: SetNull, map: "bil_amendments_schedule_id_fkey")
+  bil_tenant_subscriptions bil_tenant_subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade, map: "bil_amendments_subscription_id_fkey")
+  adm_tenants           adm_tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "bil_amendments_tenant_id_fkey")
+
+  @@index([amendment_reference], map: "idx_bil_amendments_reference")
+  @@index([effective_date], map: "idx_bil_amendments_effective_date")
+  @@index([provider_id], map: "idx_bil_amendments_provider_id")
+  @@index([schedule_id], map: "idx_bil_amendments_schedule_id")
+  @@index([status], map: "idx_bil_amendments_status")
+  @@index([subscription_id], map: "idx_bil_amendments_subscription_id")
+  @@index([tenant_id], map: "idx_bil_amendments_tenant_id")
+  @@index([amendment_type], map: "idx_bil_amendments_type")
+}
+
+/// Quote-to-Cash: bil_subscription_schedules
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bil_subscription_schedules {
+  id                     String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schedule_reference     String                           @unique @db.VarChar(50)
+  tenant_id              String                           @db.Uuid
+  order_id               String?                          @db.Uuid
+  provider_id            String                           @db.Uuid
+  stripe_schedule_id     String?                          @db.VarChar(100)
+  stripe_customer_id     String?                          @db.VarChar(100)
+  stripe_subscription_id String?                          @db.VarChar(100)
+  status                 schedule_status                  @default(not_started)
+  end_behavior           schedule_end_behavior            @default(cancel)
+  total_phases           Int                              @default(1)
+  current_phase_number   Int?                             @default(1)
+  start_date             DateTime                         @db.Date
+  end_date               DateTime?                        @db.Date
+  current_phase_start    DateTime?                        @db.Date
+  current_phase_end      DateTime?                        @db.Date
+  currency               String                           @default("EUR") @db.Char(3)
+  total_contract_value   Decimal?                         @db.Decimal(18, 2)
+  metadata               Json?                            @default("{}")
+  last_synced_at         DateTime?                        @db.Timestamptz(6)
+  sync_error             String?
+  created_by             String?                          @db.Uuid
+  updated_by             String?                          @db.Uuid
+  created_at             DateTime                         @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                         @default(now()) @db.Timestamptz(6)
+  deleted_at             DateTime?                        @db.Timestamptz(6)
+  deleted_by             String?                          @db.Uuid
+  deletion_reason        String?
+  bil_amendments         bil_amendments[]
+  bil_subscription_schedule_phases bil_subscription_schedule_phases[]
+  crm_orders             crm_orders?                      @relation(fields: [order_id], references: [id], onDelete: SetNull, map: "bil_subscription_schedules_order_id_fkey")
+  adm_providers          adm_providers                    @relation("bil_subscription_schedules_provider", fields: [provider_id], references: [id], onDelete: Cascade, map: "bil_subscription_schedules_provider_id_fkey")
+  adm_tenants            adm_tenants                      @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "bil_subscription_schedules_tenant_id_fkey")
+
+  @@index([order_id], map: "idx_bil_schedules_order_id")
+  @@index([provider_id], map: "idx_bil_schedules_provider_id")
+  @@index([schedule_reference], map: "idx_bil_schedules_reference")
+  @@index([status], map: "idx_bil_schedules_status")
+  @@index([stripe_schedule_id], map: "idx_bil_schedules_stripe_schedule_id")
+  @@index([stripe_subscription_id], map: "idx_bil_schedules_stripe_subscription_id")
+  @@index([tenant_id], map: "idx_bil_schedules_tenant_id")
+}
+
+/// Quote-to-Cash: bil_subscription_schedule_phases
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bil_subscription_schedule_phases {
+  id                 String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schedule_id        String                     @db.Uuid
+  plan_id            String?                    @db.Uuid
+  provider_id        String                     @db.Uuid
+  phase_number       Int
+  phase_name         String?                    @db.VarChar(100)
+  start_date         DateTime                   @db.Date
+  end_date           DateTime                   @db.Date
+  duration_months    Int?
+  unit_price         Decimal                    @db.Decimal(15, 2)
+  quantity           Int                        @default(1)
+  discount_percent   Decimal?                   @default(0) @db.Decimal(5, 2)
+  discount_amount    Decimal?                   @default(0) @db.Decimal(15, 2)
+  phase_total        Decimal                    @db.Decimal(15, 2)
+  billing_cycle      billing_interval           @default(month)
+  proration_behavior proration_behavior?        @default(create_prorations)
+  trial_days         Int?                       @default(0)
+  stripe_price_id    String?                    @db.VarChar(100)
+  stripe_coupon_id   String?                    @db.VarChar(100)
+  metadata           Json?                      @default("{}")
+  created_at         DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                   @default(now()) @db.Timestamptz(6)
+  bil_subscription_schedules bil_subscription_schedules @relation(fields: [schedule_id], references: [id], onDelete: Cascade, map: "bil_subscription_schedule_phases_schedule_id_fkey")
+  bil_billing_plans  bil_billing_plans?         @relation(fields: [plan_id], references: [id], onDelete: Restrict, map: "bil_subscription_schedule_phases_plan_id_fkey")
+  adm_providers      adm_providers              @relation("bil_subscription_schedule_phases_provider", fields: [provider_id], references: [id], onDelete: Cascade, map: "bil_subscription_schedule_phases_provider_id_fkey")
+
+  @@unique([schedule_id, phase_number], map: "idx_bil_schedule_phases_unique")
+  @@index([plan_id], map: "idx_bil_schedule_phases_plan_id")
+  @@index([provider_id], map: "idx_bil_schedule_phases_provider_id")
+  @@index([schedule_id], map: "idx_bil_schedule_phases_schedule_id")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1088,9 +1478,328 @@ model crm_addresses {
   address_type  address_type?
   is_default    Boolean         @default(false)
   created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  provider_id   String?         @db.Uuid
   crm_contracts crm_contracts[]
+  adm_providers adm_providers?  @relation("crm_addresses_provider", fields: [provider_id], references: [id], map: "fk_crm_addresses_provider")
+  // Quote-to-Cash relations
+  crm_orders    crm_orders[]    @relation("crm_orders_billing_address")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model crm_activities {
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id          String?                 @db.Uuid
+  opportunity_id   String?                 @db.Uuid
+  provider_id      String                  @db.Uuid
+  activity_type    String                  @db.VarChar(50)
+  subject          String                  @db.VarChar(255)
+  description      String?
+  activity_date    DateTime                @default(now()) @db.Timestamptz(6)
+  duration_minutes Int?
+  outcome          String?                 @db.VarChar(100)
+  is_completed     Boolean?                @default(false)
+  completed_at     DateTime?               @db.Timestamptz(6)
+  created_by       String?                 @db.Uuid
+  created_at       DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?               @default(now()) @db.Timestamptz(6)
+  adm_provider_employees adm_provider_employees? @relation(fields: [created_by], references: [id], map: "crm_activities_created_by_fkey")
+  crm_leads              crm_leads?              @relation(fields: [lead_id], references: [id], onDelete: Cascade, map: "crm_activities_lead_id_fkey")
+  crm_opportunities      crm_opportunities?      @relation(fields: [opportunity_id], references: [id], onDelete: Cascade, map: "crm_activities_opportunity_id_fkey")
+  adm_providers          adm_providers           @relation(fields: [provider_id], references: [id], map: "crm_activities_provider_id_fkey")
+
+  @@index([activity_date(sort: Desc)], map: "idx_activities_date")
+  @@index([lead_id], map: "idx_activities_lead")
+  @@index([opportunity_id], map: "idx_activities_opportunity")
+  @@index([provider_id], map: "idx_activities_provider")
+  @@index([activity_type], map: "idx_activities_type")
+}
+
+/// Quote-to-Cash: crm_quotes
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model crm_quotes {
+  id                       String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  quote_reference          String                 @unique @db.VarChar(50)
+  quote_code               String                 @db.VarChar(30)
+  quote_version            Int                    @default(1)
+  parent_quote_id          String?                @db.Uuid
+  opportunity_id           String                 @db.Uuid
+  status                   quote_status           @default(draft)
+  valid_from               DateTime               @default(dbgenerated("CURRENT_DATE")) @db.Date
+  valid_until              DateTime               @db.Date
+  contract_start_date      DateTime?              @db.Date
+  contract_duration_months Int                    @default(12)
+  billing_cycle            billing_interval       @default(month)
+  currency                 String                 @default("EUR") @db.Char(3)
+  subtotal                 Decimal                @default(0) @db.Decimal(15, 2)
+  discount_type            discount_type?
+  discount_value           Decimal?               @default(0) @db.Decimal(15, 2)
+  discount_amount          Decimal?               @default(0) @db.Decimal(15, 2)
+  tax_rate                 Decimal                @default(0) @db.Decimal(5, 2)
+  tax_amount               Decimal?               @default(0) @db.Decimal(15, 2)
+  total_value              Decimal?               @default(0) @db.Decimal(18, 2)
+  monthly_recurring_value  Decimal?               @db.Decimal(15, 2)
+  annual_recurring_value   Decimal?               @db.Decimal(15, 2)
+  converted_to_order_id    String?                @db.Uuid
+  converted_at             DateTime?              @db.Timestamptz(6)
+  document_url             String?
+  notes                    String?
+  metadata                 Json                   @default("{}")
+  created_by               String                 @db.Uuid
+  updated_by               String?                @db.Uuid
+  deleted_by               String?                @db.Uuid
+  deletion_reason          String?
+  created_at               DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime               @default(now()) @db.Timestamptz(6)
+  deleted_at               DateTime?              @db.Timestamptz(6)
+  provider_id              String?                @db.Uuid
+  sent_at                  DateTime?              @db.Timestamptz(6)
+  first_viewed_at          DateTime?              @db.Timestamptz(6)
+  last_viewed_at           DateTime?              @db.Timestamptz(6)
+  view_count               Int?                   @default(0)
+  accepted_at              DateTime?              @db.Timestamptz(6)
+  rejected_at              DateTime?              @db.Timestamptz(6)
+  rejection_reason         String?
+  expired_at               DateTime?              @db.Timestamptz(6)
+  document_generated_at    DateTime?              @db.Timestamptz(6)
+  terms_and_conditions     String?
+  public_token             String?                @unique @db.VarChar(64)
+  crm_quote_items          crm_quote_items[]
+  crm_quote_approvals      crm_quote_approvals[]
+  crm_orders_from_quote    crm_orders[]           @relation("crm_orders_quote")
+  parent_quote             crm_quotes?            @relation("crm_quotes_parent", fields: [parent_quote_id], references: [id], onDelete: SetNull, map: "fk_crm_quotes_parent_quote")
+  child_quotes             crm_quotes[]           @relation("crm_quotes_parent")
+  converted_order          crm_orders?            @relation("crm_quotes_converted_order", fields: [converted_to_order_id], references: [id], onDelete: SetNull, map: "fk_crm_quotes_converted_order")
+  adm_providers            adm_providers?         @relation("crm_quotes_provider", fields: [provider_id], references: [id], map: "fk_crm_quotes_provider")
+
+  @@index([opportunity_id], map: "idx_crm_quotes_opportunity_id")
+  @@index([status], map: "idx_crm_quotes_status")
+  @@index([valid_until], map: "idx_crm_quotes_valid_until")
+  @@index([created_at(sort: Desc)], map: "idx_crm_quotes_created_at")
+  @@index([created_by], map: "idx_crm_quotes_created_by")
+  @@index([provider_id], map: "idx_crm_quotes_provider_id")
+  @@index([parent_quote_id], map: "idx_crm_quotes_parent_quote_id")
+}
+
+/// Quote-to-Cash: crm_quote_items
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model crm_quote_items {
+  id                   String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  quote_id             String           @db.Uuid
+  sort_order           Int              @default(0)
+  item_type            quote_item_type
+  recurrence           item_recurrence  @default(recurring)
+  plan_id              String?          @db.Uuid
+  addon_id             String?          @db.Uuid
+  service_id           String?          @db.Uuid
+  name                 String           @db.VarChar(200)
+  description          String?
+  sku                  String?          @db.VarChar(50)
+  quantity             Int              @default(1)
+  unit_price           Decimal          @db.Decimal(15, 2)
+  line_discount_type   discount_type?
+  line_discount_value  Decimal?         @default(0) @db.Decimal(15, 2)
+  line_discount_amount Decimal?         @default(0) @db.Decimal(15, 2)
+  line_total           Decimal?         @default(0) @db.Decimal(15, 2)
+  metadata             Json             @default("{}")
+  created_at           DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime         @default(now()) @db.Timestamptz(6)
+  provider_id          String?          @db.Uuid
+  crm_quotes           crm_quotes       @relation(fields: [quote_id], references: [id], onDelete: Cascade, map: "crm_quote_items_quote_id_fkey")
+  bil_plans            bil_plans?       @relation(fields: [plan_id], references: [id], onDelete: SetNull, map: "fk_crm_quote_items_plan")
+  adm_providers        adm_providers?   @relation("crm_quote_items_provider", fields: [provider_id], references: [id], map: "fk_crm_quote_items_provider")
+
+  @@index([quote_id], map: "idx_crm_quote_items_quote_id")
+  @@index([item_type], map: "idx_crm_quote_items_item_type")
+  @@index([plan_id], map: "idx_crm_quote_items_plan_id")
+  @@index([provider_id], map: "idx_crm_quote_items_provider_id")
+}
+
+/// Quote-to-Cash: crm_quote_approvals
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model crm_quote_approvals {
+  id                           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quote_id                     String       @db.Uuid
+  offer_rule_id                String?      @db.Uuid
+  requested_by                 String       @db.Uuid
+  requested_at                 DateTime     @default(now()) @db.Timestamptz(6)
+  request_reason               String?
+  requested_adjustment_percent Decimal?     @db.Decimal(5, 2)
+  requested_free_months        Int?
+  requested_free_addon_id      String?      @db.Uuid
+  requested_volume_price       Decimal?     @db.Decimal(10, 2)
+  approval_role                String       @db.VarChar(50)
+  approved_by                  String?      @db.Uuid
+  approved_at                  DateTime?    @db.Timestamptz(6)
+  status                       String       @default("pending") @db.VarChar(20)
+  response_comment             String?
+  rejection_reason             String?
+  expires_at                   DateTime?    @db.Timestamptz(6)
+  created_at                   DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime     @default(now()) @db.Timestamptz(6)
+  crm_quotes                   crm_quotes   @relation(fields: [quote_id], references: [id], onDelete: Cascade, map: "crm_quote_approvals_quote_id_fkey")
+  bil_offer_rules              bil_offer_rules? @relation(fields: [offer_rule_id], references: [id], map: "crm_quote_approvals_offer_rule_id_fkey")
+  bil_addons                   bil_addons?  @relation(fields: [requested_free_addon_id], references: [id], map: "crm_quote_approvals_requested_free_addon_id_fkey")
+
+  @@index([quote_id], map: "idx_crm_quote_approvals_quote")
+  @@index([status], map: "idx_crm_quote_approvals_status")
+  @@index([approval_role, status], map: "idx_crm_quote_approvals_role")
+  @@index([requested_by], map: "idx_crm_quote_approvals_requested_by")
+  @@index([expires_at], map: "idx_crm_quote_approvals_expires")
+}
+
+/// Quote-to-Cash: crm_orders
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model crm_orders {
+  id                       String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  lead_id                  String                    @db.Uuid
+  contract_date            DateTime                  @db.Date
+  effective_date           DateTime                  @db.Date
+  expiry_date              DateTime?                 @db.Date
+  total_value              Decimal                   @db.Decimal(18, 2)
+  currency                 String                    @db.VarChar(3)
+  status                   String                    @default("active")
+  metadata                 Json                      @default("{}")
+  created_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  created_by               String?                   @db.Uuid
+  updated_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_by               String?                   @db.Uuid
+  deleted_at               DateTime?                 @db.Timestamptz(6)
+  deleted_by               String?                   @db.Uuid
+  deletion_reason          String?
+  opportunity_id           String?                   @db.Uuid
+  signature_date           DateTime?                 @db.Date
+  vat_rate                 Decimal?                  @db.Decimal(5, 2)
+  renewal_type             renewal_type?
+  auto_renew               Boolean?                  @default(false)
+  renewal_date             DateTime?                 @db.Date
+  notice_period_days       Int?
+  renewed_from_contract_id String?                   @db.Uuid
+  provider_id              String                    @db.Uuid
+  plan_id                  String?                   @db.Uuid
+  subscription_id          String?                   @db.Uuid
+  company_name             String?
+  contact_name             String?
+  contact_email            String?                   @db.Citext
+  contact_phone            String?                   @db.VarChar(50)
+  billing_address_id       String?                   @db.Uuid
+  version_number           Int?                      @default(1)
+  document_url             String?
+  notes                    String?
+  approved_by              String?                   @db.Uuid
+  quote_id                 String?                   @db.Uuid
+  order_type               order_type?               @default(new)
+  fulfillment_status       order_fulfillment_status? @default(pending)
+  order_reference          String?                   @unique @db.VarChar(50)
+  order_code               String?                   @db.VarChar(30)
+  billing_cycle            billing_interval?         @default(month)
+  monthly_value            Decimal?                  @db.Decimal(15, 2)
+  annual_value             Decimal?                  @db.Decimal(15, 2)
+  fulfilled_at             DateTime?                 @db.Timestamptz(6)
+  activated_at             DateTime?                 @db.Timestamptz(6)
+  cancelled_at             DateTime?                 @db.Timestamptz(6)
+  cancellation_reason      String?
+  client_tenant_id         String?                   @db.Uuid
+  crm_agreements           crm_agreements[]
+  crm_quotes_from_order    crm_quotes[]              @relation("crm_quotes_converted_order")
+  crm_quotes_quote         crm_quotes?               @relation("crm_orders_quote", fields: [quote_id], references: [id], onDelete: SetNull, map: "crm_orders_quote_id_fkey")
+  crm_opportunities        crm_opportunities?        @relation("crm_orders_opportunity", fields: [opportunity_id], references: [id], onDelete: SetNull, map: "crm_orders_opportunity_id_fkey")
+  adm_members_created_by   adm_members?              @relation("crm_orders_created_byToadm_members", fields: [created_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_created_by_fkey")
+  adm_members_deleted_by   adm_members?              @relation("crm_orders_deleted_byToadm_members", fields: [deleted_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_deleted_by_fkey")
+  adm_members_updated_by   adm_members?              @relation("crm_orders_updated_byToadm_members", fields: [updated_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_updated_by_fkey")
+  adm_provider_employees_approved_by adm_provider_employees? @relation("crm_orders_approved_byToadm_provider_employees", fields: [approved_by], references: [id], onDelete: SetNull, map: "fk_crm_orders_approved_by")
+  crm_addresses            crm_addresses?            @relation("crm_orders_billing_address", fields: [billing_address_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_billing_address")
+  adm_provider_employees_created_by adm_provider_employees? @relation("crm_orders_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: SetNull, map: "fk_crm_orders_created_by")
+  adm_provider_employees_deleted_by adm_provider_employees? @relation("crm_orders_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: SetNull, map: "fk_crm_orders_deleted_by")
+  crm_leads                crm_leads                 @relation(fields: [lead_id], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "fk_crm_orders_lead")
+  bil_billing_plans        bil_billing_plans?        @relation(fields: [plan_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_plan")
+  adm_providers            adm_providers             @relation("crm_orders_provider", fields: [provider_id], references: [id], map: "fk_crm_orders_provider")
+  renewed_from_order       crm_orders?               @relation("crm_orders_renewed_from", fields: [renewed_from_contract_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_renewed_from")
+  renewed_orders           crm_orders[]              @relation("crm_orders_renewed_from")
+  bil_tenant_subscriptions bil_tenant_subscriptions? @relation(fields: [subscription_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_subscription")
+  adm_provider_employees_updated_by adm_provider_employees? @relation("crm_orders_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: SetNull, map: "fk_crm_orders_updated_by")
+  adm_tenants              adm_tenants?              @relation(fields: [client_tenant_id], references: [id], map: "fk_crm_orders_client_tenant")
+  bil_subscription_schedules bil_subscription_schedules[]
+
+  @@index([lead_id], map: "crm_orders_lead_id_idx")
+  @@index([contract_date], map: "crm_orders_contract_date_idx")
+  @@index([created_by], map: "crm_orders_created_by_idx")
+  @@index([deleted_at], map: "crm_orders_deleted_at_idx")
+  @@index([effective_date], map: "crm_orders_effective_date_idx")
+  @@index([expiry_date], map: "crm_orders_expiry_date_idx")
+  @@index([metadata], type: Gin, map: "crm_orders_metadata_idx")
+  @@index([updated_by], map: "crm_orders_updated_by_idx")
+  @@index([opportunity_id], map: "idx_crm_orders_opportunity_id")
+  @@index([provider_id], map: "idx_crm_orders_provider_id")
+  @@index([fulfillment_status], map: "idx_crm_orders_fulfillment_status")
+  @@index([order_type], map: "idx_crm_orders_order_type")
+  @@index([quote_id], map: "idx_crm_orders_quote_id")
+  @@index([subscription_id], map: "idx_crm_orders_subscription_id")
+  @@index([billing_address_id], map: "idx_crm_orders_billing_address_id")
+  @@index([client_tenant_id], map: "idx_crm_orders_client_tenant_id")
+}
+
+/// Quote-to-Cash: crm_agreements
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model crm_agreements {
+  id                       String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  agreement_reference      String                  @unique @db.VarChar(50)
+  order_id                 String                  @db.Uuid
+  agreement_type           agreement_type
+  version_number           Int                     @default(1)
+  parent_agreement_id      String?                 @db.Uuid
+  status                   agreement_status        @default(draft)
+  effective_date           DateTime?               @db.Date
+  expiry_date              DateTime?               @db.Date
+  signature_method         signature_method        @default(electronic)
+  signature_provider       String?                 @db.VarChar(50)
+  provider_envelope_id     String?
+  provider_envelope_url    String?
+  client_signatory_name    String?                 @db.VarChar(200)
+  client_signatory_email   String?                 @db.VarChar(255)
+  client_signatory_title   String?                 @db.VarChar(100)
+  client_signed_at         DateTime?               @db.Timestamptz(6)
+  client_signature_ip      String?                 @db.Inet
+  provider_signatory_id    String?                 @db.Uuid
+  provider_signatory_name  String?                 @db.VarChar(200)
+  provider_signatory_title String?                 @db.VarChar(100)
+  provider_signed_at       DateTime?               @db.Timestamptz(6)
+  document_url             String?
+  signed_document_url      String?
+  terms_version            String?                 @db.VarChar(20)
+  governing_law            String?                 @db.VarChar(100)
+  jurisdiction             String?                 @db.VarChar(200)
+  custom_clauses           Json?                   @default("[]")
+  internal_notes           String?
+  metadata                 Json                    @default("{}")
+  created_by               String                  @db.Uuid
+  updated_by               String?                 @db.Uuid
+  deleted_by               String?                 @db.Uuid
+  deletion_reason          String?
+  created_at               DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at               DateTime?               @db.Timestamptz(6)
+  provider_id              String?                 @db.Uuid
+  sent_for_signature_at    DateTime?               @db.Timestamptz(6)
+  crm_orders               crm_orders              @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "crm_agreements_order_id_fkey")
+  parent_agreement         crm_agreements?         @relation("crm_agreements_parent", fields: [parent_agreement_id], references: [id], onDelete: SetNull, map: "fk_crm_agreements_parent")
+  child_agreements         crm_agreements[]        @relation("crm_agreements_parent")
+  adm_providers            adm_providers?          @relation("crm_agreements_provider", fields: [provider_id], references: [id], map: "fk_crm_agreements_provider")
+  adm_provider_employees   adm_provider_employees? @relation(fields: [provider_signatory_id], references: [id], onDelete: SetNull, map: "fk_crm_agreements_signatory")
+
+  @@index([order_id], map: "idx_crm_agreements_order_id")
+  @@index([status], map: "idx_crm_agreements_status")
+  @@index([agreement_type], map: "idx_crm_agreements_agreement_type")
+  @@index([effective_date], map: "idx_crm_agreements_effective_date")
+  @@index([expiry_date], map: "idx_crm_agreements_expiry_date")
+  @@index([provider_id], map: "idx_crm_agreements_provider_id")
+  @@index([provider_envelope_id], map: "idx_crm_agreements_provider_envelope_id")
+}
+
+/// DEPRECATED: crm_contracts - this table no longer exists in DB, replaced by crm_orders
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model crm_contracts {
@@ -1163,22 +1872,25 @@ model crm_contracts {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model crm_countries {
-  id                     String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  country_code           String      @unique @db.Char(2)
-  country_name_en        String      @db.VarChar(100)
-  country_name_fr        String      @db.VarChar(100)
-  country_name_ar        String      @db.VarChar(100)
-  flag_emoji             String      @db.VarChar(10)
-  is_operational         Boolean     @default(false)
-  is_visible             Boolean     @default(true)
+  id                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_code           String         @unique @db.Char(2)
+  country_name_en        String         @db.VarChar(100)
+  country_name_fr        String         @db.VarChar(100)
+  country_name_ar        String         @db.VarChar(100)
+  flag_emoji             String         @db.VarChar(10)
+  is_operational         Boolean        @default(false)
+  is_visible             Boolean        @default(true)
   display_order          Int
-  notification_locale    String      @default("en") @db.VarChar(5)
-  created_at             DateTime    @default(now()) @db.Timestamptz(6)
-  updated_at             DateTime    @default(now()) @db.Timestamptz(6)
-  country_preposition_fr String?     @default("en") @db.VarChar(5)
-  country_preposition_en String?     @default("in") @db.VarChar(10)
-  country_gdpr           Boolean     @default(false)
+  notification_locale    String         @default("en") @db.VarChar(5)
+  created_at             DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime       @default(now()) @db.Timestamptz(6)
+  country_preposition_fr String?        @default("en") @db.VarChar(5)
+  country_preposition_en String?        @default("in") @db.VarChar(10)
+  country_gdpr           Boolean        @default(false)
+  is_system              Boolean        @default(false)
+  provider_id            String?        @db.Uuid
   crm_leads              crm_leads[]
+  adm_providers          adm_providers? @relation("crm_countries_provider", fields: [provider_id], references: [id], onDelete: SetNull, map: "fk_crm_countries_provider")
 
   @@index([country_code], map: "idx_crm_countries_code")
   @@index([country_gdpr], map: "idx_crm_countries_gdpr")
@@ -1201,6 +1913,7 @@ model crm_lead_activities {
   performed_by_name String?   @db.VarChar(255)
   created_at        DateTime? @default(now()) @db.Timestamptz(6)
   updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  provider_id       String?   @db.Uuid
   crm_leads         crm_leads @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([created_at(sort: Desc)], map: "idx_crm_lead_activities_created_at")
@@ -1210,12 +1923,15 @@ model crm_lead_activities {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model crm_lead_sources {
-  id          String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name        String      @unique @db.VarChar(50)
-  description String?
-  is_active   Boolean     @default(true)
-  created_at  DateTime    @default(now()) @db.Timestamptz(6)
-  crm_leads   crm_leads[]
+  id                       String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  is_active                Boolean        @default(true)
+  created_at               DateTime       @default(now()) @db.Timestamptz(6)
+  is_system                Boolean        @default(false)
+  provider_id              String?        @db.Uuid
+  name_translations        Json?
+  description_translations Json?
+  crm_leads                crm_leads[]
+  adm_providers            adm_providers? @relation("crm_lead_sources_provider", fields: [provider_id], references: [id], onDelete: SetNull, map: "fk_crm_lead_sources_provider")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -1269,9 +1985,12 @@ model crm_leads {
   priority                                                             String?                 @default("medium") @db.VarChar(20)
   consent_ip                                                           String?                 @db.VarChar(45)
   last_activity_at                                                     DateTime?               @db.Timestamptz(6)
+  provider_id                                                          String?                 @db.Uuid
+  crm_activities                                                       crm_activities[]
   crm_contracts                                                        crm_contracts[]
   crm_lead_activities                                                  crm_lead_activities[]
   adm_provider_employees_crm_leads_assigned_toToadm_provider_employees adm_provider_employees? @relation("crm_leads_assigned_toToadm_provider_employees", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_crm_leads_assigned_to")
+  adm_providers                                                        adm_providers?          @relation("crm_leads_provider", fields: [provider_id], references: [id], map: "fk_crm_leads_provider")
   crm_countries                                                        crm_countries?          @relation(fields: [country_code], references: [country_code], onDelete: Restrict, map: "fk_crm_leads_country")
   adm_provider_employees_crm_leads_created_byToadm_provider_employees  adm_provider_employees? @relation("crm_leads_created_byToadm_provider_employees", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_created_by")
   adm_provider_employees_crm_leads_deleted_byToadm_provider_employees  adm_provider_employees? @relation("crm_leads_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_deleted_by")
@@ -1279,6 +1998,8 @@ model crm_leads {
   crm_lead_sources                                                     crm_lead_sources?       @relation(fields: [source_id], references: [id], onUpdate: NoAction, map: "fk_crm_leads_source")
   adm_provider_employees_crm_leads_updated_byToadm_provider_employees  adm_provider_employees? @relation("crm_leads_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_updated_by")
   crm_opportunities_crm_opportunities_lead_idTocrm_leads               crm_opportunities[]     @relation("crm_opportunities_lead_idTocrm_leads")
+  // Quote-to-Cash relations
+  crm_orders                                                           crm_orders[]
 
   @@index([created_at(sort: Desc)])
   @@index([deleted_at])
@@ -1328,7 +2049,10 @@ model crm_opportunities {
   notes                                                                        String?
   stage_entered_at                                                             DateTime                      @default(now()) @db.Timestamptz(6)
   max_days_in_stage                                                            Int?                          @default(14)
+  provider_id                                                                  String?                       @db.Uuid
+  crm_activities                                                               crm_activities[]
   crm_contracts_crm_contracts_opportunity_idTocrm_opportunities                crm_contracts[]               @relation("crm_contracts_opportunity_idTocrm_opportunities")
+  adm_providers                                                                adm_providers?                @relation("crm_opportunities_provider", fields: [provider_id], references: [id], map: "fk_crm_opportunities_provider")
   crm_leads_crm_leads_opportunity_idTocrm_opportunities                        crm_leads[]                   @relation("crm_leads_opportunity_idTocrm_opportunities")
   adm_members_crm_opportunities_assigned_toToadm_members                       adm_members?                  @relation("crm_opportunities_assigned_toToadm_members", fields: [assigned_to], references: [id])
   adm_members_crm_opportunities_created_byToadm_members                        adm_members?                  @relation("crm_opportunities_created_byToadm_members", fields: [created_by], references: [id])
@@ -1343,6 +2067,8 @@ model crm_opportunities {
   crm_pipelines                                                                crm_pipelines?                @relation(fields: [pipeline_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_pipeline")
   bil_billing_plans                                                            bil_billing_plans?            @relation(fields: [plan_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_plan")
   adm_provider_employees_crm_opportunities_updated_byToadm_provider_employees  adm_provider_employees?       @relation("crm_opportunities_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_updated_by")
+  // Quote-to-Cash relations
+  crm_orders                                                                   crm_orders[]                  @relation("crm_orders_opportunity")
 
   @@index([assigned_to])
   @@index([close_date])
@@ -1351,19 +2077,22 @@ model crm_opportunities {
   @@index([lead_id])
   @@index([metadata], type: Gin)
   @@index([updated_by])
+  @@index([provider_id], map: "idx_crm_opportunities_provider_id")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model crm_pipelines {
-  id                  String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name                String              @db.VarChar(100)
-  description         String?
-  stages              Json
-  default_probability Json?
-  is_default          Boolean             @default(false)
-  is_active           Boolean             @default(true)
-  created_at          DateTime            @default(now()) @db.Timestamptz(6)
-  crm_opportunities   crm_opportunities[]
+  id                       String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  stages                   Json
+  default_probability      Json?
+  is_default               Boolean             @default(false)
+  is_active                Boolean             @default(true)
+  created_at               DateTime            @default(now()) @db.Timestamptz(6)
+  provider_id              String?             @db.Uuid
+  name_translations        Json?
+  description_translations Json?
+  crm_opportunities        crm_opportunities[]
+  adm_providers            adm_providers?      @relation("crm_pipelines_provider", fields: [provider_id], references: [id], map: "fk_crm_pipelines_provider")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -1393,9 +2122,11 @@ model crm_settings {
   help_text                                                              String?
   documentation_url                                                      String?                 @db.VarChar(255)
   default_value                                                          Json?
+  provider_id                                                            String?                 @db.Uuid
   adm_provider_employees_crm_settings_created_byToadm_provider_employees adm_provider_employees? @relation("crm_settings_created_byToadm_provider_employees", fields: [created_by], references: [id])
   adm_provider_employees_crm_settings_deleted_byToadm_provider_employees adm_provider_employees? @relation("crm_settings_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
   adm_provider_employees_crm_settings_updated_byToadm_provider_employees adm_provider_employees? @relation("crm_settings_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
+  adm_providers                                                          adm_providers?          @relation("crm_settings_provider", fields: [provider_id], references: [id], onDelete: SetNull, map: "fk_crm_settings_provider")
 
   @@index([created_by], map: "idx_crm_settings_created_by")
   @@index([deleted_at], map: "idx_crm_settings_deleted")
@@ -1565,10 +2296,11 @@ model dir_fine_types {
   points            Int?
   is_criminal       Boolean             @default(false)
   active            Boolean             @default(true)
-  metadata          Json                @default("{}")
-  created_at        DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime            @default(now()) @db.Timestamptz(6)
-  fin_traffic_fines fin_traffic_fines[]
+  metadata              Json                @default("{}")
+  created_at            DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime            @default(now()) @db.Timestamptz(6)
+  description_translations Json
+  fin_traffic_fines     fin_traffic_fines[]
 
   @@unique([jurisdiction, code], map: "dir_fine_types_jurisdiction_code_uq")
 }
@@ -1594,6 +2326,8 @@ model dir_maintenance_types {
   deleted_at                DateTime?                   @db.Timestamptz(6)
   deleted_by                String?                     @db.Uuid
   deletion_reason           String?
+  label_translations        Json
+  description_translations  Json?
   adm_tenants               adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_maintenance_types_tenant")
   sch_maintenance_schedules sch_maintenance_schedules[]
 
@@ -1653,6 +2387,8 @@ model dir_ownership_types {
   deleted_at                                                                    DateTime?               @db.Timestamptz(6)
   deleted_by                                                                    String?                 @db.Uuid
   deletion_reason                                                               String?
+  name_translations                                                             Json
+  description_translations                                                      Json?
   adm_provider_employees_dir_ownership_types_created_byToadm_provider_employees adm_provider_employees  @relation("dir_ownership_types_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dir_ownership_types_created_by")
   adm_provider_employees_dir_ownership_types_deleted_byToadm_provider_employees adm_provider_employees? @relation("dir_ownership_types_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dir_ownership_types_deleted_by")
   adm_provider_employees_dir_ownership_types_updated_byToadm_provider_employees adm_provider_employees? @relation("dir_ownership_types_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dir_ownership_types_updated_by")
@@ -1710,6 +2446,8 @@ model dir_platforms {
   deleted_at                                                              DateTime?                  @db.Timestamptz(6)
   deleted_by                                                              String?                    @db.Uuid
   deletion_reason                                                         String?
+  name_translations                                                       Json
+  description_translations                                                Json?
   dir_platform_configs                                                    dir_platform_configs[]
   adm_provider_employees_dir_platforms_created_byToadm_provider_employees adm_provider_employees?    @relation("dir_platforms_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_platforms_created_by")
   adm_provider_employees_dir_platforms_deleted_byToadm_provider_employees adm_provider_employees?    @relation("dir_platforms_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_platforms_deleted_by")
@@ -1747,17 +2485,19 @@ model dir_toll_gates {
 }
 
 model dir_transaction_statuses {
-  code             String             @id @db.VarChar(30)
-  description      String
-  created_at       DateTime           @default(now()) @db.Timestamptz(6)
-  fin_transactions fin_transactions[]
+  code                     String             @id @db.VarChar(30)
+  description              String
+  created_at               DateTime           @default(now()) @db.Timestamptz(6)
+  description_translations Json
+  fin_transactions         fin_transactions[]
 }
 
 model dir_transaction_types {
-  code             String             @id @db.VarChar(30)
-  description      String
-  created_at       DateTime           @default(now()) @db.Timestamptz(6)
-  fin_transactions fin_transactions[]
+  code                     String             @id @db.VarChar(30)
+  description              String
+  created_at               DateTime           @default(now()) @db.Timestamptz(6)
+  description_translations Json
+  fin_transactions         fin_transactions[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1789,6 +2529,8 @@ model dir_vehicle_classes {
   deleted_at                                                                                DateTime?                    @db.Timestamptz(6)
   deleted_by                                                                                String?                      @db.Uuid
   deletion_reason                                                                           String?
+  name_translations                                                                         Json
+  description_translations                                                                  Json
   adm_tenant_vehicle_classes                                                                adm_tenant_vehicle_classes[]
   dir_car_models                                                                            dir_car_models[]
   dir_country_regulations_dir_country_regulations_min_vehicle_class_idTodir_vehicle_classes dir_country_regulations[]    @relation("dir_country_regulations_min_vehicle_class_idTodir_vehicle_classes")
@@ -1827,6 +2569,8 @@ model dir_vehicle_statuses {
   deleted_at                                                                     DateTime?               @db.Timestamptz(6)
   deleted_by                                                                     String?                 @db.Uuid
   deletion_reason                                                                String?
+  name_translations                                                              Json
+  description_translations                                                       Json?
   adm_provider_employees_dir_vehicle_statuses_created_byToadm_provider_employees adm_provider_employees  @relation("dir_vehicle_statuses_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dir_vehicle_statuses_created_by")
   adm_provider_employees_dir_vehicle_statuses_deleted_byToadm_provider_employees adm_provider_employees? @relation("dir_vehicle_statuses_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dir_vehicle_statuses_deleted_by")
   adm_provider_employees_dir_vehicle_statuses_updated_byToadm_provider_employees adm_provider_employees? @relation("dir_vehicle_statuses_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_dir_vehicle_statuses_updated_by")
@@ -1857,6 +2601,8 @@ model doc_document_types {
   deleted_at                                                                   DateTime?               @db.Timestamptz(6)
   deleted_by                                                                   String?                 @db.Uuid
   deletion_reason                                                              String?
+  name_translations                                                            Json
+  description_translations                                                     Json?
   adm_provider_employees_doc_document_types_created_byToadm_provider_employees adm_provider_employees? @relation("doc_document_types_created_byToadm_provider_employees", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_document_types_created_by")
   adm_provider_employees_doc_document_types_deleted_byToadm_provider_employees adm_provider_employees? @relation("doc_document_types_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_doc_document_types_deleted_by")
   adm_provider_employees_doc_document_types_updated_byToadm_provider_employees adm_provider_employees? @relation("doc_document_types_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_doc_document_types_updated_by")
@@ -1954,6 +2700,7 @@ model doc_entity_types {
   updated_by                                                                 String?                 @db.Uuid
   deleted_at                                                                 DateTime?               @db.Timestamptz(6)
   deleted_by                                                                 String?                 @db.Uuid
+  description_translations                                                   Json
   doc_documents                                                              doc_documents[]
   adm_provider_employees_doc_entity_types_created_byToadm_provider_employees adm_provider_employees? @relation("doc_entity_types_created_byToadm_provider_employees", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_entity_types_created_by")
   adm_provider_employees_doc_entity_types_deleted_byToadm_provider_employees adm_provider_employees? @relation("doc_entity_types_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_doc_entity_types_deleted_by")
@@ -1961,12 +2708,14 @@ model doc_entity_types {
 }
 
 model fin_account_types {
-  code         String         @id
-  label        String
-  description  String?
-  created_at   DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime       @default(now()) @db.Timestamptz(6)
-  fin_accounts fin_accounts[]
+  code                     String         @id
+  label                    String
+  description              String?
+  created_at               DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime       @default(now()) @db.Timestamptz(6)
+  label_translations       Json
+  description_translations Json?
+  fin_accounts             fin_accounts[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -2130,15 +2879,19 @@ model fin_payment_batch_statuses {
   label                      String
   description                String?
   created_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  label_translations         Json
+  description_translations   Json?
   fin_driver_payment_batches fin_driver_payment_batches[]
 }
 
 model fin_payment_statuses {
-  code                String                @id
-  label               String
-  description         String?
-  created_at          DateTime              @default(now()) @db.Timestamptz(6)
-  fin_driver_payments fin_driver_payments[]
+  code                     String                @id
+  label                    String
+  description              String?
+  created_at               DateTime              @default(now()) @db.Timestamptz(6)
+  label_translations       Json
+  description_translations Json?
+  fin_driver_payments      fin_driver_payments[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -2272,6 +3025,8 @@ model fin_transaction_categories {
   is_active                        Boolean                      @default(true)
   created_at                       DateTime                     @default(now()) @db.Timestamptz(6)
   updated_at                       DateTime                     @default(now()) @db.Timestamptz(6)
+  name_translations                Json
+  description_translations         Json?
   fin_transaction_categories       fin_transaction_categories?  @relation("fin_transaction_categoriesTofin_transaction_categories", fields: [parent_category_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_fin_transaction_categories_parent")
   other_fin_transaction_categories fin_transaction_categories[] @relation("fin_transaction_categoriesTofin_transaction_categories")
   fin_transactions                 fin_transactions[]
@@ -2422,6 +3177,8 @@ model flt_vehicle_equipments {
   updated_by                                                                       String?                  @db.Uuid
   deleted_at                                                                       DateTime?                @db.Timestamptz(6)
   deleted_by                                                                       String?                  @db.Uuid
+  name_translations                                                                Json
+  description_translations                                                         Json?
   adm_provider_employees_flt_vehicle_equipments_created_byToadm_provider_employees adm_provider_employees   @relation("flt_vehicle_equipments_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_equipments_created_by")
   flt_vehicle_assignments                                                          flt_vehicle_assignments? @relation(fields: [current_assignment_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_equipments_current_assignment_id")
   adm_provider_employees_flt_vehicle_equipments_deleted_byToadm_provider_employees adm_provider_employees?  @relation("flt_vehicle_equipments_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_equipments_deleted_by")
@@ -3450,6 +4207,7 @@ model rid_driver_training {
   driver_feedback                                           String?
   driver_rating                                             Decimal?                @db.Decimal(3, 2)
   feedback_submitted_at                                     DateTime?               @db.Timestamptz(6)
+  description_translations                                  Json?
   adm_members_rid_driver_training_created_byToadm_members   adm_members?            @relation("rid_driver_training_created_byToadm_members", fields: [created_by], references: [id])
   adm_members_rid_driver_training_deleted_byToadm_members   adm_members?            @relation("rid_driver_training_deleted_byToadm_members", fields: [deleted_by], references: [id])
   rid_drivers                                               rid_drivers             @relation(fields: [driver_id], references: [id], onDelete: Cascade)
@@ -3617,6 +4375,7 @@ model sch_goal_types {
   deleted_at         DateTime?         @db.Timestamptz(6)
   deleted_by         String?           @db.Uuid
   deletion_reason    String?
+  label_translations Json
   adm_tenants        adm_tenants       @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_goal_types_tenant")
   sch_goals          sch_goals[]
 
@@ -3783,9 +4542,10 @@ model sch_shift_types {
   updated_by      String?      @db.Uuid
   deleted_at      DateTime?    @db.Timestamptz(6)
   deleted_by      String?      @db.Uuid
-  deletion_reason String?
-  adm_tenants     adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_types_tenant")
-  sch_shifts      sch_shifts[]
+  deletion_reason    String?
+  label_translations Json
+  adm_tenants        adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shift_types_tenant")
+  sch_shifts         sch_shifts[]
 
   @@index([is_active, deleted_at], map: "idx_shift_types_active_deleted")
 }
@@ -3904,6 +4664,7 @@ model sch_task_types {
   deleted_at               DateTime?      @db.Timestamptz(6)
   deleted_by               String?        @db.Uuid
   deletion_reason          String?
+  label_translations       Json
   adm_tenants              adm_tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_types_tenant")
   sch_tasks                sch_tasks[]
 
@@ -4003,6 +4764,7 @@ model sup_canned_responses {
   created_at             DateTime               @default(now()) @db.Timestamptz(6)
   updated_at             DateTime               @default(now()) @db.Timestamptz(6)
   created_by             String                 @db.Uuid
+  title_translations     Json
   adm_provider_employees adm_provider_employees @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_sup_responses_creator")
   adm_tenants            adm_tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_sup_responses_tenant")
 
@@ -4064,6 +4826,8 @@ model sup_ticket_categories {
   updated_at                                                                      DateTime                @default(now()) @db.Timestamptz(6)
   created_by                                                                      String                  @db.Uuid
   updated_by                                                                      String?                 @db.Uuid
+  name_translations                                                               Json
+  description_translations                                                        Json?
   adm_provider_employees_sup_ticket_categories_created_byToadm_provider_employees adm_provider_employees  @relation("sup_ticket_categories_created_byToadm_provider_employees", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_sup_categories_creator")
   sup_ticket_categories                                                           sup_ticket_categories?  @relation("sup_ticket_categoriesTosup_ticket_categories", fields: [parent_category_id], references: [id], onUpdate: NoAction, map: "fk_sup_categories_parent")
   other_sup_ticket_categories                                                     sup_ticket_categories[] @relation("sup_ticket_categoriesTosup_ticket_categories")
@@ -4451,6 +5215,97 @@ model trp_trips {
   @@index([tenant_id])
   @@index([trip_date])
   @@index([vehicle_id])
+}
+
+/// HQ global configuration: adm_error_messages
+model adm_error_messages {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  error_code String   @unique @db.VarChar(100)
+  message_en String
+  message_fr String
+  category   String   @default("validation") @db.VarChar(50)
+  severity   String   @default("error") @db.VarChar(20)
+  module     String?  @db.VarChar(50)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([error_code], map: "idx_adm_error_messages_code")
+  @@index([module], map: "idx_adm_error_messages_module")
+}
+
+/// HQ global configuration: hq_offer_rules
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model hq_offer_rules {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_code             String?  @db.VarChar(2)
+  offer_type               String   @db.VarChar(20)
+  code                     String   @unique @db.VarChar(50)
+  name_translations        Json
+  description_translations Json?
+  free_months              Int?
+  referrer_free_months     Int?
+  referee_free_months      Int?
+  discount_percent         Decimal? @db.Decimal(5, 2)
+  requires_payment_method  Boolean  @default(false)
+  requires_qualification   Boolean  @default(false)
+  max_uses_total           Int?
+  max_uses_per_user        Int?
+  fleet_size_min           Int?
+  fleet_size_max           Int?
+  is_active                Boolean  @default(true)
+  valid_from               DateTime? @db.Date
+  valid_until              DateTime? @db.Date
+  display_order            Int      @default(0)
+  created_at               DateTime @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([is_active], map: "idx_hq_offer_active")
+  @@index([country_code], map: "idx_hq_offer_country")
+  @@index([offer_type], map: "idx_hq_offer_type")
+}
+
+/// HQ global configuration: hq_pricing_rules
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model hq_pricing_rules {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_code             String?   @db.VarChar(2)
+  code                     String    @unique @db.VarChar(50)
+  name_translations        Json
+  description_translations Json?
+  fleet_size_min           Int
+  fleet_size_max           Int?
+  max_discount_percent     Decimal   @default(0) @db.Decimal(5, 2)
+  requires_approval        Boolean   @default(false)
+  approval_role            String?   @db.VarChar(50)
+  is_active                Boolean   @default(true)
+  valid_from               DateTime? @db.Date
+  valid_until              DateTime? @db.Date
+  display_order            Int       @default(0)
+  created_at               DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([is_active], map: "idx_hq_pricing_active")
+  @@index([country_code], map: "idx_hq_pricing_country")
+  @@index([fleet_size_min, fleet_size_max], map: "idx_hq_pricing_fleet")
+}
+
+/// Stripe integration: stripe_webhook_logs
+model stripe_webhook_logs {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event_id               String   @unique @db.VarChar(255)
+  event_type             String   @db.VarChar(100)
+  payload                Json
+  processed_at           DateTime @default(now()) @db.Timestamptz(6)
+  processing_duration_ms Int?
+  status                 String?  @default("processed") @db.VarChar(20)
+  error_message          String?
+  retry_count            Int?     @default(0)
+  created_at             DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)], map: "idx_stripe_webhook_logs_created_at")
+  @@index([event_type], map: "idx_stripe_webhook_logs_event_type")
+  @@index([status], map: "idx_stripe_webhook_logs_status")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -5328,6 +6183,9 @@ enum signature_method {
   wet_signature
   app
   email
+  electronic
+  wet_ink
+  click_wrap
 }
 
 enum storage_provider {
@@ -5541,4 +6399,112 @@ enum verification_status {
   pending
   verified
   rejected
+}
+
+// Quote-to-Cash enums
+enum quote_status {
+  draft
+  sent
+  viewed
+  accepted
+  rejected
+  expired
+  converted
+}
+
+enum quote_item_type {
+  plan
+  addon
+  service
+  custom
+}
+
+enum item_recurrence {
+  one_time
+  recurring
+}
+
+enum discount_type {
+  percentage
+  fixed_amount
+}
+
+enum agreement_type {
+  msa
+  sla
+  dpa
+  nda
+  sow
+  addendum
+  other
+}
+
+enum agreement_status {
+  draft
+  pending_review
+  pending_signature
+  signed
+  active
+  expired
+  terminated
+  superseded
+}
+
+enum order_type {
+  new
+  renewal
+  upgrade
+  downgrade
+  amendment
+}
+
+enum order_fulfillment_status {
+  pending
+  ready_for_fulfillment
+  in_progress
+  fulfilled
+  active
+  cancelled
+  expired
+}
+
+enum amendment_type {
+  upgrade
+  downgrade
+  quantity_change
+  plan_change
+  billing_change
+  cancel_immediate
+  cancel_scheduled
+  pause
+  resume
+}
+
+enum amendment_status {
+  draft
+  pending_approval
+  approved
+  applied
+  rejected
+  canceled
+}
+
+enum proration_behavior {
+  create_prorations
+  none
+  always_invoice
+}
+
+enum schedule_status {
+  not_started
+  active
+  completed
+  canceled
+  released
+}
+
+enum schedule_end_behavior {
+  release
+  cancel
+  none
 }

@@ -1,17 +1,19 @@
 "use server";
 
 /**
- * CRM Lead Activities Server Actions
+ * CRM Activities Server Actions (Unified Polymorphic)
  *
- * Server Actions for managing lead activities (calls, emails, notes, meetings, tasks).
- * Uses Clerk auth() and Prisma to interact with crm_lead_activities table.
+ * Server Actions for managing CRM activities (calls, emails, notes, meetings, tasks).
+ * Uses the unified crm_activities table with polymorphic links to leads AND/OR opportunities.
  *
  * Security:
  * 1. Authentication via Clerk auth()
  * 2. Zod input validation
  * 3. Authorization (FleetCore Admin only)
+ * 4. Multi-tenant isolation via provider_id
  *
- * @see prisma/schema.prisma - crm_lead_activities model
+ * @see prisma/schema.prisma - crm_activities model
+ * @module lib/actions/crm/activities.actions
  */
 
 import { auth, currentUser } from "@clerk/nextjs/server";
@@ -20,48 +22,71 @@ import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
 import { LeadScoringService } from "@/lib/services/crm/lead-scoring.service";
+import {
+  getCurrentProviderId,
+  buildProviderFilter,
+} from "@/lib/utils/provider-context";
 
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // ============================================================================
-// GET LEAD ACTIVITIES
+// TYPES
 // ============================================================================
 
-export type GetLeadActivitiesResult =
-  | {
-      success: true;
-      activities: Array<{
-        id: string;
-        lead_id: string;
-        activity_type: string;
-        title: string | null;
-        description: string | null;
-        metadata: unknown;
-        scheduled_at: string | null;
-        completed_at: string | null;
-        is_completed: boolean;
-        performed_by: string | null;
-        performed_by_name: string | null;
-        created_at: string;
-        updated_at: string;
-      }>;
-      total: number;
-    }
+export type ActivityType = "call" | "email" | "note" | "meeting" | "task";
+
+export interface Activity {
+  id: string;
+  lead_id: string | null;
+  opportunity_id: string | null;
+  provider_id: string;
+  activity_type: ActivityType;
+  subject: string;
+  description: string | null;
+  activity_date: string;
+  duration_minutes: number | null;
+  outcome: string | null;
+  is_completed: boolean;
+  completed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  creator?: {
+    first_name: string;
+    last_name: string | null;
+  } | null;
+}
+
+export interface ActivityFilters {
+  leadId?: string;
+  opportunityId?: string;
+  type?: ActivityType;
+  isCompleted?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+// ============================================================================
+// GET ACTIVITIES (Polymorphic)
+// ============================================================================
+
+export type GetActivitiesResult =
+  | { success: true; activities: Activity[]; total: number }
   | { success: false; error: string };
 
 /**
- * Server Action: Get activities for a lead
+ * Server Action: Get activities with polymorphic filters
  *
- * Fetches all activities for a given lead with pagination.
+ * Can fetch activities by leadId, opportunityId, or both.
+ * At least one filter (leadId or opportunityId) is required.
  *
- * @param leadId - UUID of the lead
- * @param options - Pagination options (limit, offset)
- * @returns Result object with activities array and total count
+ * @param filters - Filter options (leadId, opportunityId, type, isCompleted)
+ * @returns Result with activities array and total count
  */
-export async function getLeadActivitiesAction(
-  leadId: string,
-  options?: { limit?: number; offset?: number }
-): Promise<GetLeadActivitiesResult> {
+export async function getActivitiesAction(
+  filters: ActivityFilters
+): Promise<GetActivitiesResult> {
   try {
     // 1. Authentication
     const { userId, orgId } = await auth();
@@ -74,107 +99,121 @@ export async function getLeadActivitiesAction(
       return { success: false, error: "Forbidden: Admin access required" };
     }
 
-    // 3. Validate leadId is a UUID
-    const uuidSchema = z.string().uuid("Invalid lead ID");
-    const validatedLeadId = uuidSchema.safeParse(leadId);
-    if (!validatedLeadId.success) {
-      return { success: false, error: "Invalid lead ID format" };
+    // 3. Validate at least one entity filter
+    if (!filters.leadId && !filters.opportunityId) {
+      return {
+        success: false,
+        error: "At least leadId or opportunityId is required",
+      };
     }
 
-    // 4. Query activities from database
-    const limit = options?.limit ?? 50;
-    const offset = options?.offset ?? 0;
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Build where clause
+    const whereClause: Record<string, unknown> = {
+      ...buildProviderFilter(providerId),
+    };
+
+    if (filters.leadId) {
+      whereClause.lead_id = filters.leadId;
+    }
+    if (filters.opportunityId) {
+      whereClause.opportunity_id = filters.opportunityId;
+    }
+    if (filters.type) {
+      whereClause.activity_type = filters.type;
+    }
+    if (typeof filters.isCompleted === "boolean") {
+      whereClause.is_completed = filters.isCompleted;
+    }
+
+    // 6. Query with pagination
+    const limit = filters.limit ?? 50;
+    const offset = filters.offset ?? 0;
 
     const [activities, total] = await Promise.all([
-      db.crm_lead_activities.findMany({
-        where: { lead_id: leadId },
-        orderBy: { created_at: "desc" },
+      db.crm_activities.findMany({
+        where: whereClause,
+        orderBy: { activity_date: "desc" },
         take: limit,
         skip: offset,
+        include: {
+          adm_provider_employees: {
+            select: { first_name: true, last_name: true },
+          },
+        },
       }),
-      db.crm_lead_activities.count({
-        where: { lead_id: leadId },
-      }),
+      db.crm_activities.count({ where: whereClause }),
     ]);
 
-    // 5. Serialize data for client (convert Date to ISO string)
-    const serializedActivities = activities.map((activity) => ({
-      id: activity.id,
-      lead_id: activity.lead_id,
-      activity_type: activity.activity_type,
-      title: activity.title,
-      description: activity.description,
-      metadata: activity.metadata,
-      scheduled_at: activity.scheduled_at?.toISOString() || null,
-      completed_at: activity.completed_at?.toISOString() || null,
-      is_completed: activity.is_completed ?? false,
-      performed_by: activity.performed_by,
-      performed_by_name: activity.performed_by_name,
-      created_at:
-        activity.created_at?.toISOString() || new Date().toISOString(),
-      updated_at:
-        activity.updated_at?.toISOString() || new Date().toISOString(),
+    // 7. Serialize for client
+    const serializedActivities: Activity[] = activities.map((a) => ({
+      id: a.id,
+      lead_id: a.lead_id,
+      opportunity_id: a.opportunity_id,
+      provider_id: a.provider_id,
+      activity_type: a.activity_type as ActivityType,
+      subject: a.subject,
+      description: a.description,
+      activity_date: a.activity_date.toISOString(),
+      duration_minutes: a.duration_minutes,
+      outcome: a.outcome,
+      is_completed: a.is_completed ?? false,
+      completed_at: a.completed_at?.toISOString() || null,
+      created_by: a.created_by,
+      created_at: a.created_at?.toISOString() || new Date().toISOString(),
+      updated_at: a.updated_at?.toISOString() || new Date().toISOString(),
+      creator: a.adm_provider_employees,
     }));
 
-    return {
-      success: true,
-      activities: serializedActivities,
-      total,
-    };
+    return { success: true, activities: serializedActivities, total };
   } catch (error) {
-    logger.error({ error, leadId }, "[getLeadActivitiesAction] Error");
+    logger.error({ error, filters }, "[getActivitiesAction] Error");
     return { success: false, error: "Failed to fetch activities" };
   }
 }
 
 // ============================================================================
-// CREATE ACTIVITY
+// CREATE ACTIVITY (Polymorphic)
 // ============================================================================
 
-// Schema for creating activity
-const CreateActivitySchema = z.object({
-  lead_id: z.string().uuid("Invalid lead ID"),
-  activity_type: z.enum(["call", "email", "note", "meeting", "task"]),
-  title: z.string().min(1, "Title is required").max(255),
-  description: z.string().max(5000).optional().nullable(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  scheduled_at: z.string().datetime().optional().nullable(),
-});
+const CreateActivitySchema = z
+  .object({
+    leadId: z.string().uuid("Invalid lead ID").optional().nullable(),
+    opportunityId: z
+      .string()
+      .uuid("Invalid opportunity ID")
+      .optional()
+      .nullable(),
+    activityType: z.enum(["call", "email", "note", "meeting", "task"]),
+    subject: z.string().min(1, "Subject is required").max(255),
+    description: z.string().max(5000).optional().nullable(),
+    activityDate: z.coerce.date().optional(),
+    durationMinutes: z.number().int().min(0).max(1440).optional().nullable(),
+    outcome: z.string().max(100).optional().nullable(),
+  })
+  .refine((data) => data.leadId || data.opportunityId, {
+    message: "At least leadId or opportunityId is required",
+  });
 
-export type CreateActivityInput = z.infer<typeof CreateActivitySchema>;
+export type CreateActivityData = z.infer<typeof CreateActivitySchema>;
 
 export type CreateActivityResult =
-  | {
-      success: true;
-      activity: {
-        id: string;
-        lead_id: string;
-        activity_type: string;
-        title: string | null;
-        description: string | null;
-        metadata: unknown;
-        scheduled_at: string | null;
-        completed_at: string | null;
-        is_completed: boolean;
-        performed_by: string | null;
-        performed_by_name: string | null;
-        created_at: string;
-        updated_at: string;
-      };
-    }
+  | { success: true; activity: Activity }
   | { success: false; error: string };
 
 /**
- * Server Action: Create a new activity for a lead
+ * Server Action: Create a new activity
  *
- * Creates a new activity (call, email, note, meeting, task) attached to a lead.
- * Automatically records the user who performed the action.
+ * Creates an activity linked to a lead, opportunity, or both.
+ * At least one of leadId or opportunityId must be provided.
  *
- * @param data - Activity data (lead_id, activity_type, title, description, etc.)
- * @returns Result object with created activity or error
+ * @param data - Activity data
+ * @returns Result with created activity or error
  */
 export async function createActivityAction(
-  data: CreateActivityInput
+  data: CreateActivityData
 ): Promise<CreateActivityResult> {
   try {
     // 1. Authentication
@@ -195,102 +234,143 @@ export async function createActivityAction(
       return { success: false, error: firstError?.message || "Invalid data" };
     }
 
-    // 4. Verify lead exists
-    const lead = await db.crm_leads.findUnique({
-      where: { id: validated.data.lead_id },
-      select: { id: true },
-    });
-
-    if (!lead) {
-      return { success: false, error: "Lead not found" };
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+    if (!providerId) {
+      return { success: false, error: "Provider context not found" };
     }
 
-    // 5. Get current user's name for performed_by_name
-    const user = await currentUser();
-    const performedByName = user
-      ? `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-        user.emailAddresses[0]?.emailAddress ||
-        "Unknown"
-      : "Unknown";
+    // 5. Verify lead exists if provided
+    if (validated.data.leadId) {
+      const lead = await db.crm_leads.findFirst({
+        where: {
+          id: validated.data.leadId,
+          ...buildProviderFilter(providerId),
+          deleted_at: null,
+        },
+        select: { id: true },
+      });
+      if (!lead) {
+        return { success: false, error: "Lead not found" };
+      }
+    }
 
-    // 6. Create activity in database
-    const activity = await db.crm_lead_activities.create({
+    // 6. Verify opportunity exists if provided
+    // Note: crm_opportunities doesn't have provider_id directly
+    // We verify provider isolation via the linked lead's provider_id
+    if (validated.data.opportunityId) {
+      const opportunity = await db.crm_opportunities.findFirst({
+        where: {
+          id: validated.data.opportunityId,
+          deleted_at: null,
+          // Provider isolation via lead relation
+          crm_leads_crm_opportunities_lead_idTocrm_leads: {
+            ...buildProviderFilter(providerId),
+          },
+        },
+        select: { id: true },
+      });
+      if (!opportunity) {
+        return { success: false, error: "Opportunity not found" };
+      }
+    }
+
+    // 7. Get current employee ID for created_by
+    const user = await currentUser();
+    let createdBy: string | null = null;
+    if (user) {
+      const employee = await db.adm_provider_employees.findFirst({
+        where: {
+          clerk_user_id: userId,
+          ...buildProviderFilter(providerId),
+          deleted_at: null,
+        },
+        select: { id: true },
+      });
+      createdBy = employee?.id || null;
+    }
+
+    // 8. Create activity
+    const activity = await db.crm_activities.create({
       data: {
-        lead_id: validated.data.lead_id,
-        activity_type: validated.data.activity_type,
-        title: validated.data.title,
-        description: validated.data.description || null,
-        metadata: (validated.data.metadata || {}) as object,
-        scheduled_at: validated.data.scheduled_at
-          ? new Date(validated.data.scheduled_at)
-          : null,
+        lead_id: validated.data.leadId ?? undefined,
+        opportunity_id: validated.data.opportunityId ?? undefined,
+        provider_id: providerId,
+        activity_type: validated.data.activityType,
+        subject: validated.data.subject,
+        description: validated.data.description ?? undefined,
+        activity_date: validated.data.activityDate ?? new Date(),
+        duration_minutes: validated.data.durationMinutes ?? undefined,
+        outcome: validated.data.outcome ?? undefined,
         is_completed: false,
-        // Note: performed_by would be a UUID FK to adm_provider_employees
-        // For now, we store the name directly since we're using Clerk IDs
-        performed_by: null, // Not linking to adm_provider_employees (Clerk vs UUID issue)
-        performed_by_name: performedByName,
+        created_by: createdBy ?? undefined,
+      },
+      include: {
+        adm_provider_employees: {
+          select: { first_name: true, last_name: true },
+        },
       },
     });
 
-    // 7. Update last_activity_at on lead and trigger score recalculation
-    try {
-      // 7a. Update last_activity_at
-      await db.crm_leads.update({
-        where: { id: validated.data.lead_id },
-        data: { last_activity_at: new Date() },
-      });
+    // 9. Update last_activity_at on lead if linked
+    if (validated.data.leadId) {
+      try {
+        await db.crm_leads.update({
+          where: { id: validated.data.leadId },
+          data: { last_activity_at: new Date() },
+        });
 
-      // 7b. Recalculate scores (async, non-blocking for UX)
-      const scoringService = new LeadScoringService();
-      const scoreResult = await scoringService.recalculateScores(
-        validated.data.lead_id
-      );
-
-      logger.info(
-        {
-          leadId: validated.data.lead_id,
-          activityType: validated.data.activity_type,
-          stageChanged: scoreResult.stageChanged,
-          newStage: scoreResult.newStage,
-        },
-        "[createActivityAction] Score recalculated after activity"
-      );
-    } catch (scoreError) {
-      // Log but don't fail the activity creation
-      logger.warn(
-        { leadId: validated.data.lead_id, error: scoreError },
-        "[createActivityAction] Score recalculation failed (non-blocking)"
-      );
+        // Recalculate scores (async, non-blocking)
+        const scoringService = new LeadScoringService();
+        await scoringService.recalculateScores(validated.data.leadId);
+      } catch (scoreError) {
+        logger.warn(
+          { leadId: validated.data.leadId, error: scoreError },
+          "[createActivityAction] Score update failed (non-blocking)"
+        );
+      }
     }
 
-    // 8. Revalidate lead detail page
-    revalidatePath(`/[locale]/(crm)/crm/leads/${validated.data.lead_id}`);
+    // 10. Revalidate paths
+    if (validated.data.leadId) {
+      revalidatePath(`/[locale]/(app)/crm/leads/${validated.data.leadId}`);
+    }
+    if (validated.data.opportunityId) {
+      revalidatePath(`/[locale]/(app)/crm/opportunities`);
+    }
 
-    // Log success
     logger.info(
-      { leadId: validated.data.lead_id, activityId: activity.id, userId },
+      {
+        activityId: activity.id,
+        leadId: validated.data.leadId,
+        opportunityId: validated.data.opportunityId,
+        userId,
+      },
       "[createActivityAction] Activity created"
     );
 
-    // 9. Serialize and return
+    // 11. Serialize and return
     return {
       success: true,
       activity: {
         id: activity.id,
         lead_id: activity.lead_id,
-        activity_type: activity.activity_type,
-        title: activity.title,
+        opportunity_id: activity.opportunity_id,
+        provider_id: activity.provider_id,
+        activity_type: activity.activity_type as ActivityType,
+        subject: activity.subject,
         description: activity.description,
-        metadata: activity.metadata,
-        scheduled_at: activity.scheduled_at?.toISOString() || null,
-        completed_at: activity.completed_at?.toISOString() || null,
+        activity_date: activity.activity_date.toISOString(),
+        duration_minutes: activity.duration_minutes,
+        outcome: activity.outcome,
         is_completed: activity.is_completed ?? false,
-        performed_by: activity.performed_by,
-        performed_by_name: activity.performed_by_name,
+        completed_at: activity.completed_at?.toISOString() || null,
+        created_by: activity.created_by,
         created_at:
           activity.created_at?.toISOString() || new Date().toISOString(),
         updated_at:
           activity.updated_at?.toISOString() || new Date().toISOString(),
+        creator: activity.adm_provider_employees,
       },
     };
   } catch (error) {
@@ -302,15 +382,212 @@ export async function createActivityAction(
 }
 
 // ============================================================================
-// COMPLETE ACTIVITY (bonus action for task/meeting completion)
+// UPDATE ACTIVITY
 // ============================================================================
 
-const CompleteActivitySchema = z.object({
-  activityId: z.string().uuid("Invalid activity ID"),
-  notes: z.string().max(2000).optional(),
+const UpdateActivitySchema = z.object({
+  subject: z.string().min(1).max(255).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  activityDate: z.coerce.date().optional(),
+  durationMinutes: z.number().int().min(0).max(1440).optional().nullable(),
+  outcome: z.string().max(100).optional().nullable(),
 });
 
-export type CompleteActivityResult =
+export type UpdateActivityData = z.infer<typeof UpdateActivitySchema>;
+
+export type UpdateActivityResult =
+  | { success: true; activity: Activity }
+  | { success: false; error: string };
+
+/**
+ * Server Action: Update an existing activity
+ *
+ * @param id - Activity UUID
+ * @param data - Fields to update
+ * @returns Result with updated activity or error
+ */
+export async function updateActivityAction(
+  id: string,
+  data: UpdateActivityData
+): Promise<UpdateActivityResult> {
+  try {
+    // 1. Authentication
+    const { userId, orgId } = await auth();
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // 2. Authorization
+    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
+      return { success: false, error: "Forbidden: Admin access required" };
+    }
+
+    // 3. Validate UUID
+    const uuidSchema = z.string().uuid();
+    if (!uuidSchema.safeParse(id).success) {
+      return { success: false, error: "Invalid activity ID" };
+    }
+
+    // 4. Validate data
+    const validated = UpdateActivitySchema.safeParse(data);
+    if (!validated.success) {
+      return { success: false, error: "Invalid update data" };
+    }
+
+    // 5. Get provider context
+    const providerId = await getCurrentProviderId();
+
+    // 6. Find activity with provider filter
+    const existing = await db.crm_activities.findFirst({
+      where: { id, ...buildProviderFilter(providerId) },
+      select: { id: true, lead_id: true, opportunity_id: true },
+    });
+
+    if (!existing) {
+      return { success: false, error: "Activity not found" };
+    }
+
+    // 7. Update activity
+    const updateData: Record<string, unknown> = {};
+    if (validated.data.subject !== undefined) {
+      updateData.subject = validated.data.subject;
+    }
+    if (validated.data.description !== undefined) {
+      updateData.description = validated.data.description;
+    }
+    if (validated.data.activityDate !== undefined) {
+      updateData.activity_date = validated.data.activityDate;
+    }
+    if (validated.data.durationMinutes !== undefined) {
+      updateData.duration_minutes = validated.data.durationMinutes;
+    }
+    if (validated.data.outcome !== undefined) {
+      updateData.outcome = validated.data.outcome;
+    }
+
+    const activity = await db.crm_activities.update({
+      where: { id },
+      data: updateData,
+      include: {
+        adm_provider_employees: {
+          select: { first_name: true, last_name: true },
+        },
+      },
+    });
+
+    // 8. Revalidate paths
+    if (existing.lead_id) {
+      revalidatePath(`/[locale]/(app)/crm/leads/${existing.lead_id}`);
+    }
+    if (existing.opportunity_id) {
+      revalidatePath(`/[locale]/(app)/crm/opportunities`);
+    }
+
+    return {
+      success: true,
+      activity: {
+        id: activity.id,
+        lead_id: activity.lead_id,
+        opportunity_id: activity.opportunity_id,
+        provider_id: activity.provider_id,
+        activity_type: activity.activity_type as ActivityType,
+        subject: activity.subject,
+        description: activity.description,
+        activity_date: activity.activity_date.toISOString(),
+        duration_minutes: activity.duration_minutes,
+        outcome: activity.outcome,
+        is_completed: activity.is_completed ?? false,
+        completed_at: activity.completed_at?.toISOString() || null,
+        created_by: activity.created_by,
+        created_at:
+          activity.created_at?.toISOString() || new Date().toISOString(),
+        updated_at:
+          activity.updated_at?.toISOString() || new Date().toISOString(),
+        creator: activity.adm_provider_employees,
+      },
+    };
+  } catch (error) {
+    logger.error({ error, id }, "[updateActivityAction] Error");
+    return { success: false, error: "Failed to update activity" };
+  }
+}
+
+// ============================================================================
+// DELETE ACTIVITY
+// ============================================================================
+
+export type DeleteActivityResult =
+  | { success: true }
+  | { success: false; error: string };
+
+/**
+ * Server Action: Delete an activity
+ *
+ * @param id - Activity UUID
+ * @returns Result indicating success or error
+ */
+export async function deleteActivityAction(
+  id: string
+): Promise<DeleteActivityResult> {
+  try {
+    // 1. Authentication
+    const { userId, orgId } = await auth();
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // 2. Authorization
+    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
+      return { success: false, error: "Forbidden: Admin access required" };
+    }
+
+    // 3. Validate UUID
+    const uuidSchema = z.string().uuid();
+    if (!uuidSchema.safeParse(id).success) {
+      return { success: false, error: "Invalid activity ID" };
+    }
+
+    // 4. Get provider context
+    const providerId = await getCurrentProviderId();
+
+    // 5. Find activity with provider filter
+    const existing = await db.crm_activities.findFirst({
+      where: { id, ...buildProviderFilter(providerId) },
+      select: { id: true, lead_id: true, opportunity_id: true },
+    });
+
+    if (!existing) {
+      return { success: false, error: "Activity not found" };
+    }
+
+    // 6. Delete activity
+    await db.crm_activities.delete({ where: { id } });
+
+    logger.info(
+      { activityId: id, userId },
+      "[deleteActivityAction] Activity deleted"
+    );
+
+    // 7. Revalidate paths
+    if (existing.lead_id) {
+      revalidatePath(`/[locale]/(app)/crm/leads/${existing.lead_id}`);
+    }
+    if (existing.opportunity_id) {
+      revalidatePath(`/[locale]/(app)/crm/opportunities`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    logger.error({ error, id }, "[deleteActivityAction] Error");
+    return { success: false, error: "Failed to delete activity" };
+  }
+}
+
+// ============================================================================
+// MARK ACTIVITY COMPLETE
+// ============================================================================
+
+export type MarkActivityCompleteResult =
   | {
       success: true;
       activity: {
@@ -322,16 +599,14 @@ export type CompleteActivityResult =
   | { success: false; error: string };
 
 /**
- * Server Action: Mark an activity as completed
+ * Server Action: Mark an activity as complete
  *
- * @param activityId - UUID of the activity to complete
- * @param notes - Optional completion notes
- * @returns Result object with updated activity or error
+ * @param id - Activity UUID
+ * @returns Result with completion status or error
  */
-export async function completeActivityAction(
-  activityId: string,
-  notes?: string
-): Promise<CompleteActivityResult> {
+export async function markActivityCompleteAction(
+  id: string
+): Promise<MarkActivityCompleteResult> {
   try {
     // 1. Authentication
     const { userId, orgId } = await auth();
@@ -339,46 +614,61 @@ export async function completeActivityAction(
       return { success: false, error: "Unauthorized" };
     }
 
-    // 2. Authorization - FleetCore Admin only
+    // 2. Authorization
     if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
       return { success: false, error: "Forbidden: Admin access required" };
     }
 
-    // 3. Validate
-    const validated = CompleteActivitySchema.safeParse({ activityId, notes });
-    if (!validated.success) {
+    // 3. Validate UUID
+    const uuidSchema = z.string().uuid();
+    if (!uuidSchema.safeParse(id).success) {
       return { success: false, error: "Invalid activity ID" };
     }
 
-    // 4. Find activity and get lead_id for revalidation
-    const existingActivity = await db.crm_lead_activities.findUnique({
-      where: { id: activityId },
-      select: { id: true, lead_id: true, metadata: true },
-    });
+    // 4. Get provider context
+    const providerId = await getCurrentProviderId();
 
-    if (!existingActivity) {
-      return { success: false, error: "Activity not found" };
-    }
-
-    // 5. Update activity
-    const now = new Date();
-    const existingMetadata =
-      (existingActivity.metadata as Record<string, unknown>) || {};
-
-    const activity = await db.crm_lead_activities.update({
-      where: { id: activityId },
-      data: {
+    // 5. Find activity with provider filter
+    const existing = await db.crm_activities.findFirst({
+      where: { id, ...buildProviderFilter(providerId) },
+      select: {
+        id: true,
+        lead_id: true,
+        opportunity_id: true,
         is_completed: true,
-        completed_at: now,
-        updated_at: now,
-        metadata: (notes
-          ? { ...existingMetadata, completion_notes: notes }
-          : existingMetadata) as object,
       },
     });
 
-    // 6. Revalidate
-    revalidatePath(`/[locale]/(crm)/crm/leads/${existingActivity.lead_id}`);
+    if (!existing) {
+      return { success: false, error: "Activity not found" };
+    }
+
+    if (existing.is_completed) {
+      return { success: false, error: "Activity is already completed" };
+    }
+
+    // 6. Mark as complete
+    const now = new Date();
+    const activity = await db.crm_activities.update({
+      where: { id },
+      data: {
+        is_completed: true,
+        completed_at: now,
+      },
+    });
+
+    logger.info(
+      { activityId: id, userId },
+      "[markActivityCompleteAction] Activity completed"
+    );
+
+    // 7. Revalidate paths
+    if (existing.lead_id) {
+      revalidatePath(`/[locale]/(app)/crm/leads/${existing.lead_id}`);
+    }
+    if (existing.opportunity_id) {
+      revalidatePath(`/[locale]/(app)/crm/opportunities`);
+    }
 
     return {
       success: true,
@@ -389,7 +679,35 @@ export async function completeActivityAction(
       },
     };
   } catch (error) {
-    logger.error({ error, activityId }, "[completeActivityAction] Error");
+    logger.error({ error, id }, "[markActivityCompleteAction] Error");
     return { success: false, error: "Failed to complete activity" };
   }
+}
+
+// ============================================================================
+// LEGACY EXPORTS (for backward compatibility)
+// ============================================================================
+
+/**
+ * @deprecated Use getActivitiesAction({ leadId }) instead
+ */
+export async function getLeadActivitiesAction(
+  leadId: string,
+  options?: { limit?: number; offset?: number }
+) {
+  return getActivitiesAction({
+    leadId,
+    limit: options?.limit,
+    offset: options?.offset,
+  });
+}
+
+/**
+ * @deprecated Use markActivityCompleteAction instead
+ */
+export async function completeActivityAction(
+  activityId: string,
+  _notes?: string
+) {
+  return markActivityCompleteAction(activityId);
 }

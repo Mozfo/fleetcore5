@@ -23,6 +23,7 @@ import {
   BarChart3,
   Search,
   Target,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -77,6 +78,7 @@ export function CrmSidebar({ locale }: CrmSidebarProps) {
   // Link hrefs
   const leadsPipelineHref = `/${locale}/crm/leads`;
   const opportunitiesPipelineHref = `/${locale}/crm/opportunities`;
+  const quotesPipelineHref = `/${locale}/crm/quotes`;
   const browserHref = `/${locale}/crm/leads/browser`;
   const reportsHref = `/${locale}/crm/leads/reports`;
 
@@ -88,6 +90,10 @@ export function CrmSidebar({ locale }: CrmSidebarProps) {
     if (id === "opportunities-pipeline") {
       // Opportunities Pipeline is active on /crm/opportunities
       return pathname.startsWith(`/${locale}/crm/opportunities`);
+    }
+    if (id === "quotes-pipeline") {
+      // Quotes Pipeline is active on /crm/quotes
+      return pathname.startsWith(`/${locale}/crm/quotes`);
     }
     if (id === "leads-browser") {
       // Browser is active on /crm/leads/browser
@@ -173,6 +179,21 @@ export function CrmSidebar({ locale }: CrmSidebarProps) {
               >
                 <Target className="h-4 w-4" />
                 <span>{t("sidebar.opportunities_pipeline")}</span>
+              </Link>
+
+              {/* Quotes Pipeline */}
+              <Link
+                href={quotesPipelineHref}
+                prefetch={true}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                  isActiveLink("quotes-pipeline")
+                    ? "bg-blue-100 font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                )}
+              >
+                <FileText className="h-4 w-4" />
+                <span>{t("sidebar.quotes_pipeline")}</span>
               </Link>
 
               {/* Leads Browser - Search and detail split view */}

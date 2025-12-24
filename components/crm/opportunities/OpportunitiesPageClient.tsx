@@ -11,6 +11,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { OpportunitiesPageHeader } from "./OpportunitiesPageHeader";
@@ -19,8 +20,12 @@ import { KanbanBoard } from "./KanbanBoard";
 import { OpportunitiesTable } from "./OpportunitiesTable";
 import { OpportunityColumnSelector } from "./OpportunityColumnSelector";
 import { OpportunityDrawer } from "./OpportunityDrawer";
+import { OpportunityFormModal } from "./OpportunityFormModal";
 import { TablePagination } from "../leads/TablePagination";
-import { updateOpportunityStageAction } from "@/lib/actions/crm/opportunity.actions";
+import {
+  updateOpportunityStageAction,
+  updateOpportunityAction,
+} from "@/lib/actions/crm/opportunity.actions";
 import { DEFAULT_OPPORTUNITY_COLUMNS } from "@/lib/config/opportunity-columns";
 import { useOpportunityStages } from "@/lib/hooks/useOpportunityStages";
 import { useOpportunityColumnPreferences } from "@/lib/hooks/useOpportunityColumnPreferences";
@@ -39,15 +44,25 @@ interface OpportunitiesPageClientProps {
     Opportunity & { days_in_stage: number; is_rotting: boolean }
   >;
   owners: Array<{ id: string; first_name: string; last_name: string | null }>;
+  leads: Array<{
+    id: string;
+    company_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+    phone: string | null;
+  }>;
   initialFilters: OpportunitiesFilters;
 }
 
 export function OpportunitiesPageClient({
   allOpportunities,
   owners,
+  leads,
   initialFilters,
 }: OpportunitiesPageClientProps) {
   const { t } = useTranslation("crm");
+  const router = useRouter();
 
   // Load stages dynamically from crm_settings
   const { stages, getLabel: getStageLabel } = useOpportunityStages();
@@ -74,6 +89,9 @@ export function OpportunitiesPageClient({
     (Opportunity & { days_in_stage: number; is_rotting: boolean }) | null
   >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Form modal state (for manual opportunity creation)
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
   // Column preferences (visibility, order, widths) - same pattern as Leads
   const {
@@ -348,6 +366,141 @@ export function OpportunitiesPageClient({
     setIsDrawerOpen(false);
   }, []);
 
+  // Handle new opportunity created from form modal
+  const handleOpportunityCreated = useCallback(
+    (newOpp: Partial<Opportunity>) => {
+      // Build minimal opportunity object for optimistic update
+      const now = new Date().toISOString();
+
+      // Find the lead info from our leads list
+      const leadInfo = newOpp.lead_id
+        ? leads.find((l) => l.id === newOpp.lead_id)
+        : undefined;
+
+      // Build lead relation only if we have complete data that satisfies the type
+      // Opportunity.lead requires first_name and last_name to be non-null strings
+      const leadRelation: Opportunity["lead"] =
+        leadInfo && leadInfo.first_name && leadInfo.last_name
+          ? {
+              id: leadInfo.id,
+              first_name: leadInfo.first_name,
+              last_name: leadInfo.last_name,
+              email: leadInfo.email,
+              phone: leadInfo.phone ?? null,
+              company_name: leadInfo.company_name,
+              country_code: null,
+              country: null,
+            }
+          : undefined;
+
+      const oppToAdd: Opportunity & {
+        days_in_stage: number;
+        is_rotting: boolean;
+      } = {
+        id: newOpp.id || "",
+        lead_id: newOpp.lead_id || "",
+        stage: newOpp.stage || "qualification",
+        status: newOpp.status || "open",
+        expected_value: newOpp.expected_value ?? null,
+        probability_percent: newOpp.probability_percent ?? null,
+        forecast_value: newOpp.forecast_value ?? null,
+        won_value: null,
+        currency: "EUR",
+        discount_amount: null,
+        close_date: null,
+        expected_close_date: newOpp.expected_close_date ?? null,
+        won_date: null,
+        lost_date: null,
+        created_at: newOpp.created_at || now,
+        updated_at: now,
+        stage_entered_at: now,
+        max_days_in_stage: 14,
+        assigned_to: null,
+        owner_id: null,
+        pipeline_id: null,
+        plan_id: null,
+        contract_id: null,
+        loss_reason: null,
+        notes: null,
+        metadata: {},
+        days_in_stage: 0,
+        is_rotting: false,
+        lead: leadRelation,
+        assignedTo: null,
+      };
+
+      setLocalOpportunities((prev) => [oppToAdd, ...prev]);
+
+      // Refresh server data to get complete opportunity with all relations
+      router.refresh();
+    },
+    [leads, router]
+  );
+
+  // Handle assignment change from table dropdown
+  const handleAssign = useCallback(
+    async (opportunityId: string, assigneeId: string | null) => {
+      // Find the opportunity
+      const opportunity = localOpportunities.find(
+        (o) => o.id === opportunityId
+      );
+      if (!opportunity) return;
+
+      const oldAssignedTo = opportunity.assigned_to;
+      const oldAssignedToData = opportunity.assignedTo;
+
+      // Optimistic update
+      const newAssignedTo = assigneeId
+        ? owners.find((o) => o.id === assigneeId)
+        : null;
+
+      setLocalOpportunities((prev) =>
+        prev.map((o) =>
+          o.id === opportunityId
+            ? {
+                ...o,
+                assigned_to: assigneeId,
+                assignedTo: newAssignedTo
+                  ? {
+                      id: newAssignedTo.id,
+                      first_name: newAssignedTo.first_name,
+                      last_name: newAssignedTo.last_name,
+                      email: "", // Not available from owners list
+                    }
+                  : null,
+              }
+            : o
+        )
+      );
+
+      // Server action
+      const result = await updateOpportunityAction(opportunityId, {
+        assigned_to: assigneeId,
+      });
+
+      if (!result.success) {
+        // Revert on failure
+        setLocalOpportunities((prev) =>
+          prev.map((o) =>
+            o.id === opportunityId
+              ? {
+                  ...o,
+                  assigned_to: oldAssignedTo,
+                  assignedTo: oldAssignedToData,
+                }
+              : o
+          )
+        );
+        toast.error(t("opportunity.assignFailed", "Assignment failed"));
+      } else {
+        toast.success(
+          t("opportunity.assignSuccess", "Assignment updated successfully")
+        );
+      }
+    },
+    [localOpportunities, owners, t]
+  );
+
   // Paginated opportunities for table view
   const paginatedOpportunities = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -366,9 +519,7 @@ export function OpportunitiesPageClient({
         {/* Header with stats - Same pattern as Leads */}
         <OpportunitiesPageHeader
           stats={stats}
-          onNewOpportunity={() => {
-            // TODO: Implement new opportunity modal
-          }}
+          onNewOpportunity={() => setIsFormModalOpen(true)}
           onExport={() => {
             // TODO: Implement export
           }}
@@ -431,6 +582,7 @@ export function OpportunitiesPageClient({
                 onStageChange={handleStageChange}
                 onRowClick={handleOpportunityClick}
                 onRowDoubleClick={handleOpportunityClick}
+                onAssign={handleAssign}
                 owners={owners}
               />
             </div>
@@ -456,6 +608,15 @@ export function OpportunitiesPageClient({
         onClose={handleDrawerClose}
         onDelete={handleOpportunityDelete}
         onOpportunityUpdated={handleOpportunityUpdated}
+        owners={owners}
+      />
+
+      {/* Opportunity Form Modal (manual creation) */}
+      <OpportunityFormModal
+        isOpen={isFormModalOpen}
+        onClose={() => setIsFormModalOpen(false)}
+        onSuccess={handleOpportunityCreated}
+        leads={leads}
         owners={owners}
       />
     </div>

@@ -84,6 +84,11 @@ export function OpportunityContextMenu({
   const _hasPhone = opportunity.lead?.email; // We don't have phone in lead relation
   const hasEmail = opportunity.lead?.email;
 
+  // Mark as Won is only allowed for contract_sent or negotiation stages
+  const MARK_WON_ALLOWED_STAGES = ["contract_sent", "negotiation"];
+  const canMarkAsWon =
+    isOpen && MARK_WON_ALLOWED_STAGES.includes(opportunity.stage);
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
@@ -150,8 +155,13 @@ export function OpportunityContextMenu({
         {/* OUTCOME ACTIONS */}
         <ContextMenuItem
           onClick={onMarkWon}
-          disabled={!isOpen}
+          disabled={!canMarkAsWon}
           className="text-green-600 focus:text-green-600 dark:text-green-400"
+          title={
+            isOpen && !canMarkAsWon
+              ? t("opportunity.drawer.mark_won_stage_required")
+              : undefined
+          }
         >
           <Trophy className="mr-2 h-4 w-4" />
           {t("opportunity.context_menu.mark_won", "Mark as Won")}

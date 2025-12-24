@@ -107,31 +107,22 @@ export function AddActivityModal({
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
 
-    // Build metadata based on type
-    const metadata: Record<string, unknown> = {};
-
-    if (selectedType === "call") {
-      if (data.duration_minutes)
-        metadata.duration_minutes = parseInt(data.duration_minutes);
-      if (data.outcome) metadata.outcome = data.outcome;
-      if (data.phone) metadata.phone_number = data.phone;
-    } else if (selectedType === "email") {
-      if (data.email_to) metadata.to = data.email_to;
-      if (data.template) metadata.template_used = data.template;
-    } else if (selectedType === "meeting") {
-      if (data.duration_minutes)
-        metadata.duration_minutes = parseInt(data.duration_minutes);
-      if (data.location) metadata.location = data.location;
-      if (data.attendees) metadata.attendees = data.attendees;
-    }
+    // Build activity data using unified schema fields
+    const durationMinutes = data.duration_minutes
+      ? parseInt(data.duration_minutes)
+      : undefined;
 
     const result = await createActivityAction({
-      lead_id: leadId,
-      activity_type: selectedType,
-      title: data.title,
+      leadId,
+      activityType: selectedType,
+      subject: data.title,
       description: data.description || undefined,
-      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-      scheduled_at: data.scheduled_at || undefined,
+      durationMinutes:
+        selectedType === "call" || selectedType === "meeting"
+          ? durationMinutes
+          : undefined,
+      outcome: selectedType === "call" ? data.outcome : undefined,
+      activityDate: data.scheduled_at ? new Date(data.scheduled_at) : undefined,
     });
 
     setIsSubmitting(false);

@@ -10,11 +10,10 @@ import {
   RefreshCw,
   CheckSquare,
   Settings,
-  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import type { LeadActivity, ActivityType } from "@/lib/types/activities";
+import type { Activity, ActivityType } from "@/lib/types/activities";
 import { ACTIVITY_COLORS } from "@/lib/types/activities";
 
 const IconMap = {
@@ -40,7 +39,7 @@ const ACTIVITY_ICON_NAMES: Record<ActivityType, keyof typeof IconMap> = {
 };
 
 interface ActivityItemProps {
-  activity: LeadActivity;
+  activity: Activity;
 }
 
 function formatTime(dateString: string): string {
@@ -48,11 +47,13 @@ function formatTime(dateString: string): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatStage(stage: string): string {
-  return stage
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+/**
+ * Format creator name from first_name and last_name
+ */
+function formatCreatorName(creator: Activity["creator"]): string | null {
+  if (!creator) return null;
+  const parts = [creator.first_name, creator.last_name].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : null;
 }
 
 export function ActivityItem({ activity }: ActivityItemProps) {
@@ -62,12 +63,10 @@ export function ActivityItem({ activity }: ActivityItemProps) {
   const Icon = IconMap[iconName];
   const colorClass = ACTIVITY_COLORS[activityType] || ACTIVITY_COLORS.system;
 
-  const getActivityTitle = (): string => {
-    if (activity.title) return activity.title;
-    return t(`leads.timeline.types.${activityType}`, activityType);
-  };
-
-  const metadata = activity.metadata || {};
+  // Use subject as the activity title (new unified schema)
+  const activityTitle =
+    activity.subject || t(`leads.timeline.types.${activityType}`, activityType);
+  const creatorName = formatCreatorName(activity.creator);
 
   return (
     <div className="group flex gap-3">
@@ -86,7 +85,7 @@ export function ActivityItem({ activity }: ActivityItemProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {getActivityTitle()}
+              {activityTitle}
             </p>
             {activity.description && (
               <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
@@ -95,19 +94,17 @@ export function ActivityItem({ activity }: ActivityItemProps) {
             )}
           </div>
           <span className="text-muted-foreground text-xs whitespace-nowrap">
-            {formatTime(activity.created_at)}
+            {formatTime(activity.activity_date)}
           </span>
         </div>
 
-        {/* Metadata */}
-        <ActivityMetadata activityType={activityType} metadata={metadata} />
+        {/* Activity-specific metadata */}
+        <ActivityMetadata activity={activity} />
 
-        {/* Performed by */}
-        {activity.performed_by_name && (
+        {/* Created by */}
+        {creatorName && (
           <p className="text-muted-foreground mt-1 text-xs">
-            {t("leads.timeline.performed_by", {
-              name: activity.performed_by_name,
-            })}
+            {t("leads.timeline.performed_by", { name: creatorName })}
           </p>
         )}
       </div>
@@ -116,68 +113,47 @@ export function ActivityItem({ activity }: ActivityItemProps) {
 }
 
 interface ActivityMetadataProps {
-  activityType: ActivityType;
-  metadata: Record<string, unknown>;
+  activity: Activity;
 }
 
-function ActivityMetadata({ activityType, metadata }: ActivityMetadataProps) {
-  if (!metadata || Object.keys(metadata).length === 0) return null;
-
-  const durationMinutes = metadata.duration_minutes as number | undefined;
-  const outcome = metadata.outcome as string | undefined;
-  const fromStage = metadata.from_stage as string | undefined;
-  const toStage = metadata.to_stage as string | undefined;
-  const fromStatus = metadata.from_status as string | undefined;
-  const toStatus = metadata.to_status as string | undefined;
-  const subject = metadata.subject as string | undefined;
-  const location = metadata.location as string | undefined;
+/**
+ * Renders activity-specific metadata using explicit fields from unified schema.
+ * Replaces old metadata JSON blob approach with typed fields.
+ */
+function ActivityMetadata({ activity }: ActivityMetadataProps) {
+  const activityType = activity.activity_type;
 
   switch (activityType) {
     case "call":
+      if (!activity.duration_minutes && !activity.outcome) return null;
       return (
         <div className="mt-2 flex flex-wrap gap-2 text-xs">
-          {durationMinutes !== undefined && (
-            <Badge variant="secondary">{durationMinutes} min</Badge>
+          {activity.duration_minutes !== null && (
+            <Badge variant="secondary">{activity.duration_minutes} min</Badge>
           )}
-          {outcome && <Badge variant="outline">{outcome}</Badge>}
+          {activity.outcome && (
+            <Badge variant="outline">{activity.outcome}</Badge>
+          )}
         </div>
       );
-    case "stage_change":
+    case "meeting":
+      if (!activity.duration_minutes) return null;
       return (
-        <div className="mt-2 flex items-center gap-2 text-xs">
-          <Badge variant="outline">{formatStage(fromStage || "")}</Badge>
-          <ArrowRight className="text-muted-foreground h-3 w-3" />
-          <Badge variant="secondary">{formatStage(toStage || "")}</Badge>
+        <div className="mt-2 flex flex-wrap gap-2 text-xs">
+          <Badge variant="secondary">{activity.duration_minutes} min</Badge>
         </div>
       );
-    case "status_change":
-      return (
-        <div className="mt-2 flex items-center gap-2 text-xs">
-          <Badge variant="outline">{fromStatus || ""}</Badge>
-          <ArrowRight className="text-muted-foreground h-3 w-3" />
-          <Badge variant="secondary">{toStatus || ""}</Badge>
-        </div>
-      );
-    case "email":
-      if (subject) {
+    case "task":
+      if (activity.is_completed) {
         return (
           <div className="mt-2">
-            <Badge variant="outline" className="text-xs">
-              {subject}
+            <Badge variant="secondary" className="text-xs">
+              ✓ Completed
             </Badge>
           </div>
         );
       }
       return null;
-    case "meeting":
-      return (
-        <div className="mt-2 flex flex-wrap gap-2 text-xs">
-          {durationMinutes !== undefined && (
-            <Badge variant="secondary">{durationMinutes} min</Badge>
-          )}
-          {location && <Badge variant="outline">{location}</Badge>}
-        </div>
-      );
     default:
       return null;
   }

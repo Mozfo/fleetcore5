@@ -228,7 +228,7 @@ export async function verifyScopeAccess(
   const validTables = [
     "crm_leads",
     "crm_opportunities",
-    "crm_contracts",
+    "crm_orders",
     "flt_vehicles",
   ];
 
@@ -261,8 +261,8 @@ export async function verifyScopeAccess(
         select: { id: true },
       });
       break;
-    case "crm_contracts":
-      resource = await prisma.crm_contracts.findFirst({
+    case "crm_orders":
+      resource = await prisma.crm_orders.findFirst({
         where: whereClause,
         select: { id: true },
       });

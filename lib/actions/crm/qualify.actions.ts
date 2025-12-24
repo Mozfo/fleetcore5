@@ -17,6 +17,10 @@ import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
 import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import {
+  getCurrentProviderId,
+  buildProviderFilter,
+} from "@/lib/utils/provider-context";
 
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
@@ -94,16 +98,19 @@ export async function qualifyLeadAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Fetch current lead
-    const currentLead = await db.crm_leads.findUnique({
-      where: { id: leadId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Fetch current lead (with provider filter)
+    const currentLead = await db.crm_leads.findFirst({
+      where: { id: leadId, ...buildProviderFilter(providerId) },
     });
 
     if (!currentLead) {
       return { success: false, error: "Lead not found" };
     }
 
-    // 5. Validate stage progression (only forward allowed)
+    // 6. Validate stage progression (only forward allowed)
     const currentStage =
       (currentLead.lead_stage as LeadStage) || "top_of_funnel";
     const currentIndex = STAGE_ORDER.indexOf(currentStage);
@@ -116,7 +123,7 @@ export async function qualifyLeadAction(
       };
     }
 
-    // 6. Prepare update data
+    // 7. Prepare update data
     const updateData: Record<string, unknown> = {
       lead_stage: newStage,
       updated_at: new Date(),
@@ -146,7 +153,7 @@ export async function qualifyLeadAction(
         : newNote;
     }
 
-    // 7. Update lead with Prisma
+    // 8. Update lead with Prisma
     const updatedLead = await db.crm_leads.update({
       where: { id: leadId },
       data: updateData,
@@ -162,7 +169,7 @@ export async function qualifyLeadAction(
       },
     });
 
-    // 8. Create audit log entry
+    // 9. Create audit log entry
     // Look up proper UUIDs from Clerk IDs (adm_audit_logs requires UUID FKs)
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 
@@ -188,7 +195,7 @@ export async function qualifyLeadAction(
       );
     }
 
-    // 9. Revalidate paths
+    // 10. Revalidate paths
     revalidatePath("/[locale]/(crm)/crm/leads");
     revalidatePath(`/[locale]/(crm)/crm/leads/${leadId}`);
 

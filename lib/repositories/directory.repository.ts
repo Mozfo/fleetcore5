@@ -73,15 +73,16 @@ export const COUNTRY_REGULATIONS_SORT_FIELDS = [
  *
  * ✅ Included columns:
  * - System ID: id
- * - Business data: name (platform name like "Uber", "Bolt", "Careem")
+ * - Business data: code (platform code like "uber", "bolt", "careem")
  * - Timestamps: created_at, updated_at
  *
  * ❌ Excluded columns:
  * - api_config: JSONB containing API keys/secrets (SECURITY RISK)
+ * - name_translations: JSONB (not directly sortable)
  */
 export const PLATFORMS_SORT_FIELDS = [
   "id",
-  "name",
+  "code",
   "created_at",
   "updated_at",
 ] as const satisfies SortFieldWhitelist;
@@ -89,18 +90,21 @@ export const PLATFORMS_SORT_FIELDS = [
 /**
  * Whitelist of sortable fields for dir_vehicle_classes table
  *
- * ✅ All columns safe (regulatory reference data)
+ * ✅ Included columns:
  * - System ID: id
  * - Localization: country_code (ISO 3166-1 alpha-2)
- * - Business data: name (class name like "Economy", "Premium", "Luxury")
- * - Metadata: description, max_age (vehicle age limit for this class)
+ * - Business data: code (class code like "economy", "premium", "luxury")
+ * - Metadata: max_age (vehicle age limit for this class)
  * - Timestamps: created_at, updated_at
+ *
+ * ❌ Excluded columns:
+ * - name_translations: JSONB (not directly sortable)
+ * - description_translations: JSONB (not directly sortable)
  */
 export const VEHICLE_CLASSES_SORT_FIELDS = [
   "id",
   "country_code",
-  "name",
-  "description",
+  "code",
   "max_age",
   "created_at",
   "updated_at",
@@ -199,10 +203,7 @@ export class DirectoryRepository {
    * @param tenantId - Tenant ID (V2: now required, tenant_id is NOT NULL)
    * @returns True if duplicate exists
    */
-  async makeNameExists(
-    name: string,
-    tenantId: string
-  ): Promise<boolean> {
+  async makeNameExists(name: string, tenantId: string): Promise<boolean> {
     const existing = await this.prisma.dir_car_makes.findFirst({
       where: {
         name: { equals: name, mode: "insensitive" },
@@ -281,7 +282,12 @@ export class DirectoryRepository {
    * @returns Created car model
    */
   async createModel(
-    data: { make_id: string; name: string; code: string; vehicle_class_id?: string },
+    data: {
+      make_id: string;
+      name: string;
+      code: string;
+      vehicle_class_id?: string;
+    },
     tenantId: string
   ): Promise<CarModel> {
     return await this.prisma.dir_car_models.create({
@@ -299,20 +305,20 @@ export class DirectoryRepository {
 
   /**
    * Find all platforms with optional search filter
-   * @param search - Optional search term
+   * @param search - Optional search term (searches in code)
    * @param sortBy - Field to sort by
    * @param sortOrder - Sort direction
    * @returns List of platforms
    */
   async findPlatforms(
     search?: string,
-    sortBy: "name" | "created_at" = "name",
+    sortBy: "code" | "created_at" = "code",
     sortOrder: "asc" | "desc" = "asc"
   ): Promise<Platform[]> {
     const where: Record<string, unknown> = {};
 
     if (search) {
-      where.name = { contains: search, mode: "insensitive" };
+      where.code = { contains: search, mode: "insensitive" };
     }
 
     return await this.prisma.dir_platforms.findMany({
@@ -322,14 +328,14 @@ export class DirectoryRepository {
   }
 
   /**
-   * Check if a platform with same name exists
-   * @param name - Platform name
+   * Check if a platform with same code exists
+   * @param code - Platform code
    * @returns True if duplicate exists
    */
-  async platformNameExists(name: string): Promise<boolean> {
+  async platformCodeExists(code: string): Promise<boolean> {
     const existing = await this.prisma.dir_platforms.findFirst({
       where: {
-        name: { equals: name, mode: "insensitive" },
+        code: { equals: code, mode: "insensitive" },
       },
     });
     return !!existing;
@@ -337,18 +343,24 @@ export class DirectoryRepository {
 
   /**
    * Create a new platform
-   * @param data - Platform data (V2: code is now required)
+   * @param data - Platform data with JSONB translations
    * @returns Created platform
    */
   async createPlatform(data: {
-    name: string;
     code: string;
+    name: string;
+    name_translations: Record<string, string>;
+    description?: string;
+    description_translations?: Record<string, string>;
     api_config?: Record<string, unknown>;
   }): Promise<Platform> {
     return await this.prisma.dir_platforms.create({
       data: {
-        name: data.name,
         code: data.code,
+        name: data.name,
+        name_translations: data.name_translations,
+        description: data.description,
+        description_translations: data.description_translations,
         api_config: data.api_config ? (data.api_config as never) : undefined,
       },
     });
@@ -379,7 +391,7 @@ export class DirectoryRepository {
   /**
    * Find vehicle classes with optional filters
    * @param countryCode - Optional country code filter
-   * @param search - Optional search term
+   * @param search - Optional search term (searches in code)
    * @param sortBy - Field to sort by
    * @param sortOrder - Sort direction
    * @returns List of vehicle classes
@@ -387,7 +399,7 @@ export class DirectoryRepository {
   async findVehicleClasses(
     countryCode?: string,
     search?: string,
-    sortBy: "name" | "created_at" = "name",
+    sortBy: "code" | "created_at" = "code",
     sortOrder: "asc" | "desc" = "asc"
   ): Promise<VehicleClass[]> {
     const where: Record<string, unknown> = {};
@@ -397,7 +409,7 @@ export class DirectoryRepository {
     }
 
     if (search) {
-      where.name = { contains: search, mode: "insensitive" };
+      where.code = { contains: search, mode: "insensitive" };
     }
 
     return await this.prisma.dir_vehicle_classes.findMany({
@@ -407,19 +419,19 @@ export class DirectoryRepository {
   }
 
   /**
-   * Check if a vehicle class with same country_code and name exists
+   * Check if a vehicle class with same country_code and code exists
    * @param countryCode - Country code
-   * @param name - Vehicle class name
+   * @param code - Vehicle class code
    * @returns True if duplicate exists
    */
   async vehicleClassExists(
     countryCode: string,
-    name: string
+    code: string
   ): Promise<boolean> {
     const existing = await this.prisma.dir_vehicle_classes.findFirst({
       where: {
         country_code: countryCode,
-        name: { equals: name, mode: "insensitive" },
+        code: { equals: code, mode: "insensitive" },
       },
     });
     return !!existing;
@@ -427,22 +439,26 @@ export class DirectoryRepository {
 
   /**
    * Create a new vehicle class
-   * @param data - Vehicle class data (V2: code is now required)
+   * @param data - Vehicle class data with JSONB translations
    * @returns Created vehicle class
    */
   async createVehicleClass(data: {
     country_code: string;
-    name: string;
     code: string;
+    name: string;
+    name_translations: Record<string, string>;
     description?: string;
+    description_translations?: Record<string, string>;
     max_age?: number;
   }): Promise<VehicleClass> {
     return await this.prisma.dir_vehicle_classes.create({
       data: {
         country_code: data.country_code,
-        name: data.name,
         code: data.code,
-        description: data.description || null,
+        name: data.name,
+        name_translations: data.name_translations,
+        description: data.description,
+        description_translations: data.description_translations ?? {},
         max_age: data.max_age || null,
       },
     });

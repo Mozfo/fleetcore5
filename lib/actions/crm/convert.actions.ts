@@ -14,12 +14,20 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
-import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import {
+  getAuditLogUuids,
+  getTenantUuidFromClerkOrgId,
+} from "@/lib/utils/clerk-uuid-mapper";
+import {
+  getCurrentProviderId,
+  buildProviderFilter,
+} from "@/lib/utils/provider-context";
 import {
   getStageProbability,
   getStageMaxDays,
   DEFAULT_OPPORTUNITY_STAGE,
 } from "@/lib/config/opportunity-stages";
+import { getOrgCurrency } from "@/lib/organization";
 
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
@@ -96,9 +104,12 @@ export async function convertLeadToOpportunityAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Fetch current lead
-    const currentLead = await db.crm_leads.findUnique({
-      where: { id: leadId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Fetch current lead (with provider filter)
+    const currentLead = await db.crm_leads.findFirst({
+      where: { id: leadId, ...buildProviderFilter(providerId) },
       include: {
         adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
           select: { id: true },
@@ -110,7 +121,7 @@ export async function convertLeadToOpportunityAction(
       return { success: false, error: "Lead not found" };
     }
 
-    // 5. Verify eligibility - must be sales_qualified
+    // 6. Verify eligibility - must be sales_qualified
     if (currentLead.lead_stage !== "sales_qualified") {
       return {
         success: false,
@@ -118,9 +129,14 @@ export async function convertLeadToOpportunityAction(
       };
     }
 
-    // 6. Transaction: Create opportunity + Update lead
+    // 7. Get currency from tenant (zero hardcoding principle)
+    // Lookup tenant UUID from Clerk org ID, then get configured currency
+    const tenant = orgId ? await getTenantUuidFromClerkOrgId(orgId) : null;
+    const currency = tenant ? await getOrgCurrency(tenant.id) : "EUR";
+
+    // 8. Transaction: Create opportunity + Update lead
     logger.debug(
-      { leadId },
+      { leadId, currency },
       "[convertLeadToOpportunityAction] Starting transaction"
     );
 
@@ -145,11 +161,12 @@ export async function convertLeadToOpportunityAction(
           : null,
         // expected_value must be Decimal - pass as number, Prisma handles conversion
         expected_value: validation.data.expectedValue
-          ? parseFloat(validation.data.expectedValue)
+          ? Number.parseFloat(validation.data.expectedValue)
           : null,
         // Don't set: status (defaults to 'open')
         // Don't set: assigned_to (might have FK constraint issues)
-        currency: "EUR",
+        // Currency from tenant configuration (adm_tenants.default_currency)
+        currency,
         metadata: {
           opportunity_name: validation.data.opportunityName,
           converted_from_lead: true,
@@ -202,7 +219,7 @@ export async function convertLeadToOpportunityAction(
       return { lead: updatedLead, opportunity };
     });
 
-    // 7. Create audit log entry
+    // 8. Create audit log entry
     // Look up proper UUIDs from Clerk IDs (adm_audit_logs requires UUID FKs)
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 
@@ -232,7 +249,7 @@ export async function convertLeadToOpportunityAction(
       );
     }
 
-    // 8. Revalidate paths
+    // 9. Revalidate paths
     revalidatePath("/[locale]/(crm)/crm/leads");
     revalidatePath(`/[locale]/(crm)/crm/leads/${leadId}`);
     revalidatePath("/[locale]/(crm)/crm/opportunities");

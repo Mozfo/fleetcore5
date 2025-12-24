@@ -17,6 +17,10 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import {
+  getCurrentProviderId,
+  buildProviderFilter,
+} from "@/lib/utils/provider-context";
 
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
@@ -82,9 +86,12 @@ export async function deleteLeadAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Verify lead exists
-    const lead = await db.crm_leads.findUnique({
-      where: { id: leadId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Verify lead exists (with provider filter)
+    const lead = await db.crm_leads.findFirst({
+      where: { id: leadId, ...buildProviderFilter(providerId) },
       select: {
         id: true,
         email: true,
@@ -98,7 +105,7 @@ export async function deleteLeadAction(
       return { success: false, error: "Lead not found" };
     }
 
-    // 5. Get UUIDs for audit log
+    // 6. Get UUIDs for audit log
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 
     if (permanentDelete) {
@@ -222,9 +229,12 @@ export async function restoreLeadAction(
       return { success: false, error: "Invalid lead ID" };
     }
 
-    // 4. Verify lead exists and is soft-deleted
-    const lead = await db.crm_leads.findUnique({
-      where: { id: leadId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Verify lead exists and is soft-deleted (with provider filter)
+    const lead = await db.crm_leads.findFirst({
+      where: { id: leadId, ...buildProviderFilter(providerId) },
       select: { id: true, deleted_at: true },
     });
 
@@ -236,7 +246,7 @@ export async function restoreLeadAction(
       return { success: false, error: "Lead is not deleted" };
     }
 
-    // 5. Restore the lead
+    // 6. Restore the lead
     await db.crm_leads.update({
       where: { id: leadId },
       data: {
@@ -247,7 +257,7 @@ export async function restoreLeadAction(
       },
     });
 
-    // 6. Create audit log
+    // 7. Create audit log
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 
     if (tenantUuid && memberUuid) {

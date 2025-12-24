@@ -1,3 +1,12 @@
+/**
+ * Unified Activity Types for CRM
+ *
+ * Supports polymorphic activities linked to leads AND/OR opportunities.
+ * Replaces the old LeadActivity type with explicit fields instead of metadata JSON.
+ *
+ * @see prisma/schema.prisma - crm_activities model
+ */
+
 export type ActivityType =
   | "call"
   | "email"
@@ -8,21 +17,38 @@ export type ActivityType =
   | "task"
   | "system";
 
-export interface LeadActivity {
+/**
+ * Unified Activity interface (polymorphic)
+ *
+ * Can be linked to a lead, opportunity, or both.
+ * Uses explicit fields instead of metadata JSON for better type safety.
+ */
+export interface Activity {
   id: string;
-  lead_id: string;
+  lead_id: string | null;
+  opportunity_id: string | null;
+  provider_id: string;
   activity_type: ActivityType;
-  title: string | null;
+  subject: string;
   description: string | null;
-  metadata: Record<string, unknown>;
-  scheduled_at: string | null;
-  completed_at: string | null;
+  activity_date: string;
+  duration_minutes: number | null;
+  outcome: string | null;
   is_completed: boolean;
-  performed_by: string | null;
-  performed_by_name: string | null;
+  completed_at: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
+  creator?: {
+    first_name: string;
+    last_name: string | null;
+  } | null;
 }
+
+/**
+ * @deprecated Use Activity instead. Kept for backward compatibility during migration.
+ */
+export type LeadActivity = Activity;
 
 export const ACTIVITY_ICONS: Record<ActivityType, string> = {
   call: "Phone",

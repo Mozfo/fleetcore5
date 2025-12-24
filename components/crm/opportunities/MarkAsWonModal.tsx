@@ -1,19 +1,22 @@
 "use client";
 
 /**
- * MarkAsWonModal - Modal to mark an opportunity as won
+ * MarkAsWonModal - Modal to mark an opportunity as won (Quote-to-Cash)
  *
  * Features:
  * - Pre-populated with expected_value from opportunity
- * - Won date defaults to today
- * - Optional notes field
- * - Calls markOpportunityWonAction server action
+ * - Contract parameters: billing cycle, duration, effective date
+ * - Auto-renew and notice period options
+ * - Creates Order via markOpportunityWonAction
+ * - Returns both opportunity and order data on success
+ *
+ * @module components/crm/opportunities/MarkAsWonModal
  */
 
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Trophy, Loader2 } from "lucide-react";
+import { Trophy, Loader2, Calendar, Clock, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,18 +29,57 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { markOpportunityWonAction } from "@/lib/actions/crm/opportunity.actions";
 import type { Opportunity } from "@/types/crm";
 
+// Billing cycle options (matches Prisma enum billing_interval)
+const BILLING_CYCLE_OPTIONS = [
+  { value: "month", labelKey: "opportunity.won_modal.billing_monthly" },
+  { value: "year", labelKey: "opportunity.won_modal.billing_annual" },
+] as const;
+
+// Common contract durations
+const DURATION_OPTIONS = [
+  { value: 6, labelKey: "opportunity.won_modal.duration_6m" },
+  { value: 12, labelKey: "opportunity.won_modal.duration_12m" },
+  { value: 24, labelKey: "opportunity.won_modal.duration_24m" },
+  { value: 36, labelKey: "opportunity.won_modal.duration_36m" },
+] as const;
+
+// Notice period options
+const NOTICE_PERIOD_OPTIONS = [
+  { value: 0, labelKey: "opportunity.won_modal.notice_none" },
+  { value: 30, labelKey: "opportunity.won_modal.notice_30" },
+  { value: 60, labelKey: "opportunity.won_modal.notice_60" },
+  { value: 90, labelKey: "opportunity.won_modal.notice_90" },
+] as const;
+
+/**
+ * Props for the MarkAsWonModal component
+ */
 interface MarkAsWonModalProps {
   opportunity: Opportunity;
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (data: {
-    id: string;
-    status: string;
-    won_date?: string;
-    won_value?: number;
+    opportunity: {
+      id: string;
+      status: string;
+      won_date: string;
+      won_value: number;
+    };
+    order: {
+      id: string;
+      order_reference: string;
+      order_code: string;
+      total_value: number;
+      monthly_value: number;
+      annual_value: number;
+      effective_date: string;
+      expiry_date: string;
+    };
   }) => void;
 }
 
@@ -49,9 +91,13 @@ export function MarkAsWonModal({
 }: MarkAsWonModalProps) {
   const { t } = useTranslation("crm");
 
-  // Form state
-  const [wonValue, setWonValue] = useState<string>("");
-  const [wonDate, setWonDate] = useState<string>("");
+  // Form state - Contract parameters
+  const [totalValue, setTotalValue] = useState<string>("");
+  const [billingCycle, setBillingCycle] = useState<string>("monthly");
+  const [effectiveDate, setEffectiveDate] = useState<string>("");
+  const [durationMonths, setDurationMonths] = useState<number>(12);
+  const [autoRenew, setAutoRenew] = useState<boolean>(false);
+  const [noticePeriodDays, setNoticePeriodDays] = useState<number>(30);
   const [notes, setNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,9 +105,20 @@ export function MarkAsWonModal({
   useEffect(() => {
     if (isOpen) {
       // Default to expected_value
-      setWonValue(opportunity.expected_value?.toString() ?? "");
-      // Default to today
-      setWonDate(new Date().toISOString().split("T")[0]);
+      setTotalValue(opportunity.expected_value?.toString() ?? "");
+      // Default billing cycle
+      setBillingCycle("month");
+      // Default to tomorrow (contract starts tomorrow)
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setEffectiveDate(tomorrow.toISOString().split("T")[0]);
+      // Default duration
+      setDurationMonths(12);
+      // Auto-renew off by default
+      setAutoRenew(false);
+      // Standard notice period
+      setNoticePeriodDays(30);
+      // Clear notes
       setNotes("");
     }
   }, [isOpen, opportunity.expected_value]);
@@ -70,18 +127,44 @@ export function MarkAsWonModal({
     async (e: React.FormEvent) => {
       e.preventDefault();
 
+      // Validate required fields
+      if (!totalValue || parseFloat(totalValue) < 100) {
+        toast.error(t("opportunity.won_modal.error_min_value"));
+        return;
+      }
+
+      if (!effectiveDate) {
+        toast.error(t("opportunity.won_modal.error_date_required"));
+        return;
+      }
+
       setIsSubmitting(true);
       try {
-        const result = await markOpportunityWonAction(
-          opportunity.id,
-          wonValue ? parseFloat(wonValue) : undefined
-        );
+        const result = await markOpportunityWonAction({
+          opportunityId: opportunity.id,
+          totalValue: parseFloat(totalValue),
+          currency: opportunity.currency || "EUR",
+          billingCycle: billingCycle as "month" | "year",
+          effectiveDate: new Date(effectiveDate),
+          durationMonths,
+          autoRenew,
+          noticePeriodDays,
+          notes: notes || undefined,
+        });
 
         if (!result.success) {
           toast.error(result.error || t("opportunity.won_modal.error"));
           return;
         }
-        toast.success(t("opportunity.won_modal.success"));
+
+        // Show success with order reference
+        toast.success(
+          t("opportunity.won_modal.success_with_order", {
+            orderRef: result.data.order.order_reference,
+          })
+        );
+
+        // Call onSuccess with full data
         onSuccess?.(result.data);
         onClose();
       } catch {
@@ -90,7 +173,20 @@ export function MarkAsWonModal({
         setIsSubmitting(false);
       }
     },
-    [opportunity.id, wonValue, t, onSuccess, onClose]
+    [
+      opportunity.id,
+      opportunity.currency,
+      totalValue,
+      billingCycle,
+      effectiveDate,
+      durationMonths,
+      autoRenew,
+      noticePeriodDays,
+      notes,
+      t,
+      onSuccess,
+      onClose,
+    ]
   );
 
   const handleClose = useCallback(() => {
@@ -99,10 +195,16 @@ export function MarkAsWonModal({
     }
   }, [isSubmitting, onClose]);
 
+  // Calculate monthly value preview
+  const monthlyValuePreview =
+    totalValue && durationMonths
+      ? (parseFloat(totalValue) / durationMonths).toFixed(2)
+      : "0.00";
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent
-        className="sm:max-w-md"
+        className="sm:max-w-lg"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -112,45 +214,134 @@ export function MarkAsWonModal({
             {t("opportunity.won_modal.title")}
           </DialogTitle>
           <DialogDescription>
-            {t("opportunity.won_modal.description")}
+            {t("opportunity.won_modal.description_quote_to_cash")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Won Value */}
+          {/* Contract Value */}
           <div className="space-y-2">
-            <Label htmlFor="won-value">
-              {t("opportunity.won_modal.won_value")}
+            <Label htmlFor="total-value">
+              {t("opportunity.won_modal.total_value")} *
             </Label>
             <div className="relative">
               <Input
-                id="won-value"
+                id="total-value"
                 type="number"
-                min="0"
+                min="100"
                 step="0.01"
-                value={wonValue}
-                onChange={(e) => setWonValue(e.target.value)}
-                placeholder={t("opportunity.won_modal.won_value_placeholder")}
+                value={totalValue}
+                onChange={(e) => setTotalValue(e.target.value)}
+                placeholder={t("opportunity.won_modal.total_value_placeholder")}
                 className="pr-12"
+                required
               />
               <span className="absolute top-1/2 right-3 -translate-y-1/2 text-sm text-gray-500">
                 {opportunity.currency || "EUR"}
               </span>
             </div>
+            {totalValue && (
+              <p className="text-muted-foreground text-xs">
+                {t("opportunity.won_modal.monthly_value_preview", {
+                  value: monthlyValuePreview,
+                  currency: opportunity.currency || "EUR",
+                })}
+              </p>
+            )}
           </div>
 
-          {/* Won Date */}
+          {/* Billing Cycle & Duration Row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Billing Cycle */}
+            <div className="space-y-2">
+              <Label htmlFor="billing-cycle">
+                <Clock className="mr-1 inline h-4 w-4" />
+                {t("opportunity.won_modal.billing_cycle")} *
+              </Label>
+              <Select
+                id="billing-cycle"
+                value={billingCycle}
+                onChange={(e) => setBillingCycle(e.target.value)}
+                required
+              >
+                {BILLING_CYCLE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {t(option.labelKey)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {/* Duration */}
+            <div className="space-y-2">
+              <Label htmlFor="duration">
+                {t("opportunity.won_modal.duration")} *
+              </Label>
+              <Select
+                id="duration"
+                value={durationMonths.toString()}
+                onChange={(e) => setDurationMonths(parseInt(e.target.value))}
+                required
+              >
+                {DURATION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value.toString()}>
+                    {t(option.labelKey)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          {/* Effective Date */}
           <div className="space-y-2">
-            <Label htmlFor="won-date">
-              {t("opportunity.won_modal.won_date")}
+            <Label htmlFor="effective-date">
+              <Calendar className="mr-1 inline h-4 w-4" />
+              {t("opportunity.won_modal.effective_date")} *
             </Label>
             <Input
-              id="won-date"
+              id="effective-date"
               type="date"
-              value={wonDate}
-              onChange={(e) => setWonDate(e.target.value)}
-              max={new Date().toISOString().split("T")[0]}
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              required
             />
+          </div>
+
+          {/* Auto-Renew & Notice Period Row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Auto-Renew Toggle */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="auto-renew" className="text-sm font-medium">
+                  <RefreshCw className="mr-1 inline h-4 w-4" />
+                  {t("opportunity.won_modal.auto_renew")}
+                </Label>
+              </div>
+              <Switch
+                id="auto-renew"
+                checked={autoRenew}
+                onCheckedChange={setAutoRenew}
+              />
+            </div>
+
+            {/* Notice Period */}
+            <div className="space-y-2">
+              <Label htmlFor="notice-period">
+                {t("opportunity.won_modal.notice_period")}
+              </Label>
+              <Select
+                id="notice-period"
+                value={noticePeriodDays.toString()}
+                onChange={(e) => setNoticePeriodDays(parseInt(e.target.value))}
+              >
+                {NOTICE_PERIOD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value.toString()}>
+                    {t(option.labelKey)}
+                  </option>
+                ))}
+              </Select>
+            </div>
           </div>
 
           {/* Notes (optional) */}
@@ -163,7 +354,8 @@ export function MarkAsWonModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t("opportunity.won_modal.notes_placeholder")}
-              rows={3}
+              rows={2}
+              maxLength={2000}
             />
           </div>
 
@@ -178,7 +370,7 @@ export function MarkAsWonModal({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !totalValue || !effectiveDate}
               className="bg-green-600 text-white hover:bg-green-700"
             >
               {isSubmitting ? (

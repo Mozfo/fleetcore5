@@ -169,7 +169,12 @@ export class DirectoryService extends BaseService {
    * @throws ValidationError if duplicate name exists
    */
   async createModel(
-    data: { make_id: string; name: string; code: string; vehicle_class_id?: string },
+    data: {
+      make_id: string;
+      name: string;
+      code: string;
+      vehicle_class_id?: string;
+    },
     tenantId: string,
     checkTenantId: string
   ): Promise<CarModel> {
@@ -210,14 +215,14 @@ export class DirectoryService extends BaseService {
 
   /**
    * List all platforms with optional search filter
-   * @param search - Optional search term
+   * @param search - Optional search term (searches in code)
    * @param sortBy - Field to sort by
    * @param sortOrder - Sort direction
    * @returns List of platforms
    */
   async listPlatforms(
     search?: string,
-    sortBy: "name" | "created_at" = "name",
+    sortBy: "code" | "created_at" = "code",
     sortOrder: "asc" | "desc" = "asc"
   ): Promise<Platform[]> {
     try {
@@ -229,20 +234,25 @@ export class DirectoryService extends BaseService {
 
   /**
    * Create a new platform
-   * @param data - Platform data (V2: code is now required)
+   * @param data - Platform data with JSONB translations
    * @returns Created platform
-   * @throws ValidationError if duplicate name exists
+   * @throws ValidationError if duplicate code exists
    */
   async createPlatform(data: {
-    name: string;
     code: string;
+    name: string;
+    name_translations: Record<string, string>;
+    description?: string;
+    description_translations?: Record<string, string>;
     api_config?: Record<string, unknown>;
   }): Promise<Platform> {
     try {
-      // Check for duplicate name
-      const exists = await this.directoryRepo.platformNameExists(data.name);
+      // Check for duplicate code
+      const exists = await this.directoryRepo.platformCodeExists(data.code);
       if (exists) {
-        throw new ValidationError(`Platform "${data.name}" already exists`);
+        throw new ValidationError(
+          `Platform with code "${data.code}" already exists`
+        );
       }
 
       // Create platform
@@ -275,7 +285,7 @@ export class DirectoryService extends BaseService {
   /**
    * List vehicle classes with optional filters
    * @param countryCode - Optional country code filter
-   * @param search - Optional search term
+   * @param search - Optional search term (searches in code)
    * @param sortBy - Field to sort by
    * @param sortOrder - Sort direction
    * @returns List of vehicle classes
@@ -283,7 +293,7 @@ export class DirectoryService extends BaseService {
   async listVehicleClasses(
     countryCode?: string,
     search?: string,
-    sortBy: "name" | "created_at" = "name",
+    sortBy: "code" | "created_at" = "code",
     sortOrder: "asc" | "desc" = "asc"
   ): Promise<VehicleClass[]> {
     try {
@@ -300,26 +310,28 @@ export class DirectoryService extends BaseService {
 
   /**
    * Create a new vehicle class
-   * @param data - Vehicle class data
+   * @param data - Vehicle class data with JSONB translations
    * @returns Created vehicle class
-   * @throws ValidationError if duplicate country_code + name exists
+   * @throws ValidationError if duplicate country_code + code exists
    */
   async createVehicleClass(data: {
     country_code: string;
-    name: string;
     code: string;
+    name: string;
+    name_translations: Record<string, string>;
     description?: string;
+    description_translations?: Record<string, string>;
     max_age?: number;
   }): Promise<VehicleClass> {
     try {
-      // Check for duplicate (country_code, name)
+      // Check for duplicate (country_code, code)
       const exists = await this.directoryRepo.vehicleClassExists(
         data.country_code,
-        data.name
+        data.code
       );
       if (exists) {
         throw new ValidationError(
-          `Vehicle class "${data.name}" already exists for country ${data.country_code}`
+          `Vehicle class with code "${data.code}" already exists for country ${data.country_code}`
         );
       }
 

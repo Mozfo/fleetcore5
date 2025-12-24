@@ -20,6 +20,10 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import {
+  getCurrentProviderId,
+  buildProviderFilter,
+} from "@/lib/utils/provider-context";
 import type { LeadStatus } from "@/types/crm";
 
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
@@ -84,9 +88,12 @@ export async function updateLeadStatusAction(
       return { success: false, error: "Forbidden: Admin access required" };
     }
 
-    // 4. Fetch current lead to get old status and metadata
-    const currentLead = await db.crm_leads.findUnique({
-      where: { id: leadId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Fetch current lead to get old status and metadata
+    const currentLead = await db.crm_leads.findFirst({
+      where: { id: leadId, ...buildProviderFilter(providerId) },
       select: { status: true, metadata: true, qualified_date: true },
     });
 
@@ -121,7 +128,7 @@ export async function updateLeadStatusAction(
       updateData.qualified_date = now;
     }
 
-    // 6. Update with Prisma
+    // 6. Update with Prisma (provider_id filter already applied via RLS)
     const updatedLead = await db.crm_leads.update({
       where: { id: leadId },
       data: updateData,
@@ -204,16 +211,19 @@ export async function updateLeadAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Fetch old lead for audit log
-    const oldLead = await db.crm_leads.findUnique({
-      where: { id: leadId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Fetch old lead for audit log (with provider filter)
+    const oldLead = await db.crm_leads.findFirst({
+      where: { id: leadId, ...buildProviderFilter(providerId) },
     });
 
     if (!oldLead) {
       return { success: false, error: "Lead not found" };
     }
 
-    // 5. Prepare update data (only non-undefined fields)
+    // 6. Prepare update data (only non-undefined fields)
     const updateData: Record<string, unknown> = {
       updated_at: new Date(),
     };
@@ -244,7 +254,7 @@ export async function updateLeadAction(
     if (validatedData.assigned_to_id !== undefined)
       updateData.assigned_to = validatedData.assigned_to_id;
 
-    // 6. Update lead with Prisma
+    // 7. Update lead with Prisma
     const updatedLead = await db.crm_leads.update({
       where: { id: leadId },
       data: updateData,
@@ -260,7 +270,7 @@ export async function updateLeadAction(
       },
     });
 
-    // 7. Create audit log entry
+    // 8. Create audit log entry
     // Look up proper UUIDs from Clerk IDs (adm_audit_logs requires UUID FKs)
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 

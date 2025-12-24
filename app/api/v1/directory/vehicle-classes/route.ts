@@ -14,17 +14,18 @@ import { handleApiError } from "@/lib/api/error-handler";
  *
  * Query Parameters:
  * - country_code (string, optional) - Filter by country code (2 chars)
- * - search (string, optional) - Search by name
- * - sortBy (enum: name|created_at, default: name)
+ * - search (string, optional) - Search by code
+ * - sortBy (enum: code|created_at, default: code)
  * - sortOrder (enum: asc|desc, default: asc)
  *
- * Response: Array of vehicle classes
+ * Response: Array of vehicle classes with JSONB translations
  * [
  *   {
  *     id: "uuid",
  *     country_code: "FR",
- *     name: "Berline",
- *     description: "Standard sedan",
+ *     code: "sedan",
+ *     name_translations: {"en": "Sedan", "fr": "Berline", "ar": "سيدان"},
+ *     description_translations: {"en": "Standard sedan", ...},
  *     max_age: 7,
  *     created_at: "2025-01-01T00:00:00Z",
  *     updated_at: "2025-01-01T00:00:00Z"
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     const queryParams = {
       country_code: searchParams.get("country_code") || undefined,
       search: searchParams.get("search") || undefined,
-      sortBy: searchParams.get("sortBy") || "name",
+      sortBy: searchParams.get("sortBy") || "code",
       sortOrder: searchParams.get("sortOrder") || "asc",
     };
 
@@ -80,20 +81,22 @@ export async function GET(request: NextRequest) {
  * POST /api/v1/directory/vehicle-classes
  * Create a new vehicle class (requires manage_directory or admin permission)
  *
- * Body:
+ * Body (V3 - JSONB translations):
  * {
  *   country_code: "FR",
- *   name: "Berline",
- *   description: "Standard sedan" (optional),
+ *   code: "sedan",
+ *   name_translations: {"en": "Sedan", "fr": "Berline", "ar": "سيدان"},
+ *   description_translations: {"en": "Standard sedan", ...} (optional),
  *   max_age: 7 (optional)
  * }
  *
- * Response: Created vehicle class
+ * Response: Created vehicle class with JSONB translations
  * {
  *   id: "uuid",
  *   country_code: "FR",
- *   name: "Berline",
- *   description: "Standard sedan",
+ *   code: "sedan",
+ *   name_translations: {"en": "Sedan", ...},
+ *   description_translations: {...},
  *   max_age: 7,
  *   created_at: "2025-01-01T00:00:00Z",
  *   updated_at: "2025-01-01T00:00:00Z"

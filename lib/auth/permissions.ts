@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getTranslation } from "@/lib/utils/i18n-db";
 
 /**
  * Permission check result
@@ -57,7 +58,8 @@ export async function hasPermission(
       include: {
         adm_roles: {
           select: {
-            name: true,
+            slug: true,
+            name_translations: true,
             permissions: true,
             deleted_at: true,
             status: true,
@@ -88,7 +90,13 @@ export async function hasPermission(
         continue;
       }
 
-      roleNames.push(role.name);
+      // Use English name from translations for logging, fallback to slug
+      const roleName = getTranslation(
+        role.name_translations as Record<string, string> | null,
+        "en",
+        role.slug
+      );
+      roleNames.push(roleName);
 
       // Check if role has required permission
       const permissions = role.permissions as Record<string, boolean>;

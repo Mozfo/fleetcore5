@@ -154,6 +154,8 @@ describe("CountryService", () => {
         country_preposition_fr: "en",
         is_visible: true,
         display_order: 2,
+        is_system: false,
+        provider_id: null,
         created_at: new Date(),
         updated_at: new Date(),
       };

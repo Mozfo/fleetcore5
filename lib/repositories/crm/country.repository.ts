@@ -9,6 +9,10 @@ export type Country = crm_countries;
 /**
  * Repository for managing CRM countries
  *
+ * NOTE: crm_countries is a SYSTEM table (no provider_id, no is_system).
+ * All countries are globally visible to all users.
+ * No multi-tenant filtering is applied.
+ *
  * Provides database access layer for country data including:
  * - GDPR compliance checks (EU/EEA countries)
  * - Operational status (FleetCore availability)
@@ -47,13 +51,11 @@ export class CountryRepository extends BaseRepository<crm_countries> {
    * ```
    */
   async findByCode(countryCode: string): Promise<crm_countries | null> {
-    const country = await this.prisma.crm_countries.findUnique({
+    return this.prisma.crm_countries.findFirst({
       where: {
         country_code: countryCode.toUpperCase(),
       },
     });
-
-    return country;
   }
 
   /**
@@ -74,10 +76,10 @@ export class CountryRepository extends BaseRepository<crm_countries> {
    */
   async isGdprCountry(countryCode: string): Promise<boolean> {
     try {
-      const country = await this.prisma.crm_countries.findUnique({
+      const country = await this.prisma.crm_countries.findFirst({
         where: {
           country_code: countryCode.toUpperCase(),
-          is_visible: true, // Only consider visible countries
+          is_visible: true,
         },
         select: {
           country_gdpr: true,
@@ -113,7 +115,7 @@ export class CountryRepository extends BaseRepository<crm_countries> {
    */
   async isOperationalCountry(countryCode: string): Promise<boolean> {
     try {
-      const country = await this.prisma.crm_countries.findUnique({
+      const country = await this.prisma.crm_countries.findFirst({
         where: {
           country_code: countryCode.toUpperCase(),
         },

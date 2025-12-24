@@ -36,7 +36,12 @@ describe("RBAC Middleware - requirePermission()", () => {
         scope_id: null,
         adm_roles: {
           id: "role_001",
-          name: "Admin",
+          slug: "admin",
+          name_translations: {
+            en: "Admin",
+            fr: "Administrateur",
+            ar: "المسؤول",
+          },
           status: "active",
           permissions: {
             leads: { create: true, read: true, update: true, delete: true },
@@ -64,7 +69,12 @@ describe("RBAC Middleware - requirePermission()", () => {
         scope_id: "branch_north",
         adm_roles: {
           id: "role_002",
-          name: "Branch Manager",
+          slug: "branch-manager",
+          name_translations: {
+            en: "Branch Manager",
+            fr: "Responsable Agence",
+            ar: "مدير الفرع",
+          },
           status: "active",
           permissions: {
             leads: { create: true, read: true, update: true, delete: false },
@@ -92,7 +102,12 @@ describe("RBAC Middleware - requirePermission()", () => {
         scope_id: "team_sales",
         adm_roles: {
           id: "role_003",
-          name: "Team Lead",
+          slug: "team-lead",
+          name_translations: {
+            en: "Team Lead",
+            fr: "Chef d'Équipe",
+            ar: "قائد الفريق",
+          },
           status: "active",
           permissions: {
             leads: { create: false, read: true, update: true, delete: false },
@@ -120,7 +135,8 @@ describe("RBAC Middleware - requirePermission()", () => {
         scope_id: null,
         adm_roles: {
           id: "role_004",
-          name: "Viewer",
+          slug: "viewer",
+          name_translations: { en: "Viewer", fr: "Lecteur", ar: "مشاهد" },
           status: "active",
           permissions: {
             leads: { create: false, read: true, update: false, delete: false },

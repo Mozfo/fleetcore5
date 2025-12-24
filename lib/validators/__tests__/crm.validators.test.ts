@@ -14,9 +14,9 @@ import {
   OpportunityCreateSchema,
   OpportunityUpdateSchema,
   OpportunityQuerySchema,
-  ContractCreateSchema,
-  ContractUpdateSchema,
-  ContractQuerySchema,
+  OrderCreateSchema,
+  OrderUpdateSchema,
+  OrderQuerySchema,
 } from "../crm.validators";
 
 // ===== LEAD VALIDATORS (6 tests) =====
@@ -244,10 +244,10 @@ describe("OpportunityQuerySchema", () => {
   });
 });
 
-// ===== CONTRACT VALIDATORS (8 tests) =====
+// ===== ORDER VALIDATORS (8 tests) =====
 
-describe("ContractCreateSchema", () => {
-  it("should validate valid contract creation", () => {
+describe("OrderCreateSchema", () => {
+  it("should validate valid order creation", () => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() + 30); // 30 days in the future
     const endDate = new Date(startDate);
@@ -262,12 +262,12 @@ describe("ContractCreateSchema", () => {
       auto_renew: true,
     };
 
-    const result = ContractCreateSchema.parse(validData);
+    const result = OrderCreateSchema.parse(validData);
     expect(result.total_value).toBe(60000);
     expect(result.auto_renew).toBe(true);
   });
 
-  it("should reject contract with invalid dates", () => {
+  it("should reject order with invalid dates", () => {
     const invalid = {
       opportunity_id: "123e4567-e89b-12d3-a456-426614174000",
       start_date: new Date("2025-06-01"),
@@ -277,7 +277,7 @@ describe("ContractCreateSchema", () => {
       auto_renew: false,
     };
 
-    expect(() => ContractCreateSchema.parse(invalid)).toThrow();
+    expect(() => OrderCreateSchema.parse(invalid)).toThrow();
   });
 
   it("should reject end_date before start_date", () => {
@@ -290,7 +290,7 @@ describe("ContractCreateSchema", () => {
       auto_renew: false,
     };
 
-    expect(() => ContractCreateSchema.parse(invalid)).toThrow();
+    expect(() => OrderCreateSchema.parse(invalid)).toThrow();
   });
 
   it("should reject total_value below minimum", () => {
@@ -303,18 +303,18 @@ describe("ContractCreateSchema", () => {
       auto_renew: false,
     };
 
-    expect(() => ContractCreateSchema.parse(invalid)).toThrow();
+    expect(() => OrderCreateSchema.parse(invalid)).toThrow();
   });
 });
 
-describe("ContractUpdateSchema", () => {
-  it("should validate partial contract updates", () => {
+describe("OrderUpdateSchema", () => {
+  it("should validate partial order updates", () => {
     const update = {
       total_value: 70000,
       auto_renew: false,
     };
 
-    const result = ContractUpdateSchema.parse(update);
+    const result = OrderUpdateSchema.parse(update);
     expect(result.total_value).toBe(70000);
   });
 
@@ -323,12 +323,12 @@ describe("ContractUpdateSchema", () => {
       billing_cycle: "invalid_cycle",
     };
 
-    expect(() => ContractUpdateSchema.parse(invalid)).toThrow();
+    expect(() => OrderUpdateSchema.parse(invalid)).toThrow();
   });
 });
 
-describe("ContractQuerySchema", () => {
-  it("should validate contract query params", () => {
+describe("OrderQuerySchema", () => {
+  it("should validate order query params", () => {
     const query = {
       page: "1",
       status: "active",
@@ -336,7 +336,7 @@ describe("ContractQuerySchema", () => {
       auto_renew: "true",
     };
 
-    const result = ContractQuerySchema.parse(query);
+    const result = OrderQuerySchema.parse(query);
 
     expect(result.status).toBe("active");
     expect(result.auto_renew).toBe(true); // Coerced to boolean
@@ -347,7 +347,7 @@ describe("ContractQuerySchema", () => {
       renewal_date_within_days: "30",
     };
 
-    const result = ContractQuerySchema.parse(query);
+    const result = OrderQuerySchema.parse(query);
 
     expect(result.page).toBe(1);
     expect(result.renewal_date_within_days).toBe(30);

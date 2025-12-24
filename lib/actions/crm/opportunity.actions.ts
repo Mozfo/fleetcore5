@@ -25,6 +25,10 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import {
+  getCurrentProviderId,
+  buildProviderFilter,
+} from "@/lib/utils/provider-context";
 import type { OpportunityStage, OpportunityStatus } from "@/types/crm";
 import {
   getStageProbability,
@@ -32,6 +36,10 @@ import {
   OPPORTUNITY_STAGE_VALUES,
 } from "@/lib/config/opportunity-stages";
 import type { Prisma, opportunity_status } from "@prisma/client";
+import { orderService } from "@/lib/services/crm/order.service";
+import { BILLING_CYCLES } from "@/lib/validators/crm/order.validators";
+import { NotFoundError, ValidationError } from "@/lib/core/errors";
+import { sendOrderCreatedNotification } from "@/lib/services/notification";
 
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
@@ -55,10 +63,32 @@ const UpdateOpportunitySchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 
-const MarkWonSchema = z.object({
+/**
+ * Schema for marking an opportunity as WON (Quote-to-Cash)
+ *
+ * This schema validates the full contract parameters needed to create an Order
+ * when an opportunity is won. All values are required for proper order creation.
+ */
+const MarkAsWonSchema = z.object({
   opportunityId: z.string().uuid("Invalid opportunity ID"),
-  won_value: z.number().min(0).optional(),
+  totalValue: z.number().min(100, "Total value must be at least 100"),
+  currency: z
+    .string()
+    .length(3, "Currency must be a 3-letter ISO code")
+    .default("EUR"),
+  billingCycle: z.enum(BILLING_CYCLES),
+  effectiveDate: z.coerce.date(),
+  durationMonths: z
+    .number()
+    .int("Duration must be a whole number")
+    .min(1, "Duration must be at least 1 month")
+    .max(120, "Duration cannot exceed 120 months"),
+  autoRenew: z.boolean().default(false),
+  noticePeriodDays: z.number().int().min(0).max(365).default(30),
+  notes: z.string().max(2000).optional().nullable(),
 });
+
+type MarkAsWonInput = z.infer<typeof MarkAsWonSchema>;
 
 const MarkLostSchema = z.object({
   opportunityId: z.string().uuid("Invalid opportunity ID"),
@@ -66,11 +96,45 @@ const MarkLostSchema = z.object({
   loss_notes: z.string().max(1000).optional(),
 });
 
+/**
+ * Schema for creating a new opportunity (manual creation)
+ * Note: lead_id is required as per database schema
+ */
+const CreateOpportunitySchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters").max(200),
+  lead_id: z.string().uuid("Lead selection is required"),
+  expected_value: z.number().min(0, "Value must be positive"),
+  currency: z.string().length(3, "Currency must be 3 letters").default("EUR"),
+  stage: z.enum(OPPORTUNITY_STAGE_VALUES),
+  expected_close_date: z.coerce.date(),
+  assigned_to: z.string().uuid("Invalid assignee ID").optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+
+export type CreateOpportunityData = z.infer<typeof CreateOpportunitySchema>;
+
 // ============================================================================
 // Types
 // ============================================================================
 
 export type UpdateOpportunityData = z.infer<typeof UpdateOpportunitySchema>;
+
+export type CreateOpportunityResult =
+  | {
+      success: true;
+      opportunity: {
+        id: string;
+        lead_id: string;
+        stage: OpportunityStage;
+        status: OpportunityStatus;
+        expected_value: number | null;
+        probability_percent: number | null;
+        forecast_value: number | null;
+        expected_close_date: string | null;
+        created_at: string;
+      };
+    }
+  | { success: false; error: string };
 
 export type UpdateStageResult =
   | {
@@ -102,9 +166,184 @@ export type MarkWonLostResult =
     }
   | { success: false; error: string };
 
+/**
+ * Result type for markOpportunityWonAction (Quote-to-Cash)
+ *
+ * Returns both the updated opportunity AND the created order
+ */
+export type MarkAsWonResult =
+  | {
+      success: true;
+      data: {
+        opportunity: {
+          id: string;
+          status: OpportunityStatus;
+          won_date: string;
+          won_value: number;
+        };
+        order: {
+          id: string;
+          order_reference: string;
+          order_code: string;
+          total_value: number;
+          monthly_value: number;
+          annual_value: number;
+          effective_date: string;
+          expiry_date: string;
+        };
+      };
+    }
+  | { success: false; error: string };
+
 // ============================================================================
 // Actions
 // ============================================================================
+
+/**
+ * Server Action: Create a new opportunity (manual creation)
+ *
+ * Business Logic:
+ * - Validates input against CreateOpportunitySchema
+ * - Sets probability_percent based on stage config
+ * - Calculates forecast_value = expected_value * (probability / 100)
+ * - Sets max_days_in_stage based on stage config
+ * - Records stage_entered_at timestamp
+ * - If lead_id provided, links opportunity to lead
+ *
+ * @param data - Opportunity creation data
+ */
+export async function createOpportunityAction(
+  data: CreateOpportunityData
+): Promise<CreateOpportunityResult> {
+  try {
+    // 1. Authentication
+    const { userId, orgId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // 2. Authorization - FleetCore Admin only
+    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
+      return {
+        success: false,
+        error: "Forbidden: Admin access required",
+      };
+    }
+
+    // 3. Validation
+    const validation = CreateOpportunitySchema.safeParse(data);
+    if (!validation.success) {
+      const firstError = validation.error.issues[0];
+      return { success: false, error: firstError?.message || "Invalid input" };
+    }
+
+    const validData = validation.data;
+
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Verify lead exists and belongs to provider
+    const lead = await db.crm_leads.findFirst({
+      where: {
+        id: validData.lead_id,
+        ...buildProviderFilter(providerId),
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+
+    if (!lead) {
+      return { success: false, error: "Lead not found" };
+    }
+
+    // 6. Calculate auto-populated fields
+    const probability = getStageProbability(validData.stage);
+    const forecastValue = validData.expected_value
+      ? (validData.expected_value * probability) / 100
+      : null;
+    const maxDaysInStage = getStageMaxDays(validData.stage);
+
+    // 7. Create the opportunity
+    const opportunity = await db.crm_opportunities.create({
+      data: {
+        lead_id: validData.lead_id,
+        stage: validData.stage,
+        status: "open" as opportunity_status,
+        expected_value: validData.expected_value,
+        currency: validData.currency,
+        probability_percent: probability,
+        forecast_value: forecastValue,
+        expected_close_date: validData.expected_close_date,
+        assigned_to: validData.assigned_to ?? undefined,
+        notes: validData.notes ?? undefined,
+        max_days_in_stage: maxDaysInStage,
+        stage_entered_at: new Date(),
+        metadata: {
+          opportunity_name: validData.name,
+          created_manually: true,
+        },
+        provider_id: providerId,
+      },
+    });
+
+    // 8. Audit log
+    const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
+    if (tenantUuid && memberUuid) {
+      await db.adm_audit_logs.create({
+        data: {
+          tenant_id: tenantUuid,
+          member_id: memberUuid,
+          entity: "crm_opportunity",
+          entity_id: opportunity.id,
+          action: "CREATE",
+          new_values: {
+            opportunity_name: validData.name,
+            expected_value: validData.expected_value,
+            stage: validData.stage,
+          },
+          severity: "info",
+          category: "operational",
+        },
+      });
+    }
+
+    // 9. Revalidate paths
+    revalidatePath("/[locale]/(app)/crm/opportunities");
+
+    logger.info(
+      { opportunityId: opportunity.id, userId },
+      "[createOpportunityAction] Opportunity created"
+    );
+
+    return {
+      success: true,
+      opportunity: {
+        id: opportunity.id,
+        lead_id: opportunity.lead_id,
+        stage: opportunity.stage,
+        status: opportunity.status,
+        expected_value: opportunity.expected_value
+          ? Number(opportunity.expected_value)
+          : null,
+        probability_percent: opportunity.probability_percent
+          ? Number(opportunity.probability_percent)
+          : null,
+        forecast_value: opportunity.forecast_value
+          ? Number(opportunity.forecast_value)
+          : null,
+        expected_close_date:
+          opportunity.expected_close_date?.toISOString() || null,
+        created_at: opportunity.created_at.toISOString(),
+      },
+    };
+  } catch (error) {
+    logger.error({ error }, "[createOpportunityAction] Error");
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to create opportunity";
+    return { success: false, error: errorMessage };
+  }
+}
 
 /**
  * Server Action: Update opportunity stage (Kanban drag & drop)
@@ -157,7 +396,7 @@ export async function updateOpportunityStageAction(
       return { success: false, error: "Opportunity not found" };
     }
 
-    // 5. Prevent stage change if not open
+    // 6. Prevent stage change if not open
     if (current.status !== "open") {
       return {
         success: false,
@@ -168,7 +407,7 @@ export async function updateOpportunityStageAction(
     const oldStage = current.stage;
     const now = new Date();
 
-    // 6. Calculate new values
+    // 7. Calculate new values
     const newProbability = getStageProbability(stage);
     const newMaxDays = getStageMaxDays(stage);
     const expectedValue = current.expected_value
@@ -177,7 +416,7 @@ export async function updateOpportunityStageAction(
     const newForecast =
       expectedValue !== null ? expectedValue * (newProbability / 100) : null;
 
-    // 7. Build update data with stage transition tracking
+    // 8. Build update data with stage transition tracking
     const existingMetadata =
       (current.metadata as Record<string, unknown>) || {};
     const stageHistory =
@@ -203,7 +442,7 @@ export async function updateOpportunityStageAction(
       } as Prisma.InputJsonValue,
     };
 
-    // 8. Update
+    // 9. Update
     const updated = await db.crm_opportunities.update({
       where: { id: opportunityId },
       data: updateData,
@@ -216,7 +455,7 @@ export async function updateOpportunityStageAction(
       },
     });
 
-    // 9. Log
+    // 10. Log
     if (process.env.NODE_ENV === "production") {
       logger.info(
         { opportunityId, oldStage, newStage: stage, userId },
@@ -279,16 +518,19 @@ export async function updateOpportunityAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Fetch old opportunity for audit log
-    const old = await db.crm_opportunities.findUnique({
-      where: { id: opportunityId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Fetch old opportunity for audit log (with provider filter)
+    const old = await db.crm_opportunities.findFirst({
+      where: { id: opportunityId, ...buildProviderFilter(providerId) },
     });
 
     if (!old) {
       return { success: false, error: "Opportunity not found" };
     }
 
-    // 5. Prepare update data
+    // 6. Prepare update data
     const validatedData = validation.data;
     const updateData: Prisma.crm_opportunitiesUpdateInput = {
       updated_at: new Date(),
@@ -354,7 +596,7 @@ export async function updateOpportunityAction(
       updateData.forecast_value = expectedValue * (probability / 100);
     }
 
-    // 6. Update
+    // 7. Update
     const updated = await db.crm_opportunities.update({
       where: { id: opportunityId },
       data: updateData,
@@ -365,6 +607,7 @@ export async function updateOpportunityAction(
             first_name: true,
             last_name: true,
             email: true,
+            phone: true,
             company_name: true,
           },
         },
@@ -374,7 +617,7 @@ export async function updateOpportunityAction(
       },
     });
 
-    // 7. Audit log
+    // 8. Audit log
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 
     if (tenantUuid && memberUuid) {
@@ -415,21 +658,22 @@ export async function updateOpportunityAction(
 }
 
 /**
- * Server Action: Mark opportunity as WON
+ * Server Action: Mark opportunity as WON (Quote-to-Cash)
  *
- * Business Logic:
- * - Set status to "won"
- * - Set won_date to now
- * - Set close_date to now if not set
- * - Set won_value to expected_value if not provided
+ * This action orchestrates the complete Quote-to-Cash flow:
+ * 1. Validates contract parameters (totalValue, billingCycle, duration)
+ * 2. Creates an Order via OrderService (with auto-generated reference)
+ * 3. Updates opportunity status to 'won' with contract_id link
+ * 4. Returns both opportunity and order data
  *
- * @param opportunityId - UUID of the opportunity
- * @param won_value - Optional won value (defaults to expected_value)
+ * All operations are wrapped in a transaction by OrderService.
+ *
+ * @param params - Contract parameters for order creation
+ * @returns Opportunity and Order data on success
  */
 export async function markOpportunityWonAction(
-  opportunityId: string,
-  won_value?: number
-): Promise<MarkWonLostResult> {
+  params: MarkAsWonInput
+): Promise<MarkAsWonResult> {
   try {
     // 1. Authentication
     const { userId, orgId } = await auth();
@@ -438,81 +682,131 @@ export async function markOpportunityWonAction(
       return { success: false, error: "Unauthorized" };
     }
 
-    // 2. Validation
-    const validation = MarkWonSchema.safeParse({ opportunityId, won_value });
+    // 2. Validation with Zod schema
+    const validation = MarkAsWonSchema.safeParse(params);
     if (!validation.success) {
-      return { success: false, error: "Invalid input" };
+      const firstError = validation.error.issues[0];
+      return {
+        success: false,
+        error: firstError?.message || "Invalid input",
+      };
     }
+    const validated = validation.data;
 
-    // 3. Authorization
+    // 3. Authorization - FleetCore Admin only
     if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
       return { success: false, error: "Forbidden: Admin access required" };
     }
 
-    // 4. Fetch opportunity
-    const current = await db.crm_opportunities.findUnique({
-      where: { id: opportunityId },
-      select: { id: true, status: true, expected_value: true },
-    });
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
 
-    if (!current) {
-      return { success: false, error: "Opportunity not found" };
-    }
-
-    if (current.status !== "open") {
+    if (!providerId) {
       return {
         success: false,
-        error: `Cannot mark as won: opportunity is ${current.status}`,
+        error: "Provider context required for order creation",
       };
     }
 
-    const now = new Date();
-    const finalWonValue =
-      won_value ??
-      (current.expected_value ? Number(current.expected_value) : undefined);
-
-    // 5. Update
-    const updated = await db.crm_opportunities.update({
-      where: { id: opportunityId },
-      data: {
-        status: "won",
-        won_date: now,
-        close_date: now,
-        won_value: finalWonValue,
-        updated_at: now,
-      },
-      select: {
-        id: true,
-        status: true,
-        won_date: true,
-        won_value: true,
-      },
+    // 5. Create order via OrderService
+    // This handles:
+    // - Opportunity validation (exists, not already won)
+    // - Order creation with auto-generated reference
+    // - Opportunity update to 'won' status
+    // - All in a single transaction
+    const result = await orderService.createOrderFromOpportunity({
+      opportunityId: validated.opportunityId,
+      providerId,
+      userId,
+      totalValue: validated.totalValue,
+      currency: validated.currency,
+      billingCycle: validated.billingCycle,
+      effectiveDate: validated.effectiveDate,
+      durationMonths: validated.durationMonths,
+      autoRenew: validated.autoRenew,
+      noticePeriodDays: validated.noticePeriodDays,
+      metadata: validated.notes ? { notes: validated.notes } : undefined,
     });
 
-    if (process.env.NODE_ENV === "production") {
-      logger.info(
-        { opportunityId, userId, won_value: finalWonValue },
-        "[markOpportunityWonAction] Opportunity marked as WON"
-      );
-    }
+    // 6. Log success
+    logger.info(
+      {
+        opportunityId: validated.opportunityId,
+        orderId: result.order.id,
+        orderReference: result.order.order_reference,
+        totalValue: validated.totalValue,
+        userId,
+      },
+      "[markOpportunityWonAction] Opportunity marked as WON with Order created"
+    );
 
+    // 7. Revalidate cache for both pages
+    revalidatePath("/[locale]/(app)/crm/opportunities", "page");
+    revalidatePath("/[locale]/(app)/crm/orders", "page");
+
+    // 8. Send order created notification (async, non-blocking)
+    sendOrderCreatedNotification(result.order.id).catch((err) => {
+      logger.error(
+        {
+          err: err instanceof Error ? err.message : String(err),
+          orderId: result.order.id,
+          orderReference: result.order.order_reference,
+        },
+        "[markOpportunityWonAction] Failed to send order created notification"
+      );
+    });
+
+    // 9. Return combined result
     return {
       success: true,
       data: {
-        id: updated.id,
-        status: updated.status as OpportunityStatus,
-        won_date: updated.won_date?.toISOString(),
-        won_value: updated.won_value ? Number(updated.won_value) : undefined,
+        opportunity: {
+          id: result.opportunity.id,
+          status: "won" as OpportunityStatus,
+          won_date: new Date().toISOString(),
+          won_value: validated.totalValue,
+        },
+        order: {
+          id: result.order.id,
+          order_reference: result.order.order_reference || "",
+          order_code: result.order.order_code || "",
+          total_value: Number(result.order.total_value),
+          monthly_value: result.calculations.monthlyValue,
+          annual_value: result.calculations.annualValue,
+          effective_date: result.order.effective_date.toISOString(),
+          expiry_date: result.calculations.expiryDate.toISOString(),
+        },
       },
     };
   } catch (error) {
-    if (process.env.NODE_ENV === "production") {
-      logger.error(
-        { error, opportunityId },
-        "[markOpportunityWonAction] Error"
+    // Handle specific errors from OrderService
+    if (error instanceof NotFoundError) {
+      logger.warn(
+        { error: error.message, opportunityId: params.opportunityId },
+        "[markOpportunityWonAction] Opportunity not found"
       );
+      return { success: false, error: error.message };
     }
-    return { success: false, error: "Failed to mark opportunity as won" };
+
+    if (error instanceof ValidationError) {
+      logger.warn(
+        { error: error.message, opportunityId: params.opportunityId },
+        "[markOpportunityWonAction] Validation error"
+      );
+      return { success: false, error: error.message };
+    }
+
+    // Log unexpected errors
+    logger.error(
+      { error, opportunityId: params.opportunityId },
+      "[markOpportunityWonAction] Unexpected error"
+    );
+
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to mark opportunity as won";
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -557,9 +851,12 @@ export async function markOpportunityLostAction(
       return { success: false, error: "Forbidden: Admin access required" };
     }
 
-    // 4. Fetch opportunity
-    const current = await db.crm_opportunities.findUnique({
-      where: { id: opportunityId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Fetch opportunity (with provider filter)
+    const current = await db.crm_opportunities.findFirst({
+      where: { id: opportunityId, ...buildProviderFilter(providerId) },
       select: { id: true, status: true, metadata: true },
     });
 
@@ -578,7 +875,7 @@ export async function markOpportunityLostAction(
     const existingMetadata =
       (current.metadata as Record<string, unknown>) || {};
 
-    // 5. Build update data
+    // 6. Build update data
     const updateData: Prisma.crm_opportunitiesUpdateInput = {
       status: "lost",
       lost_date: now,
@@ -595,7 +892,7 @@ export async function markOpportunityLostAction(
       updateData.loss_reason = loss_reason;
     }
 
-    // 6. Update
+    // 7. Update
     const updated = await db.crm_opportunities.update({
       where: { id: opportunityId },
       data: updateData,
@@ -664,18 +961,22 @@ export async function getOpportunitiesAction(options?: {
       return { success: false, error: "Forbidden: Admin access required" };
     }
 
+    // 3. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
     const page = options?.page ?? 1;
     const limit = Math.min(options?.limit ?? 50, 100);
 
-    // 3. Build where clause
+    // 4. Build where clause (with provider filter)
     const where: Prisma.crm_opportunitiesWhereInput = {
       deleted_at: null,
+      ...buildProviderFilter(providerId),
     };
 
     if (options?.stage) where.stage = options.stage;
     if (options?.status) where.status = options.status as opportunity_status;
 
-    // 4. Query
+    // 5. Query
     const [opportunities, total] = await Promise.all([
       db.crm_opportunities.findMany({
         where,
@@ -686,6 +987,7 @@ export async function getOpportunitiesAction(options?: {
               first_name: true,
               last_name: true,
               email: true,
+              phone: true,
               company_name: true,
               country_code: true,
               crm_countries: {
@@ -753,9 +1055,12 @@ export async function deleteOpportunityAction(
       return { success: false, error: "Forbidden: Admin access required" };
     }
 
-    // 4. Check opportunity exists
-    const current = await db.crm_opportunities.findUnique({
-      where: { id: opportunityId },
+    // 4. Get provider context for data isolation
+    const providerId = await getCurrentProviderId();
+
+    // 5. Check opportunity exists (with provider filter)
+    const current = await db.crm_opportunities.findFirst({
+      where: { id: opportunityId, ...buildProviderFilter(providerId) },
       select: { id: true, deleted_at: true },
     });
 
@@ -767,7 +1072,7 @@ export async function deleteOpportunityAction(
       return { success: false, error: "Opportunity already deleted" };
     }
 
-    // 5. Soft delete
+    // 6. Soft delete
     await db.crm_opportunities.update({
       where: { id: opportunityId },
       data: {

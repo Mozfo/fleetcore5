@@ -842,6 +842,390 @@ Si vous avez reçu cet email, les webhooks sont correctement configurés.
       reply_to: "engineering@fleetcore.app",
       status: "active" as const,
     },
+
+    // 11. CRM: Order Created (Quote-to-Cash)
+    {
+      template_code: "order_created",
+      channel: "email" as const,
+      template_name: "Order Created Notification",
+      description:
+        "Sent when an order is created from a won opportunity (Quote-to-Cash CRM)",
+      subject_translations: {
+        en: "🎉 New Order Created: {{order_reference}}",
+        fr: "🎉 Nouvelle commande créée : {{order_reference}}",
+        ar: "🎉 تم إنشاء طلب جديد: {{order_reference}}",
+      },
+      body_translations: {
+        en: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 New Order Created!</h1>
+  </div>
+
+  <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
+      Great news! An opportunity has been converted to an order.
+    </p>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #10b981; padding-bottom: 10px;">
+        📋 Order Details
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">Order Reference:</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{order_reference}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Order Code:</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{order_code}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Opportunity:</td>
+          <td style="padding: 8px 0; color: #111827;">{{opportunity_title}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">
+        💰 Contract Value
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">Total Value:</td>
+          <td style="padding: 8px 0; color: #10b981; font-weight: bold; font-size: 18px;">{{total_value}} {{currency}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Monthly Value:</td>
+          <td style="padding: 8px 0; color: #111827;">{{monthly_value}} {{currency}}/month</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Annual Value:</td>
+          <td style="padding: 8px 0; color: #111827;">{{annual_value}} {{currency}}/year</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Billing Cycle:</td>
+          <td style="padding: 8px 0; color: #111827;">{{billing_cycle}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #8b5cf6; padding-bottom: 10px;">
+        📅 Contract Timeline
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">Effective Date:</td>
+          <td style="padding: 8px 0; color: #111827;">{{effective_date}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Expiry Date:</td>
+          <td style="padding: 8px 0; color: #111827;">{{expiry_date}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Duration:</td>
+          <td style="padding: 8px 0; color: #111827;">{{duration_months}} months</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Auto-Renew:</td>
+          <td style="padding: 8px 0; color: #111827;">{{auto_renew}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #f59e0b; padding-bottom: 10px;">
+        🏢 Client Information
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">Company:</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{company_name}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Contact:</td>
+          <td style="padding: 8px 0; color: #111827;">{{contact_name}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Email:</td>
+          <td style="padding: 8px 0; color: #3b82f6;">{{contact_email}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="{{order_url}}" style="display: inline-block; background: #10b981; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+        View Order Details →
+      </a>
+    </div>
+  </div>
+
+  <div style="background: #1f2937; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+    <p style="color: #9ca3af; margin: 0; font-size: 14px;">
+      FleetCore CRM • Quote-to-Cash
+    </p>
+  </div>
+</div>`,
+        fr: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 Nouvelle commande créée !</h1>
+  </div>
+
+  <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
+      Excellente nouvelle ! Une opportunité a été convertie en commande.
+    </p>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #10b981; padding-bottom: 10px;">
+        📋 Détails de la commande
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">Référence :</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{order_reference}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Code :</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{order_code}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Opportunité :</td>
+          <td style="padding: 8px 0; color: #111827;">{{opportunity_title}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">
+        💰 Valeur du contrat
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">Valeur totale :</td>
+          <td style="padding: 8px 0; color: #10b981; font-weight: bold; font-size: 18px;">{{total_value}} {{currency}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Valeur mensuelle :</td>
+          <td style="padding: 8px 0; color: #111827;">{{monthly_value}} {{currency}}/mois</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Valeur annuelle :</td>
+          <td style="padding: 8px 0; color: #111827;">{{annual_value}} {{currency}}/an</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Cycle de facturation :</td>
+          <td style="padding: 8px 0; color: #111827;">{{billing_cycle}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #8b5cf6; padding-bottom: 10px;">
+        📅 Calendrier du contrat
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">Date d'effet :</td>
+          <td style="padding: 8px 0; color: #111827;">{{effective_date}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Date d'expiration :</td>
+          <td style="padding: 8px 0; color: #111827;">{{expiry_date}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Durée :</td>
+          <td style="padding: 8px 0; color: #111827;">{{duration_months}} mois</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Renouvellement auto :</td>
+          <td style="padding: 8px 0; color: #111827;">{{auto_renew}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #f59e0b; padding-bottom: 10px;">
+        🏢 Informations client
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">Entreprise :</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{company_name}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Contact :</td>
+          <td style="padding: 8px 0; color: #111827;">{{contact_name}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Email :</td>
+          <td style="padding: 8px 0; color: #3b82f6;">{{contact_email}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="{{order_url}}" style="display: inline-block; background: #10b981; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+        Voir les détails →
+      </a>
+    </div>
+  </div>
+
+  <div style="background: #1f2937; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+    <p style="color: #9ca3af; margin: 0; font-size: 14px;">
+      FleetCore CRM • Quote-to-Cash
+    </p>
+  </div>
+</div>`,
+        ar: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; direction: rtl;">
+  <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 تم إنشاء طلب جديد!</h1>
+  </div>
+
+  <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">
+      أخبار رائعة! تم تحويل فرصة إلى طلب.
+    </p>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #10b981; padding-bottom: 10px;">
+        📋 تفاصيل الطلب
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">مرجع الطلب:</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{order_reference}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">رمز الطلب:</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{order_code}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">الفرصة:</td>
+          <td style="padding: 8px 0; color: #111827;">{{opportunity_title}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">
+        💰 قيمة العقد
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">القيمة الإجمالية:</td>
+          <td style="padding: 8px 0; color: #10b981; font-weight: bold; font-size: 18px;">{{total_value}} {{currency}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">القيمة الشهرية:</td>
+          <td style="padding: 8px 0; color: #111827;">{{monthly_value}} {{currency}}/شهر</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">القيمة السنوية:</td>
+          <td style="padding: 8px 0; color: #111827;">{{annual_value}} {{currency}}/سنة</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">دورة الفوترة:</td>
+          <td style="padding: 8px 0; color: #111827;">{{billing_cycle}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #8b5cf6; padding-bottom: 10px;">
+        📅 الجدول الزمني للعقد
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">تاريخ السريان:</td>
+          <td style="padding: 8px 0; color: #111827;">{{effective_date}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">تاريخ الانتهاء:</td>
+          <td style="padding: 8px 0; color: #111827;">{{expiry_date}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">المدة:</td>
+          <td style="padding: 8px 0; color: #111827;">{{duration_months}} شهر</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">التجديد التلقائي:</td>
+          <td style="padding: 8px 0; color: #111827;">{{auto_renew}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+      <h2 style="color: #111827; font-size: 18px; margin: 0 0 15px 0; border-bottom: 2px solid #f59e0b; padding-bottom: 10px;">
+        🏢 معلومات العميل
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280; width: 40%;">الشركة:</td>
+          <td style="padding: 8px 0; color: #111827; font-weight: bold;">{{company_name}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">جهة الاتصال:</td>
+          <td style="padding: 8px 0; color: #111827;">{{contact_name}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">البريد الإلكتروني:</td>
+          <td style="padding: 8px 0; color: #3b82f6;">{{contact_email}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="{{order_url}}" style="display: inline-block; background: #10b981; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+        عرض التفاصيل ←
+      </a>
+    </div>
+  </div>
+
+  <div style="background: #1f2937; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+    <p style="color: #9ca3af; margin: 0; font-size: 14px;">
+      FleetCore CRM • Quote-to-Cash
+    </p>
+  </div>
+</div>`,
+      },
+      variables: [
+        "order_reference",
+        "order_code",
+        "opportunity_title",
+        "total_value",
+        "currency",
+        "monthly_value",
+        "annual_value",
+        "billing_cycle",
+        "effective_date",
+        "expiry_date",
+        "duration_months",
+        "auto_renew",
+        "company_name",
+        "contact_name",
+        "contact_email",
+        "order_url",
+      ],
+      supported_countries: [
+        "FR",
+        "AE",
+        "SA",
+        "GB",
+        "US",
+        "BE",
+        "MA",
+        "TN",
+        "DZ",
+        "QA",
+      ],
+      supported_locales: ["en", "fr", "ar"],
+      from_name: "FleetCore CRM",
+      from_email: "crm@fleetcore.app",
+      reply_to: "sales@fleetcore.app",
+      status: "active" as const,
+    },
   ];
 
   // Upsert all templates

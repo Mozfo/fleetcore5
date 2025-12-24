@@ -2,14 +2,17 @@
 
 **Date:** 21 Octobre 2025  
 **Version:** 2.2 - Document complété avec modules Administration + Billing  
-**Source:** Document 0_All_tables_v1.md (6386 lignes) + Analyses tables _analysis.md  
+**Source:** Document 0_All_tables_v1.md (6386 lignes) + Analyses tables \_analysis.md  
 **Ajout:** Module Billing (6 tables) documenté avec même granularité que Administration
 
 ---
+
 Le document est une analyse EXHAUSTIVE du modèle de données complet, pas seulement d'un sous-ensemble.
 
 ---
+
 ### 💰 Domaine Billing SaaS (6 tables) - AJOUTÉ
+
 45. `bil_billing_plans` - Plans tarifaires et quotas
 46. `bil_tenant_subscriptions` - Abonnements clients
 47. `bil_tenant_usage_metrics` - Métriques consommation
@@ -17,13 +20,14 @@ Le document est une analyse EXHAUSTIVE du modèle de données complet, pas seule
 49. `bil_tenant_invoice_lines` - Détail lignes factures
 50. `bil_payment_methods` - Moyens de paiement
 
-
 ## ÉVOLUTIONS MAJEURES V1 → V2 - MODULE BILLING
 
 ### 💰 Évolutions sur les 6 tables Billing
 
 #### Table 1: `bil_billing_plans` - Plans et tarification
+
 **Existant V1:**
+
 - Plan name et description basiques
 - Monthly/annual fees simples
 - Features en JSON non structuré
@@ -31,12 +35,13 @@ Le document est une analyse EXHAUSTIVE du modèle de données complet, pas seule
 - Pas de quotas inclus
 
 **Évolutions V2:**
+
 ```sql
 AJOUTER:
 - plan_code (varchar 100) UNIQUE - Identifiant technique stable
   * Permet renommage marketing sans casser les références
   * Utilisé dans le code et intégrations (Stripe)
-  
+
 - max_vehicles (integer) - Quota véhicules inclus
 - max_drivers (integer) - Quota conducteurs inclus
 - max_users (integer) - Quota utilisateurs inclus
@@ -67,22 +72,28 @@ AJOUTER intégration Stripe:
   * Références vers objets Price Stripe
   * Automatise synchronisation facturation
 
-RENOMMER pour cohérence:
-- monthly_fee → price_monthly
-- annual_fee → price_yearly
+COLONNES PRIX (décision 21/12/2025):
+- monthly_fee : prix mensuel (Decimal 14,2, NOT NULL, default 0)
+- annual_fee : prix annuel (Decimal 14,2, NOT NULL, default 0)
+
+Note: Les colonnes price_monthly/price_yearly ont été supprimées car redondantes.
+Convention retenue: monthly_fee/annual_fee (noms originaux, compatibles code existant).
 
 AJOUTER contrainte unique:
 - UNIQUE (plan_code, version) WHERE deleted_at IS NULL
 ```
 
 **Cas d'usage des évolutions:**
+
 - **plan_code**: "basic-v1" reste identique même si plan_name change de "Basic" à "Essentiel"
 - **Quotas**: Plan Basic inclut 10 véhicules, 20 drivers → au-delà = overage fees
 - **Version**: Plan Pro passe de 99€ à 119€ → version 2 créée, anciens clients gardent v1
 - **Stripe IDs**: Permet facturation automatique sans duplication de configuration
 
 #### Table 2: `bil_tenant_subscriptions` - Abonnements clients
+
 **Existant V1:**
+
 - Liaison simple tenant → plan
 - Dates start/end basiques
 - Status limité (active, inactive, cancelled)
@@ -90,12 +101,13 @@ AJOUTER contrainte unique:
 - Pas de référence prestataire paiement
 
 **Évolutions V2:**
+
 ```sql
 AJOUTER gestion cycle facturation:
 - billing_cycle (varchar 10) NOT NULL DEFAULT 'monthly'
   * 'monthly' ou 'yearly'
   * Détermine fréquence facturation
-  
+
 - current_period_start (timestamptz)
 - current_period_end (timestamptz)
   * Période facturation en cours
@@ -104,7 +116,7 @@ AJOUTER gestion cycle facturation:
 - trial_end (timestamptz)
   * Fin période essai gratuit (14 jours défaut)
   * Conversion auto en payant après cette date
-  
+
 - cancel_at_period_end (boolean) NOT NULL DEFAULT true
   * Si true: annulation à fin période (pas immédiate)
   * Si false: annulation et suspension immédiates
@@ -113,7 +125,7 @@ AJOUTER gestion multi-PSP:
 - provider (varchar 50) - 'stripe', 'adyen', 'paypal'
   * Nom prestataire de paiement utilisé
   * Permet migration entre PSP sans perte données
-  
+
 - provider_subscription_id (text)
 - provider_customer_id (text)
   * Identifiants chez le PSP
@@ -134,7 +146,7 @@ AJOUTER historique et contexte:
 - previous_plan_id (uuid) REFERENCES bil_billing_plans(id)
   * Plan précédent lors upgrade/downgrade
   * Permet calcul proration
-  
+
 - plan_version (integer)
   * Version du plan souscrit
   * Fige tarif même si plan évolue
@@ -154,6 +166,7 @@ MODIFIER contrainte unique:
 ```
 
 **Cas d'usage des évolutions:**
+
 - **Cycle + périodes**: Facturation mensuelle du 1er au 30, metrics agrégées sur cette période
 - **Trial**: 14 jours gratuit → trial_end = date_start + 14 jours → passage auto à active
 - **Multi-PSP**: Client UAE sur Stripe, client FR sur Adyen → provider différent
@@ -162,7 +175,9 @@ MODIFIER contrainte unique:
 - **Versioning**: Client sur plan Basic v1 à 49€ → plan passe v2 à 59€ → client garde v1
 
 #### Table 3: `bil_tenant_usage_metrics` - Métriques consommation
+
 **Existant V1:**
+
 - Metric_name en texte libre (risque erreurs)
 - Metric_value simple sans unité
 - Périodes en dates (pas de granularité horaire)
@@ -170,6 +185,7 @@ MODIFIER contrainte unique:
 - Pas de lien avec plan/souscription
 
 **Évolutions V2:**
+
 ```sql
 CRÉER table référence types métriques:
 CREATE TABLE bil_usage_metric_types (
@@ -209,7 +225,7 @@ AJOUTER contexte facturation:
 - subscription_id (uuid) REFERENCES bil_tenant_subscriptions(id)
   * Lie metrics à abonnement actif
   * Facilite calcul dépassements par période
-  
+
 - plan_version (integer)
   * Version du plan durant cette période
   * Permet appliquer bons quotas pour calcul overage
@@ -230,6 +246,7 @@ MODIFIER contrainte unique:
 ```
 
 **Cas d'usage des évolutions:**
+
 - **metric_type_id**: Plus de typo "active_vehicules" vs "active_vehicles", liste contrôlée
 - **Timestamps**: Période du 2025-01-15 14:30 au 2025-01-15 23:59 (changement plan en cours journée)
 - **period_type**: Agrégation jour pour suivi temps réel, mois pour facturation
@@ -238,7 +255,9 @@ MODIFIER contrainte unique:
 - **Précision**: Revenue 12,456.7834 AED au lieu de 12,456.78 AED
 
 #### Table 4: `bil_tenant_invoices` - Factures SaaS
+
 **Existant V1:**
+
 - Invoice_number basique
 - Total_amount unique sans détail
 - Status limité (draft, sent, paid, overdue)
@@ -247,6 +266,7 @@ MODIFIER contrainte unique:
 - Pas de référence abonnement/PSP
 
 **Évolutions V2:**
+
 ```sql
 AJOUTER lien abonnement:
 - subscription_id (uuid) NOT NULL REFERENCES bil_tenant_subscriptions(id)
@@ -265,15 +285,15 @@ DÉTAILLER montants:
 - subtotal (numeric 18,2) NOT NULL
   * Montant HT (plan + overages)
   * Avant application taxes/remises
-  
+
 - tax_rate (numeric 5,2)
   * Taux TVA appliqué (5% UAE, 20% FR)
   * Peut varier selon pays tenant
-  
+
 - tax_amount (numeric 18,2)
   * Montant TVA calculé
   * subtotal × tax_rate
-  
+
 - total_amount reste inchangé
   * Montant TTC final
   * subtotal + tax_amount - discounts
@@ -282,11 +302,11 @@ AJOUTER gestion paiements:
 - amount_paid (numeric 18,2) DEFAULT 0
   * Montant déjà réglé
   * Support paiements partiels
-  
+
 - amount_due (numeric 18,2) DEFAULT 0
   * Montant restant à payer
   * total_amount - amount_paid
-  
+
 - paid_at (timestamptz)
   * Date paiement effectif
   * NULL si impayé, renseigné par webhook PSP
@@ -301,7 +321,7 @@ AJOUTER intégration PSP:
   * ID facture chez Stripe
   * Utilisé par webhooks pour maj statut
   * Indexé pour performance lookups
-  
+
 - document_url (text)
   * URL PDF facture générée
   * Stocké S3/CDN
@@ -320,6 +340,7 @@ MODIFIER contrainte unique:
 ```
 
 **Cas d'usage des évolutions:**
+
 - **Périodes**: Facture période 2025-01-01 00:00 → 2025-01-31 23:59, metrics agrégées sur cette période
 - **Détail montants**: Plan 99€ + Overage 25€ = 124€ HT, TVA 5% = 6.20€ → Total 130.20€
 - **Paiements partiels**: Total 500€, paiement 1 = 200€ → amount_due = 300€, status reste 'sent'
@@ -328,7 +349,9 @@ MODIFIER contrainte unique:
 - **document_url**: PDF généré et uploadé S3 → URL stockée → envoyé email avec lien téléchargement
 
 #### Table 5: `bil_tenant_invoice_lines` - Détail lignes factures
+
 **Existant V1:**
+
 - Description texte libre
 - Amount simple sans décomposition
 - Quantity sans unit_price explicite
@@ -336,6 +359,7 @@ MODIFIER contrainte unique:
 - Pas de référence source (plan, metric, etc.)
 
 **Évolutions V2:**
+
 ```sql
 AJOUTER typage ligne:
 - line_type (varchar 30) NOT NULL
@@ -350,7 +374,7 @@ DÉCOMPOSER montant:
 - unit_price (numeric 18,2) NOT NULL
   * Prix unitaire de l'élément
   * Ex: 5€ par véhicule supplémentaire
-  
+
 - quantity reste inchangé mais:
   * Utilisé pour calcul: amount = unit_price × quantity
   * Ex: 15 véhicules en overage × 5€ = 75€
@@ -364,11 +388,11 @@ AJOUTER détail taxes/remises par ligne:
 - tax_rate (numeric 5,2)
   * Taux TVA ligne spécifique
   * NULL si pas taxable
-  
+
 - tax_amount (numeric 18,2)
   * Montant TVA ligne
   * NULL si pas taxable
-  
+
 - discount_amount (numeric 18,2)
   * Montant remise ligne
   * Négatif ou colonne séparée selon politique
@@ -377,7 +401,7 @@ AJOUTER traçabilité source:
 - source_type (varchar 30)
   * 'billing_plan', 'usage_metric', 'manual', 'promotion'
   * Indique origine de la ligne
-  
+
 - source_id (uuid)
   * ID entité source
   * plan_id si plan_fee
@@ -398,6 +422,7 @@ MODIFIER contrainte unique:
 ```
 
 **Cas d'usage des évolutions:**
+
 - **Typage**: Facture avec 1 ligne plan_fee (99€), 2 lignes overage_fee (véhicules 25€, drivers 15€), 1 ligne tax (6.95€)
 - **unit_price × quantity**: 15 véhicules excédentaires × 5€/véhicule = 75€
 - **source**: Ligne "Overage véhicules" → source_type='usage_metric', source_id=UUID metric active_vehicles
@@ -406,7 +431,9 @@ MODIFIER contrainte unique:
 - **Reporting**: SELECT SUM(amount) WHERE line_type='overage_fee' → revenus totaux overages
 
 #### Table 6: `bil_payment_methods` - Moyens de paiement
+
 **Existant V1:**
+
 - Payment_type limité (card, bank, paypal)
 - Provider_token générique sans distinction PSP
 - Contrainte mono-méthode par type (1 seule carte active)
@@ -415,13 +442,14 @@ MODIFIER contrainte unique:
 - Pas de champ last_used
 
 **Évolutions V2:**
+
 ```sql
 AJOUTER identification PSP:
 - provider (varchar 50) NOT NULL
   * 'stripe', 'adyen', 'paypal', 'checkout', etc.
   * Permet multi-PSP simultanés
   * Routage paiements selon provider
-  
+
 RENOMMER pour clarté:
 - provider_token → provider_payment_method_id (text NOT NULL)
   * Plus explicite: c'est l'ID method côté PSP
@@ -473,7 +501,7 @@ SUPPRIMER:
 AJOUTER:
 - UNIQUE (tenant_id) WHERE is_default=true AND deleted_at IS NULL
   * Un seul défaut par tenant
-  
+
 - UNIQUE (tenant_id, provider_payment_method_id) WHERE deleted_at IS NULL
   * Évite doublons même méthode
 
@@ -484,6 +512,7 @@ CRÉER indexes:
 ```
 
 **Cas d'usage des évolutions:**
+
 - **Multi-cartes**: Tenant a Visa corporate + Mastercard backup → les deux actives, Visa en default
 - **Multi-PSP**: Carte UAE via Stripe, carte FR via Adyen → provider différent
 - **Affichage**: Client voit "Visa •••• 4242 (défaut)" et "Mastercard •••• 8888"
@@ -499,7 +528,9 @@ CRÉER indexes:
 ### Tables complémentaires pour V2 complète
 
 #### `bil_usage_metric_types` - Types métriques normalisés
+
 **Rôle:** Référentiel centralisé des métriques autorisées
+
 ```sql
 CREATE TABLE bil_usage_metric_types (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -527,13 +558,16 @@ INSERT INTO bil_usage_metric_types (name, unit, aggregation_method) VALUES
 ```
 
 **Bénéfices:**
+
 - Liste contrôlée, pas de typos
 - Unité explicite (count, currency, data)
 - Méthode agrégation documentée
 - Extensible facilement (nouvelles métriques)
 
 #### `bil_plan_features` - Features normalisées (optionnel)
+
 **Alternative au JSON features dans bil_billing_plans**
+
 ```sql
 CREATE TABLE bil_plan_features (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -553,12 +587,14 @@ CREATE INDEX ON bil_plan_features (feature_key);
 ```
 
 **Bénéfices:**
+
 - Features normalisées (table séparée)
 - Requêtes faciles: "plans avec WPS"
 - Limites par feature documentées
 - Alternative si JSON features trop libre
 
 #### `bil_promotions` - Codes promo et remises (futur)
+
 ```sql
 CREATE TABLE bil_promotions (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -595,6 +631,7 @@ CREATE INDEX ON bil_promotions (status);
 ```
 
 #### `bil_promotion_usage` - Utilisation codes promo
+
 ```sql
 CREATE TABLE bil_promotion_usage (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -619,6 +656,7 @@ CREATE INDEX ON bil_promotion_usage (tenant_id);
 ### Tables complémentaires pour V2 complète
 
 #### `adm_role_permissions` - Permissions granulaires
+
 ```sql
 CREATE TABLE adm_role_permissions (
   id uuid PRIMARY KEY,
@@ -631,6 +669,7 @@ CREATE TABLE adm_role_permissions (
 ```
 
 #### `adm_role_versions` - Historique rôles
+
 ```sql
 CREATE TABLE adm_role_versions (
   id uuid PRIMARY KEY,
@@ -644,6 +683,7 @@ CREATE TABLE adm_role_versions (
 ```
 
 #### `adm_member_sessions` - Sessions actives
+
 ```sql
 CREATE TABLE adm_member_sessions (
   id uuid PRIMARY KEY,
@@ -658,6 +698,7 @@ CREATE TABLE adm_member_sessions (
 ```
 
 #### `adm_tenant_settings` - Configuration avancée
+
 ```sql
 CREATE TABLE adm_tenant_settings (
   id uuid PRIMARY KEY,
@@ -677,45 +718,34 @@ CREATE TABLE adm_tenant_settings (
 ### Ordre d'implémentation obligatoire
 
 #### Phase 0 - Corrections critiques (IMMÉDIAT)
+
 **Administration:**
+
 1. **adm_tenants** : Ajouter status + contact fields
 2. **adm_provider_employees** : Créer table complète
 3. **adm_tenant_lifecycle_events** : Créer avec tous event types (inclure billing events)
 4. **adm_invitations** : Créer pour onboarding
 
-**Billing:**
-5. **bil_billing_plans** : Ajouter plan_code, quotas, version, stripe_ids
-6. **bil_usage_metric_types** : Créer table référentiel
-7. **bil_payment_methods** : Ajouter provider, is_default, card_*/bank_* fields
+**Billing:** 5. **bil_billing_plans** : Ajouter plan*code, quotas, version, stripe_ids 6. **bil_usage_metric_types** : Créer table référentiel 7. **bil_payment_methods** : Ajouter provider, is_default, card*\_/bank\_\_ fields
 
 #### Phase 1 - Sécurité, RBAC et Facturation de base (Semaine 1)
-**Administration:**
-8. **adm_members** : Ajouter 2FA et vérifications
-9. **adm_roles** : Ajouter slug et hiérarchie
-10. **adm_role_permissions** : Créer table
-11. **adm_member_roles** : Ajouter contexte temporel
 
-**Billing:**
-12. **bil_tenant_subscriptions** : Ajouter cycle, périodes, provider_*, statuts enrichis
-13. **bil_tenant_invoices** : Ajouter subscription_id, périodes, montants détaillés, stripe_id
-14. **bil_tenant_invoice_lines** : Ajouter line_type, unit_price, tax_*, source_*
+**Administration:** 8. **adm_members** : Ajouter 2FA et vérifications 9. **adm_roles** : Ajouter slug et hiérarchie 10. **adm_role_permissions** : Créer table 11. **adm_member_roles** : Ajouter contexte temporel
+
+**Billing:** 12. **bil_tenant_subscriptions** : Ajouter cycle, périodes, provider*\*, statuts enrichis 13. **bil_tenant_invoices** : Ajouter subscription_id, périodes, montants détaillés, stripe_id 14. **bil_tenant_invoice_lines** : Ajouter line_type, unit_price, tax*\_, source\_\_
 
 #### Phase 2 - Audit, conformité et Metrics (Semaine 2)
-**Administration:**
-15. **adm_audit_logs** : Enrichir avec catégories
-16. **adm_role_versions** : Créer historique
-17. **adm_member_sessions** : Tracking sessions
-18. **adm_tenant_settings** : Configuration flexible
 
-**Billing:**
-19. **bil_tenant_usage_metrics** : Ajouter metric_type_id, period_type, subscription_id, timestamps
-20. **bil_promotions** + **bil_promotion_usage** : Créer tables (optionnel, peut être Phase 3)
+**Administration:** 15. **adm_audit_logs** : Enrichir avec catégories 16. **adm_role_versions** : Créer historique 17. **adm_member_sessions** : Tracking sessions 18. **adm_tenant_settings** : Configuration flexible
+
+**Billing:** 19. **bil_tenant_usage_metrics** : Ajouter metric_type_id, period_type, subscription_id, timestamps 20. **bil_promotions** + **bil_promotion_usage** : Créer tables (optionnel, peut être Phase 3)
 
 ---
 
 ## MÉTRIQUES DE VALIDATION - ADMINISTRATION + BILLING
 
 ### Techniques Administration
+
 - [ ] 8 tables Administration opérationnelles
 - [ ] RLS unifié sur toutes tables tenant
 - [ ] 2FA actif pour rôles sensibles
@@ -723,15 +753,17 @@ CREATE TABLE adm_tenant_settings (
 - [ ] Invitations avec expiration 72h
 
 ### Techniques Billing
+
 - [ ] 6 tables Billing opérationnelles
 - [ ] Référentiel metric_types créé et rempli
 - [ ] Plan avec quotas, version, stripe_ids
-- [ ] Subscription avec périodes et provider_*
+- [ ] Subscription avec périodes et provider\_\*
 - [ ] Invoice avec détail taxes/montants
 - [ ] Invoice_lines typées (plan_fee, overage_fee, tax)
 - [ ] Payment_methods multi-PSP avec is_default
 
 ### Fonctionnelles Administration
+
 - [ ] Onboarding < 5 minutes
 - [ ] Support cross-tenant fonctionnel
 - [ ] Historique complet des changements
@@ -739,6 +771,7 @@ CREATE TABLE adm_tenant_settings (
 - [ ] Conformité RGPD (retention, audit)
 
 ### Fonctionnelles Billing
+
 - [ ] Facturation automatique mensuelle/annuelle
 - [ ] Calcul overages basé quotas plan
 - [ ] Gestion période essai (trial)
@@ -751,6 +784,7 @@ CREATE TABLE adm_tenant_settings (
 - [ ] Multi-devises (AED, USD, EUR)
 
 ### Sécurité Billing
+
 - [ ] 0 numéro carte stocké (tokenisation)
 - [ ] PCI-DSS compliant (provider_payment_method_id uniquement)
 - [ ] Encryption provider_tokens
@@ -803,18 +837,22 @@ CREATE TABLE adm_tenant_settings (
 ### Dépendances autres modules
 
 **Billing → Finance:**
+
 - bil_tenant_invoices ↔ fin_transactions (enregistrement paiements)
 - bil_payment_methods.last_used_at màj lors transaction
 
 **Billing → Documents:**
+
 - bil_tenant_invoices.document_url → doc_documents (stockage PDF)
 - Génération PDF facture → upload S3 → URL stockée
 
 **Billing → CRM:**
+
 - crm_contracts.signed → création bil_tenant_subscriptions
 - crm_opportunities.plan_interest → bil_billing_plans suggérés
 
 **Billing → Support:**
+
 - bil_tenant_invoices overdue → sup_tickets auto-créés
 - bil_payment_methods failed → ticket support assigné
 
