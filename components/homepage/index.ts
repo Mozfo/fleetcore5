@@ -8,3 +8,4 @@
 
 export { LiveDashboard } from "./LiveDashboard";
 export { Navigation } from "./Navigation";
+export { Segmentation } from "./Segmentation";

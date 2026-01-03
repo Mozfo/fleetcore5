@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
@@ -11,8 +11,17 @@ import { Car, Globe, ChevronRight } from "lucide-react";
 export function Navigation() {
   const { locale, localizedPath } = useLocalizedPath();
   const router = useRouter();
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation("common");
+
+  // Function to switch language while staying on the current page
+  const switchLanguage = () => {
+    const newLocale = locale === "en" ? "fr" : "en";
+    // Replace the current locale in the path with the new locale
+    const newPath = pathname.replace(/^\/(en|fr)/, `/${newLocale}`);
+    router.push(newPath);
+  };
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("fleet");
@@ -652,13 +661,31 @@ export function Navigation() {
             {/* Regular Links */}
             <Link
               href={`/${locale}/resources`}
-              className="font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              className={`font-medium transition-colors ${
+                pathname === `/${locale}/resources`
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              }`}
             >
               {t("homepage.nav.resources")}
             </Link>
             <Link
+              href={`/${locale}/plan`}
+              className={`font-medium transition-colors ${
+                pathname === `/${locale}/plan`
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              }`}
+            >
+              {t("homepage.nav.plan")}
+            </Link>
+            <Link
               href={`/${locale}/company`}
-              className="font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              className={`font-medium transition-colors ${
+                pathname === `/${locale}/company`
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              }`}
             >
               {t("homepage.nav.company")}
             </Link>
@@ -674,7 +701,7 @@ export function Navigation() {
             </button>
 
             <button
-              onClick={() => router.push(locale === "en" ? "/fr" : "/en")}
+              onClick={switchLanguage}
               className="hidden items-center gap-2 text-gray-600 hover:text-gray-900 lg:flex dark:text-gray-400 dark:hover:text-white"
             >
               <Globe className="h-4 w-4" />

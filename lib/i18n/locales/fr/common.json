@@ -22,6 +22,7 @@
       "product": "Produit",
       "solutions": "Solutions",
       "resources": "Ressources",
+      "plan": "Plan",
       "company": "Entreprise",
       "login": "Connexion",
       "demo": "Planifier Démo"
@@ -386,6 +387,12 @@
       "company": "Entreprise",
       "legal": "Légal",
       "copyright": "© 2025 FleetCore. Tous droits réservés."
+    },
+    "segmentation": {
+      "title": "Choisissez Votre Solution",
+      "subtitle": "FleetCore s'adapte à la taille de votre activité",
+      "loading": "Chargement...",
+      "error": "Impossible de charger les segments"
     }
   },
   "gdpr": {
@@ -466,5 +473,100 @@
     "remove_widget": "Supprimer",
     "saving": "Enregistrement...",
     "saved": "Disposition enregistrée"
+  },
+  "solopreneur": {
+    "hero": {
+      "badge": "L'App pour Chauffeurs VTC",
+      "title": "Boostez Vos Revenus VTC",
+      "subtitle": "Suivez vos gains, optimisez votre temps, maximisez vos revenus sur toutes les plateformes",
+      "downloadFree": "Télécharger sur",
+      "appStore": "App Store",
+      "googlePlay": "Google Play",
+      "rating": "Note 4.8"
+    },
+    "platforms": {
+      "title": "Toutes Vos Plateformes en Un Seul Endroit",
+      "subtitle": "Synchronisez automatiquement vos revenus Uber, Bolt, Careem et plus",
+      "connected": "Connecté"
+    },
+    "value": {
+      "title": "Pourquoi les Chauffeurs Adorent FleetCore",
+      "items": [
+        {
+          "title": "Tout Centraliser",
+          "desc": "Visualisez tous vos gains de chaque plateforme dans un tableau de bord unifié"
+        },
+        {
+          "title": "Décisions Intelligentes",
+          "desc": "Savez exactement quand et où conduire pour maximiser vos gains"
+        },
+        {
+          "title": "Économisez sur les Impôts",
+          "desc": "Suivi automatique du kilométrage et des dépenses pour les déductions fiscales"
+        }
+      ]
+    },
+    "features": {
+      "earnings": {
+        "title": "Suivi des Revenus en Temps Réel",
+        "subtitle": "Ne perdez plus un seul euro",
+        "items": [
+          "Revenus en direct de toutes les plateformes",
+          "Voyez quelle plateforme vous paie le mieux",
+          "Résumés quotidiens, hebdomadaires, mensuels",
+          "Suivi des bonus et des surges"
+        ]
+      },
+      "mileage": {
+        "title": "Kilométrage & Dépenses Automatiques",
+        "subtitle": "Configurez et oubliez",
+        "items": [
+          "Suivi GPS du kilométrage en arrière-plan",
+          "Enregistrement des dépenses avec photos de reçus",
+          "Suivi des coûts de carburant et stations",
+          "Enregistrement des coûts de maintenance"
+        ]
+      },
+      "taxes": {
+        "title": "Rapports Fiscaux Prêts à l'Emploi",
+        "subtitle": "La saison des impôts simplifiée",
+        "items": [
+          "Calcul automatique des déductions",
+          "Rapports exportables pour les impôts",
+          "Ne manquez jamais une déduction",
+          "Rappels d'estimation trimestrielle"
+        ]
+      }
+    },
+    "social": {
+      "title": "Rejoignez des Milliers de Chauffeurs Malins",
+      "stats": {
+        "drivers": "Chauffeurs Actifs",
+        "tracked": "Revenus Suivis",
+        "saved": "Économies Fiscales"
+      },
+      "testimonials": [
+        {
+          "quote": "Enfin je peux voir tous mes gains Uber et Bolt en un seul endroit. Révolutionnaire!",
+          "author": "Ahmed K.",
+          "role": "Chauffeur temps plein, Dubai"
+        },
+        {
+          "quote": "Le suivi du kilométrage m'a fait économiser des centaines d'euros sur mes impôts.",
+          "author": "Sarah M.",
+          "role": "Chauffeur temps partiel, Paris"
+        },
+        {
+          "quote": "J'ai augmenté mes gains hebdomadaires de 20% en sachant quand conduire.",
+          "author": "James L.",
+          "role": "Chauffeur Uber, Londres"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Téléchargez FleetCore",
+      "subtitle": "Commencez à suivre vos revenus dès aujourd'hui",
+      "scanQR": "Scannez pour télécharger"
+    }
   }
 }

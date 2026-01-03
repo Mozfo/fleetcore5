@@ -22,6 +22,7 @@
       "product": "Product",
       "solutions": "Solutions",
       "resources": "Resources",
+      "plan": "Plan",
       "company": "Company",
       "login": "Login",
       "demo": "Schedule Demo"
@@ -336,6 +337,12 @@
       "company": "Company",
       "legal": "Legal",
       "copyright": "© 2025 FleetCore. All rights reserved."
+    },
+    "segmentation": {
+      "title": "Choose Your Path to Success",
+      "subtitle": "FleetCore adapts to your business size",
+      "loading": "Loading...",
+      "error": "Unable to load segments"
     }
   },
   "gdpr": {
@@ -416,5 +423,100 @@
     "remove_widget": "Remove",
     "saving": "Saving...",
     "saved": "Layout saved"
+  },
+  "solopreneur": {
+    "hero": {
+      "badge": "The App for Rideshare Drivers",
+      "title": "Boost Your Rideshare Earnings",
+      "subtitle": "Track your earnings, optimize your time, maximize your income across all platforms",
+      "downloadFree": "Download on",
+      "appStore": "App Store",
+      "googlePlay": "Google Play",
+      "rating": "4.8 rating"
+    },
+    "platforms": {
+      "title": "All Your Platforms in One Place",
+      "subtitle": "Sync your earnings from Uber, Bolt, Careem and more automatically",
+      "connected": "Connected"
+    },
+    "value": {
+      "title": "Why Drivers Love FleetCore",
+      "items": [
+        {
+          "title": "Track Everything",
+          "desc": "See all your earnings from every platform in one unified dashboard"
+        },
+        {
+          "title": "Smarter Decisions",
+          "desc": "Know exactly when and where to drive for maximum earnings"
+        },
+        {
+          "title": "Save on Taxes",
+          "desc": "Automatic mileage and expense tracking for tax deductions"
+        }
+      ]
+    },
+    "features": {
+      "earnings": {
+        "title": "Real-Time Earnings Tracking",
+        "subtitle": "Never lose track of a single dollar",
+        "items": [
+          "Live earnings from all platforms",
+          "See which platform pays you best",
+          "Daily, weekly, monthly summaries",
+          "Bonus and surge tracking"
+        ]
+      },
+      "mileage": {
+        "title": "Automatic Mileage & Expenses",
+        "subtitle": "Set it and forget it",
+        "items": [
+          "GPS mileage tracking in background",
+          "Expense logging with receipt photos",
+          "Fuel cost and gas station tracking",
+          "Maintenance cost logging"
+        ]
+      },
+      "taxes": {
+        "title": "Tax-Ready Reports",
+        "subtitle": "Tax season made easy",
+        "items": [
+          "Automatic deduction calculation",
+          "Export-ready IRS reports",
+          "Never miss a tax deduction",
+          "Quarterly estimate reminders"
+        ]
+      }
+    },
+    "social": {
+      "title": "Join Thousands of Smart Drivers",
+      "stats": {
+        "drivers": "Active Drivers",
+        "tracked": "Earnings Tracked",
+        "saved": "Tax Savings"
+      },
+      "testimonials": [
+        {
+          "quote": "Finally I can see all my Uber and Bolt earnings in one place. Game changer!",
+          "author": "Ahmed K.",
+          "role": "Full-time driver, Dubai"
+        },
+        {
+          "quote": "The mileage tracking alone saved me hundreds on my taxes last year.",
+          "author": "Sarah M.",
+          "role": "Part-time driver, Paris"
+        },
+        {
+          "quote": "I increased my weekly earnings by 20% just by knowing when to drive.",
+          "author": "James L.",
+          "role": "Uber driver, London"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Download FleetCore",
+      "subtitle": "Start tracking your earnings today",
+      "scanQR": "Scan to download"
+    }
   }
 }
