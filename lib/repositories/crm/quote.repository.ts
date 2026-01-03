@@ -737,6 +737,15 @@ export class QuoteRepository extends BaseRepository<Quote> {
 
     const newVersion = existingQuote.quote_version + 1;
 
+    // Business rule: Quote versioning requires an opportunity
+    // Standalone quotes (without opportunity) cannot be versioned
+    if (!existingQuote.opportunity_id) {
+      throw new Error(
+        `Cannot create new version: Quote ${quoteId} has no associated opportunity. ` +
+          `Quote versioning is only supported for opportunity-linked quotes.`
+      );
+    }
+
     // Map existing items to new version
     const items: QuoteItemCreateInput[] = existingQuote.crm_quote_items.map(
       (item) => ({

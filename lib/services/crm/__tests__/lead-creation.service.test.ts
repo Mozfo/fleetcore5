@@ -315,6 +315,30 @@ describe("LeadCreationService", () => {
           deletion_reason: null,
           last_activity_at: null,
           provider_id: _providerId ?? null,
+          // V5: Closing columns
+          expected_value: null,
+          expected_close_date: null,
+          probability_percent: null,
+          forecast_value: null,
+          stage_entered_at: null,
+          won_date: null,
+          lost_date: null,
+          loss_reason_code: null,
+          loss_reason_detail: null,
+          competitor_name: null,
+          // V5: Tracking columns
+          callback_requested_at: null,
+          callback_scheduled_at: null,
+          callback_mode: null,
+          demo_requested_at: null,
+          demo_scheduled_at: null,
+          demo_viewed_at: null,
+          demo_view_percent: null,
+          checkout_started_at: null,
+          checkout_abandoned_at: null,
+          // V5: Escalation columns
+          escalated_at: null,
+          escalation_expires_at: null,
         };
         return lead;
       }

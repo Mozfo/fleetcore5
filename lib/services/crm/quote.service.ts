@@ -778,6 +778,15 @@ export class QuoteService {
       );
     }
 
+    // Business rule: Order creation requires an associated opportunity
+    if (!quote.opportunity_id) {
+      throw new BusinessRuleError(
+        "Cannot convert quote to order: no associated opportunity",
+        "quote_missing_opportunity",
+        { quoteId: id }
+      );
+    }
+
     // Create order from quote via OrderService
     const orderResult = await this.orderService.createOrderFromOpportunity({
       opportunityId: quote.opportunity_id,

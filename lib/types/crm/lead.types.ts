@@ -141,7 +141,8 @@ export interface QuoteSummary {
   currency: string;
   valid_until: Date | null;
   created_at: Date;
-  opportunity_id: string;
+  /** Nullable: quotes can exist without an opportunity (e.g., standalone quotes) */
+  opportunity_id: string | null;
 }
 
 // ============================================
