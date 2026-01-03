@@ -1,5 +1,7 @@
 REGLE ABSOLUE - CARTON ROUGE
 
+PLAYWRIGHT: admin@fleetcore.io / FleetCore2024!
+
 IL EST STRICTEMENT INTERDIT DE MODIFIER OU SUPPRIMER DES REGLES METIERS POUR CORRIGER DES BUGS.
 
 Incident du 27/11/2025: Claude a tente de supprimer l audit logging dans qualify.actions.ts sous pretexte de corriger une erreur UUID. INACCEPTABLE.

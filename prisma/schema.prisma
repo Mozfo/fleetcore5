@@ -1523,7 +1523,8 @@ model crm_quotes {
   quote_code               String                 @db.VarChar(30)
   quote_version            Int                    @default(1)
   parent_quote_id          String?                @db.Uuid
-  opportunity_id           String                 @db.Uuid
+  opportunity_id           String?                @db.Uuid
+  lead_id                  String?                @db.Uuid
   status                   quote_status           @default(draft)
   valid_from               DateTime               @default(dbgenerated("CURRENT_DATE")) @db.Date
   valid_until              DateTime               @db.Date
@@ -1564,6 +1565,19 @@ model crm_quotes {
   document_generated_at    DateTime?              @db.Timestamptz(6)
   terms_and_conditions     String?
   public_token             String?                @unique @db.VarChar(64)
+  // V5: Colonnes avantages commerciaux
+  free_months              Int?                   @default(0)
+  free_vehicles_count      Int?                   @default(0)
+  free_vehicles_ratio      String?                @db.VarChar(10)
+  unit_price_override      Decimal?               @db.Decimal(15, 2)
+  unit_price_approved_by   String?                @db.Uuid
+  unit_price_approved_at   DateTime?              @db.Timestamptz(6)
+  escalation_required      Boolean?               @default(false)
+  escalation_status        String?                @db.VarChar(20)
+  escalated_at             DateTime?              @db.Timestamptz(6)
+  escalation_decided_at    DateTime?              @db.Timestamptz(6)
+  escalation_decided_by    String?                @db.Uuid
+  // Relations
   crm_quote_items          crm_quote_items[]
   crm_quote_approvals      crm_quote_approvals[]
   crm_orders_from_quote    crm_orders[]           @relation("crm_orders_quote")
@@ -1571,8 +1585,11 @@ model crm_quotes {
   child_quotes             crm_quotes[]           @relation("crm_quotes_parent")
   converted_order          crm_orders?            @relation("crm_quotes_converted_order", fields: [converted_to_order_id], references: [id], onDelete: SetNull, map: "fk_crm_quotes_converted_order")
   adm_providers            adm_providers?         @relation("crm_quotes_provider", fields: [provider_id], references: [id], map: "fk_crm_quotes_provider")
+  // V5: Relation Quote → Lead (direct, sans Opportunity)
+  crm_leads                crm_leads?             @relation("crm_quotes_lead", fields: [lead_id], references: [id], onDelete: SetNull, map: "fk_crm_quotes_lead")
 
   @@index([opportunity_id], map: "idx_crm_quotes_opportunity_id")
+  @@index([lead_id], map: "idx_crm_quotes_lead_id")
   @@index([status], map: "idx_crm_quotes_status")
   @@index([valid_until], map: "idx_crm_quotes_valid_until")
   @@index([created_at(sort: Desc)], map: "idx_crm_quotes_created_at")
@@ -1986,6 +2003,31 @@ model crm_leads {
   consent_ip                                                           String?                 @db.VarChar(45)
   last_activity_at                                                     DateTime?               @db.Timestamptz(6)
   provider_id                                                          String?                 @db.Uuid
+  // V5: Colonnes CLOSING
+  expected_value                                                       Decimal?                @db.Decimal(18, 2)
+  expected_close_date                                                  DateTime?               @db.Date
+  probability_percent                                                  Decimal?                @db.Decimal(5, 2)
+  forecast_value                                                       Decimal?                @db.Decimal(15, 2)
+  stage_entered_at                                                     DateTime?               @default(now()) @db.Timestamptz(6)
+  won_date                                                             DateTime?               @db.Date
+  lost_date                                                            DateTime?               @db.Date
+  loss_reason_code                                                     String?                 @db.VarChar(50)
+  loss_reason_detail                                                   String?
+  competitor_name                                                      String?                 @db.VarChar(100)
+  // V5: Colonnes TRACKING
+  callback_requested_at                                                DateTime?               @db.Timestamptz(6)
+  callback_scheduled_at                                                DateTime?               @db.Timestamptz(6)
+  callback_mode                                                        String?                 @db.VarChar(20)
+  demo_requested_at                                                    DateTime?               @db.Timestamptz(6)
+  demo_scheduled_at                                                    DateTime?               @db.Timestamptz(6)
+  demo_viewed_at                                                       DateTime?               @db.Timestamptz(6)
+  demo_view_percent                                                    Int?
+  checkout_started_at                                                  DateTime?               @db.Timestamptz(6)
+  checkout_abandoned_at                                                DateTime?               @db.Timestamptz(6)
+  // V5: Colonnes ESCALADE
+  escalated_at                                                         DateTime?               @db.Timestamptz(6)
+  escalation_expires_at                                                DateTime?               @db.Timestamptz(6)
+  // Relations
   crm_activities                                                       crm_activities[]
   crm_contracts                                                        crm_contracts[]
   crm_lead_activities                                                  crm_lead_activities[]
@@ -2000,6 +2042,8 @@ model crm_leads {
   crm_opportunities_crm_opportunities_lead_idTocrm_leads               crm_opportunities[]     @relation("crm_opportunities_lead_idTocrm_leads")
   // Quote-to-Cash relations
   crm_orders                                                           crm_orders[]
+  // V5: Relation inverse Lead → Quotes (direct, sans Opportunity)
+  crm_quotes_from_lead                                                 crm_quotes[]            @relation("crm_quotes_lead")
 
   @@index([created_at(sort: Desc)])
   @@index([deleted_at])
@@ -2012,6 +2056,11 @@ model crm_leads {
   @@index([deleted_at, status, lead_stage], map: "idx_crm_leads_status_stage_deleted")
   @@index([updated_at], map: "idx_crm_leads_updated_at")
   @@index([last_activity_at], map: "idx_crm_leads_last_activity_at")
+  // V5: Nouveaux index closing/tracking/escalade
+  @@index([stage_entered_at(sort: Desc)], map: "idx_crm_leads_stage_entered")
+  @@index([loss_reason_code], map: "idx_crm_leads_loss_reason")
+  @@index([expected_close_date], map: "idx_crm_leads_expected_close")
+  @@index([escalation_expires_at], map: "idx_crm_leads_escalation")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
