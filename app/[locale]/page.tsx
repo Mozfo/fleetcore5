@@ -11,25 +11,19 @@ import type { FeatureItem, ProcessStep, ProofMetric } from "@/lib/i18n/types";
 import {
   // Navigation & UI
   Car,
-  Users,
   Globe,
   ChevronRight,
   ArrowRight,
   // Features
-  CreditCard,
-  FileSignature,
   Wrench,
   CheckCircle,
   AlertCircle,
-  BarChart3,
   Calendar,
-  TrendingUp,
   // Platforms
   Settings,
   // Status
   Circle,
   Zap,
-  // Process - all unused, removed
 } from "lucide-react";
 
 export default function FleetCoreUltimatePremium() {
@@ -40,7 +34,7 @@ export default function FleetCoreUltimatePremium() {
   >("operations");
   const { theme, setTheme } = useTheme();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("rental");
+  const [activeTab, setActiveTab] = useState<string>("fleet");
   const [activeSolutionTab, setActiveSolutionTab] =
     useState<string>("industry");
   // Live metrics animation
@@ -713,12 +707,6 @@ export default function FleetCoreUltimatePremium() {
                         <div className="w-64 border-r border-gray-200 py-6 dark:border-gray-700">
                           <div className="space-y-1">
                             <button
-                              onMouseEnter={() => setActiveTab("rental")}
-                              className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeTab === "rental" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
-                            >
-                              {t("homepage.productMenu.tabs.rental")}
-                            </button>
-                            <button
                               onMouseEnter={() => setActiveTab("fleet")}
                               className={`w-full px-6 py-3 text-left font-medium transition-colors ${activeTab === "fleet" ? "border-l-4 border-blue-600 bg-blue-50 text-blue-600 dark:bg-gray-800 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
                             >
@@ -739,88 +727,6 @@ export default function FleetCoreUltimatePremium() {
                           </div>
                         </div>
                         <div className="flex-1 p-6">
-                          {activeTab === "rental" && (
-                            <div className="grid grid-cols-3 gap-6">
-                              <div className="space-y-3">
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.0.title"
-                                    )}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.0.desc"
-                                    )}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.1.title"
-                                    )}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.1.desc"
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="space-y-3">
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.2.title"
-                                    )}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.2.desc"
-                                    )}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.3.title"
-                                    )}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.3.desc"
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="space-y-3">
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.4.title"
-                                    )}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.4.desc"
-                                    )}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.productMenu.rental.items.5.title"
-                                    )}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.productMenu.rental.items.5.desc"
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
                           {activeTab === "fleet" && (
                             <div className="grid grid-cols-3 gap-6">
                               <div className="space-y-3">
@@ -1185,18 +1091,6 @@ export default function FleetCoreUltimatePremium() {
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
                                     {t(
                                       "homepage.solutionsMenu.industry.items.4.desc"
-                                    )}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.5.title"
-                                    )}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t(
-                                      "homepage.solutionsMenu.industry.items.5.desc"
                                     )}
                                   </p>
                                 </div>
@@ -1642,135 +1536,7 @@ export default function FleetCoreUltimatePremium() {
               </p>
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-3">
-              {/* Car Rental Management - NEW SECTION */}
-              <div className="rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-900">
-                <h3 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-                  {t("homepage.features.carRental.title")}
-                </h3>
-                <div className="space-y-4">
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 }}
-                    viewport={{ once: true }}
-                    className="flex gap-4"
-                  >
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                      <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.0.name")}
-                      </h4>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.0.desc")}
-                      </p>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
-                    viewport={{ once: true }}
-                    className="flex gap-4"
-                  >
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                      <FileSignature className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.1.name")}
-                      </h4>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.1.desc")}
-                      </p>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                    viewport={{ once: true }}
-                    className="flex gap-4"
-                  >
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                      <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.2.name")}
-                      </h4>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.2.desc")}
-                      </p>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
-                    viewport={{ once: true }}
-                    className="flex gap-4"
-                  >
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                      <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.3.name")}
-                      </h4>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.3.desc")}
-                      </p>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
-                    viewport={{ once: true }}
-                    className="flex gap-4"
-                  >
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                      <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.4.name")}
-                      </h4>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.4.desc")}
-                      </p>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 }}
-                    viewport={{ once: true }}
-                    className="flex gap-4"
-                  >
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-                      <BarChart3 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {t("homepage.features.carRental.items.5.name")}
-                      </h4>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        {t("homepage.features.carRental.items.5.desc")}
-                      </p>
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
-
+            <div className="grid gap-8 lg:grid-cols-2">
               {/* Fleet Management Features */}
               <div className="rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-900">
                 <h3 className="mb-6 text-2xl font-bold text-gray-900 lg:whitespace-nowrap dark:text-white">

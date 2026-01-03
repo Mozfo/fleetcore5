@@ -28,38 +28,9 @@
     },
     "productMenu": {
       "tabs": {
-        "rental": "Car Rental Management",
         "fleet": "Fleet Operations",
         "platform": "Platform Integrations",
         "analytics": "Analytics & Reports"
-      },
-      "rental": {
-        "items": [
-          {
-            "title": "Booking System",
-            "desc": "Online reservations with real-time availability"
-          },
-          {
-            "title": "Contract Management",
-            "desc": "Digital agreements and e-signatures"
-          },
-          {
-            "title": "Pricing Engine",
-            "desc": "Dynamic rates and seasonal pricing"
-          },
-          {
-            "title": "Billing & Invoicing",
-            "desc": "Automated invoices and payment processing"
-          },
-          {
-            "title": "Customer CRM",
-            "desc": "Customer profiles and rental history"
-          },
-          {
-            "title": "Document Verification",
-            "desc": "License and ID verification system"
-          }
-        ]
       },
       "fleet": {
         "items": [
@@ -125,7 +96,6 @@
       },
       "industry": {
         "items": [
-          { "title": "Car Rental", "desc": "Traditional rental companies" },
           { "title": "Ride-Hailing", "desc": "Uber, Bolt, Careem fleets" },
           { "title": "Taxi Companies", "desc": "Traditional taxi operations" },
           { "title": "Delivery Services", "desc": "Last-mile delivery fleets" },
@@ -205,7 +175,7 @@
     },
     "hero": {
       "badge": "All-in-One Fleet & Driver Management Platform",
-      "title": "Manage Your Rental and Ride-Hailing Activities Like Never Before",
+      "title": "Manage Your Ride-Hailing Fleet Like Never Before",
       "subtitle": "Complete SaaS solution for managing drivers, vehicles, finances, and operations. From single driver assignments to multi-platform revenue tracking.",
       "metrics": {
         "vehicles": "Vehicles Tracked",
@@ -215,35 +185,6 @@
       }
     },
     "features": {
-      "carRental": {
-        "title": "Car Rental Management",
-        "items": [
-          {
-            "name": "Reservation & Booking",
-            "desc": "Create and manage bookings with real-time availability and instant confirmation."
-          },
-          {
-            "name": "Contracts & Handover",
-            "desc": "Auto-generate rental agreements, capture digital signatures, and log vehicle condition with photos."
-          },
-          {
-            "name": "Pricing, Billing & Insurance",
-            "desc": "Set dynamic rates and extras, automate invoices, manage deposits, and handle insurance policies and claims."
-          },
-          {
-            "name": "Customer CRM & Verification",
-            "desc": "Store verified profiles, rental history, communication records, and document validation."
-          },
-          {
-            "name": "Sales & Opportunity Management",
-            "desc": "Track leads, corporate deals, pipeline stages, and rental conversions."
-          },
-          {
-            "name": "Fleet Utilization & Operations",
-            "desc": "Monitor availability, usage, damage, maintenance, and optimize asset performance."
-          }
-        ]
-      },
       "rental": {
         "title": "Complete Fleet Management",
         "items": [
