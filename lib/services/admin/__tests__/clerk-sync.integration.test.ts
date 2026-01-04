@@ -72,7 +72,7 @@ describe("ClerkSyncService - Integration Tests (PostgreSQL)", () => {
     });
 
     // Verify: Member created in PostgreSQL
-    const member = await testPrisma.adm_members.findFirst({
+    const member = await testPrisma.clt_members.findFirst({
       where: { clerk_user_id: "user_clerk_123" },
     });
 
@@ -146,12 +146,12 @@ describe("ClerkSyncService - Integration Tests (PostgreSQL)", () => {
     // 1st call: Creates member
     await clerkSync.handleUserCreated(userData);
 
-    const membersCount1 = await testPrisma.adm_members.count();
+    const membersCount1 = await testPrisma.clt_members.count();
 
     // 2nd call: Should return early (idempotent)
     await clerkSync.handleUserCreated(userData);
 
-    const membersCount2 = await testPrisma.adm_members.count();
+    const membersCount2 = await testPrisma.clt_members.count();
 
     // Verify: Same count (no duplicate created)
     expect(membersCount1).toBe(membersCount2);
@@ -172,7 +172,7 @@ describe("ClerkSyncService - Integration Tests (PostgreSQL)", () => {
     ).rejects.toThrow(NotFoundError);
 
     // Verify: No member created in PostgreSQL
-    const member = await testPrisma.adm_members.findFirst({
+    const member = await testPrisma.clt_members.findFirst({
       where: { clerk_user_id: "user_no_invite" },
     });
 
@@ -218,7 +218,7 @@ describe("ClerkSyncService - Integration Tests (PostgreSQL)", () => {
 
   it("handleUserDeleted soft-deletes member and revokes roles in PostgreSQL", async () => {
     // Setup: Create member with role
-    const member = await testPrisma.adm_members.create({
+    const member = await testPrisma.clt_members.create({
       data: {
         tenant_id: TEST_DATA.ACTIVE_TENANT_ID,
         email: "delete@example.com",
@@ -243,7 +243,7 @@ describe("ClerkSyncService - Integration Tests (PostgreSQL)", () => {
     });
 
     // Verify: Member soft-deleted
-    const deletedMember = await testPrisma.adm_members.findUnique({
+    const deletedMember = await testPrisma.clt_members.findUnique({
       where: { id: member.id },
     });
 

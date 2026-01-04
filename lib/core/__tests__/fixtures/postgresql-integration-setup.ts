@@ -160,7 +160,7 @@ export class PostgresContainerManager {
     await this.prismaClient.$executeRaw`TRUNCATE TABLE adm_roles CASCADE`;
 
     // Core admin tables
-    await this.prismaClient.$executeRaw`TRUNCATE TABLE adm_members CASCADE`;
+    await this.prismaClient.$executeRaw`TRUNCATE TABLE clt_members CASCADE`;
     await this.prismaClient
       .$executeRaw`TRUNCATE TABLE adm_provider_employees CASCADE`;
     await this.prismaClient.$executeRaw`TRUNCATE TABLE adm_tenants CASCADE`;
@@ -183,7 +183,7 @@ export class PostgresContainerManager {
 
     // Create SYSTEM user (used for all automated operations - audit trail best practice)
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_members (id, tenant_id, email, clerk_user_id, phone)
+      INSERT INTO clt_members (id, tenant_id, email, clerk_user_id, phone)
       VALUES (${SYSTEM_USER_ID}::uuid, ${SYSTEM_TENANT_ID}::uuid, 'system@fleetcore.internal', 'user_system', '+33000000000')
     `;
 
@@ -207,7 +207,7 @@ export class PostgresContainerManager {
 
     // Create test member
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_members (id, tenant_id, email, clerk_user_id, phone)
+      INSERT INTO clt_members (id, tenant_id, email, clerk_user_id, phone)
       VALUES (${TEST_DATA.MEMBER_ID}::uuid, ${TEST_DATA.ACTIVE_TENANT_ID}::uuid, 'test@example.com', 'user_test123', '+33612345678')
     `;
 

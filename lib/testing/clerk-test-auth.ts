@@ -417,10 +417,10 @@ async function createTestMemberWithPermissions(
 
     const tenantId = tenant.id;
 
-    // 2. Get or create member in adm_members (handles webhook race condition)
+    // 2. Get or create member in clt_members (handles webhook race condition)
     // CRITICAL: Webhook may create member between findFirst and create, causing P2002
     // Solution: Try create first, catch P2002, then findFirst
-    let member = await prisma.adm_members.findFirst({
+    let member = await prisma.clt_members.findFirst({
       where: {
         tenant_id: tenantId,
         clerk_user_id: userId,
@@ -432,7 +432,7 @@ async function createTestMemberWithPermissions(
       logger.info({ memberId: member.id }, "Reusing existing test member");
     } else {
       try {
-        member = await prisma.adm_members.create({
+        member = await prisma.clt_members.create({
           data: {
             tenant_id: tenantId,
             clerk_user_id: userId,
@@ -456,7 +456,7 @@ async function createTestMemberWithPermissions(
             "Member created by webhook during race condition, fetching existing member"
           );
           // Retry findFirst - member must exist now (created by webhook)
-          member = await prisma.adm_members.findFirst({
+          member = await prisma.clt_members.findFirst({
             where: {
               tenant_id: tenantId,
               email: email,
@@ -801,7 +801,7 @@ export async function cleanupClerkTestAuth(auth: ClerkTestAuth): Promise<void> {
       });
 
       if (tenant) {
-        await prisma.adm_members.deleteMany({
+        await prisma.clt_members.deleteMany({
           where: {
             clerk_user_id: auth.userId,
             tenant_id: tenant.id,

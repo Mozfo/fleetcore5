@@ -67,7 +67,7 @@ export async function getMemberUuidFromClerkUserId(
 ): Promise<MemberLookupResult | null> {
   try {
     // First try exact match
-    const exactMatch = await db.adm_members.findFirst({
+    const exactMatch = await db.clt_members.findFirst({
       where: {
         clerk_user_id: clerkUserId,
         ...(tenantId ? { tenant_id: tenantId } : {}),
@@ -81,7 +81,7 @@ export async function getMemberUuidFromClerkUserId(
 
     // Fall back to startsWith match if exact match fails
     // This helps when clerk_user_id might have slight variations
-    const startsWithMatch = await db.adm_members.findFirst({
+    const startsWithMatch = await db.clt_members.findFirst({
       where: {
         clerk_user_id: { startsWith: clerkUserId.substring(0, 20) },
         ...(tenantId ? { tenant_id: tenantId } : {}),

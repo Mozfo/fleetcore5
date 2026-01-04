@@ -127,7 +127,7 @@ async function seedTestData(): Promise<void> {
     },
   });
 
-  await testPrisma.adm_members.upsert({
+  await testPrisma.clt_members.upsert({
     where: { id: TEST_DATA.MEMBER_ID },
     update: {},
     create: {
@@ -163,7 +163,7 @@ export async function resetDatabase(): Promise<void> {
   await testPrisma.flt_drivers.deleteMany();
   await testPrisma.adm_member_roles.deleteMany();
   await testPrisma.adm_invitations.deleteMany();
-  await testPrisma.adm_members.deleteMany();
+  await testPrisma.clt_members.deleteMany();
   await testPrisma.adm_roles.deleteMany();
   await testPrisma.adm_tenant_lifecycle_events.deleteMany();
   await testPrisma.adm_tenants.deleteMany();

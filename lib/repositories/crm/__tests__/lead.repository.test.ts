@@ -98,6 +98,16 @@ describe("LeadRepository", () => {
         // V5: Escalation columns
         escalated_at: null,
         escalation_expires_at: null,
+        // V6.2: Booking Cal.com columns
+        booking_slot_at: null,
+        booking_confirmed_at: null,
+        booking_calcom_uid: null,
+        platforms_used: [],
+        // V6.2: Wizard column
+        wizard_completed: false,
+        // V6.2: Conversion columns
+        tenant_id: null,
+        converted_at: null,
         adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
           id: "emp-1",
           first_name: "Marie",

@@ -567,11 +567,11 @@ export async function updateOpportunityAction(
     // Handle assigned_to relation
     if (validatedData.assigned_to !== undefined) {
       if (validatedData.assigned_to) {
-        updateData.adm_members_crm_opportunities_assigned_toToadm_members = {
+        updateData.clt_members_crm_opportunities_assigned_toToclt_members = {
           connect: { id: validatedData.assigned_to },
         };
       } else {
-        updateData.adm_members_crm_opportunities_assigned_toToadm_members = {
+        updateData.clt_members_crm_opportunities_assigned_toToclt_members = {
           disconnect: true,
         };
       }
@@ -611,7 +611,7 @@ export async function updateOpportunityAction(
             company_name: true,
           },
         },
-        adm_members_crm_opportunities_assigned_toToadm_members: {
+        clt_members_crm_opportunities_assigned_toToclt_members: {
           select: { id: true, first_name: true, last_name: true },
         },
       },
@@ -999,7 +999,7 @@ export async function getOpportunitiesAction(options?: {
               },
             },
           },
-          adm_members_crm_opportunities_assigned_toToadm_members: {
+          clt_members_crm_opportunities_assigned_toToclt_members: {
             select: { id: true, first_name: true, last_name: true },
           },
         },

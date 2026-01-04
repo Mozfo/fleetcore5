@@ -191,7 +191,7 @@ export async function POST(req: Request) {
       });
 
       if (org) {
-        const member = await prisma.adm_members.create({
+        const member = await prisma.clt_members.create({
           data: {
             tenant_id: org.id,
             clerk_user_id: evt.data.public_user_data.user_id,
@@ -267,7 +267,7 @@ export async function POST(req: Request) {
       });
 
       if (org) {
-        const existingMember = await prisma.adm_members.findFirst({
+        const existingMember = await prisma.clt_members.findFirst({
           where: {
             tenant_id: org.id,
             clerk_user_id: evt.data.public_user_data.user_id,
@@ -278,7 +278,7 @@ export async function POST(req: Request) {
           const oldRole = existingMember.role;
           const newRole = evt.data.role === "org:admin" ? "admin" : "member";
 
-          await prisma.adm_members.update({
+          await prisma.clt_members.update({
             where: { id: existingMember.id },
             data: { role: newRole },
           });
@@ -314,7 +314,7 @@ export async function POST(req: Request) {
       });
 
       if (org) {
-        const member = await prisma.adm_members.findFirst({
+        const member = await prisma.clt_members.findFirst({
           where: {
             tenant_id: org.id,
             clerk_user_id: evt.data.public_user_data.user_id,
@@ -322,7 +322,7 @@ export async function POST(req: Request) {
         });
 
         if (member) {
-          await prisma.adm_members.update({
+          await prisma.clt_members.update({
             where: { id: member.id },
             data: {
               deleted_at: new Date(),

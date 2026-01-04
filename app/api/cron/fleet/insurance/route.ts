@@ -72,7 +72,7 @@ export async function GET(request: Request) {
             dir_car_models: true,
             adm_tenants: {
               include: {
-                adm_members: {
+                clt_members: {
                   where: {
                     role: "admin",
                     deleted_at: null,
@@ -94,7 +94,7 @@ export async function GET(request: Request) {
       try {
         const vehicle = insurance.flt_vehicles;
         const tenant = vehicle.adm_tenants;
-        const fleetManager = tenant.adm_members[0];
+        const fleetManager = tenant.clt_members[0];
 
         if (!fleetManager) {
           logger.warn(

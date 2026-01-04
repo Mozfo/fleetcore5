@@ -136,7 +136,7 @@ describeIntegration("NotificationService Integration Tests", () => {
     testTenantId = tenant.id;
 
     // Create test user/member (ADM domain)
-    const member = await prisma.adm_members.create({
+    const member = await prisma.clt_members.create({
       data: {
         tenant_id: testTenantId,
         email: "integration-test@fleetcore.app",
@@ -179,7 +179,7 @@ describeIntegration("NotificationService Integration Tests", () => {
     }
 
     if (testUserId) {
-      await prisma.adm_members.update({
+      await prisma.clt_members.update({
         where: { id: testUserId },
         data: { deleted_at: new Date(), deleted_by: null },
       });
@@ -204,7 +204,7 @@ describeIntegration("NotificationService Integration Tests", () => {
     await prisma.$disconnect();
   });
 
-  describe("CASCADE Level 1: User preferred_language (adm_members)", () => {
+  describe("CASCADE Level 1: User preferred_language (clt_members)", () => {
     it("should select FR locale from user preferred_language", async () => {
       const result = await service.selectTemplate({
         templateCode: "integration_test_template",
@@ -222,7 +222,7 @@ describeIntegration("NotificationService Integration Tests", () => {
   describe("CASCADE Level 3: Tenant country primary_locale (adm_tenants → dir_country_locales)", () => {
     it("should select FR locale from tenant country when no user preferred_language", async () => {
       // Create member without preferred_language
-      const memberNoLang = await prisma.adm_members.create({
+      const memberNoLang = await prisma.clt_members.create({
         data: {
           tenant_id: testTenantId,
           email: "no-lang@test.com",
@@ -248,7 +248,7 @@ describeIntegration("NotificationService Integration Tests", () => {
       expect(result.subject).toBe("Sujet de test FR");
 
       // Cleanup
-      await prisma.adm_members.update({
+      await prisma.clt_members.update({
         where: { id: memberNoLang.id },
         data: { deleted_at: new Date(), deleted_by: null },
       });

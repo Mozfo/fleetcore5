@@ -19,7 +19,7 @@ vi.mock("@/lib/services/email/email.service", () => ({
 
 // Mock Prisma Client
 const mockPrisma = {
-  adm_members: { findUnique: vi.fn() },
+  clt_members: { findUnique: vi.fn() },
   adm_tenants: { findUnique: vi.fn() },
   adm_tenant_settings: { findFirst: vi.fn() },
   crm_leads: { findUnique: vi.fn() },
@@ -52,7 +52,7 @@ describe("NotificationService", () => {
 
   describe("selectTemplate - CASCADE 1: User preferred_language", () => {
     it("should use user preferred_language (priority 1)", async () => {
-      vi.mocked(mockPrisma.adm_members.findUnique).mockResolvedValue({
+      vi.mocked(mockPrisma.clt_members.findUnique).mockResolvedValue({
         id: "user-1",
         preferred_language: "fr",
       } as never);
@@ -77,7 +77,7 @@ describe("NotificationService", () => {
 
       expect(result.locale).toBe("fr");
       expect(result.subject).toBe("FR");
-      expect(mockPrisma.adm_members.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.clt_members.findUnique).toHaveBeenCalledWith({
         where: { id: "user-1" },
         select: { preferred_language: true },
       });
@@ -115,7 +115,7 @@ describe("NotificationService", () => {
 
   describe("selectTemplate - CASCADE 4: Lead country primary_locale", () => {
     it("should use lead country primary_locale if no user/tenant", async () => {
-      vi.mocked(mockPrisma.adm_members.findUnique).mockResolvedValue(null);
+      vi.mocked(mockPrisma.clt_members.findUnique).mockResolvedValue(null);
       vi.mocked(mockPrisma.crm_leads.findUnique).mockResolvedValue({
         id: "lead-1",
         country_code: "AE",
@@ -178,7 +178,7 @@ describe("NotificationService", () => {
 
   describe("selectTemplate - CASCADE 6: Fallback locale", () => {
     it("should use fallback locale if all cascades fail", async () => {
-      vi.mocked(mockPrisma.adm_members.findUnique).mockResolvedValue(null);
+      vi.mocked(mockPrisma.clt_members.findUnique).mockResolvedValue(null);
       vi.mocked(
         mockPrisma.dir_notification_templates.findFirst
       ).mockResolvedValue({

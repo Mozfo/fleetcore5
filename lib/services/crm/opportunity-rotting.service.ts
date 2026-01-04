@@ -182,8 +182,8 @@ export class OpportunityRottingService {
           for (const opp of rottingOpportunities) {
             if (opp.assignedTo) {
               try {
-                // Get assignee email from adm_members
-                const assignee = await db.adm_members.findUnique({
+                // Get assignee email from clt_members
+                const assignee = await db.clt_members.findUnique({
                   where: { id: opp.assignedTo },
                   select: { email: true, first_name: true },
                 });

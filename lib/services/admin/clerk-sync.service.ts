@@ -43,8 +43,8 @@ export interface ClerkOrganizationData {
  * Sync verification result
  */
 export interface SyncVerificationResult {
-  missingInFleetCore: string[]; // Clerk user IDs not in adm_members
-  missingInClerk: string[]; // adm_members.clerk_user_id not in Clerk
+  missingInFleetCore: string[]; // Clerk user IDs not in clt_members
+  missingInClerk: string[]; // clt_members.clerk_user_id not in Clerk
   total: number;
 }
 
@@ -86,7 +86,7 @@ export class ClerkSyncService {
    * 1. Check idempotence (clerk_user_id exists?)
    * 2. Find invitation by email
    * 3. Find role by invitation.role (slug)
-   * 4. Create member in adm_members
+   * 4. Create member in clt_members
    * 5. Assign role in adm_member_roles
    * 6. Mark invitation accepted
    * 7. Create audit log
@@ -110,7 +110,7 @@ export class ClerkSyncService {
     const { clerkUserId, email, firstName, lastName } = data;
 
     // 1. Idempotence check
-    const existingMember = await this.prisma.adm_members.findFirst({
+    const existingMember = await this.prisma.clt_members.findFirst({
       where: { clerk_user_id: clerkUserId, deleted_at: null },
     });
 
@@ -152,7 +152,7 @@ export class ClerkSyncService {
     // 4. Create member in transaction and get the created member ID
     const createdMember = await this.prisma.$transaction(async (tx) => {
       // Create member
-      const member = await tx.adm_members.create({
+      const member = await tx.clt_members.create({
         data: {
           tenant_id: invitation.tenant_id,
           clerk_user_id: clerkUserId,
@@ -215,7 +215,7 @@ export class ClerkSyncService {
     const { clerkUserId, email, firstName, lastName } = data;
 
     // Find member by clerk_user_id
-    const member = await this.prisma.adm_members.findFirst({
+    const member = await this.prisma.clt_members.findFirst({
       where: { clerk_user_id: clerkUserId, deleted_at: null },
     });
 
@@ -253,7 +253,7 @@ export class ClerkSyncService {
       updateData.updated_at = new Date();
       updateData.updated_by = SYSTEM_USER_ID; // System action
 
-      await this.prisma.adm_members.update({
+      await this.prisma.clt_members.update({
         where: { id: member.id },
         data: updateData,
       });
@@ -286,7 +286,7 @@ export class ClerkSyncService {
     const { clerkUserId } = data;
 
     // Find member
-    const member = await this.prisma.adm_members.findFirst({
+    const member = await this.prisma.clt_members.findFirst({
       where: { clerk_user_id: clerkUserId, deleted_at: null },
     });
 
@@ -299,7 +299,7 @@ export class ClerkSyncService {
     // Soft delete in transaction
     await this.prisma.$transaction(async (tx) => {
       // Soft delete member
-      await tx.adm_members.update({
+      await tx.clt_members.update({
         where: { id: member.id },
         data: {
           deleted_at: new Date(),
@@ -520,7 +520,7 @@ export class ClerkSyncService {
       });
 
       // Suspend all members
-      await tx.adm_members.updateMany({
+      await tx.clt_members.updateMany({
         where: {
           tenant_id: tenant.id,
           deleted_at: null,
@@ -555,7 +555,7 @@ export class ClerkSyncService {
   /**
    * Verify synchronization between Clerk and FleetCore
    *
-   * Compares Clerk users (via API) with adm_members to detect desynchronization.
+   * Compares Clerk users (via API) with clt_members to detect desynchronization.
    * Used for daily health checks.
    *
    * NOTE: This is a placeholder - actual Clerk API integration would require
@@ -573,7 +573,7 @@ export class ClerkSyncService {
    */
   async verifySync(): Promise<SyncVerificationResult> {
     // Fetch all members with clerk_user_id
-    const members = await this.prisma.adm_members.findMany({
+    const members = await this.prisma.clt_members.findMany({
       where: {
         clerk_user_id: { not: "" }, // Filter out empty strings (required field default)
         deleted_at: null,

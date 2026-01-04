@@ -222,10 +222,10 @@ export class AmendmentService {
     logger.info({ input }, "[AmendmentService] Creating amendment");
 
     // Validate subscription exists and is active
-    const subscription = await this.prisma.bil_tenant_subscriptions.findUnique({
+    const subscription = await this.prisma.clt_subscriptions.findUnique({
       where: { id: input.subscriptionId },
       include: {
-        bil_billing_plans_bil_tenant_subscriptions_plan_idTobil_billing_plans: true,
+        bil_billing_plans_clt_subscriptions_plan_idTobil_billing_plans: true,
       },
     });
 
@@ -280,7 +280,7 @@ export class AmendmentService {
 
     // Get current plan price
     const currentPlan =
-      subscription.bil_billing_plans_bil_tenant_subscriptions_plan_idTobil_billing_plans;
+      subscription.bil_billing_plans_clt_subscriptions_plan_idTobil_billing_plans;
     const currentPrice = currentPlan?.monthly_fee ?? null;
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -618,19 +618,19 @@ export class AmendmentService {
       }
 
       // Apply changes to subscription
-      const updateData: Prisma.bil_tenant_subscriptionsUpdateInput = {
+      const updateData: Prisma.clt_subscriptionsUpdateInput = {
         updated_at: new Date(),
       };
 
       if (amendment.new_plan_id) {
-        updateData.bil_billing_plans_bil_tenant_subscriptions_plan_idTobil_billing_plans =
+        updateData.bil_billing_plans_clt_subscriptions_plan_idTobil_billing_plans =
           { connect: { id: amendment.new_plan_id } };
       }
       if (amendment.new_billing_cycle) {
         updateData.billing_cycle = amendment.new_billing_cycle;
       }
 
-      await tx.bil_tenant_subscriptions.update({
+      await tx.clt_subscriptions.update({
         where: { id: amendment.subscription_id },
         data: updateData,
       });
@@ -776,7 +776,7 @@ export class AmendmentService {
     const effectiveDate = new Date(amendment.effective_date);
 
     // Fetch subscription separately (no relation in schema)
-    const subscription = await this.prisma.bil_tenant_subscriptions.findUnique({
+    const subscription = await this.prisma.clt_subscriptions.findUnique({
       where: { id: amendment.subscription_id },
       select: {
         current_period_start: true,

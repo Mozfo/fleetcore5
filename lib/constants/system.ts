@@ -8,7 +8,7 @@
  * This user exists in the 'System' tenant and is used for audit trail
  * on operations that don't have a human user (e.g., automated notifications)
  *
- * Reference: adm_members.id = '00000000-0000-0000-0000-000000000001'
+ * Reference: clt_members.id = '00000000-0000-0000-0000-000000000001'
  */
 export const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
 

@@ -41,7 +41,7 @@ export async function getTenantId(clerkUserId: string): Promise<string | null> {
     }
 
     // Query database for member
-    const member = await prisma.adm_members.findFirst({
+    const member = await prisma.clt_members.findFirst({
       where: {
         clerk_user_id: clerkUserId,
         deleted_at: null,
@@ -82,7 +82,7 @@ export async function validateTenantAccess(
 ): Promise<boolean> {
   try {
     // Check if user is a member of the specified tenant
-    const member = await prisma.adm_members.findFirst({
+    const member = await prisma.clt_members.findFirst({
       where: {
         clerk_user_id: clerkUserId,
         tenant_id: tenantId,
@@ -106,7 +106,7 @@ export async function validateTenantAccess(
  */
 export async function getMemberByClerkId(clerkUserId: string) {
   try {
-    const member = await prisma.adm_members.findFirst({
+    const member = await prisma.clt_members.findFirst({
       where: {
         clerk_user_id: clerkUserId,
         deleted_at: null,

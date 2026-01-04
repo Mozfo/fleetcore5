@@ -18,7 +18,7 @@ import { SYSTEM_USER_ID } from "@/lib/constants/system";
 // Create mock Prisma with transaction support
 const createMockPrisma = () => {
   const mockModels = {
-    adm_members: {
+    clt_members: {
       findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -72,7 +72,7 @@ describe("ClerkSyncService - Unit Tests", () => {
   describe("handleUserCreated()", () => {
     it("should create member from invitation and assign role", async () => {
       // Setup: No existing member (idempotence check)
-      vi.mocked(mockPrisma.adm_members.findFirst).mockResolvedValueOnce(null);
+      vi.mocked(mockPrisma.clt_members.findFirst).mockResolvedValueOnce(null);
 
       // Setup: Invitation exists
       const mockInvitation = {
@@ -107,7 +107,7 @@ describe("ClerkSyncService - Unit Tests", () => {
         first_name: "John",
         last_name: "Doe",
       };
-      vi.mocked(mockPrisma.adm_members.create).mockResolvedValue(
+      vi.mocked(mockPrisma.clt_members.create).mockResolvedValue(
         mockMember as never
       );
 
@@ -123,7 +123,7 @@ describe("ClerkSyncService - Unit Tests", () => {
       expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
 
       // Verify member created with correct data
-      expect(mockPrisma.adm_members.create).toHaveBeenCalledWith({
+      expect(mockPrisma.clt_members.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           tenant_id: "tenant-456",
           clerk_user_id: "user_123",
@@ -166,7 +166,7 @@ describe("ClerkSyncService - Unit Tests", () => {
         email: "john@acme.com",
         deleted_at: null,
       };
-      vi.mocked(mockPrisma.adm_members.findFirst).mockResolvedValue(
+      vi.mocked(mockPrisma.clt_members.findFirst).mockResolvedValue(
         existingMember as never
       );
 
@@ -181,12 +181,12 @@ describe("ClerkSyncService - Unit Tests", () => {
       // Verify NO invitation lookup (returned early)
       expect(mockPrisma.adm_invitations.findFirst).not.toHaveBeenCalled();
       expect(mockPrisma.$transaction).not.toHaveBeenCalled();
-      expect(mockPrisma.adm_members.create).not.toHaveBeenCalled();
+      expect(mockPrisma.clt_members.create).not.toHaveBeenCalled();
     });
 
     it("should throw NotFoundError if no invitation found", async () => {
       // Setup: No existing member
-      vi.mocked(mockPrisma.adm_members.findFirst).mockResolvedValue(null);
+      vi.mocked(mockPrisma.clt_members.findFirst).mockResolvedValue(null);
 
       // Setup: No invitation
       vi.mocked(mockPrisma.adm_invitations.findFirst).mockResolvedValue(null);
@@ -211,7 +211,7 @@ describe("ClerkSyncService - Unit Tests", () => {
       ).rejects.toThrow(/No pending invitation found/);
 
       // Verify no member created
-      expect(mockPrisma.adm_members.create).not.toHaveBeenCalled();
+      expect(mockPrisma.clt_members.create).not.toHaveBeenCalled();
     });
   });
 
@@ -227,7 +227,7 @@ describe("ClerkSyncService - Unit Tests", () => {
         first_name: "OldFirst",
         last_name: "OldLast",
       };
-      vi.mocked(mockPrisma.adm_members.findFirst).mockResolvedValue(
+      vi.mocked(mockPrisma.clt_members.findFirst).mockResolvedValue(
         existingMember as never
       );
 
@@ -239,7 +239,7 @@ describe("ClerkSyncService - Unit Tests", () => {
       });
 
       // Verify update was called with changed fields
-      expect(mockPrisma.adm_members.update).toHaveBeenCalledWith({
+      expect(mockPrisma.clt_members.update).toHaveBeenCalledWith({
         where: { id: "member-123" },
         data: expect.objectContaining({
           email: "new@example.com",
@@ -265,7 +265,7 @@ describe("ClerkSyncService - Unit Tests", () => {
         clerk_user_id: "user_123",
         email: "john@acme.com",
       };
-      vi.mocked(mockPrisma.adm_members.findFirst).mockResolvedValue(
+      vi.mocked(mockPrisma.clt_members.findFirst).mockResolvedValue(
         existingMember as never
       );
 
@@ -277,7 +277,7 @@ describe("ClerkSyncService - Unit Tests", () => {
       expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
 
       // Verify member soft deleted
-      expect(mockPrisma.adm_members.update).toHaveBeenCalledWith({
+      expect(mockPrisma.clt_members.update).toHaveBeenCalledWith({
         where: { id: "member-123" },
         data: expect.objectContaining({
           deleted_at: expect.any(Date),
@@ -408,7 +408,7 @@ describe("ClerkSyncService - Unit Tests", () => {
       });
 
       // Verify all members suspended
-      expect(mockPrisma.adm_members.updateMany).toHaveBeenCalledWith({
+      expect(mockPrisma.clt_members.updateMany).toHaveBeenCalledWith({
         where: expect.objectContaining({
           tenant_id: "tenant-123",
         }),

@@ -27,7 +27,7 @@ export async function hasPermission(
 ): Promise<PermissionCheckResult> {
   try {
     // 1. Get member by clerk_user_id
-    const member = await prisma.adm_members.findFirst({
+    const member = await prisma.clt_members.findFirst({
       where: {
         clerk_user_id: userId,
         tenant_id: tenantId,

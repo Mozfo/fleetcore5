@@ -190,7 +190,7 @@ export class NotificationService extends BaseService {
    * Select template with ZÉRO HARDCODING locale cascade (6 levels)
    *
    * ALGORITHME CASCADE :
-   * 1. adm_members.preferred_language (user preference)
+   * 1. clt_members.preferred_language (user preference)
    * 2. adm_tenant_settings.default_locale (future - tenant default)
    * 3. adm_tenants.country_code → dir_country_locales.primary_locale
    * 4. crm_leads.country_code → dir_country_locales.primary_locale
@@ -258,7 +258,7 @@ export class NotificationService extends BaseService {
    * CASCADE 2 HELPER: Get user's preferred locale
    *
    * Checks BOTH:
-   * 1. adm_members.preferred_language (for tenant members)
+   * 1. clt_members.preferred_language (for tenant members)
    * 2. adm_provider_employees.preferred_locale (for FleetCore employees without tenant)
    *
    * @param userId - User UUID (can be member ID or clerk_user_id for employees)
@@ -269,8 +269,8 @@ export class NotificationService extends BaseService {
    */
   private async getUserPreferredLocale(userId: string): Promise<string | null> {
     try {
-      // Check adm_members first (tenant members)
-      const member = await this.prisma.adm_members.findUnique({
+      // Check clt_members first (tenant members)
+      const member = await this.prisma.clt_members.findUnique({
         where: { id: userId },
         select: { preferred_language: true },
       });

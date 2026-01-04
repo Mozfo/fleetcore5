@@ -95,7 +95,7 @@ export async function bulkAssignLeadsAction(
     }
 
     // 4. Verify assignee exists and is a member
-    const assignee = await db.adm_members.findUnique({
+    const assignee = await db.clt_members.findUnique({
       where: { id: assigneeId },
       select: { id: true },
     });

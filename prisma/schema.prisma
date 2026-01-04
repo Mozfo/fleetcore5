@@ -27,7 +27,7 @@ model adm_audit_logs {
   new_values      Json?
   retention_until DateTime?      @db.Timestamptz(6)
   tags            String[]       @default([])
-  adm_members     adm_members?   @relation(fields: [member_id], references: [id])
+  clt_members     clt_members?   @relation(fields: [member_id], references: [id])
   adm_tenants     adm_tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 
   @@index([changes], map: "adm_audit_logs_changes_gin", type: Gin)
@@ -56,7 +56,7 @@ model adm_invitations {
   sent_by                String                 @db.Uuid
   created_at             DateTime               @default(now()) @db.Timestamptz(6)
   updated_at             DateTime               @default(now()) @db.Timestamptz(6)
-  adm_members            adm_members?           @relation(fields: [accepted_by_member_id], references: [id], map: "fk_adm_invitations_accepted_by")
+  clt_members            clt_members?           @relation(fields: [accepted_by_member_id], references: [id], map: "fk_adm_invitations_accepted_by")
   adm_provider_employees adm_provider_employees @relation(fields: [sent_by], references: [id], map: "fk_adm_invitations_sent_by")
   adm_tenants            adm_tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_adm_invitations_tenant")
 }
@@ -83,13 +83,13 @@ model adm_member_roles {
   scope_type                                            scope_type?
   scope_id                                              String?      @db.Uuid
   priority                                              Int?         @default(0)
-  adm_members_adm_member_roles_created_byToadm_members  adm_members? @relation("adm_member_roles_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_adm_member_roles_deleted_byToadm_members  adm_members? @relation("adm_member_roles_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_adm_member_roles_member_idToadm_members   adm_members  @relation("adm_member_roles_member_idToadm_members", fields: [member_id], references: [id], onDelete: Cascade)
+  clt_members_adm_member_roles_created_byToclt_members  clt_members? @relation("adm_member_roles_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_adm_member_roles_deleted_byToclt_members  clt_members? @relation("adm_member_roles_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_adm_member_roles_member_idToclt_members   clt_members  @relation("adm_member_roles_member_idToclt_members", fields: [member_id], references: [id], onDelete: Cascade)
   adm_roles                                             adm_roles    @relation(fields: [role_id], references: [id], onDelete: Cascade)
   adm_tenants                                           adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_adm_member_roles_updated_byToadm_members  adm_members? @relation("adm_member_roles_updated_byToadm_members", fields: [updated_by], references: [id])
-  adm_members_adm_member_roles_assigned_byToadm_members adm_members? @relation("adm_member_roles_assigned_byToadm_members", fields: [assigned_by], references: [id], map: "fk_adm_member_roles_assigned_by")
+  clt_members_adm_member_roles_updated_byToclt_members  clt_members? @relation("adm_member_roles_updated_byToclt_members", fields: [updated_by], references: [id])
+  clt_members_adm_member_roles_assigned_byToclt_members clt_members? @relation("adm_member_roles_assigned_byToclt_members", fields: [assigned_by], references: [id], map: "fk_adm_member_roles_assigned_by")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -108,11 +108,11 @@ model adm_member_sessions {
   expires_at  DateTime    @db.Timestamptz(6)
   revoked_at  DateTime?   @db.Timestamptz(6)
   created_at  DateTime    @default(now()) @db.Timestamptz(6)
-  adm_members adm_members @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_adm_member_sessions_member")
+  clt_members clt_members @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_adm_member_sessions_member")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model adm_members {
+model clt_members {
   id                                                                                              String                         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id                                                                                       String                         @db.Uuid
   email                                                                                           String                         @db.Citext
@@ -142,178 +142,178 @@ model adm_members {
   notification_preferences                                                                        Json?
   adm_audit_logs                                                                                  adm_audit_logs[]
   adm_invitations                                                                                 adm_invitations[]
-  adm_member_roles_adm_member_roles_created_byToadm_members                                       adm_member_roles[]             @relation("adm_member_roles_created_byToadm_members")
-  adm_member_roles_adm_member_roles_deleted_byToadm_members                                       adm_member_roles[]             @relation("adm_member_roles_deleted_byToadm_members")
-  adm_member_roles_adm_member_roles_member_idToadm_members                                        adm_member_roles[]             @relation("adm_member_roles_member_idToadm_members")
-  adm_member_roles_adm_member_roles_updated_byToadm_members                                       adm_member_roles[]             @relation("adm_member_roles_updated_byToadm_members")
-  adm_member_roles_adm_member_roles_assigned_byToadm_members                                      adm_member_roles[]             @relation("adm_member_roles_assigned_byToadm_members")
+  adm_member_roles_adm_member_roles_created_byToclt_members                                       adm_member_roles[]             @relation("adm_member_roles_created_byToclt_members")
+  adm_member_roles_adm_member_roles_deleted_byToclt_members                                       adm_member_roles[]             @relation("adm_member_roles_deleted_byToclt_members")
+  adm_member_roles_adm_member_roles_member_idToclt_members                                        adm_member_roles[]             @relation("adm_member_roles_member_idToclt_members")
+  adm_member_roles_adm_member_roles_updated_byToclt_members                                       adm_member_roles[]             @relation("adm_member_roles_updated_byToclt_members")
+  adm_member_roles_adm_member_roles_assigned_byToclt_members                                      adm_member_roles[]             @relation("adm_member_roles_assigned_byToclt_members")
   adm_member_sessions                                                                             adm_member_sessions[]
-  adm_members_adm_members_created_byToadm_members                                                 adm_members?                   @relation("adm_members_created_byToadm_members", fields: [created_by], references: [id])
-  other_adm_members_adm_members_created_byToadm_members                                           adm_members[]                  @relation("adm_members_created_byToadm_members")
-  adm_members_adm_members_deleted_byToadm_members                                                 adm_members?                   @relation("adm_members_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  other_adm_members_adm_members_deleted_byToadm_members                                           adm_members[]                  @relation("adm_members_deleted_byToadm_members")
+  clt_members_clt_members_created_byToclt_members                                                 clt_members?                   @relation("clt_members_created_byToclt_members", fields: [created_by], references: [id])
+  other_clt_members_clt_members_created_byToclt_members                                           clt_members[]                  @relation("clt_members_created_byToclt_members")
+  clt_members_clt_members_deleted_byToclt_members                                                 clt_members?                   @relation("clt_members_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  other_clt_members_clt_members_deleted_byToclt_members                                           clt_members[]                  @relation("clt_members_deleted_byToclt_members")
   adm_tenants                                                                                     adm_tenants                    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_adm_members_updated_byToadm_members                                                 adm_members?                   @relation("adm_members_updated_byToadm_members", fields: [updated_by], references: [id])
-  other_adm_members_adm_members_updated_byToadm_members                                           adm_members[]                  @relation("adm_members_updated_byToadm_members")
-  adm_roles_adm_members_default_role_idToadm_roles                                                adm_roles?                     @relation("adm_members_default_role_idToadm_roles", fields: [default_role_id], references: [id], map: "fk_adm_members_default_role")
-  adm_notification_logs_adm_notification_logs_created_byToadm_members                             adm_notification_logs[]        @relation("adm_notification_logs_created_byToadm_members")
-  adm_notification_logs_adm_notification_logs_deleted_byToadm_members                             adm_notification_logs[]        @relation("adm_notification_logs_deleted_byToadm_members")
-  adm_notification_logs_adm_notification_logs_recipient_idToadm_members                           adm_notification_logs[]        @relation("adm_notification_logs_recipient_idToadm_members")
-  adm_notification_logs_adm_notification_logs_updated_byToadm_members                             adm_notification_logs[]        @relation("adm_notification_logs_updated_byToadm_members")
+  clt_members_clt_members_updated_byToclt_members                                                 clt_members?                   @relation("clt_members_updated_byToclt_members", fields: [updated_by], references: [id])
+  other_clt_members_clt_members_updated_byToclt_members                                           clt_members[]                  @relation("clt_members_updated_byToclt_members")
+  adm_roles_clt_members_default_role_idToadm_roles                                                adm_roles?                     @relation("clt_members_default_role_idToadm_roles", fields: [default_role_id], references: [id], map: "fk_clt_members_default_role")
+  adm_notification_logs_adm_notification_logs_created_byToclt_members                             adm_notification_logs[]        @relation("adm_notification_logs_created_byToclt_members")
+  adm_notification_logs_adm_notification_logs_deleted_byToclt_members                             adm_notification_logs[]        @relation("adm_notification_logs_deleted_byToclt_members")
+  adm_notification_logs_adm_notification_logs_recipient_idToclt_members                           adm_notification_logs[]        @relation("adm_notification_logs_recipient_idToclt_members")
+  adm_notification_logs_adm_notification_logs_updated_byToclt_members                             adm_notification_logs[]        @relation("adm_notification_logs_updated_byToclt_members")
   adm_role_versions                                                                               adm_role_versions[]
-  adm_roles_adm_roles_created_byToadm_members                                                     adm_roles[]                    @relation("adm_roles_created_byToadm_members")
-  adm_roles_adm_roles_deleted_byToadm_members                                                     adm_roles[]                    @relation("adm_roles_deleted_byToadm_members")
-  adm_roles_adm_roles_updated_byToadm_members                                                     adm_roles[]                    @relation("adm_roles_updated_byToadm_members")
-  adm_tenant_vehicle_classes_adm_tenant_vehicle_classes_created_byToadm_members                   adm_tenant_vehicle_classes[]   @relation("adm_tenant_vehicle_classes_created_byToadm_members")
-  adm_tenant_vehicle_classes_adm_tenant_vehicle_classes_deleted_byToadm_members                   adm_tenant_vehicle_classes[]   @relation("adm_tenant_vehicle_classes_deleted_byToadm_members")
-  adm_tenant_vehicle_classes_adm_tenant_vehicle_classes_updated_byToadm_members                   adm_tenant_vehicle_classes[]   @relation("adm_tenant_vehicle_classes_updated_byToadm_members")
-  crm_contracts_crm_contracts_created_byToadm_members                                             crm_contracts[]                @relation("crm_contracts_created_byToadm_members")
-  crm_contracts_crm_contracts_deleted_byToadm_members                                             crm_contracts[]                @relation("crm_contracts_deleted_byToadm_members")
-  crm_contracts_crm_contracts_updated_byToadm_members                                             crm_contracts[]                @relation("crm_contracts_updated_byToadm_members")
-  crm_opportunities_crm_opportunities_assigned_toToadm_members                                    crm_opportunities[]            @relation("crm_opportunities_assigned_toToadm_members")
-  crm_opportunities_crm_opportunities_created_byToadm_members                                     crm_opportunities[]            @relation("crm_opportunities_created_byToadm_members")
-  crm_opportunities_crm_opportunities_deleted_byToadm_members                                     crm_opportunities[]            @relation("crm_opportunities_deleted_byToadm_members")
-  crm_opportunities_crm_opportunities_updated_byToadm_members                                     crm_opportunities[]            @relation("crm_opportunities_updated_byToadm_members")
+  adm_roles_adm_roles_created_byToclt_members                                                     adm_roles[]                    @relation("adm_roles_created_byToclt_members")
+  adm_roles_adm_roles_deleted_byToclt_members                                                     adm_roles[]                    @relation("adm_roles_deleted_byToclt_members")
+  adm_roles_adm_roles_updated_byToclt_members                                                     adm_roles[]                    @relation("adm_roles_updated_byToclt_members")
+  adm_tenant_vehicle_classes_adm_tenant_vehicle_classes_created_byToclt_members                   adm_tenant_vehicle_classes[]   @relation("adm_tenant_vehicle_classes_created_byToclt_members")
+  adm_tenant_vehicle_classes_adm_tenant_vehicle_classes_deleted_byToclt_members                   adm_tenant_vehicle_classes[]   @relation("adm_tenant_vehicle_classes_deleted_byToclt_members")
+  adm_tenant_vehicle_classes_adm_tenant_vehicle_classes_updated_byToclt_members                   adm_tenant_vehicle_classes[]   @relation("adm_tenant_vehicle_classes_updated_byToclt_members")
+  crm_contracts_crm_contracts_created_byToclt_members                                             crm_contracts[]                @relation("crm_contracts_created_byToclt_members")
+  crm_contracts_crm_contracts_deleted_byToclt_members                                             crm_contracts[]                @relation("crm_contracts_deleted_byToclt_members")
+  crm_contracts_crm_contracts_updated_byToclt_members                                             crm_contracts[]                @relation("crm_contracts_updated_byToclt_members")
+  crm_opportunities_crm_opportunities_assigned_toToclt_members                                    crm_opportunities[]            @relation("crm_opportunities_assigned_toToclt_members")
+  crm_opportunities_crm_opportunities_created_byToclt_members                                     crm_opportunities[]            @relation("crm_opportunities_created_byToclt_members")
+  crm_opportunities_crm_opportunities_deleted_byToclt_members                                     crm_opportunities[]            @relation("crm_opportunities_deleted_byToclt_members")
+  crm_opportunities_crm_opportunities_updated_byToclt_members                                     crm_opportunities[]            @relation("crm_opportunities_updated_byToclt_members")
   doc_document_versions                                                                           doc_document_versions[]
-  doc_documents_doc_documents_created_byToadm_members                                             doc_documents[]                @relation("doc_documents_created_byToadm_members")
-  doc_documents_doc_documents_deleted_byToadm_members                                             doc_documents[]                @relation("doc_documents_deleted_byToadm_members")
-  doc_documents_doc_documents_updated_byToadm_members                                             doc_documents[]                @relation("doc_documents_updated_byToadm_members")
-  doc_documents_doc_documents_verified_byToadm_members                                            doc_documents[]                @relation("doc_documents_verified_byToadm_members")
-  fin_accounts_fin_accounts_created_byToadm_members                                               fin_accounts[]                 @relation("fin_accounts_created_byToadm_members")
-  fin_accounts_fin_accounts_deleted_byToadm_members                                               fin_accounts[]                 @relation("fin_accounts_deleted_byToadm_members")
-  fin_accounts_fin_accounts_updated_byToadm_members                                               fin_accounts[]                 @relation("fin_accounts_updated_byToadm_members")
-  fin_driver_payment_batches_fin_driver_payment_batches_created_byToadm_members                   fin_driver_payment_batches[]   @relation("fin_driver_payment_batches_created_byToadm_members")
-  fin_driver_payment_batches_fin_driver_payment_batches_deleted_byToadm_members                   fin_driver_payment_batches[]   @relation("fin_driver_payment_batches_deleted_byToadm_members")
-  fin_driver_payment_batches_fin_driver_payment_batches_updated_byToadm_members                   fin_driver_payment_batches[]   @relation("fin_driver_payment_batches_updated_byToadm_members")
-  fin_driver_payments_fin_driver_payments_created_byToadm_members                                 fin_driver_payments[]          @relation("fin_driver_payments_created_byToadm_members")
-  fin_driver_payments_fin_driver_payments_deleted_byToadm_members                                 fin_driver_payments[]          @relation("fin_driver_payments_deleted_byToadm_members")
-  fin_driver_payments_fin_driver_payments_updated_byToadm_members                                 fin_driver_payments[]          @relation("fin_driver_payments_updated_byToadm_members")
-  fin_toll_transactions_fin_toll_transactions_created_byToadm_members                             fin_toll_transactions[]        @relation("fin_toll_transactions_created_byToadm_members")
-  fin_toll_transactions_fin_toll_transactions_deleted_byToadm_members                             fin_toll_transactions[]        @relation("fin_toll_transactions_deleted_byToadm_members")
-  fin_toll_transactions_fin_toll_transactions_updated_byToadm_members                             fin_toll_transactions[]        @relation("fin_toll_transactions_updated_byToadm_members")
-  fin_traffic_fine_disputes_fin_traffic_fine_disputes_reviewed_byToadm_members                    fin_traffic_fine_disputes[]    @relation("fin_traffic_fine_disputes_reviewed_byToadm_members")
-  fin_traffic_fine_disputes_fin_traffic_fine_disputes_submitted_byToadm_members                   fin_traffic_fine_disputes[]    @relation("fin_traffic_fine_disputes_submitted_byToadm_members")
-  fin_traffic_fines_fin_traffic_fines_created_byToadm_members                                     fin_traffic_fines[]            @relation("fin_traffic_fines_created_byToadm_members")
-  fin_traffic_fines_fin_traffic_fines_deleted_byToadm_members                                     fin_traffic_fines[]            @relation("fin_traffic_fines_deleted_byToadm_members")
-  fin_traffic_fines_fin_traffic_fines_updated_byToadm_members                                     fin_traffic_fines[]            @relation("fin_traffic_fines_updated_byToadm_members")
-  fin_transactions_fin_transactions_created_byToadm_members                                       fin_transactions[]             @relation("fin_transactions_created_byToadm_members")
-  fin_transactions_fin_transactions_deleted_byToadm_members                                       fin_transactions[]             @relation("fin_transactions_deleted_byToadm_members")
-  fin_transactions_fin_transactions_updated_byToadm_members                                       fin_transactions[]             @relation("fin_transactions_updated_byToadm_members")
-  fin_transactions_fin_transactions_validated_byToadm_members                                     fin_transactions[]             @relation("fin_transactions_validated_byToadm_members")
-  flt_vehicle_assignments_flt_vehicle_assignments_created_byToadm_members                         flt_vehicle_assignments[]      @relation("flt_vehicle_assignments_created_byToadm_members")
-  flt_vehicle_assignments_flt_vehicle_assignments_deleted_byToadm_members                         flt_vehicle_assignments[]      @relation("flt_vehicle_assignments_deleted_byToadm_members")
-  flt_vehicle_assignments_flt_vehicle_assignments_updated_byToadm_members                         flt_vehicle_assignments[]      @relation("flt_vehicle_assignments_updated_byToadm_members")
-  flt_vehicle_events_flt_vehicle_events_created_byToadm_members                                   flt_vehicle_events[]           @relation("flt_vehicle_events_created_byToadm_members")
-  flt_vehicle_events_flt_vehicle_events_deleted_byToadm_members                                   flt_vehicle_events[]           @relation("flt_vehicle_events_deleted_byToadm_members")
-  flt_vehicle_events_flt_vehicle_events_updated_byToadm_members                                   flt_vehicle_events[]           @relation("flt_vehicle_events_updated_byToadm_members")
-  flt_vehicle_expenses_flt_vehicle_expenses_created_byToadm_members                               flt_vehicle_expenses[]         @relation("flt_vehicle_expenses_created_byToadm_members")
-  flt_vehicle_expenses_flt_vehicle_expenses_deleted_byToadm_members                               flt_vehicle_expenses[]         @relation("flt_vehicle_expenses_deleted_byToadm_members")
-  flt_vehicle_expenses_flt_vehicle_expenses_updated_byToadm_members                               flt_vehicle_expenses[]         @relation("flt_vehicle_expenses_updated_byToadm_members")
-  flt_vehicle_insurances_flt_vehicle_insurances_created_byToadm_members                           flt_vehicle_insurances[]       @relation("flt_vehicle_insurances_created_byToadm_members")
-  flt_vehicle_insurances_flt_vehicle_insurances_deleted_byToadm_members                           flt_vehicle_insurances[]       @relation("flt_vehicle_insurances_deleted_byToadm_members")
-  flt_vehicle_insurances_flt_vehicle_insurances_updated_byToadm_members                           flt_vehicle_insurances[]       @relation("flt_vehicle_insurances_updated_byToadm_members")
-  flt_vehicle_maintenance_flt_vehicle_maintenance_created_byToadm_members                         flt_vehicle_maintenance[]      @relation("flt_vehicle_maintenance_created_byToadm_members")
-  flt_vehicle_maintenance_flt_vehicle_maintenance_updated_byToadm_members                         flt_vehicle_maintenance[]      @relation("flt_vehicle_maintenance_updated_byToadm_members")
-  flt_vehicles_flt_vehicles_created_byToadm_members                                               flt_vehicles[]                 @relation("flt_vehicles_created_byToadm_members")
-  flt_vehicles_flt_vehicles_deleted_byToadm_members                                               flt_vehicles[]                 @relation("flt_vehicles_deleted_byToadm_members")
-  flt_vehicles_flt_vehicles_updated_byToadm_members                                               flt_vehicles[]                 @relation("flt_vehicles_updated_byToadm_members")
-  rev_driver_revenues_rev_driver_revenues_created_byToadm_members                                 rev_driver_revenues[]          @relation("rev_driver_revenues_created_byToadm_members")
-  rev_driver_revenues_rev_driver_revenues_deleted_byToadm_members                                 rev_driver_revenues[]          @relation("rev_driver_revenues_deleted_byToadm_members")
-  rev_driver_revenues_rev_driver_revenues_updated_byToadm_members                                 rev_driver_revenues[]          @relation("rev_driver_revenues_updated_byToadm_members")
-  rev_driver_revenues_rev_driver_revenues_validated_byToadm_members                               rev_driver_revenues[]          @relation("rev_driver_revenues_validated_byToadm_members")
-  rev_reconciliations_rev_reconciliations_assigned_toToadm_members                                rev_reconciliations[]          @relation("rev_reconciliations_assigned_toToadm_members")
-  rev_reconciliations_rev_reconciliations_created_byToadm_members                                 rev_reconciliations[]          @relation("rev_reconciliations_created_byToadm_members")
-  rev_reconciliations_rev_reconciliations_deleted_byToadm_members                                 rev_reconciliations[]          @relation("rev_reconciliations_deleted_byToadm_members")
-  rev_reconciliations_rev_reconciliations_resolved_byToadm_members                                rev_reconciliations[]          @relation("rev_reconciliations_resolved_byToadm_members")
-  rev_reconciliations_rev_reconciliations_updated_byToadm_members                                 rev_reconciliations[]          @relation("rev_reconciliations_updated_byToadm_members")
-  rev_revenue_imports_rev_revenue_imports_created_byToadm_members                                 rev_revenue_imports[]          @relation("rev_revenue_imports_created_byToadm_members")
-  rev_revenue_imports_rev_revenue_imports_deleted_byToadm_members                                 rev_revenue_imports[]          @relation("rev_revenue_imports_deleted_byToadm_members")
-  rev_revenue_imports_rev_revenue_imports_updated_byToadm_members                                 rev_revenue_imports[]          @relation("rev_revenue_imports_updated_byToadm_members")
-  rid_driver_blacklists_rid_driver_blacklists_appeal_reviewed_byToadm_members                     rid_driver_blacklists[]        @relation("rid_driver_blacklists_appeal_reviewed_byToadm_members")
-  rid_driver_blacklists_rid_driver_blacklists_created_byToadm_members                             rid_driver_blacklists[]        @relation("rid_driver_blacklists_created_byToadm_members")
-  rid_driver_blacklists_rid_driver_blacklists_decided_byToadm_members                             rid_driver_blacklists[]        @relation("rid_driver_blacklists_decided_byToadm_members")
-  rid_driver_blacklists_rid_driver_blacklists_reviewed_byToadm_members                            rid_driver_blacklists[]        @relation("rid_driver_blacklists_reviewed_byToadm_members")
-  rid_driver_blacklists_rid_driver_blacklists_deleted_byToadm_members                             rid_driver_blacklists[]        @relation("rid_driver_blacklists_deleted_byToadm_members")
-  rid_driver_blacklists_rid_driver_blacklists_legal_reviewed_byToadm_members                      rid_driver_blacklists[]        @relation("rid_driver_blacklists_legal_reviewed_byToadm_members")
-  rid_driver_blacklists_rid_driver_blacklists_reinstated_byToadm_members                          rid_driver_blacklists[]        @relation("rid_driver_blacklists_reinstated_byToadm_members")
-  rid_driver_blacklists_rid_driver_blacklists_updated_byToadm_members                             rid_driver_blacklists[]        @relation("rid_driver_blacklists_updated_byToadm_members")
-  rid_driver_cooperation_terms_rid_driver_cooperation_terms_created_byToadm_members               rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_created_byToadm_members")
-  rid_driver_cooperation_terms_rid_driver_cooperation_terms_deleted_byToadm_members               rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_deleted_byToadm_members")
-  rid_driver_cooperation_terms_rid_driver_cooperation_terms_legal_reviewed_byToadm_members        rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_legal_reviewed_byToadm_members")
-  rid_driver_cooperation_terms_rid_driver_cooperation_terms_termination_initiated_byToadm_members rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_termination_initiated_byToadm_members")
-  rid_driver_cooperation_terms_rid_driver_cooperation_terms_updated_byToadm_members               rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_updated_byToadm_members")
-  rid_driver_documents_rid_driver_documents_created_byToadm_members                               rid_driver_documents[]         @relation("rid_driver_documents_created_byToadm_members")
-  rid_driver_documents_rid_driver_documents_deleted_byToadm_members                               rid_driver_documents[]         @relation("rid_driver_documents_deleted_byToadm_members")
-  rid_driver_documents_rid_driver_documents_updated_byToadm_members                               rid_driver_documents[]         @relation("rid_driver_documents_updated_byToadm_members")
-  rid_driver_documents_rid_driver_documents_verified_byToadm_members                              rid_driver_documents[]         @relation("rid_driver_documents_verified_byToadm_members")
-  rid_driver_languages_rid_driver_languages_created_byToadm_members                               rid_driver_languages[]         @relation("rid_driver_languages_created_byToadm_members")
-  rid_driver_languages_rid_driver_languages_deleted_byToadm_members                               rid_driver_languages[]         @relation("rid_driver_languages_deleted_byToadm_members")
-  rid_driver_languages_rid_driver_languages_updated_byToadm_members                               rid_driver_languages[]         @relation("rid_driver_languages_updated_byToadm_members")
-  rid_driver_performances_rid_driver_performances_created_byToadm_members                         rid_driver_performances[]      @relation("rid_driver_performances_created_byToadm_members")
-  rid_driver_performances_rid_driver_performances_deleted_byToadm_members                         rid_driver_performances[]      @relation("rid_driver_performances_deleted_byToadm_members")
-  rid_driver_performances_rid_driver_performances_updated_byToadm_members                         rid_driver_performances[]      @relation("rid_driver_performances_updated_byToadm_members")
-  rid_driver_requests_rid_driver_requests_approved_byToadm_members                                rid_driver_requests[]          @relation("rid_driver_requests_approved_byToadm_members")
-  rid_driver_requests_rid_driver_requests_assigned_toToadm_members                                rid_driver_requests[]          @relation("rid_driver_requests_assigned_toToadm_members")
-  rid_driver_requests_rid_driver_requests_created_byToadm_members                                 rid_driver_requests[]          @relation("rid_driver_requests_created_byToadm_members")
-  rid_driver_requests_rid_driver_requests_deleted_byToadm_members                                 rid_driver_requests[]          @relation("rid_driver_requests_deleted_byToadm_members")
-  rid_driver_requests_rid_driver_requests_escalated_toToadm_members                               rid_driver_requests[]          @relation("rid_driver_requests_escalated_toToadm_members")
-  rid_driver_requests_rid_driver_requests_hr_approved_byToadm_members                             rid_driver_requests[]          @relation("rid_driver_requests_hr_approved_byToadm_members")
-  rid_driver_requests_rid_driver_requests_manager_approved_byToadm_members                        rid_driver_requests[]          @relation("rid_driver_requests_manager_approved_byToadm_members")
-  rid_driver_requests_rid_driver_requests_rejected_byToadm_members                                rid_driver_requests[]          @relation("rid_driver_requests_rejected_byToadm_members")
-  rid_driver_requests_rid_driver_requests_reviewed_byToadm_members                                rid_driver_requests[]          @relation("rid_driver_requests_reviewed_byToadm_members")
-  rid_driver_requests_rid_driver_requests_updated_byToadm_members                                 rid_driver_requests[]          @relation("rid_driver_requests_updated_byToadm_members")
-  rid_driver_training_rid_driver_training_created_byToadm_members                                 rid_driver_training[]          @relation("rid_driver_training_created_byToadm_members")
-  rid_driver_training_rid_driver_training_deleted_byToadm_members                                 rid_driver_training[]          @relation("rid_driver_training_deleted_byToadm_members")
-  rid_driver_training_rid_driver_training_evaluated_byToadm_members                               rid_driver_training[]          @relation("rid_driver_training_evaluated_byToadm_members")
-  rid_driver_training_rid_driver_training_updated_byToadm_members                                 rid_driver_training[]          @relation("rid_driver_training_updated_byToadm_members")
-  sch_goals_sch_goals_created_byToadm_members                                                     sch_goals[]                    @relation("sch_goals_created_byToadm_members")
-  sch_goals_sch_goals_deleted_byToadm_members                                                     sch_goals[]                    @relation("sch_goals_deleted_byToadm_members")
-  sch_goals_sch_goals_updated_byToadm_members                                                     sch_goals[]                    @relation("sch_goals_updated_byToadm_members")
-  sch_maintenance_schedules_sch_maintenance_schedules_scheduled_byToadm_members                   sch_maintenance_schedules[]    @relation("sch_maintenance_schedules_scheduled_byToadm_members")
-  sch_maintenance_schedules_sch_maintenance_schedules_created_byToadm_members                     sch_maintenance_schedules[]    @relation("sch_maintenance_schedules_created_byToadm_members")
-  sch_maintenance_schedules_sch_maintenance_schedules_deleted_byToadm_members                     sch_maintenance_schedules[]    @relation("sch_maintenance_schedules_deleted_byToadm_members")
-  sch_maintenance_schedules_sch_maintenance_schedules_updated_byToadm_members                     sch_maintenance_schedules[]    @relation("sch_maintenance_schedules_updated_byToadm_members")
-  sch_shifts_sch_shifts_approved_byToadm_members                                                  sch_shifts[]                   @relation("sch_shifts_approved_byToadm_members")
-  sch_shifts_sch_shifts_created_byToadm_members                                                   sch_shifts[]                   @relation("sch_shifts_created_byToadm_members")
-  sch_shifts_sch_shifts_deleted_byToadm_members                                                   sch_shifts[]                   @relation("sch_shifts_deleted_byToadm_members")
-  sch_shifts_sch_shifts_updated_byToadm_members                                                   sch_shifts[]                   @relation("sch_shifts_updated_byToadm_members")
+  doc_documents_doc_documents_created_byToclt_members                                             doc_documents[]                @relation("doc_documents_created_byToclt_members")
+  doc_documents_doc_documents_deleted_byToclt_members                                             doc_documents[]                @relation("doc_documents_deleted_byToclt_members")
+  doc_documents_doc_documents_updated_byToclt_members                                             doc_documents[]                @relation("doc_documents_updated_byToclt_members")
+  doc_documents_doc_documents_verified_byToclt_members                                            doc_documents[]                @relation("doc_documents_verified_byToclt_members")
+  fin_accounts_fin_accounts_created_byToclt_members                                               fin_accounts[]                 @relation("fin_accounts_created_byToclt_members")
+  fin_accounts_fin_accounts_deleted_byToclt_members                                               fin_accounts[]                 @relation("fin_accounts_deleted_byToclt_members")
+  fin_accounts_fin_accounts_updated_byToclt_members                                               fin_accounts[]                 @relation("fin_accounts_updated_byToclt_members")
+  fin_driver_payment_batches_fin_driver_payment_batches_created_byToclt_members                   fin_driver_payment_batches[]   @relation("fin_driver_payment_batches_created_byToclt_members")
+  fin_driver_payment_batches_fin_driver_payment_batches_deleted_byToclt_members                   fin_driver_payment_batches[]   @relation("fin_driver_payment_batches_deleted_byToclt_members")
+  fin_driver_payment_batches_fin_driver_payment_batches_updated_byToclt_members                   fin_driver_payment_batches[]   @relation("fin_driver_payment_batches_updated_byToclt_members")
+  fin_driver_payments_fin_driver_payments_created_byToclt_members                                 fin_driver_payments[]          @relation("fin_driver_payments_created_byToclt_members")
+  fin_driver_payments_fin_driver_payments_deleted_byToclt_members                                 fin_driver_payments[]          @relation("fin_driver_payments_deleted_byToclt_members")
+  fin_driver_payments_fin_driver_payments_updated_byToclt_members                                 fin_driver_payments[]          @relation("fin_driver_payments_updated_byToclt_members")
+  fin_toll_transactions_fin_toll_transactions_created_byToclt_members                             fin_toll_transactions[]        @relation("fin_toll_transactions_created_byToclt_members")
+  fin_toll_transactions_fin_toll_transactions_deleted_byToclt_members                             fin_toll_transactions[]        @relation("fin_toll_transactions_deleted_byToclt_members")
+  fin_toll_transactions_fin_toll_transactions_updated_byToclt_members                             fin_toll_transactions[]        @relation("fin_toll_transactions_updated_byToclt_members")
+  fin_traffic_fine_disputes_fin_traffic_fine_disputes_reviewed_byToclt_members                    fin_traffic_fine_disputes[]    @relation("fin_traffic_fine_disputes_reviewed_byToclt_members")
+  fin_traffic_fine_disputes_fin_traffic_fine_disputes_submitted_byToclt_members                   fin_traffic_fine_disputes[]    @relation("fin_traffic_fine_disputes_submitted_byToclt_members")
+  fin_traffic_fines_fin_traffic_fines_created_byToclt_members                                     fin_traffic_fines[]            @relation("fin_traffic_fines_created_byToclt_members")
+  fin_traffic_fines_fin_traffic_fines_deleted_byToclt_members                                     fin_traffic_fines[]            @relation("fin_traffic_fines_deleted_byToclt_members")
+  fin_traffic_fines_fin_traffic_fines_updated_byToclt_members                                     fin_traffic_fines[]            @relation("fin_traffic_fines_updated_byToclt_members")
+  fin_transactions_fin_transactions_created_byToclt_members                                       fin_transactions[]             @relation("fin_transactions_created_byToclt_members")
+  fin_transactions_fin_transactions_deleted_byToclt_members                                       fin_transactions[]             @relation("fin_transactions_deleted_byToclt_members")
+  fin_transactions_fin_transactions_updated_byToclt_members                                       fin_transactions[]             @relation("fin_transactions_updated_byToclt_members")
+  fin_transactions_fin_transactions_validated_byToclt_members                                     fin_transactions[]             @relation("fin_transactions_validated_byToclt_members")
+  flt_vehicle_assignments_flt_vehicle_assignments_created_byToclt_members                         flt_vehicle_assignments[]      @relation("flt_vehicle_assignments_created_byToclt_members")
+  flt_vehicle_assignments_flt_vehicle_assignments_deleted_byToclt_members                         flt_vehicle_assignments[]      @relation("flt_vehicle_assignments_deleted_byToclt_members")
+  flt_vehicle_assignments_flt_vehicle_assignments_updated_byToclt_members                         flt_vehicle_assignments[]      @relation("flt_vehicle_assignments_updated_byToclt_members")
+  flt_vehicle_events_flt_vehicle_events_created_byToclt_members                                   flt_vehicle_events[]           @relation("flt_vehicle_events_created_byToclt_members")
+  flt_vehicle_events_flt_vehicle_events_deleted_byToclt_members                                   flt_vehicle_events[]           @relation("flt_vehicle_events_deleted_byToclt_members")
+  flt_vehicle_events_flt_vehicle_events_updated_byToclt_members                                   flt_vehicle_events[]           @relation("flt_vehicle_events_updated_byToclt_members")
+  flt_vehicle_expenses_flt_vehicle_expenses_created_byToclt_members                               flt_vehicle_expenses[]         @relation("flt_vehicle_expenses_created_byToclt_members")
+  flt_vehicle_expenses_flt_vehicle_expenses_deleted_byToclt_members                               flt_vehicle_expenses[]         @relation("flt_vehicle_expenses_deleted_byToclt_members")
+  flt_vehicle_expenses_flt_vehicle_expenses_updated_byToclt_members                               flt_vehicle_expenses[]         @relation("flt_vehicle_expenses_updated_byToclt_members")
+  flt_vehicle_insurances_flt_vehicle_insurances_created_byToclt_members                           flt_vehicle_insurances[]       @relation("flt_vehicle_insurances_created_byToclt_members")
+  flt_vehicle_insurances_flt_vehicle_insurances_deleted_byToclt_members                           flt_vehicle_insurances[]       @relation("flt_vehicle_insurances_deleted_byToclt_members")
+  flt_vehicle_insurances_flt_vehicle_insurances_updated_byToclt_members                           flt_vehicle_insurances[]       @relation("flt_vehicle_insurances_updated_byToclt_members")
+  flt_vehicle_maintenance_flt_vehicle_maintenance_created_byToclt_members                         flt_vehicle_maintenance[]      @relation("flt_vehicle_maintenance_created_byToclt_members")
+  flt_vehicle_maintenance_flt_vehicle_maintenance_updated_byToclt_members                         flt_vehicle_maintenance[]      @relation("flt_vehicle_maintenance_updated_byToclt_members")
+  flt_vehicles_flt_vehicles_created_byToclt_members                                               flt_vehicles[]                 @relation("flt_vehicles_created_byToclt_members")
+  flt_vehicles_flt_vehicles_deleted_byToclt_members                                               flt_vehicles[]                 @relation("flt_vehicles_deleted_byToclt_members")
+  flt_vehicles_flt_vehicles_updated_byToclt_members                                               flt_vehicles[]                 @relation("flt_vehicles_updated_byToclt_members")
+  rev_driver_revenues_rev_driver_revenues_created_byToclt_members                                 rev_driver_revenues[]          @relation("rev_driver_revenues_created_byToclt_members")
+  rev_driver_revenues_rev_driver_revenues_deleted_byToclt_members                                 rev_driver_revenues[]          @relation("rev_driver_revenues_deleted_byToclt_members")
+  rev_driver_revenues_rev_driver_revenues_updated_byToclt_members                                 rev_driver_revenues[]          @relation("rev_driver_revenues_updated_byToclt_members")
+  rev_driver_revenues_rev_driver_revenues_validated_byToclt_members                               rev_driver_revenues[]          @relation("rev_driver_revenues_validated_byToclt_members")
+  rev_reconciliations_rev_reconciliations_assigned_toToclt_members                                rev_reconciliations[]          @relation("rev_reconciliations_assigned_toToclt_members")
+  rev_reconciliations_rev_reconciliations_created_byToclt_members                                 rev_reconciliations[]          @relation("rev_reconciliations_created_byToclt_members")
+  rev_reconciliations_rev_reconciliations_deleted_byToclt_members                                 rev_reconciliations[]          @relation("rev_reconciliations_deleted_byToclt_members")
+  rev_reconciliations_rev_reconciliations_resolved_byToclt_members                                rev_reconciliations[]          @relation("rev_reconciliations_resolved_byToclt_members")
+  rev_reconciliations_rev_reconciliations_updated_byToclt_members                                 rev_reconciliations[]          @relation("rev_reconciliations_updated_byToclt_members")
+  rev_revenue_imports_rev_revenue_imports_created_byToclt_members                                 rev_revenue_imports[]          @relation("rev_revenue_imports_created_byToclt_members")
+  rev_revenue_imports_rev_revenue_imports_deleted_byToclt_members                                 rev_revenue_imports[]          @relation("rev_revenue_imports_deleted_byToclt_members")
+  rev_revenue_imports_rev_revenue_imports_updated_byToclt_members                                 rev_revenue_imports[]          @relation("rev_revenue_imports_updated_byToclt_members")
+  rid_driver_blacklists_rid_driver_blacklists_appeal_reviewed_byToclt_members                     rid_driver_blacklists[]        @relation("rid_driver_blacklists_appeal_reviewed_byToclt_members")
+  rid_driver_blacklists_rid_driver_blacklists_created_byToclt_members                             rid_driver_blacklists[]        @relation("rid_driver_blacklists_created_byToclt_members")
+  rid_driver_blacklists_rid_driver_blacklists_decided_byToclt_members                             rid_driver_blacklists[]        @relation("rid_driver_blacklists_decided_byToclt_members")
+  rid_driver_blacklists_rid_driver_blacklists_reviewed_byToclt_members                            rid_driver_blacklists[]        @relation("rid_driver_blacklists_reviewed_byToclt_members")
+  rid_driver_blacklists_rid_driver_blacklists_deleted_byToclt_members                             rid_driver_blacklists[]        @relation("rid_driver_blacklists_deleted_byToclt_members")
+  rid_driver_blacklists_rid_driver_blacklists_legal_reviewed_byToclt_members                      rid_driver_blacklists[]        @relation("rid_driver_blacklists_legal_reviewed_byToclt_members")
+  rid_driver_blacklists_rid_driver_blacklists_reinstated_byToclt_members                          rid_driver_blacklists[]        @relation("rid_driver_blacklists_reinstated_byToclt_members")
+  rid_driver_blacklists_rid_driver_blacklists_updated_byToclt_members                             rid_driver_blacklists[]        @relation("rid_driver_blacklists_updated_byToclt_members")
+  rid_driver_cooperation_terms_rid_driver_cooperation_terms_created_byToclt_members               rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_created_byToclt_members")
+  rid_driver_cooperation_terms_rid_driver_cooperation_terms_deleted_byToclt_members               rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_deleted_byToclt_members")
+  rid_driver_cooperation_terms_rid_driver_cooperation_terms_legal_reviewed_byToclt_members        rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_legal_reviewed_byToclt_members")
+  rid_driver_cooperation_terms_rid_driver_cooperation_terms_termination_initiated_byToclt_members rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_termination_initiated_byToclt_members")
+  rid_driver_cooperation_terms_rid_driver_cooperation_terms_updated_byToclt_members               rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_terms_updated_byToclt_members")
+  rid_driver_documents_rid_driver_documents_created_byToclt_members                               rid_driver_documents[]         @relation("rid_driver_documents_created_byToclt_members")
+  rid_driver_documents_rid_driver_documents_deleted_byToclt_members                               rid_driver_documents[]         @relation("rid_driver_documents_deleted_byToclt_members")
+  rid_driver_documents_rid_driver_documents_updated_byToclt_members                               rid_driver_documents[]         @relation("rid_driver_documents_updated_byToclt_members")
+  rid_driver_documents_rid_driver_documents_verified_byToclt_members                              rid_driver_documents[]         @relation("rid_driver_documents_verified_byToclt_members")
+  rid_driver_languages_rid_driver_languages_created_byToclt_members                               rid_driver_languages[]         @relation("rid_driver_languages_created_byToclt_members")
+  rid_driver_languages_rid_driver_languages_deleted_byToclt_members                               rid_driver_languages[]         @relation("rid_driver_languages_deleted_byToclt_members")
+  rid_driver_languages_rid_driver_languages_updated_byToclt_members                               rid_driver_languages[]         @relation("rid_driver_languages_updated_byToclt_members")
+  rid_driver_performances_rid_driver_performances_created_byToclt_members                         rid_driver_performances[]      @relation("rid_driver_performances_created_byToclt_members")
+  rid_driver_performances_rid_driver_performances_deleted_byToclt_members                         rid_driver_performances[]      @relation("rid_driver_performances_deleted_byToclt_members")
+  rid_driver_performances_rid_driver_performances_updated_byToclt_members                         rid_driver_performances[]      @relation("rid_driver_performances_updated_byToclt_members")
+  rid_driver_requests_rid_driver_requests_approved_byToclt_members                                rid_driver_requests[]          @relation("rid_driver_requests_approved_byToclt_members")
+  rid_driver_requests_rid_driver_requests_assigned_toToclt_members                                rid_driver_requests[]          @relation("rid_driver_requests_assigned_toToclt_members")
+  rid_driver_requests_rid_driver_requests_created_byToclt_members                                 rid_driver_requests[]          @relation("rid_driver_requests_created_byToclt_members")
+  rid_driver_requests_rid_driver_requests_deleted_byToclt_members                                 rid_driver_requests[]          @relation("rid_driver_requests_deleted_byToclt_members")
+  rid_driver_requests_rid_driver_requests_escalated_toToclt_members                               rid_driver_requests[]          @relation("rid_driver_requests_escalated_toToclt_members")
+  rid_driver_requests_rid_driver_requests_hr_approved_byToclt_members                             rid_driver_requests[]          @relation("rid_driver_requests_hr_approved_byToclt_members")
+  rid_driver_requests_rid_driver_requests_manager_approved_byToclt_members                        rid_driver_requests[]          @relation("rid_driver_requests_manager_approved_byToclt_members")
+  rid_driver_requests_rid_driver_requests_rejected_byToclt_members                                rid_driver_requests[]          @relation("rid_driver_requests_rejected_byToclt_members")
+  rid_driver_requests_rid_driver_requests_reviewed_byToclt_members                                rid_driver_requests[]          @relation("rid_driver_requests_reviewed_byToclt_members")
+  rid_driver_requests_rid_driver_requests_updated_byToclt_members                                 rid_driver_requests[]          @relation("rid_driver_requests_updated_byToclt_members")
+  rid_driver_training_rid_driver_training_created_byToclt_members                                 rid_driver_training[]          @relation("rid_driver_training_created_byToclt_members")
+  rid_driver_training_rid_driver_training_deleted_byToclt_members                                 rid_driver_training[]          @relation("rid_driver_training_deleted_byToclt_members")
+  rid_driver_training_rid_driver_training_evaluated_byToclt_members                               rid_driver_training[]          @relation("rid_driver_training_evaluated_byToclt_members")
+  rid_driver_training_rid_driver_training_updated_byToclt_members                                 rid_driver_training[]          @relation("rid_driver_training_updated_byToclt_members")
+  sch_goals_sch_goals_created_byToclt_members                                                     sch_goals[]                    @relation("sch_goals_created_byToclt_members")
+  sch_goals_sch_goals_deleted_byToclt_members                                                     sch_goals[]                    @relation("sch_goals_deleted_byToclt_members")
+  sch_goals_sch_goals_updated_byToclt_members                                                     sch_goals[]                    @relation("sch_goals_updated_byToclt_members")
+  sch_maintenance_schedules_sch_maintenance_schedules_scheduled_byToclt_members                   sch_maintenance_schedules[]    @relation("sch_maintenance_schedules_scheduled_byToclt_members")
+  sch_maintenance_schedules_sch_maintenance_schedules_created_byToclt_members                     sch_maintenance_schedules[]    @relation("sch_maintenance_schedules_created_byToclt_members")
+  sch_maintenance_schedules_sch_maintenance_schedules_deleted_byToclt_members                     sch_maintenance_schedules[]    @relation("sch_maintenance_schedules_deleted_byToclt_members")
+  sch_maintenance_schedules_sch_maintenance_schedules_updated_byToclt_members                     sch_maintenance_schedules[]    @relation("sch_maintenance_schedules_updated_byToclt_members")
+  sch_shifts_sch_shifts_approved_byToclt_members                                                  sch_shifts[]                   @relation("sch_shifts_approved_byToclt_members")
+  sch_shifts_sch_shifts_created_byToclt_members                                                   sch_shifts[]                   @relation("sch_shifts_created_byToclt_members")
+  sch_shifts_sch_shifts_deleted_byToclt_members                                                   sch_shifts[]                   @relation("sch_shifts_deleted_byToclt_members")
+  sch_shifts_sch_shifts_updated_byToclt_members                                                   sch_shifts[]                   @relation("sch_shifts_updated_byToclt_members")
   sch_task_comments                                                                               sch_task_comments[]
   sch_task_history                                                                                sch_task_history[]
-  sch_tasks_sch_tasks_assigned_byToadm_members                                                    sch_tasks[]                    @relation("sch_tasks_assigned_byToadm_members")
-  sch_tasks_sch_tasks_assigned_toToadm_members                                                    sch_tasks[]                    @relation("sch_tasks_assigned_toToadm_members")
-  sch_tasks_sch_tasks_completed_byToadm_members                                                   sch_tasks[]                    @relation("sch_tasks_completed_byToadm_members")
-  sch_tasks_sch_tasks_escalated_toToadm_members                                                   sch_tasks[]                    @relation("sch_tasks_escalated_toToadm_members")
-  sch_tasks_sch_tasks_verified_byToadm_members                                                    sch_tasks[]                    @relation("sch_tasks_verified_byToadm_members")
-  sch_tasks_sch_tasks_created_byToadm_members                                                     sch_tasks[]                    @relation("sch_tasks_created_byToadm_members")
-  sch_tasks_sch_tasks_deleted_byToadm_members                                                     sch_tasks[]                    @relation("sch_tasks_deleted_byToadm_members")
-  sch_tasks_sch_tasks_updated_byToadm_members                                                     sch_tasks[]                    @relation("sch_tasks_updated_byToadm_members")
-  sup_ticket_messages_sup_ticket_messages_created_byToadm_members                                 sup_ticket_messages[]          @relation("sup_ticket_messages_created_byToadm_members")
-  sup_ticket_messages_sup_ticket_messages_deleted_byToadm_members                                 sup_ticket_messages[]          @relation("sup_ticket_messages_deleted_byToadm_members")
-  sup_ticket_messages_sup_ticket_messages_updated_byToadm_members                                 sup_ticket_messages[]          @relation("sup_ticket_messages_updated_byToadm_members")
-  sup_tickets_sup_tickets_raised_byToadm_members                                                  sup_tickets[]                  @relation("sup_tickets_raised_byToadm_members")
-  sup_tickets_sup_tickets_created_byToadm_members                                                 sup_tickets[]                  @relation("sup_tickets_created_byToadm_members")
-  sup_tickets_sup_tickets_deleted_byToadm_members                                                 sup_tickets[]                  @relation("sup_tickets_deleted_byToadm_members")
-  sup_tickets_sup_tickets_updated_byToadm_members                                                 sup_tickets[]                  @relation("sup_tickets_updated_byToadm_members")
-  trp_client_invoices_trp_client_invoices_created_byToadm_members                                 trp_client_invoices[]          @relation("trp_client_invoices_created_byToadm_members")
-  trp_client_invoices_trp_client_invoices_deleted_byToadm_members                                 trp_client_invoices[]          @relation("trp_client_invoices_deleted_byToadm_members")
-  trp_client_invoices_trp_client_invoices_updated_byToadm_members                                 trp_client_invoices[]          @relation("trp_client_invoices_updated_byToadm_members")
-  trp_platform_accounts_trp_platform_accounts_created_byToadm_members                             trp_platform_accounts[]        @relation("trp_platform_accounts_created_byToadm_members")
-  trp_platform_accounts_trp_platform_accounts_deleted_byToadm_members                             trp_platform_accounts[]        @relation("trp_platform_accounts_deleted_byToadm_members")
-  trp_platform_accounts_trp_platform_accounts_updated_byToadm_members                             trp_platform_accounts[]        @relation("trp_platform_accounts_updated_byToadm_members")
-  trp_settlements_trp_settlements_created_byToadm_members                                         trp_settlements[]              @relation("trp_settlements_created_byToadm_members")
-  trp_settlements_trp_settlements_deleted_byToadm_members                                         trp_settlements[]              @relation("trp_settlements_deleted_byToadm_members")
-  trp_settlements_trp_settlements_updated_byToadm_members                                         trp_settlements[]              @relation("trp_settlements_updated_byToadm_members")
+  sch_tasks_sch_tasks_assigned_byToclt_members                                                    sch_tasks[]                    @relation("sch_tasks_assigned_byToclt_members")
+  sch_tasks_sch_tasks_assigned_toToclt_members                                                    sch_tasks[]                    @relation("sch_tasks_assigned_toToclt_members")
+  sch_tasks_sch_tasks_completed_byToclt_members                                                   sch_tasks[]                    @relation("sch_tasks_completed_byToclt_members")
+  sch_tasks_sch_tasks_escalated_toToclt_members                                                   sch_tasks[]                    @relation("sch_tasks_escalated_toToclt_members")
+  sch_tasks_sch_tasks_verified_byToclt_members                                                    sch_tasks[]                    @relation("sch_tasks_verified_byToclt_members")
+  sch_tasks_sch_tasks_created_byToclt_members                                                     sch_tasks[]                    @relation("sch_tasks_created_byToclt_members")
+  sch_tasks_sch_tasks_deleted_byToclt_members                                                     sch_tasks[]                    @relation("sch_tasks_deleted_byToclt_members")
+  sch_tasks_sch_tasks_updated_byToclt_members                                                     sch_tasks[]                    @relation("sch_tasks_updated_byToclt_members")
+  sup_ticket_messages_sup_ticket_messages_created_byToclt_members                                 sup_ticket_messages[]          @relation("sup_ticket_messages_created_byToclt_members")
+  sup_ticket_messages_sup_ticket_messages_deleted_byToclt_members                                 sup_ticket_messages[]          @relation("sup_ticket_messages_deleted_byToclt_members")
+  sup_ticket_messages_sup_ticket_messages_updated_byToclt_members                                 sup_ticket_messages[]          @relation("sup_ticket_messages_updated_byToclt_members")
+  sup_tickets_sup_tickets_raised_byToclt_members                                                  sup_tickets[]                  @relation("sup_tickets_raised_byToclt_members")
+  sup_tickets_sup_tickets_created_byToclt_members                                                 sup_tickets[]                  @relation("sup_tickets_created_byToclt_members")
+  sup_tickets_sup_tickets_deleted_byToclt_members                                                 sup_tickets[]                  @relation("sup_tickets_deleted_byToclt_members")
+  sup_tickets_sup_tickets_updated_byToclt_members                                                 sup_tickets[]                  @relation("sup_tickets_updated_byToclt_members")
+  trp_client_invoices_trp_client_invoices_created_byToclt_members                                 trp_client_invoices[]          @relation("trp_client_invoices_created_byToclt_members")
+  trp_client_invoices_trp_client_invoices_deleted_byToclt_members                                 trp_client_invoices[]          @relation("trp_client_invoices_deleted_byToclt_members")
+  trp_client_invoices_trp_client_invoices_updated_byToclt_members                                 trp_client_invoices[]          @relation("trp_client_invoices_updated_byToclt_members")
+  trp_platform_accounts_trp_platform_accounts_created_byToclt_members                             trp_platform_accounts[]        @relation("trp_platform_accounts_created_byToclt_members")
+  trp_platform_accounts_trp_platform_accounts_deleted_byToclt_members                             trp_platform_accounts[]        @relation("trp_platform_accounts_deleted_byToclt_members")
+  trp_platform_accounts_trp_platform_accounts_updated_byToclt_members                             trp_platform_accounts[]        @relation("trp_platform_accounts_updated_byToclt_members")
+  trp_settlements_trp_settlements_created_byToclt_members                                         trp_settlements[]              @relation("trp_settlements_created_byToclt_members")
+  trp_settlements_trp_settlements_deleted_byToclt_members                                         trp_settlements[]              @relation("trp_settlements_deleted_byToclt_members")
+  trp_settlements_trp_settlements_updated_byToclt_members                                         trp_settlements[]              @relation("trp_settlements_updated_byToclt_members")
   // Quote-to-Cash relations
-  crm_orders_created                                                                              crm_orders[]                   @relation("crm_orders_created_byToadm_members")
-  crm_orders_updated                                                                              crm_orders[]                   @relation("crm_orders_updated_byToadm_members")
-  crm_orders_deleted                                                                              crm_orders[]                   @relation("crm_orders_deleted_byToadm_members")
+  crm_orders_created                                                                              crm_orders[]                   @relation("crm_orders_created_byToclt_members")
+  crm_orders_updated                                                                              crm_orders[]                   @relation("crm_orders_updated_byToclt_members")
+  crm_orders_deleted                                                                              crm_orders[]                   @relation("crm_orders_deleted_byToclt_members")
 
   @@index([clerk_user_id])
   @@index([created_by])
   @@index([deleted_at])
   @@index([email])
   @@index([last_login_at])
-  @@index([metadata], map: "adm_members_metadata_gin", type: Gin)
+  @@index([metadata], map: "clt_members_metadata_gin", type: Gin)
   @@index([tenant_id])
   @@index([updated_by])
 }
@@ -350,11 +350,11 @@ model adm_notification_logs {
   deleted_at                                                  DateTime?            @db.Timestamptz(6)
   deleted_by                                                  String?              @db.Uuid
   deletion_reason                                             String?
-  adm_members_adm_notification_logs_created_byToadm_members   adm_members?         @relation("adm_notification_logs_created_byToadm_members", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_created_by")
-  adm_members_adm_notification_logs_deleted_byToadm_members   adm_members?         @relation("adm_notification_logs_deleted_byToadm_members", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_deleted_by")
-  adm_members_adm_notification_logs_recipient_idToadm_members adm_members?         @relation("adm_notification_logs_recipient_idToadm_members", fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_recipient_id")
+  clt_members_adm_notification_logs_created_byToclt_members   clt_members?         @relation("adm_notification_logs_created_byToclt_members", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_created_by")
+  clt_members_adm_notification_logs_deleted_byToclt_members   clt_members?         @relation("adm_notification_logs_deleted_byToclt_members", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_deleted_by")
+  clt_members_adm_notification_logs_recipient_idToclt_members clt_members?         @relation("adm_notification_logs_recipient_idToclt_members", fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_recipient_id")
   adm_tenants                                                 adm_tenants?         @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_adm_notification_logs_tenant")
-  adm_members_adm_notification_logs_updated_byToadm_members   adm_members?         @relation("adm_notification_logs_updated_byToadm_members", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_updated_by")
+  clt_members_adm_notification_logs_updated_byToclt_members   clt_members?         @relation("adm_notification_logs_updated_byToclt_members", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_updated_by")
 
   @@index([channel], map: "idx_adm_notification_logs_channel")
   @@index([created_at], map: "idx_adm_notification_logs_created_at")
@@ -439,15 +439,15 @@ model adm_provider_employees {
   bil_payment_methods_bil_payment_methods_deleted_byToadm_provider_employees                bil_payment_methods[]         @relation("bil_payment_methods_deleted_byToadm_provider_employees")
   bil_payment_methods_bil_payment_methods_updated_byToadm_provider_employees                bil_payment_methods[]         @relation("bil_payment_methods_updated_byToadm_provider_employees")
   bil_promotions                                                                            bil_promotions[]
-  bil_tenant_invoice_lines_bil_tenant_invoice_lines_created_byToadm_provider_employees      bil_tenant_invoice_lines[]    @relation("bil_tenant_invoice_lines_created_byToadm_provider_employees")
-  bil_tenant_invoice_lines_bil_tenant_invoice_lines_deleted_byToadm_provider_employees      bil_tenant_invoice_lines[]    @relation("bil_tenant_invoice_lines_deleted_byToadm_provider_employees")
-  bil_tenant_invoice_lines_bil_tenant_invoice_lines_updated_byToadm_provider_employees      bil_tenant_invoice_lines[]    @relation("bil_tenant_invoice_lines_updated_byToadm_provider_employees")
-  bil_tenant_invoices_bil_tenant_invoices_created_byToadm_provider_employees                bil_tenant_invoices[]         @relation("bil_tenant_invoices_created_byToadm_provider_employees")
-  bil_tenant_invoices_bil_tenant_invoices_deleted_byToadm_provider_employees                bil_tenant_invoices[]         @relation("bil_tenant_invoices_deleted_byToadm_provider_employees")
-  bil_tenant_invoices_bil_tenant_invoices_updated_byToadm_provider_employees                bil_tenant_invoices[]         @relation("bil_tenant_invoices_updated_byToadm_provider_employees")
-  bil_tenant_subscriptions_bil_tenant_subscriptions_created_byToadm_provider_employees      bil_tenant_subscriptions[]    @relation("bil_tenant_subscriptions_created_byToadm_provider_employees")
-  bil_tenant_subscriptions_bil_tenant_subscriptions_deleted_byToadm_provider_employees      bil_tenant_subscriptions[]    @relation("bil_tenant_subscriptions_deleted_byToadm_provider_employees")
-  bil_tenant_subscriptions_bil_tenant_subscriptions_updated_byToadm_provider_employees      bil_tenant_subscriptions[]    @relation("bil_tenant_subscriptions_updated_byToadm_provider_employees")
+  clt_invoice_lines_clt_invoice_lines_created_byToadm_provider_employees      clt_invoice_lines[]    @relation("clt_invoice_lines_created_byToadm_provider_employees")
+  clt_invoice_lines_clt_invoice_lines_deleted_byToadm_provider_employees      clt_invoice_lines[]    @relation("clt_invoice_lines_deleted_byToadm_provider_employees")
+  clt_invoice_lines_clt_invoice_lines_updated_byToadm_provider_employees      clt_invoice_lines[]    @relation("clt_invoice_lines_updated_byToadm_provider_employees")
+  clt_invoices_clt_invoices_created_byToadm_provider_employees                clt_invoices[]         @relation("clt_invoices_created_byToadm_provider_employees")
+  clt_invoices_clt_invoices_deleted_byToadm_provider_employees                clt_invoices[]         @relation("clt_invoices_deleted_byToadm_provider_employees")
+  clt_invoices_clt_invoices_updated_byToadm_provider_employees                clt_invoices[]         @relation("clt_invoices_updated_byToadm_provider_employees")
+  clt_subscriptions_clt_subscriptions_created_byToadm_provider_employees      clt_subscriptions[]    @relation("clt_subscriptions_created_byToadm_provider_employees")
+  clt_subscriptions_clt_subscriptions_deleted_byToadm_provider_employees      clt_subscriptions[]    @relation("clt_subscriptions_deleted_byToadm_provider_employees")
+  clt_subscriptions_clt_subscriptions_updated_byToadm_provider_employees      clt_subscriptions[]    @relation("clt_subscriptions_updated_byToadm_provider_employees")
   bil_tenant_usage_metrics_bil_tenant_usage_metrics_created_byToadm_provider_employees      bil_tenant_usage_metrics[]    @relation("bil_tenant_usage_metrics_created_byToadm_provider_employees")
   bil_tenant_usage_metrics_bil_tenant_usage_metrics_deleted_byToadm_provider_employees      bil_tenant_usage_metrics[]    @relation("bil_tenant_usage_metrics_deleted_byToadm_provider_employees")
   bil_tenant_usage_metrics_bil_tenant_usage_metrics_updated_byToadm_provider_employees      bil_tenant_usage_metrics[]    @relation("bil_tenant_usage_metrics_updated_byToadm_provider_employees")
@@ -638,7 +638,7 @@ model adm_role_versions {
   changed_by           String?      @db.Uuid
   change_reason        String?
   created_at           DateTime     @default(now()) @db.Timestamptz(6)
-  adm_members          adm_members? @relation(fields: [changed_by], references: [id], map: "fk_adm_role_versions_changed_by")
+  clt_members          clt_members? @relation(fields: [changed_by], references: [id], map: "fk_adm_role_versions_changed_by")
   adm_roles            adm_roles    @relation(fields: [role_id], references: [id], onDelete: Cascade, map: "fk_adm_role_versions_role")
 }
 
@@ -668,13 +668,13 @@ model adm_roles {
   name_translations                                  Json
   description_translations                           Json?
   adm_member_roles                                   adm_member_roles[]
-  adm_members_adm_members_default_role_idToadm_roles adm_members[]          @relation("adm_members_default_role_idToadm_roles")
+  clt_members_clt_members_default_role_idToadm_roles clt_members[]          @relation("clt_members_default_role_idToadm_roles")
   adm_role_permissions                               adm_role_permissions[]
   adm_role_versions                                  adm_role_versions[]
-  adm_members_adm_roles_created_byToadm_members      adm_members?           @relation("adm_roles_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_adm_roles_deleted_byToadm_members      adm_members?           @relation("adm_roles_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_adm_roles_created_byToclt_members      clt_members?           @relation("adm_roles_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_adm_roles_deleted_byToclt_members      clt_members?           @relation("adm_roles_deleted_byToclt_members", fields: [deleted_by], references: [id])
   adm_tenants                                        adm_tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_adm_roles_updated_byToadm_members      adm_members?           @relation("adm_roles_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_adm_roles_updated_byToclt_members      clt_members?           @relation("adm_roles_updated_byToclt_members", fields: [updated_by], references: [id])
   adm_roles                                          adm_roles?             @relation("adm_rolesToadm_roles", fields: [parent_role_id], references: [id], map: "fk_adm_roles_parent")
   other_adm_roles                                    adm_roles[]            @relation("adm_rolesToadm_roles")
 
@@ -736,10 +736,10 @@ model adm_tenant_vehicle_classes {
   name_translations                                              Json
   description_translations                                       Json?
   dir_vehicle_classes                                            dir_vehicle_classes? @relation(fields: [based_on_class_id], references: [id], onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_based_on")
-  adm_members_adm_tenant_vehicle_classes_created_byToadm_members adm_members          @relation("adm_tenant_vehicle_classes_created_byToadm_members", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_created_by")
-  adm_members_adm_tenant_vehicle_classes_deleted_byToadm_members adm_members?         @relation("adm_tenant_vehicle_classes_deleted_byToadm_members", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_deleted_by")
+  clt_members_adm_tenant_vehicle_classes_created_byToclt_members clt_members          @relation("adm_tenant_vehicle_classes_created_byToclt_members", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_created_by")
+  clt_members_adm_tenant_vehicle_classes_deleted_byToclt_members clt_members?         @relation("adm_tenant_vehicle_classes_deleted_byToclt_members", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_deleted_by")
   adm_tenants                                                    adm_tenants          @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_tenant")
-  adm_members_adm_tenant_vehicle_classes_updated_byToadm_members adm_members?         @relation("adm_tenant_vehicle_classes_updated_byToadm_members", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_updated_by")
+  clt_members_adm_tenant_vehicle_classes_updated_byToclt_members clt_members?         @relation("adm_tenant_vehicle_classes_updated_byToclt_members", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_updated_by")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -766,7 +766,7 @@ model adm_tenants {
   adm_audit_logs               adm_audit_logs[]
   adm_invitations              adm_invitations[]
   adm_member_roles             adm_member_roles[]
-  adm_members                  adm_members[]
+  clt_members                  clt_members[]
   adm_notification_logs        adm_notification_logs[]
   adm_roles                    adm_roles[]
   adm_tenant_lifecycle_events  adm_tenant_lifecycle_events[]
@@ -774,8 +774,8 @@ model adm_tenants {
   adm_tenant_vehicle_classes   adm_tenant_vehicle_classes[]
   bil_payment_methods          bil_payment_methods[]
   bil_promotion_usage          bil_promotion_usage[]
-  bil_tenant_invoices          bil_tenant_invoices[]
-  bil_tenant_subscriptions     bil_tenant_subscriptions[]
+  clt_invoices          clt_invoices[]
+  clt_subscriptions     clt_subscriptions[]
   bil_tenant_usage_metrics     bil_tenant_usage_metrics[]
   crm_contracts                crm_contracts[]
   dir_car_makes                dir_car_makes[]
@@ -829,11 +829,53 @@ model adm_tenants {
   bil_amendments               bil_amendments[]
   bil_subscription_schedules   bil_subscription_schedules[]
   crm_orders                   crm_orders[]
+  // V6.2: Leads convertis en clients
+  crm_leads_converted          crm_leads[]                  @relation("crm_leads_tenant")
+  // V6.2-3: Module CLT - relation 1:1 avec clt_masterdata
+  clt_masterdata               clt_masterdata?
 
   @@index([clerk_organization_id])
   @@index([country_code])
   @@index([default_currency])
   @@index([deleted_at])
+}
+
+/// V6.2-3: Module CLT - Donnees identite client apres conversion Lead
+/// Relation 1:1 avec adm_tenants
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model clt_masterdata {
+  id                      String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id               String        @unique @db.Uuid
+  origin_lead_code        String?       @db.VarChar(50)
+  origin_lead_id          String?       @db.Uuid
+  company_name            String        @db.VarChar(255)
+  legal_name              String?       @db.VarChar(255)
+  tax_id                  String?       @db.VarChar(50)
+  billing_email           String?       @db.VarChar(255)
+  billing_address         Json?
+  primary_contact_name    String?       @db.VarChar(255)
+  primary_contact_email   String?       @db.VarChar(255)
+  primary_contact_phone   String?       @db.VarChar(50)
+  segment                 String?       @db.VarChar(20)
+  onboarded_at            DateTime?     @db.Timestamptz(6)
+  churned_at              DateTime?     @db.Timestamptz(6)
+  churn_reason            String?       @db.VarChar(255)
+  metadata                Json          @default("{}")
+  created_at              DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime      @default(now()) @db.Timestamptz(6)
+  deleted_at              DateTime?     @db.Timestamptz(6)
+  created_by              String?       @db.Uuid
+  updated_by              String?       @db.Uuid
+  deleted_by              String?       @db.Uuid
+
+  // Relations
+  adm_tenants             adm_tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_clt_masterdata_tenant")
+  crm_leads               crm_leads?    @relation(fields: [origin_lead_id], references: [id], onDelete: SetNull, map: "fk_clt_masterdata_origin_lead")
+
+  @@index([origin_lead_id], map: "idx_clt_masterdata_origin_lead")
+  @@index([segment], map: "idx_clt_masterdata_segment")
+  @@index([deleted_at], map: "idx_clt_masterdata_deleted_at")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -872,8 +914,8 @@ model bil_billing_plans {
   adm_provider_employees_bil_billing_plans_deleted_byToadm_provider_employees           adm_provider_employees?    @relation("bil_billing_plans_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
   adm_provider_employees_bil_billing_plans_updated_byToadm_provider_employees           adm_provider_employees?    @relation("bil_billing_plans_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
   bil_promotions                                                                        bil_promotions[]
-  bil_tenant_subscriptions_bil_tenant_subscriptions_plan_idTobil_billing_plans          bil_tenant_subscriptions[] @relation("bil_tenant_subscriptions_plan_idTobil_billing_plans")
-  bil_tenant_subscriptions_bil_tenant_subscriptions_previous_plan_idTobil_billing_plans bil_tenant_subscriptions[] @relation("bil_tenant_subscriptions_previous_plan_idTobil_billing_plans")
+  clt_subscriptions_clt_subscriptions_plan_idTobil_billing_plans          clt_subscriptions[] @relation("clt_subscriptions_plan_idTobil_billing_plans")
+  clt_subscriptions_clt_subscriptions_previous_plan_idTobil_billing_plans clt_subscriptions[] @relation("clt_subscriptions_previous_plan_idTobil_billing_plans")
   crm_contracts                                                                         crm_contracts[]
   crm_opportunities                                                                     crm_opportunities[]
   // Quote-to-Cash relations
@@ -921,7 +963,7 @@ model bil_payment_methods {
   adm_provider_employees_bil_payment_methods_deleted_byToadm_provider_employees adm_provider_employees?    @relation("bil_payment_methods_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
   adm_tenants                                                                   adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   adm_provider_employees_bil_payment_methods_updated_byToadm_provider_employees adm_provider_employees?    @relation("bil_payment_methods_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
-  bil_tenant_subscriptions                                                      bil_tenant_subscriptions[]
+  clt_subscriptions                                                      clt_subscriptions[]
   fin_traffic_fines                                                             fin_traffic_fines[]
   fin_transactions                                                              fin_transactions[]
 
@@ -941,7 +983,7 @@ model bil_promotion_usage {
   invoice_id          String?              @db.Uuid
   applied_at          DateTime             @default(now()) @db.Timestamptz(6)
   discount_amount     Decimal              @db.Decimal(18, 2)
-  bil_tenant_invoices bil_tenant_invoices? @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_promotion_usage_invoice")
+  clt_invoices clt_invoices? @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_promotion_usage_invoice")
   bil_promotions      bil_promotions       @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_promotion_usage_promotion")
   adm_tenants         adm_tenants          @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_promotion_usage_tenant")
 }
@@ -973,7 +1015,7 @@ model bil_promotions {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model bil_tenant_invoice_lines {
+model clt_invoice_lines {
   id                                                                                 String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   invoice_id                                                                         String                    @db.Uuid
   description                                                                        String
@@ -994,10 +1036,10 @@ model bil_tenant_invoice_lines {
   discount_amount                                                                    Decimal?                  @db.Decimal(18, 2)
   source_type                                                                        invoice_line_source_type?
   source_id                                                                          String?                   @db.Uuid
-  adm_provider_employees_bil_tenant_invoice_lines_created_byToadm_provider_employees adm_provider_employees?   @relation("bil_tenant_invoice_lines_created_byToadm_provider_employees", fields: [created_by], references: [id])
-  adm_provider_employees_bil_tenant_invoice_lines_deleted_byToadm_provider_employees adm_provider_employees?   @relation("bil_tenant_invoice_lines_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
-  bil_tenant_invoices                                                                bil_tenant_invoices       @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
-  adm_provider_employees_bil_tenant_invoice_lines_updated_byToadm_provider_employees adm_provider_employees?   @relation("bil_tenant_invoice_lines_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
+  adm_provider_employees_clt_invoice_lines_created_byToadm_provider_employees adm_provider_employees?   @relation("clt_invoice_lines_created_byToadm_provider_employees", fields: [created_by], references: [id])
+  adm_provider_employees_clt_invoice_lines_deleted_byToadm_provider_employees adm_provider_employees?   @relation("clt_invoice_lines_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
+  clt_invoices                                                                clt_invoices       @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  adm_provider_employees_clt_invoice_lines_updated_byToadm_provider_employees adm_provider_employees?   @relation("clt_invoice_lines_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -1010,7 +1052,7 @@ model bil_tenant_invoice_lines {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model bil_tenant_invoices {
+model clt_invoices {
   id                                                                            String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id                                                                     String                     @db.Uuid
   invoice_number                                                                String
@@ -1039,12 +1081,12 @@ model bil_tenant_invoices {
   stripe_invoice_id                                                             String?                    @db.VarChar(255)
   document_url                                                                  String?
   bil_promotion_usage                                                           bil_promotion_usage[]
-  bil_tenant_invoice_lines                                                      bil_tenant_invoice_lines[]
-  adm_provider_employees_bil_tenant_invoices_created_byToadm_provider_employees adm_provider_employees?    @relation("bil_tenant_invoices_created_byToadm_provider_employees", fields: [created_by], references: [id])
-  adm_provider_employees_bil_tenant_invoices_deleted_byToadm_provider_employees adm_provider_employees?    @relation("bil_tenant_invoices_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
+  clt_invoice_lines                                                      clt_invoice_lines[]
+  adm_provider_employees_clt_invoices_created_byToadm_provider_employees adm_provider_employees?    @relation("clt_invoices_created_byToadm_provider_employees", fields: [created_by], references: [id])
+  adm_provider_employees_clt_invoices_deleted_byToadm_provider_employees adm_provider_employees?    @relation("clt_invoices_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
   adm_tenants                                                                   adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_provider_employees_bil_tenant_invoices_updated_byToadm_provider_employees adm_provider_employees?    @relation("bil_tenant_invoices_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
-  bil_tenant_subscriptions                                                      bil_tenant_subscriptions?  @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_invoices_subscription")
+  adm_provider_employees_clt_invoices_updated_byToadm_provider_employees adm_provider_employees?    @relation("clt_invoices_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
+  clt_subscriptions                                                      clt_subscriptions?  @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_invoices_subscription")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -1059,7 +1101,7 @@ model bil_tenant_invoices {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model bil_tenant_subscriptions {
+model clt_subscriptions {
   id                                                                                 String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id                                                                          String                     @db.Uuid
   plan_id                                                                            String                     @db.Uuid
@@ -1086,14 +1128,14 @@ model bil_tenant_subscriptions {
   provider                                                                           String?                    @db.VarChar(50)
   provider_subscription_id                                                           String?
   provider_customer_id                                                               String?
-  bil_tenant_invoices                                                                bil_tenant_invoices[]
-  adm_provider_employees_bil_tenant_subscriptions_created_byToadm_provider_employees adm_provider_employees?    @relation("bil_tenant_subscriptions_created_byToadm_provider_employees", fields: [created_by], references: [id])
-  adm_provider_employees_bil_tenant_subscriptions_deleted_byToadm_provider_employees adm_provider_employees?    @relation("bil_tenant_subscriptions_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
-  bil_billing_plans_bil_tenant_subscriptions_plan_idTobil_billing_plans              bil_billing_plans          @relation("bil_tenant_subscriptions_plan_idTobil_billing_plans", fields: [plan_id], references: [id], onDelete: Cascade)
+  clt_invoices                                                                clt_invoices[]
+  adm_provider_employees_clt_subscriptions_created_byToadm_provider_employees adm_provider_employees?    @relation("clt_subscriptions_created_byToadm_provider_employees", fields: [created_by], references: [id])
+  adm_provider_employees_clt_subscriptions_deleted_byToadm_provider_employees adm_provider_employees?    @relation("clt_subscriptions_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
+  bil_billing_plans_clt_subscriptions_plan_idTobil_billing_plans              bil_billing_plans          @relation("clt_subscriptions_plan_idTobil_billing_plans", fields: [plan_id], references: [id], onDelete: Cascade)
   adm_tenants                                                                        adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_provider_employees_bil_tenant_subscriptions_updated_byToadm_provider_employees adm_provider_employees?    @relation("bil_tenant_subscriptions_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
+  adm_provider_employees_clt_subscriptions_updated_byToadm_provider_employees adm_provider_employees?    @relation("clt_subscriptions_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
   bil_payment_methods                                                                bil_payment_methods?       @relation(fields: [payment_method_id], references: [id], onUpdate: NoAction, map: "fk_bil_subscriptions_payment_method")
-  bil_billing_plans_bil_tenant_subscriptions_previous_plan_idTobil_billing_plans     bil_billing_plans?         @relation("bil_tenant_subscriptions_previous_plan_idTobil_billing_plans", fields: [previous_plan_id], references: [id], onUpdate: NoAction, map: "fk_bil_subscriptions_previous_plan")
+  bil_billing_plans_clt_subscriptions_previous_plan_idTobil_billing_plans     bil_billing_plans?         @relation("clt_subscriptions_previous_plan_idTobil_billing_plans", fields: [previous_plan_id], references: [id], onUpdate: NoAction, map: "fk_bil_subscriptions_previous_plan")
   bil_tenant_usage_metrics                                                           bil_tenant_usage_metrics[]
   crm_contracts                                                                      crm_contracts[]
   // Quote-to-Cash relations
@@ -1139,7 +1181,7 @@ model bil_tenant_usage_metrics {
   adm_provider_employees_bil_tenant_usage_metrics_deleted_byToadm_provider_employees adm_provider_employees?   @relation("bil_tenant_usage_metrics_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id])
   adm_tenants                                                                        adm_tenants               @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   adm_provider_employees_bil_tenant_usage_metrics_updated_byToadm_provider_employees adm_provider_employees?   @relation("bil_tenant_usage_metrics_updated_byToadm_provider_employees", fields: [updated_by], references: [id])
-  bil_tenant_subscriptions                                                           bil_tenant_subscriptions? @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_usage_metrics_subscription")
+  clt_subscriptions                                                           clt_subscriptions? @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_usage_metrics_subscription")
   bil_usage_metric_types                                                             bil_usage_metric_types?   @relation(fields: [metric_type_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_bil_usage_metrics_type")
 
   @@index([created_by])
@@ -1372,7 +1414,7 @@ model bil_amendments {
   bil_billing_plans_old bil_billing_plans?       @relation("bil_amendments_old_plan", fields: [old_plan_id], references: [id], onDelete: SetNull, map: "bil_amendments_old_plan_id_fkey")
   adm_providers         adm_providers            @relation("bil_amendments_provider", fields: [provider_id], references: [id], onDelete: Cascade, map: "bil_amendments_provider_id_fkey")
   bil_subscription_schedules bil_subscription_schedules? @relation(fields: [schedule_id], references: [id], onDelete: SetNull, map: "bil_amendments_schedule_id_fkey")
-  bil_tenant_subscriptions bil_tenant_subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade, map: "bil_amendments_subscription_id_fkey")
+  clt_subscriptions clt_subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade, map: "bil_amendments_subscription_id_fkey")
   adm_tenants           adm_tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "bil_amendments_tenant_id_fkey")
 
   @@index([amendment_reference], map: "idx_bil_amendments_reference")
@@ -1723,9 +1765,9 @@ model crm_orders {
   crm_quotes_from_order    crm_quotes[]              @relation("crm_quotes_converted_order")
   crm_quotes_quote         crm_quotes?               @relation("crm_orders_quote", fields: [quote_id], references: [id], onDelete: SetNull, map: "crm_orders_quote_id_fkey")
   crm_opportunities        crm_opportunities?        @relation("crm_orders_opportunity", fields: [opportunity_id], references: [id], onDelete: SetNull, map: "crm_orders_opportunity_id_fkey")
-  adm_members_created_by   adm_members?              @relation("crm_orders_created_byToadm_members", fields: [created_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_created_by_fkey")
-  adm_members_deleted_by   adm_members?              @relation("crm_orders_deleted_byToadm_members", fields: [deleted_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_deleted_by_fkey")
-  adm_members_updated_by   adm_members?              @relation("crm_orders_updated_byToadm_members", fields: [updated_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_updated_by_fkey")
+  clt_members_created_by   clt_members?              @relation("crm_orders_created_byToclt_members", fields: [created_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_created_by_fkey")
+  clt_members_deleted_by   clt_members?              @relation("crm_orders_deleted_byToclt_members", fields: [deleted_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_deleted_by_fkey")
+  clt_members_updated_by   clt_members?              @relation("crm_orders_updated_byToclt_members", fields: [updated_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_updated_by_fkey")
   adm_provider_employees_approved_by adm_provider_employees? @relation("crm_orders_approved_byToadm_provider_employees", fields: [approved_by], references: [id], onDelete: SetNull, map: "fk_crm_orders_approved_by")
   crm_addresses            crm_addresses?            @relation("crm_orders_billing_address", fields: [billing_address_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_billing_address")
   adm_provider_employees_created_by adm_provider_employees? @relation("crm_orders_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: SetNull, map: "fk_crm_orders_created_by")
@@ -1735,7 +1777,7 @@ model crm_orders {
   adm_providers            adm_providers             @relation("crm_orders_provider", fields: [provider_id], references: [id], map: "fk_crm_orders_provider")
   renewed_from_order       crm_orders?               @relation("crm_orders_renewed_from", fields: [renewed_from_contract_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_renewed_from")
   renewed_orders           crm_orders[]              @relation("crm_orders_renewed_from")
-  bil_tenant_subscriptions bil_tenant_subscriptions? @relation(fields: [subscription_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_subscription")
+  clt_subscriptions clt_subscriptions? @relation(fields: [subscription_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_subscription")
   adm_provider_employees_updated_by adm_provider_employees? @relation("crm_orders_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: SetNull, map: "fk_crm_orders_updated_by")
   adm_tenants              adm_tenants?              @relation(fields: [client_tenant_id], references: [id], map: "fk_crm_orders_client_tenant")
   bil_subscription_schedules bil_subscription_schedules[]
@@ -1859,10 +1901,10 @@ model crm_contracts {
   document_url                                                             String?
   notes                                                                    String?
   approved_by                                                              String?                   @db.Uuid
-  adm_members_crm_contracts_created_byToadm_members                        adm_members?              @relation("crm_contracts_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_crm_contracts_deleted_byToadm_members                        adm_members?              @relation("crm_contracts_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_crm_contracts_created_byToclt_members                        clt_members?              @relation("crm_contracts_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_crm_contracts_deleted_byToclt_members                        clt_members?              @relation("crm_contracts_deleted_byToclt_members", fields: [deleted_by], references: [id])
   crm_opportunities_crm_contracts_opportunity_idTocrm_opportunities        crm_opportunities?        @relation("crm_contracts_opportunity_idTocrm_opportunities", fields: [opportunity_id], references: [id], onUpdate: NoAction)
-  adm_members_crm_contracts_updated_byToadm_members                        adm_members?              @relation("crm_contracts_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_crm_contracts_updated_byToclt_members                        clt_members?              @relation("crm_contracts_updated_byToclt_members", fields: [updated_by], references: [id])
   adm_provider_employees_crm_contracts_approved_byToadm_provider_employees adm_provider_employees?   @relation("crm_contracts_approved_byToadm_provider_employees", fields: [approved_by], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_approved_by")
   crm_addresses                                                            crm_addresses?            @relation(fields: [billing_address_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_billing_address")
   adm_provider_employees_crm_contracts_created_byToadm_provider_employees  adm_provider_employees?   @relation("crm_contracts_created_byToadm_provider_employees", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_created_by")
@@ -1871,7 +1913,7 @@ model crm_contracts {
   bil_billing_plans                                                        bil_billing_plans?        @relation(fields: [plan_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_plan")
   crm_contracts                                                            crm_contracts?            @relation("crm_contractsTocrm_contracts", fields: [renewed_from_contract_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_renewed_from")
   other_crm_contracts                                                      crm_contracts[]           @relation("crm_contractsTocrm_contracts")
-  bil_tenant_subscriptions                                                 bil_tenant_subscriptions? @relation(fields: [subscription_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_subscription")
+  clt_subscriptions                                                 clt_subscriptions? @relation(fields: [subscription_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_subscription")
   adm_tenants                                                              adm_tenants               @relation(fields: [tenant_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_crm_contracts_tenant")
   adm_provider_employees_crm_contracts_updated_byToadm_provider_employees  adm_provider_employees?   @relation("crm_contracts_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_updated_by")
   crm_opportunities_crm_opportunities_contract_idTocrm_contracts           crm_opportunities[]       @relation("crm_opportunities_contract_idTocrm_contracts")
@@ -2027,6 +2069,16 @@ model crm_leads {
   // V5: Colonnes ESCALADE
   escalated_at                                                         DateTime?               @db.Timestamptz(6)
   escalation_expires_at                                                DateTime?               @db.Timestamptz(6)
+  // V6.2: Colonnes BOOKING CAL.COM
+  booking_slot_at                                                      DateTime?               @db.Timestamptz(6)
+  booking_confirmed_at                                                 DateTime?               @db.Timestamptz(6)
+  booking_calcom_uid                                                   String?                 @db.VarChar(100)
+  platforms_used                                                       String[]
+  // V6.2: Colonne WIZARD
+  wizard_completed                                                     Boolean?                @default(false)
+  // V6.2: Colonnes CONVERSION
+  tenant_id                                                            String?                 @db.Uuid
+  converted_at                                                         DateTime?               @db.Timestamptz(6)
   // Relations
   crm_activities                                                       crm_activities[]
   crm_contracts                                                        crm_contracts[]
@@ -2044,6 +2096,10 @@ model crm_leads {
   crm_orders                                                           crm_orders[]
   // V5: Relation inverse Lead → Quotes (direct, sans Opportunity)
   crm_quotes_from_lead                                                 crm_quotes[]            @relation("crm_quotes_lead")
+  // V6.2: Relation Lead → Tenant (après conversion)
+  adm_tenants                                                          adm_tenants?            @relation("crm_leads_tenant", fields: [tenant_id], references: [id], onUpdate: NoAction, map: "fk_crm_leads_tenant")
+  // V6.2-3: Relation inverse Lead → clt_masterdata (origine)
+  clt_masterdata                                                       clt_masterdata[]
 
   @@index([created_at(sort: Desc)])
   @@index([deleted_at])
@@ -2061,6 +2117,11 @@ model crm_leads {
   @@index([loss_reason_code], map: "idx_crm_leads_loss_reason")
   @@index([expected_close_date], map: "idx_crm_leads_expected_close")
   @@index([escalation_expires_at], map: "idx_crm_leads_escalation")
+  // V6.2: Index booking/wizard/tenant
+  @@index([booking_slot_at], map: "idx_crm_leads_booking_slot")
+  @@index([booking_calcom_uid], map: "idx_crm_leads_booking_calcom_uid")
+  @@index([wizard_completed], map: "idx_crm_leads_wizard_completed")
+  @@index([tenant_id], map: "idx_crm_leads_tenant")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -2103,11 +2164,11 @@ model crm_opportunities {
   crm_contracts_crm_contracts_opportunity_idTocrm_opportunities                crm_contracts[]               @relation("crm_contracts_opportunity_idTocrm_opportunities")
   adm_providers                                                                adm_providers?                @relation("crm_opportunities_provider", fields: [provider_id], references: [id], map: "fk_crm_opportunities_provider")
   crm_leads_crm_leads_opportunity_idTocrm_opportunities                        crm_leads[]                   @relation("crm_leads_opportunity_idTocrm_opportunities")
-  adm_members_crm_opportunities_assigned_toToadm_members                       adm_members?                  @relation("crm_opportunities_assigned_toToadm_members", fields: [assigned_to], references: [id])
-  adm_members_crm_opportunities_created_byToadm_members                        adm_members?                  @relation("crm_opportunities_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_crm_opportunities_deleted_byToadm_members                        adm_members?                  @relation("crm_opportunities_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_crm_opportunities_assigned_toToclt_members                       clt_members?                  @relation("crm_opportunities_assigned_toToclt_members", fields: [assigned_to], references: [id])
+  clt_members_crm_opportunities_created_byToclt_members                        clt_members?                  @relation("crm_opportunities_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_crm_opportunities_deleted_byToclt_members                        clt_members?                  @relation("crm_opportunities_deleted_byToclt_members", fields: [deleted_by], references: [id])
   crm_leads_crm_opportunities_lead_idTocrm_leads                               crm_leads                     @relation("crm_opportunities_lead_idTocrm_leads", fields: [lead_id], references: [id], onDelete: Cascade)
-  adm_members_crm_opportunities_updated_byToadm_members                        adm_members?                  @relation("crm_opportunities_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_crm_opportunities_updated_byToclt_members                        clt_members?                  @relation("crm_opportunities_updated_byToclt_members", fields: [updated_by], references: [id])
   adm_provider_employees_crm_opportunities_assigned_toToadm_provider_employees adm_provider_employees?       @relation("crm_opportunities_assigned_toToadm_provider_employees", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_assigned_to")
   crm_contracts_crm_opportunities_contract_idTocrm_contracts                   crm_contracts?                @relation("crm_opportunities_contract_idTocrm_contracts", fields: [contract_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_contract")
   adm_provider_employees_crm_opportunities_created_byToadm_provider_employees  adm_provider_employees?       @relation("crm_opportunities_created_byToadm_provider_employees", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_created_by")
@@ -2678,7 +2739,7 @@ model doc_document_versions {
   created_at          DateTime      @default(now()) @db.Timestamptz(6)
   created_by          String        @db.Uuid
   change_reason       String?
-  adm_members         adm_members   @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_document_versions_created_by")
+  clt_members         clt_members   @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_document_versions_created_by")
   doc_documents       doc_documents @relation(fields: [document_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_doc_document_versions_document")
 }
 
@@ -2716,12 +2777,12 @@ model doc_documents {
   deletion_reason                                    String?
   doc_document_versions                              doc_document_versions[]
   adm_tenants                                        adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_doc_documents_created_byToadm_members  adm_members?            @relation("doc_documents_created_byToadm_members", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_created_by")
-  adm_members_doc_documents_deleted_byToadm_members  adm_members?            @relation("doc_documents_deleted_byToadm_members", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_deleted_by")
+  clt_members_doc_documents_created_byToclt_members  clt_members?            @relation("doc_documents_created_byToclt_members", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_created_by")
+  clt_members_doc_documents_deleted_byToclt_members  clt_members?            @relation("doc_documents_deleted_byToclt_members", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_deleted_by")
   doc_document_types                                 doc_document_types      @relation(fields: [document_type], references: [code], onUpdate: NoAction, map: "fk_doc_documents_document_type")
   doc_entity_types                                   doc_entity_types        @relation(fields: [entity_type], references: [code], onUpdate: NoAction, map: "fk_doc_documents_entity_type")
-  adm_members_doc_documents_updated_byToadm_members  adm_members?            @relation("doc_documents_updated_byToadm_members", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_updated_by")
-  adm_members_doc_documents_verified_byToadm_members adm_members?            @relation("doc_documents_verified_byToadm_members", fields: [verified_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_verified_by")
+  clt_members_doc_documents_updated_byToclt_members  clt_members?            @relation("doc_documents_updated_byToclt_members", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_updated_by")
+  clt_members_doc_documents_verified_byToclt_members clt_members?            @relation("doc_documents_verified_byToclt_members", fields: [verified_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_verified_by")
   rid_driver_documents                               rid_driver_documents[]
 
   @@index([created_at])
@@ -2796,10 +2857,10 @@ model fin_accounts {
   iban                                                                    String?
   swift_bic                                                               String?
   description                                                             String?
-  adm_members_fin_accounts_created_byToadm_members                        adm_members?                 @relation("fin_accounts_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_fin_accounts_deleted_byToadm_members                        adm_members?                 @relation("fin_accounts_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_fin_accounts_created_byToclt_members                        clt_members?                 @relation("fin_accounts_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_fin_accounts_deleted_byToclt_members                        clt_members?                 @relation("fin_accounts_deleted_byToclt_members", fields: [deleted_by], references: [id])
   adm_tenants                                                             adm_tenants                  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_fin_accounts_updated_byToadm_members                        adm_members?                 @relation("fin_accounts_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_fin_accounts_updated_byToclt_members                        clt_members?                 @relation("fin_accounts_updated_byToclt_members", fields: [updated_by], references: [id])
   fin_account_types                                                       fin_account_types            @relation(fields: [account_type], references: [code], map: "fk_fin_accounts_account_type")
   fin_driver_payment_batches                                              fin_driver_payment_batches[]
   fin_driver_payments                                                     fin_driver_payments[]
@@ -2846,10 +2907,10 @@ model fin_driver_payment_batches {
   sent_at                                                                              DateTime?                  @db.Timestamptz(6)
   processed_at                                                                         DateTime?                  @db.Timestamptz(6)
   error_details                                                                        Json?
-  adm_members_fin_driver_payment_batches_created_byToadm_members                       adm_members?               @relation("fin_driver_payment_batches_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_fin_driver_payment_batches_deleted_byToadm_members                       adm_members?               @relation("fin_driver_payment_batches_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_fin_driver_payment_batches_created_byToclt_members                       clt_members?               @relation("fin_driver_payment_batches_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_fin_driver_payment_batches_deleted_byToclt_members                       clt_members?               @relation("fin_driver_payment_batches_deleted_byToclt_members", fields: [deleted_by], references: [id])
   adm_tenants                                                                          adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_fin_driver_payment_batches_updated_byToadm_members                       adm_members?               @relation("fin_driver_payment_batches_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_fin_driver_payment_batches_updated_byToclt_members                       clt_members?               @relation("fin_driver_payment_batches_updated_byToclt_members", fields: [updated_by], references: [id])
   adm_provider_employees_fin_driver_payment_batches_created_byToadm_provider_employees adm_provider_employees?    @relation("fin_driver_payment_batches_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, map: "fk_fin_driver_payment_batches_created_by")
   adm_provider_employees_fin_driver_payment_batches_deleted_byToadm_provider_employees adm_provider_employees?    @relation("fin_driver_payment_batches_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, map: "fk_fin_driver_payment_batches_deleted_by")
   fin_accounts                                                                         fin_accounts?              @relation(fields: [payout_account_id], references: [id], onDelete: Restrict, map: "fk_fin_driver_payment_batches_payout_account")
@@ -2899,12 +2960,12 @@ model fin_driver_payments {
   failed_at                                                                     DateTime?                  @db.Timestamptz(6)
   cancelled_at                                                                  DateTime?                  @db.Timestamptz(6)
   notes                                                                         String?
-  adm_members_fin_driver_payments_created_byToadm_members                       adm_members?               @relation("fin_driver_payments_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_fin_driver_payments_deleted_byToadm_members                       adm_members?               @relation("fin_driver_payments_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_fin_driver_payments_created_byToclt_members                       clt_members?               @relation("fin_driver_payments_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_fin_driver_payments_deleted_byToclt_members                       clt_members?               @relation("fin_driver_payments_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                                                   rid_drivers                @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   fin_driver_payment_batches                                                    fin_driver_payment_batches @relation(fields: [payment_batch_id], references: [id], onDelete: Cascade)
   adm_tenants                                                                   adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_fin_driver_payments_updated_byToadm_members                       adm_members?               @relation("fin_driver_payments_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_fin_driver_payments_updated_byToclt_members                       clt_members?               @relation("fin_driver_payments_updated_byToclt_members", fields: [updated_by], references: [id])
   adm_provider_employees_fin_driver_payments_created_byToadm_provider_employees adm_provider_employees?    @relation("fin_driver_payments_created_byToadm_provider_employees", fields: [created_by], references: [id], onDelete: Restrict, map: "fk_fin_driver_payments_created_by")
   adm_provider_employees_fin_driver_payments_deleted_byToadm_provider_employees adm_provider_employees?    @relation("fin_driver_payments_deleted_byToadm_provider_employees", fields: [deleted_by], references: [id], onDelete: Restrict, map: "fk_fin_driver_payments_deleted_by")
   fin_accounts                                                                  fin_accounts?              @relation(fields: [payout_account_id], references: [id], map: "fk_fin_driver_payments_payout_account")
@@ -2969,11 +3030,11 @@ model fin_toll_transactions {
   payment_batch_id                                          String?                     @db.Uuid
   driver_payment_id                                         String?                     @db.Uuid
   trip_id                                                   String?                     @db.Uuid
-  adm_members_fin_toll_transactions_created_byToadm_members adm_members?                @relation("fin_toll_transactions_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_fin_toll_transactions_deleted_byToadm_members adm_members?                @relation("fin_toll_transactions_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_fin_toll_transactions_created_byToclt_members clt_members?                @relation("fin_toll_transactions_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_fin_toll_transactions_deleted_byToclt_members clt_members?                @relation("fin_toll_transactions_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                               rid_drivers                 @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   adm_tenants                                               adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_fin_toll_transactions_updated_byToadm_members adm_members?                @relation("fin_toll_transactions_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_fin_toll_transactions_updated_byToclt_members clt_members?                @relation("fin_toll_transactions_updated_byToclt_members", fields: [updated_by], references: [id])
   flt_vehicles                                              flt_vehicles                @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
   fin_driver_payments                                       fin_driver_payments?        @relation(fields: [driver_payment_id], references: [id], map: "fk_fin_toll_transactions_driver_payment")
   fin_driver_payment_batches                                fin_driver_payment_batches? @relation(fields: [payment_batch_id], references: [id], map: "fk_fin_toll_transactions_payment_batch")
@@ -3005,8 +3066,8 @@ model fin_traffic_fine_disputes {
   created_at                                                                DateTime            @default(now()) @db.Timestamptz(6)
   updated_at                                                                DateTime            @default(now()) @db.Timestamptz(6)
   fin_traffic_fines_fin_traffic_fine_disputes_fine_idTofin_traffic_fines    fin_traffic_fines   @relation("fin_traffic_fine_disputes_fine_idTofin_traffic_fines", fields: [fine_id], references: [id], onDelete: Cascade, map: "fk_fin_traffic_fine_disputes_fine")
-  adm_members_fin_traffic_fine_disputes_reviewed_byToadm_members            adm_members?        @relation("fin_traffic_fine_disputes_reviewed_byToadm_members", fields: [reviewed_by], references: [id], map: "fk_fin_traffic_fine_disputes_reviewed_by")
-  adm_members_fin_traffic_fine_disputes_submitted_byToadm_members           adm_members         @relation("fin_traffic_fine_disputes_submitted_byToadm_members", fields: [submitted_by], references: [id], onDelete: Cascade, map: "fk_fin_traffic_fine_disputes_submitted_by")
+  clt_members_fin_traffic_fine_disputes_reviewed_byToclt_members            clt_members?        @relation("fin_traffic_fine_disputes_reviewed_byToclt_members", fields: [reviewed_by], references: [id], map: "fk_fin_traffic_fine_disputes_reviewed_by")
+  clt_members_fin_traffic_fine_disputes_submitted_byToclt_members           clt_members         @relation("fin_traffic_fine_disputes_submitted_byToclt_members", fields: [submitted_by], references: [id], onDelete: Cascade, map: "fk_fin_traffic_fine_disputes_submitted_by")
   fin_traffic_fines_fin_traffic_fines_dispute_idTofin_traffic_fine_disputes fin_traffic_fines[] @relation("fin_traffic_fines_dispute_idTofin_traffic_fine_disputes")
 }
 
@@ -3043,11 +3104,11 @@ model fin_traffic_fines {
   driver_payment_id                                                                 String?                     @db.Uuid
   dispute_id                                                                        String?                     @db.Uuid
   fin_traffic_fine_disputes_fin_traffic_fine_disputes_fine_idTofin_traffic_fines    fin_traffic_fine_disputes[] @relation("fin_traffic_fine_disputes_fine_idTofin_traffic_fines")
-  adm_members_fin_traffic_fines_created_byToadm_members                             adm_members?                @relation("fin_traffic_fines_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_fin_traffic_fines_deleted_byToadm_members                             adm_members?                @relation("fin_traffic_fines_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_fin_traffic_fines_created_byToclt_members                             clt_members?                @relation("fin_traffic_fines_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_fin_traffic_fines_deleted_byToclt_members                             clt_members?                @relation("fin_traffic_fines_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                                                       rid_drivers                 @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   adm_tenants                                                                       adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_fin_traffic_fines_updated_byToadm_members                             adm_members?                @relation("fin_traffic_fines_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_fin_traffic_fines_updated_byToclt_members                             clt_members?                @relation("fin_traffic_fines_updated_byToclt_members", fields: [updated_by], references: [id])
   flt_vehicles                                                                      flt_vehicles                @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
   fin_traffic_fine_disputes_fin_traffic_fines_dispute_idTofin_traffic_fine_disputes fin_traffic_fine_disputes?  @relation("fin_traffic_fines_dispute_idTofin_traffic_fine_disputes", fields: [dispute_id], references: [id], map: "fk_fin_traffic_fines_dispute")
   fin_driver_payments                                                               fin_driver_payments?        @relation(fields: [driver_payment_id], references: [id], map: "fk_fin_traffic_fines_driver_payment")
@@ -3115,16 +3176,16 @@ model fin_transactions {
   validated_by                                                        String?                     @db.Uuid
   validated_at                                                        DateTime?                   @db.Timestamptz(6)
   fin_accounts_fin_transactions_account_idTofin_accounts              fin_accounts                @relation("fin_transactions_account_idTofin_accounts", fields: [account_id], references: [id], onDelete: Cascade)
-  adm_members_fin_transactions_created_byToadm_members                adm_members?                @relation("fin_transactions_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_fin_transactions_deleted_byToadm_members                adm_members?                @relation("fin_transactions_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_fin_transactions_created_byToclt_members                clt_members?                @relation("fin_transactions_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_fin_transactions_deleted_byToclt_members                clt_members?                @relation("fin_transactions_deleted_byToclt_members", fields: [deleted_by], references: [id])
   adm_tenants                                                         adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_fin_transactions_updated_byToadm_members                adm_members?                @relation("fin_transactions_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_fin_transactions_updated_byToclt_members                clt_members?                @relation("fin_transactions_updated_byToclt_members", fields: [updated_by], references: [id])
   fin_transaction_categories                                          fin_transaction_categories? @relation(fields: [category_id], references: [id], map: "fk_fin_transactions_category")
   fin_accounts_fin_transactions_counterparty_account_idTofin_accounts fin_accounts?               @relation("fin_transactions_counterparty_account_idTofin_accounts", fields: [counterparty_account_id], references: [id], map: "fk_fin_transactions_counterparty")
   bil_payment_methods                                                 bil_payment_methods?        @relation(fields: [payment_method_id], references: [id], map: "fk_fin_transactions_payment_method")
   dir_transaction_statuses                                            dir_transaction_statuses    @relation(fields: [status], references: [code], map: "fk_fin_transactions_status")
   dir_transaction_types                                               dir_transaction_types       @relation(fields: [transaction_type], references: [code], map: "fk_fin_transactions_transaction_type")
-  adm_members_fin_transactions_validated_byToadm_members              adm_members?                @relation("fin_transactions_validated_byToadm_members", fields: [validated_by], references: [id], map: "fk_fin_transactions_validated_by")
+  clt_members_fin_transactions_validated_byToclt_members              clt_members?                @relation("fin_transactions_validated_byToclt_members", fields: [validated_by], references: [id], map: "fk_fin_transactions_validated_by")
 
   @@index([account_id])
   @@index([created_by])
@@ -3177,9 +3238,9 @@ model flt_vehicle_assignments {
   adm_tenants                                                                       adm_tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_assignments_tenant_id")
   adm_provider_employees_flt_vehicle_assignments_updated_byToadm_provider_employees adm_provider_employees?  @relation("flt_vehicle_assignments_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_assignments_updated_by")
   flt_vehicles                                                                      flt_vehicles             @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_assignments_vehicle_id")
-  adm_members_flt_vehicle_assignments_created_byToadm_members                       adm_members?             @relation("flt_vehicle_assignments_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_flt_vehicle_assignments_deleted_byToadm_members                       adm_members?             @relation("flt_vehicle_assignments_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_flt_vehicle_assignments_updated_byToadm_members                       adm_members?             @relation("flt_vehicle_assignments_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_flt_vehicle_assignments_created_byToclt_members                       clt_members?             @relation("flt_vehicle_assignments_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_flt_vehicle_assignments_deleted_byToclt_members                       clt_members?             @relation("flt_vehicle_assignments_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_flt_vehicle_assignments_updated_byToclt_members                       clt_members?             @relation("flt_vehicle_assignments_updated_byToclt_members", fields: [updated_by], references: [id])
   flt_vehicle_equipments                                                            flt_vehicle_equipments[]
   flt_vehicle_events                                                                flt_vehicle_events[]
 
@@ -3285,9 +3346,9 @@ model flt_vehicle_events {
   adm_tenants                                                                  adm_tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_events_tenant_id")
   adm_provider_employees_flt_vehicle_events_updated_byToadm_provider_employees adm_provider_employees?  @relation("flt_vehicle_events_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_events_updated_by")
   flt_vehicles                                                                 flt_vehicles             @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_events_vehicle_id")
-  adm_members_flt_vehicle_events_created_byToadm_members                       adm_members?             @relation("flt_vehicle_events_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_flt_vehicle_events_deleted_byToadm_members                       adm_members?             @relation("flt_vehicle_events_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_flt_vehicle_events_updated_byToadm_members                       adm_members?             @relation("flt_vehicle_events_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_flt_vehicle_events_created_byToclt_members                       clt_members?             @relation("flt_vehicle_events_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_flt_vehicle_events_deleted_byToclt_members                       clt_members?             @relation("flt_vehicle_events_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_flt_vehicle_events_updated_byToclt_members                       clt_members?             @relation("flt_vehicle_events_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_at(sort: Desc)])
   @@index([created_by])
@@ -3366,10 +3427,10 @@ model flt_vehicle_expenses {
   adm_tenants                                                                             adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_expenses_tenant_id")
   adm_provider_employees_flt_vehicle_expenses_updated_byToadm_provider_employees          adm_provider_employees? @relation("flt_vehicle_expenses_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_expenses_updated_by")
   flt_vehicles                                                                            flt_vehicles            @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_expenses_vehicle_id")
-  adm_members_flt_vehicle_expenses_created_byToadm_members                                adm_members?            @relation("flt_vehicle_expenses_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_flt_vehicle_expenses_deleted_byToadm_members                                adm_members?            @relation("flt_vehicle_expenses_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_flt_vehicle_expenses_created_byToclt_members                                clt_members?            @relation("flt_vehicle_expenses_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_flt_vehicle_expenses_deleted_byToclt_members                                clt_members?            @relation("flt_vehicle_expenses_deleted_byToclt_members", fields: [deleted_by], references: [id])
   trp_trips                                                                               trp_trips?              @relation(fields: [ride_id], references: [id], onUpdate: NoAction)
-  adm_members_flt_vehicle_expenses_updated_byToadm_members                                adm_members?            @relation("flt_vehicle_expenses_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_flt_vehicle_expenses_updated_byToclt_members                                clt_members?            @relation("flt_vehicle_expenses_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_at(sort: Desc)])
   @@index([created_by])
@@ -3499,9 +3560,9 @@ model flt_vehicle_insurances {
   adm_tenants                                                                      adm_tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_insurances_tenant_id")
   adm_provider_employees_flt_vehicle_insurances_updated_byToadm_provider_employees adm_provider_employees?  @relation("flt_vehicle_insurances_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_insurances_updated_by")
   flt_vehicles                                                                     flt_vehicles             @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_insurances_vehicle_id")
-  adm_members_flt_vehicle_insurances_created_byToadm_members                       adm_members?             @relation("flt_vehicle_insurances_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_flt_vehicle_insurances_deleted_byToadm_members                       adm_members?             @relation("flt_vehicle_insurances_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_flt_vehicle_insurances_updated_byToadm_members                       adm_members?             @relation("flt_vehicle_insurances_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_flt_vehicle_insurances_created_byToclt_members                       clt_members?             @relation("flt_vehicle_insurances_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_flt_vehicle_insurances_deleted_byToclt_members                       clt_members?             @relation("flt_vehicle_insurances_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_flt_vehicle_insurances_updated_byToclt_members                       clt_members?             @relation("flt_vehicle_insurances_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_at(sort: Desc)])
   @@index([metadata], type: Gin)
@@ -3579,8 +3640,8 @@ model flt_vehicle_maintenance {
   adm_tenants                                                                             adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_maintenance_tenant_id")
   adm_provider_employees_flt_vehicle_maintenance_updated_byToadm_provider_employees       adm_provider_employees?     @relation("flt_vehicle_maintenance_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_maintenance_updated_by")
   flt_vehicles                                                                            flt_vehicles                @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_maintenance_vehicle_id")
-  adm_members_flt_vehicle_maintenance_created_byToadm_members                             adm_members?                @relation("flt_vehicle_maintenance_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_flt_vehicle_maintenance_updated_byToadm_members                             adm_members?                @relation("flt_vehicle_maintenance_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_flt_vehicle_maintenance_created_byToclt_members                             clt_members?                @relation("flt_vehicle_maintenance_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_flt_vehicle_maintenance_updated_byToclt_members                             clt_members?                @relation("flt_vehicle_maintenance_updated_byToclt_members", fields: [updated_by], references: [id])
   sch_maintenance_schedules                                                               sch_maintenance_schedules[]
 
   @@index([created_at(sort: Desc)])
@@ -3667,9 +3728,9 @@ model flt_vehicles {
   adm_tenants                                                            adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicles_tenant_id")
   adm_provider_employees_flt_vehicles_updated_byToadm_provider_employees adm_provider_employees?     @relation("flt_vehicles_updated_byToadm_provider_employees", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicles_updated_by")
   dir_vehicle_classes                                                    dir_vehicle_classes?        @relation(fields: [vehicle_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicles_vehicle_class_id")
-  adm_members_flt_vehicles_created_byToadm_members                       adm_members?                @relation("flt_vehicles_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_flt_vehicles_deleted_byToadm_members                       adm_members?                @relation("flt_vehicles_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_flt_vehicles_updated_byToadm_members                       adm_members?                @relation("flt_vehicles_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_flt_vehicles_created_byToclt_members                       clt_members?                @relation("flt_vehicles_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_flt_vehicles_deleted_byToclt_members                       clt_members?                @relation("flt_vehicles_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_flt_vehicles_updated_byToclt_members                       clt_members?                @relation("flt_vehicles_updated_byToclt_members", fields: [updated_by], references: [id])
   sch_maintenance_schedules                                              sch_maintenance_schedules[]
   trp_trips                                                              trp_trips[]
 
@@ -3712,14 +3773,14 @@ model rev_driver_revenues {
   validated_by                                              String?                     @db.Uuid
   validated_at                                              DateTime?                   @db.Timestamptz(6)
   adjustment_reason                                         String?
-  adm_members_rev_driver_revenues_created_byToadm_members   adm_members?                @relation("rev_driver_revenues_created_byToadm_members", fields: [created_by], references: [id], map: "fk_rev_driver_revenues_created_by")
-  adm_members_rev_driver_revenues_deleted_byToadm_members   adm_members?                @relation("rev_driver_revenues_deleted_byToadm_members", fields: [deleted_by], references: [id], map: "fk_rev_driver_revenues_deleted_by")
+  clt_members_rev_driver_revenues_created_byToclt_members   clt_members?                @relation("rev_driver_revenues_created_byToclt_members", fields: [created_by], references: [id], map: "fk_rev_driver_revenues_created_by")
+  clt_members_rev_driver_revenues_deleted_byToclt_members   clt_members?                @relation("rev_driver_revenues_deleted_byToclt_members", fields: [deleted_by], references: [id], map: "fk_rev_driver_revenues_deleted_by")
   rid_drivers                                               rid_drivers                 @relation(fields: [driver_id], references: [id], map: "fk_rev_driver_revenues_driver")
   rev_revenue_imports                                       rev_revenue_imports?        @relation(fields: [import_id], references: [id], onDelete: Restrict, map: "fk_rev_driver_revenues_import")
   dir_platforms                                             dir_platforms?              @relation(fields: [platform_id], references: [id], onDelete: Restrict, map: "fk_rev_driver_revenues_platform")
   adm_tenants                                               adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_rev_driver_revenues_tenant")
-  adm_members_rev_driver_revenues_updated_byToadm_members   adm_members?                @relation("rev_driver_revenues_updated_byToadm_members", fields: [updated_by], references: [id], map: "fk_rev_driver_revenues_updated_by")
-  adm_members_rev_driver_revenues_validated_byToadm_members adm_members?                @relation("rev_driver_revenues_validated_byToadm_members", fields: [validated_by], references: [id], map: "fk_rev_driver_revenues_validated_by")
+  clt_members_rev_driver_revenues_updated_byToclt_members   clt_members?                @relation("rev_driver_revenues_updated_byToclt_members", fields: [updated_by], references: [id], map: "fk_rev_driver_revenues_updated_by")
+  clt_members_rev_driver_revenues_validated_byToclt_members clt_members?                @relation("rev_driver_revenues_validated_byToclt_members", fields: [validated_by], references: [id], map: "fk_rev_driver_revenues_validated_by")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -3775,14 +3836,14 @@ model rev_reconciliations {
   requires_action                                          Boolean?                   @default(false)
   driver_id                                                String?                    @db.Uuid
   rev_reconciliation_lines                                 rev_reconciliation_lines[]
-  adm_members_rev_reconciliations_assigned_toToadm_members adm_members?               @relation("rev_reconciliations_assigned_toToadm_members", fields: [assigned_to], references: [id], map: "fk_rev_reconciliations_assigned_to")
-  adm_members_rev_reconciliations_created_byToadm_members  adm_members?               @relation("rev_reconciliations_created_byToadm_members", fields: [created_by], references: [id], map: "fk_rev_reconciliations_created_by")
-  adm_members_rev_reconciliations_deleted_byToadm_members  adm_members?               @relation("rev_reconciliations_deleted_byToadm_members", fields: [deleted_by], references: [id], map: "fk_rev_reconciliations_deleted_by")
+  clt_members_rev_reconciliations_assigned_toToclt_members clt_members?               @relation("rev_reconciliations_assigned_toToclt_members", fields: [assigned_to], references: [id], map: "fk_rev_reconciliations_assigned_to")
+  clt_members_rev_reconciliations_created_byToclt_members  clt_members?               @relation("rev_reconciliations_created_byToclt_members", fields: [created_by], references: [id], map: "fk_rev_reconciliations_created_by")
+  clt_members_rev_reconciliations_deleted_byToclt_members  clt_members?               @relation("rev_reconciliations_deleted_byToclt_members", fields: [deleted_by], references: [id], map: "fk_rev_reconciliations_deleted_by")
   rid_drivers                                              rid_drivers?               @relation(fields: [driver_id], references: [id], onDelete: Restrict, map: "fk_rev_reconciliations_driver")
   rev_revenue_imports                                      rev_revenue_imports        @relation(fields: [import_id], references: [id], map: "fk_rev_reconciliations_import")
-  adm_members_rev_reconciliations_resolved_byToadm_members adm_members?               @relation("rev_reconciliations_resolved_byToadm_members", fields: [resolved_by], references: [id], map: "fk_rev_reconciliations_resolved_by")
+  clt_members_rev_reconciliations_resolved_byToclt_members clt_members?               @relation("rev_reconciliations_resolved_byToclt_members", fields: [resolved_by], references: [id], map: "fk_rev_reconciliations_resolved_by")
   adm_tenants                                              adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_rev_reconciliations_tenant")
-  adm_members_rev_reconciliations_updated_byToadm_members  adm_members?               @relation("rev_reconciliations_updated_byToadm_members", fields: [updated_by], references: [id], map: "fk_rev_reconciliations_updated_by")
+  clt_members_rev_reconciliations_updated_byToclt_members  clt_members?               @relation("rev_reconciliations_updated_byToclt_members", fields: [updated_by], references: [id], map: "fk_rev_reconciliations_updated_by")
   trp_settlements                                          trp_settlements[]
 
   @@index([created_by])
@@ -3828,11 +3889,11 @@ model rev_revenue_imports {
   last_error                                              String?
   rev_driver_revenues                                     rev_driver_revenues[]
   rev_reconciliations                                     rev_reconciliations[]
-  adm_members_rev_revenue_imports_created_byToadm_members adm_members?                @relation("rev_revenue_imports_created_byToadm_members", fields: [created_by], references: [id], map: "fk_rev_revenue_imports_created_by")
-  adm_members_rev_revenue_imports_deleted_byToadm_members adm_members?                @relation("rev_revenue_imports_deleted_byToadm_members", fields: [deleted_by], references: [id], map: "fk_rev_revenue_imports_deleted_by")
+  clt_members_rev_revenue_imports_created_byToclt_members clt_members?                @relation("rev_revenue_imports_created_byToclt_members", fields: [created_by], references: [id], map: "fk_rev_revenue_imports_created_by")
+  clt_members_rev_revenue_imports_deleted_byToclt_members clt_members?                @relation("rev_revenue_imports_deleted_byToclt_members", fields: [deleted_by], references: [id], map: "fk_rev_revenue_imports_deleted_by")
   dir_platforms                                           dir_platforms?              @relation(fields: [platform_id], references: [id], onDelete: Restrict, map: "fk_rev_revenue_imports_platform")
   adm_tenants                                             adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_rev_revenue_imports_tenant")
-  adm_members_rev_revenue_imports_updated_byToadm_members adm_members?                @relation("rev_revenue_imports_updated_byToadm_members", fields: [updated_by], references: [id], map: "fk_rev_revenue_imports_updated_by")
+  clt_members_rev_revenue_imports_updated_byToclt_members clt_members?                @relation("rev_revenue_imports_updated_byToclt_members", fields: [updated_by], references: [id], map: "fk_rev_revenue_imports_updated_by")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -3892,16 +3953,16 @@ model rid_driver_blacklists {
   notification_method                                               String?             @db.VarChar(50)
   acknowledgment_received                                           Boolean?            @default(false)
   acknowledgment_date                                               DateTime?           @db.Timestamptz(6)
-  adm_members_rid_driver_blacklists_appeal_reviewed_byToadm_members adm_members?        @relation("rid_driver_blacklists_appeal_reviewed_byToadm_members", fields: [appeal_reviewed_by], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_blacklists_created_byToadm_members         adm_members?        @relation("rid_driver_blacklists_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_rid_driver_blacklists_decided_byToadm_members         adm_members?        @relation("rid_driver_blacklists_decided_byToadm_members", fields: [decided_by], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_blacklists_reviewed_byToadm_members        adm_members?        @relation("rid_driver_blacklists_reviewed_byToadm_members", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "rid_driver_blacklists_decision_reviewed_by_fkey")
-  adm_members_rid_driver_blacklists_deleted_byToadm_members         adm_members?        @relation("rid_driver_blacklists_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_rid_driver_blacklists_appeal_reviewed_byToclt_members clt_members?        @relation("rid_driver_blacklists_appeal_reviewed_byToclt_members", fields: [appeal_reviewed_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_blacklists_created_byToclt_members         clt_members?        @relation("rid_driver_blacklists_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_rid_driver_blacklists_decided_byToclt_members         clt_members?        @relation("rid_driver_blacklists_decided_byToclt_members", fields: [decided_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_blacklists_reviewed_byToclt_members        clt_members?        @relation("rid_driver_blacklists_reviewed_byToclt_members", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "rid_driver_blacklists_decision_reviewed_by_fkey")
+  clt_members_rid_driver_blacklists_deleted_byToclt_members         clt_members?        @relation("rid_driver_blacklists_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                                       rid_drivers         @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_blacklists_legal_reviewed_byToadm_members  adm_members?        @relation("rid_driver_blacklists_legal_reviewed_byToadm_members", fields: [legal_reviewed_by], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_blacklists_reinstated_byToadm_members      adm_members?        @relation("rid_driver_blacklists_reinstated_byToadm_members", fields: [reinstated_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_blacklists_legal_reviewed_byToclt_members  clt_members?        @relation("rid_driver_blacklists_legal_reviewed_byToclt_members", fields: [legal_reviewed_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_blacklists_reinstated_byToclt_members      clt_members?        @relation("rid_driver_blacklists_reinstated_byToclt_members", fields: [reinstated_by], references: [id], onUpdate: NoAction)
   adm_tenants                                                       adm_tenants         @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_blacklists_updated_byToadm_members         adm_members?        @relation("rid_driver_blacklists_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_rid_driver_blacklists_updated_byToclt_members         clt_members?        @relation("rid_driver_blacklists_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -3957,15 +4018,15 @@ model rid_driver_cooperation_terms {
   termination_reason                                                             String?
   termination_initiated_by                                                       String?                        @db.Uuid
   early_termination_penalty                                                      Decimal?                       @db.Decimal(12, 2)
-  adm_members_rid_driver_cooperation_terms_created_byToadm_members               adm_members?                   @relation("rid_driver_cooperation_terms_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_rid_driver_cooperation_terms_deleted_byToadm_members               adm_members?                   @relation("rid_driver_cooperation_terms_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_rid_driver_cooperation_terms_created_byToclt_members               clt_members?                   @relation("rid_driver_cooperation_terms_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_rid_driver_cooperation_terms_deleted_byToclt_members               clt_members?                   @relation("rid_driver_cooperation_terms_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                                                    rid_drivers                    @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_cooperation_terms_legal_reviewed_byToadm_members        adm_members?                   @relation("rid_driver_cooperation_terms_legal_reviewed_byToadm_members", fields: [legal_reviewed_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_cooperation_terms_legal_reviewed_byToclt_members        clt_members?                   @relation("rid_driver_cooperation_terms_legal_reviewed_byToclt_members", fields: [legal_reviewed_by], references: [id], onUpdate: NoAction)
   rid_driver_cooperation_terms                                                   rid_driver_cooperation_terms?  @relation("rid_driver_cooperation_termsTorid_driver_cooperation_terms", fields: [previous_version_id], references: [id], onUpdate: NoAction, map: "rid_driver_cooperation_terms_previous_version_fkey")
   other_rid_driver_cooperation_terms                                             rid_driver_cooperation_terms[] @relation("rid_driver_cooperation_termsTorid_driver_cooperation_terms")
   adm_tenants                                                                    adm_tenants                    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_cooperation_terms_termination_initiated_byToadm_members adm_members?                   @relation("rid_driver_cooperation_terms_termination_initiated_byToadm_members", fields: [termination_initiated_by], references: [id], onUpdate: NoAction, map: "rid_driver_cooperation_terms_termination_by_fkey")
-  adm_members_rid_driver_cooperation_terms_updated_byToadm_members               adm_members?                   @relation("rid_driver_cooperation_terms_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_rid_driver_cooperation_terms_termination_initiated_byToclt_members clt_members?                   @relation("rid_driver_cooperation_terms_termination_initiated_byToclt_members", fields: [termination_initiated_by], references: [id], onUpdate: NoAction, map: "rid_driver_cooperation_terms_termination_by_fkey")
+  clt_members_rid_driver_cooperation_terms_updated_byToclt_members               clt_members?                   @relation("rid_driver_cooperation_terms_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([accepted_at])
   @@index([created_by])
@@ -4012,15 +4073,15 @@ model rid_driver_documents {
   replacement_reason                                        String?
   ocr_data                                                  Json?
   confidence_score                                          Decimal?                      @db.Decimal(5, 2)
-  adm_members_rid_driver_documents_created_byToadm_members  adm_members?                  @relation("rid_driver_documents_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_rid_driver_documents_deleted_byToadm_members  adm_members?                  @relation("rid_driver_documents_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_rid_driver_documents_created_byToclt_members  clt_members?                  @relation("rid_driver_documents_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_rid_driver_documents_deleted_byToclt_members  clt_members?                  @relation("rid_driver_documents_deleted_byToclt_members", fields: [deleted_by], references: [id])
   doc_documents                                             doc_documents                 @relation(fields: [document_id], references: [id], onDelete: Cascade)
   rid_drivers                                               rid_drivers                   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   rid_driver_documents                                      rid_driver_documents?         @relation("rid_driver_documentsTorid_driver_documents", fields: [replaced_document_id], references: [id], onUpdate: NoAction, map: "rid_driver_documents_replaced_document_fkey")
   other_rid_driver_documents                                rid_driver_documents[]        @relation("rid_driver_documentsTorid_driver_documents")
   adm_tenants                                               adm_tenants                   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_documents_updated_byToadm_members  adm_members?                  @relation("rid_driver_documents_updated_byToadm_members", fields: [updated_by], references: [id])
-  adm_members_rid_driver_documents_verified_byToadm_members adm_members?                  @relation("rid_driver_documents_verified_byToadm_members", fields: [verified_by], references: [id])
+  clt_members_rid_driver_documents_updated_byToclt_members  clt_members?                  @relation("rid_driver_documents_updated_byToclt_members", fields: [updated_by], references: [id])
+  clt_members_rid_driver_documents_verified_byToclt_members clt_members?                  @relation("rid_driver_documents_verified_byToclt_members", fields: [verified_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -4046,11 +4107,11 @@ model rid_driver_languages {
   deleted_at                                               DateTime?    @db.Timestamptz(6)
   deleted_by                                               String?      @db.Uuid
   deletion_reason                                          String?
-  adm_members_rid_driver_languages_created_byToadm_members adm_members? @relation("rid_driver_languages_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_rid_driver_languages_deleted_byToadm_members adm_members? @relation("rid_driver_languages_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_rid_driver_languages_created_byToclt_members clt_members? @relation("rid_driver_languages_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_rid_driver_languages_deleted_byToclt_members clt_members? @relation("rid_driver_languages_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                              rid_drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   adm_tenants                                              adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_languages_updated_byToadm_members adm_members? @relation("rid_driver_languages_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_rid_driver_languages_updated_byToclt_members clt_members? @relation("rid_driver_languages_updated_byToclt_members", fields: [updated_by], references: [id])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -4108,12 +4169,12 @@ model rid_driver_performances {
   penalties_deducted                                          Decimal?       @default(0) @db.Decimal(12, 2)
   total_distance_km                                           Decimal?       @default(0) @db.Decimal(10, 2)
   hours_logged                                                Decimal?       @db.Decimal(7, 2)
-  adm_members_rid_driver_performances_created_byToadm_members adm_members?   @relation("rid_driver_performances_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_rid_driver_performances_deleted_byToadm_members adm_members?   @relation("rid_driver_performances_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_rid_driver_performances_created_byToclt_members clt_members?   @relation("rid_driver_performances_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_rid_driver_performances_deleted_byToclt_members clt_members?   @relation("rid_driver_performances_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                                 rid_drivers    @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   dir_platforms                                               dir_platforms? @relation(fields: [platform_id], references: [id], onUpdate: NoAction)
   adm_tenants                                                 adm_tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_performances_updated_byToadm_members adm_members?   @relation("rid_driver_performances_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_rid_driver_performances_updated_byToclt_members clt_members?   @relation("rid_driver_performances_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -4170,18 +4231,18 @@ model rid_driver_requests {
   manager_notified_at                                              DateTime?            @db.Timestamptz(6)
   notification_method                                              String?              @db.VarChar(50)
   attachments                                                      Json?                @default("[]")
-  adm_members_rid_driver_requests_approved_byToadm_members         adm_members?         @relation("rid_driver_requests_approved_byToadm_members", fields: [approved_by], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_requests_assigned_toToadm_members         adm_members?         @relation("rid_driver_requests_assigned_toToadm_members", fields: [assigned_to], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_requests_created_byToadm_members          adm_members?         @relation("rid_driver_requests_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_rid_driver_requests_deleted_byToadm_members          adm_members?         @relation("rid_driver_requests_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_rid_driver_requests_approved_byToclt_members         clt_members?         @relation("rid_driver_requests_approved_byToclt_members", fields: [approved_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_requests_assigned_toToclt_members         clt_members?         @relation("rid_driver_requests_assigned_toToclt_members", fields: [assigned_to], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_requests_created_byToclt_members          clt_members?         @relation("rid_driver_requests_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_rid_driver_requests_deleted_byToclt_members          clt_members?         @relation("rid_driver_requests_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                                      rid_drivers          @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_requests_escalated_toToadm_members        adm_members?         @relation("rid_driver_requests_escalated_toToadm_members", fields: [escalated_to], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_requests_hr_approved_byToadm_members      adm_members?         @relation("rid_driver_requests_hr_approved_byToadm_members", fields: [hr_approved_by], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_requests_manager_approved_byToadm_members adm_members?         @relation("rid_driver_requests_manager_approved_byToadm_members", fields: [manager_approved_by], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_requests_rejected_byToadm_members         adm_members?         @relation("rid_driver_requests_rejected_byToadm_members", fields: [rejected_by], references: [id], onUpdate: NoAction)
-  adm_members_rid_driver_requests_reviewed_byToadm_members         adm_members?         @relation("rid_driver_requests_reviewed_byToadm_members", fields: [reviewed_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_requests_escalated_toToclt_members        clt_members?         @relation("rid_driver_requests_escalated_toToclt_members", fields: [escalated_to], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_requests_hr_approved_byToclt_members      clt_members?         @relation("rid_driver_requests_hr_approved_byToclt_members", fields: [hr_approved_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_requests_manager_approved_byToclt_members clt_members?         @relation("rid_driver_requests_manager_approved_byToclt_members", fields: [manager_approved_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_requests_rejected_byToclt_members         clt_members?         @relation("rid_driver_requests_rejected_byToclt_members", fields: [rejected_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_requests_reviewed_byToclt_members         clt_members?         @relation("rid_driver_requests_reviewed_byToclt_members", fields: [reviewed_by], references: [id], onUpdate: NoAction)
   adm_tenants                                                      adm_tenants          @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_requests_updated_byToadm_members          adm_members?         @relation("rid_driver_requests_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_rid_driver_requests_updated_byToclt_members          clt_members?         @relation("rid_driver_requests_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -4257,13 +4318,13 @@ model rid_driver_training {
   driver_rating                                             Decimal?                @db.Decimal(3, 2)
   feedback_submitted_at                                     DateTime?               @db.Timestamptz(6)
   description_translations                                  Json?
-  adm_members_rid_driver_training_created_byToadm_members   adm_members?            @relation("rid_driver_training_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_rid_driver_training_deleted_byToadm_members   adm_members?            @relation("rid_driver_training_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_rid_driver_training_created_byToclt_members   clt_members?            @relation("rid_driver_training_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_rid_driver_training_deleted_byToclt_members   clt_members?            @relation("rid_driver_training_deleted_byToclt_members", fields: [deleted_by], references: [id])
   rid_drivers                                               rid_drivers             @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_training_evaluated_byToadm_members adm_members?            @relation("rid_driver_training_evaluated_byToadm_members", fields: [evaluated_by], references: [id], onUpdate: NoAction)
+  clt_members_rid_driver_training_evaluated_byToclt_members clt_members?            @relation("rid_driver_training_evaluated_byToclt_members", fields: [evaluated_by], references: [id], onUpdate: NoAction)
   adm_provider_employees                                    adm_provider_employees? @relation(fields: [provider_id], references: [id], onUpdate: NoAction)
   adm_tenants                                               adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_rid_driver_training_updated_byToadm_members   adm_members?            @relation("rid_driver_training_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_rid_driver_training_updated_byToclt_members   clt_members?            @relation("rid_driver_training_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -4475,9 +4536,9 @@ model sch_goals {
   sch_goal_achievements                         sch_goal_achievements[]
   sch_goal_types                                sch_goal_types?         @relation(fields: [goal_type_id], references: [id], onUpdate: NoAction, map: "fk_goals_goal_type")
   adm_tenants                                   adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_goals_tenant")
-  adm_members_sch_goals_created_byToadm_members adm_members?            @relation("sch_goals_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_sch_goals_deleted_byToadm_members adm_members?            @relation("sch_goals_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_sch_goals_updated_byToadm_members adm_members?            @relation("sch_goals_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_sch_goals_created_byToclt_members clt_members?            @relation("sch_goals_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_sch_goals_deleted_byToclt_members clt_members?            @relation("sch_goals_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_sch_goals_updated_byToclt_members clt_members?            @relation("sch_goals_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([achievement_date], map: "idx_goals_achievement_date")
   @@index([progress_percent, status], map: "idx_goals_progress_status")
@@ -4555,12 +4616,12 @@ model sch_maintenance_schedules {
   dir_maintenance_types                                           dir_maintenance_types?      @relation(fields: [maintenance_type_id], references: [id], onUpdate: NoAction, map: "fk_maintenance_schedules_maintenance_type")
   sch_maintenance_schedules                                       sch_maintenance_schedules?  @relation("sch_maintenance_schedulesTosch_maintenance_schedules", fields: [rescheduled_from], references: [id], onUpdate: NoAction, map: "fk_maintenance_schedules_rescheduled_from")
   other_sch_maintenance_schedules                                 sch_maintenance_schedules[] @relation("sch_maintenance_schedulesTosch_maintenance_schedules")
-  adm_members_sch_maintenance_schedules_scheduled_byToadm_members adm_members?                @relation("sch_maintenance_schedules_scheduled_byToadm_members", fields: [scheduled_by], references: [id], onUpdate: NoAction, map: "fk_maintenance_schedules_scheduled_by")
+  clt_members_sch_maintenance_schedules_scheduled_byToclt_members clt_members?                @relation("sch_maintenance_schedules_scheduled_byToclt_members", fields: [scheduled_by], references: [id], onUpdate: NoAction, map: "fk_maintenance_schedules_scheduled_by")
   adm_tenants                                                     adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_maintenance_schedules_tenant")
   flt_vehicles                                                    flt_vehicles                @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_maintenance_schedules_vehicle")
-  adm_members_sch_maintenance_schedules_created_byToadm_members   adm_members?                @relation("sch_maintenance_schedules_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_sch_maintenance_schedules_deleted_byToadm_members   adm_members?                @relation("sch_maintenance_schedules_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_sch_maintenance_schedules_updated_byToadm_members   adm_members?                @relation("sch_maintenance_schedules_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_sch_maintenance_schedules_created_byToclt_members   clt_members?                @relation("sch_maintenance_schedules_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_sch_maintenance_schedules_deleted_byToclt_members   clt_members?                @relation("sch_maintenance_schedules_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_sch_maintenance_schedules_updated_byToclt_members   clt_members?                @relation("sch_maintenance_schedules_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([odometer_reading], map: "idx_maintenance_schedules_odometer")
   @@index([reminder_sent_at], map: "idx_maintenance_schedules_reminder_sent")
@@ -4629,15 +4690,15 @@ model sch_shifts {
   approved_at                                               DateTime?        @db.Timestamptz(6)
   cancellation_reason                                       String?          @db.VarChar(255)
   replacement_driver_id                                     String?          @db.Uuid
-  adm_members_sch_shifts_approved_byToadm_members           adm_members?     @relation("sch_shifts_approved_byToadm_members", fields: [approved_by], references: [id], onUpdate: NoAction, map: "fk_shifts_approved_by")
+  clt_members_sch_shifts_approved_byToclt_members           clt_members?     @relation("sch_shifts_approved_byToclt_members", fields: [approved_by], references: [id], onUpdate: NoAction, map: "fk_shifts_approved_by")
   rid_drivers_sch_shifts_driver_idTorid_drivers             rid_drivers      @relation("sch_shifts_driver_idTorid_drivers", fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shifts_driver")
   sch_locations                                             sch_locations?   @relation(fields: [location_id], references: [id], onUpdate: NoAction, map: "fk_shifts_location")
   rid_drivers_sch_shifts_replacement_driver_idTorid_drivers rid_drivers?     @relation("sch_shifts_replacement_driver_idTorid_drivers", fields: [replacement_driver_id], references: [id], onUpdate: NoAction, map: "fk_shifts_replacement_driver")
   sch_shift_types                                           sch_shift_types? @relation(fields: [shift_type_id], references: [id], onUpdate: NoAction, map: "fk_shifts_shift_type")
   adm_tenants                                               adm_tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shifts_tenant")
-  adm_members_sch_shifts_created_byToadm_members            adm_members?     @relation("sch_shifts_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_sch_shifts_deleted_byToadm_members            adm_members?     @relation("sch_shifts_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_sch_shifts_updated_byToadm_members            adm_members?     @relation("sch_shifts_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_sch_shifts_created_byToclt_members            clt_members?     @relation("sch_shifts_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_sch_shifts_deleted_byToclt_members            clt_members?     @relation("sch_shifts_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_sch_shifts_updated_byToclt_members            clt_members?     @relation("sch_shifts_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([start_time(sort: Desc)], map: "idx_sch_shifts_start_time")
   @@index([check_in_at], map: "idx_shifts_checkin")
@@ -4665,7 +4726,7 @@ model sch_task_comments {
   is_internal  Boolean?          @default(false)
   metadata     Json?
   created_at   DateTime?         @default(now()) @db.Timestamptz(6)
-  adm_members  adm_members       @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_comments_author")
+  clt_members  clt_members       @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_comments_author")
   sch_tasks    sch_tasks         @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_comments_task")
 
   @@index([author_id], map: "idx_task_comments_author")
@@ -4683,7 +4744,7 @@ model sch_task_history {
   change_reason String?
   metadata      Json?
   created_at    DateTime?        @default(now()) @db.Timestamptz(6)
-  adm_members   adm_members      @relation(fields: [changed_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_history_changed_by")
+  clt_members   clt_members      @relation(fields: [changed_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_history_changed_by")
   sch_tasks     sch_tasks        @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_history_task")
 
   @@index([change_type], map: "idx_task_history_change_type")
@@ -4771,18 +4832,18 @@ model sch_tasks {
   status                                          task_status?        @default(pending)
   sch_task_comments                               sch_task_comments[]
   sch_task_history                                sch_task_history[]
-  adm_members_sch_tasks_assigned_byToadm_members  adm_members?        @relation("sch_tasks_assigned_byToadm_members", fields: [assigned_by], references: [id], onUpdate: NoAction, map: "fk_tasks_assigned_by")
-  adm_members_sch_tasks_assigned_toToadm_members  adm_members?        @relation("sch_tasks_assigned_toToadm_members", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_tasks_assigned_to")
-  adm_members_sch_tasks_completed_byToadm_members adm_members?        @relation("sch_tasks_completed_byToadm_members", fields: [completed_by], references: [id], onUpdate: NoAction, map: "fk_tasks_completed_by")
-  adm_members_sch_tasks_escalated_toToadm_members adm_members?        @relation("sch_tasks_escalated_toToadm_members", fields: [escalated_to], references: [id], onUpdate: NoAction, map: "fk_tasks_escalated_to")
+  clt_members_sch_tasks_assigned_byToclt_members  clt_members?        @relation("sch_tasks_assigned_byToclt_members", fields: [assigned_by], references: [id], onUpdate: NoAction, map: "fk_tasks_assigned_by")
+  clt_members_sch_tasks_assigned_toToclt_members  clt_members?        @relation("sch_tasks_assigned_toToclt_members", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_tasks_assigned_to")
+  clt_members_sch_tasks_completed_byToclt_members clt_members?        @relation("sch_tasks_completed_byToclt_members", fields: [completed_by], references: [id], onUpdate: NoAction, map: "fk_tasks_completed_by")
+  clt_members_sch_tasks_escalated_toToclt_members clt_members?        @relation("sch_tasks_escalated_toToclt_members", fields: [escalated_to], references: [id], onUpdate: NoAction, map: "fk_tasks_escalated_to")
   sch_tasks                                       sch_tasks?          @relation("sch_tasksTosch_tasks", fields: [parent_task_id], references: [id], onUpdate: NoAction, map: "fk_tasks_parent_task")
   other_sch_tasks                                 sch_tasks[]         @relation("sch_tasksTosch_tasks")
   sch_task_types                                  sch_task_types?     @relation(fields: [task_type_id], references: [id], onUpdate: NoAction, map: "fk_tasks_task_type")
   adm_tenants                                     adm_tenants         @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tasks_tenant")
-  adm_members_sch_tasks_verified_byToadm_members  adm_members?        @relation("sch_tasks_verified_byToadm_members", fields: [verified_by], references: [id], onUpdate: NoAction, map: "fk_tasks_verified_by")
-  adm_members_sch_tasks_created_byToadm_members   adm_members?        @relation("sch_tasks_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_sch_tasks_deleted_byToadm_members   adm_members?        @relation("sch_tasks_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_sch_tasks_updated_byToadm_members   adm_members?        @relation("sch_tasks_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_sch_tasks_verified_byToclt_members  clt_members?        @relation("sch_tasks_verified_byToclt_members", fields: [verified_by], references: [id], onUpdate: NoAction, map: "fk_tasks_verified_by")
+  clt_members_sch_tasks_created_byToclt_members   clt_members?        @relation("sch_tasks_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_sch_tasks_deleted_byToclt_members   clt_members?        @relation("sch_tasks_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_sch_tasks_updated_byToclt_members   clt_members?        @relation("sch_tasks_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_by], map: "idx_sch_tasks_created_by")
   @@index([deleted_at], map: "idx_sch_tasks_deleted_at")
@@ -4916,10 +4977,10 @@ model sup_ticket_messages {
   translation                                             Json?
   sup_ticket_messages                                     sup_ticket_messages?  @relation("sup_ticket_messagesTosup_ticket_messages", fields: [parent_message_id], references: [id], onUpdate: NoAction, map: "fk_sup_messages_parent")
   other_sup_ticket_messages                               sup_ticket_messages[] @relation("sup_ticket_messagesTosup_ticket_messages")
-  adm_members_sup_ticket_messages_created_byToadm_members adm_members?          @relation("sup_ticket_messages_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_sup_ticket_messages_deleted_byToadm_members adm_members?          @relation("sup_ticket_messages_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_sup_ticket_messages_created_byToclt_members clt_members?          @relation("sup_ticket_messages_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_sup_ticket_messages_deleted_byToclt_members clt_members?          @relation("sup_ticket_messages_deleted_byToclt_members", fields: [deleted_by], references: [id])
   sup_tickets                                             sup_tickets           @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
-  adm_members_sup_ticket_messages_updated_byToadm_members adm_members?          @relation("sup_ticket_messages_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_sup_ticket_messages_updated_byToclt_members clt_members?          @relation("sup_ticket_messages_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -4984,12 +5045,12 @@ model sup_tickets {
   priority                                        ticket_priority?        @default(medium)
   sup_customer_feedback                           sup_customer_feedback[]
   sup_ticket_messages                             sup_ticket_messages[]
-  adm_members_sup_tickets_raised_byToadm_members  adm_members             @relation("sup_tickets_raised_byToadm_members", fields: [raised_by], references: [id], onUpdate: NoAction, map: "fk_sup_tickets_member")
+  clt_members_sup_tickets_raised_byToclt_members  clt_members             @relation("sup_tickets_raised_byToclt_members", fields: [raised_by], references: [id], onUpdate: NoAction, map: "fk_sup_tickets_member")
   adm_provider_employees                          adm_provider_employees? @relation(fields: [assigned_to], references: [id])
-  adm_members_sup_tickets_created_byToadm_members adm_members?            @relation("sup_tickets_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_sup_tickets_deleted_byToadm_members adm_members?            @relation("sup_tickets_deleted_byToadm_members", fields: [deleted_by], references: [id])
+  clt_members_sup_tickets_created_byToclt_members clt_members?            @relation("sup_tickets_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_sup_tickets_deleted_byToclt_members clt_members?            @relation("sup_tickets_deleted_byToclt_members", fields: [deleted_by], references: [id])
   adm_tenants                                     adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  adm_members_sup_tickets_updated_byToadm_members adm_members?            @relation("sup_tickets_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_sup_tickets_updated_byToclt_members clt_members?            @relation("sup_tickets_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([assigned_to])
   @@index([created_at])
@@ -5049,9 +5110,9 @@ model trp_client_invoices {
   payment_method                                          trp_payment_method?
   trp_client_invoice_lines                                trp_client_invoice_lines[]
   adm_tenants                                             adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_invoices_tenant")
-  adm_members_trp_client_invoices_created_byToadm_members adm_members?               @relation("trp_client_invoices_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_trp_client_invoices_deleted_byToadm_members adm_members?               @relation("trp_client_invoices_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_trp_client_invoices_updated_byToadm_members adm_members?               @relation("trp_client_invoices_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_trp_client_invoices_created_byToclt_members clt_members?               @relation("trp_client_invoices_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_trp_client_invoices_deleted_byToclt_members clt_members?               @relation("trp_client_invoices_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_trp_client_invoices_updated_byToclt_members clt_members?               @relation("trp_client_invoices_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([client_id, status, invoice_date], map: "idx_client_invoices_client_status_date")
   @@index([paid_at], map: "idx_client_invoices_paid_at")
@@ -5111,9 +5172,9 @@ model trp_platform_accounts {
   trp_platform_account_keys                                 trp_platform_account_keys[]
   dir_platforms                                             dir_platforms               @relation(fields: [platform_id], references: [id], onUpdate: NoAction, map: "fk_platform_accounts_platform")
   adm_tenants                                               adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_platform_accounts_tenant")
-  adm_members_trp_platform_accounts_created_byToadm_members adm_members?                @relation("trp_platform_accounts_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_trp_platform_accounts_deleted_byToadm_members adm_members?                @relation("trp_platform_accounts_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_trp_platform_accounts_updated_byToadm_members adm_members?                @relation("trp_platform_accounts_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_trp_platform_accounts_created_byToclt_members clt_members?                @relation("trp_platform_accounts_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_trp_platform_accounts_deleted_byToclt_members clt_members?                @relation("trp_platform_accounts_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_trp_platform_accounts_updated_byToclt_members clt_members?                @relation("trp_platform_accounts_updated_byToclt_members", fields: [updated_by], references: [id])
   trp_settlements                                           trp_settlements[]
   trp_trips                                                 trp_trips[]
 
@@ -5166,9 +5227,9 @@ model trp_settlements {
   adm_tenants                                         adm_tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_settlements_tenant")
   trp_trips                                           trp_trips              @relation(fields: [trip_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_settlements_trip")
   rev_reconciliations                                 rev_reconciliations?   @relation(fields: [reconciliation_id], references: [id], map: "fk_trp_settlements_reconciliation")
-  adm_members_trp_settlements_created_byToadm_members adm_members?           @relation("trp_settlements_created_byToadm_members", fields: [created_by], references: [id])
-  adm_members_trp_settlements_deleted_byToadm_members adm_members?           @relation("trp_settlements_deleted_byToadm_members", fields: [deleted_by], references: [id])
-  adm_members_trp_settlements_updated_byToadm_members adm_members?           @relation("trp_settlements_updated_byToadm_members", fields: [updated_by], references: [id])
+  clt_members_trp_settlements_created_byToclt_members clt_members?           @relation("trp_settlements_created_byToclt_members", fields: [created_by], references: [id])
+  clt_members_trp_settlements_deleted_byToclt_members clt_members?           @relation("trp_settlements_deleted_byToclt_members", fields: [deleted_by], references: [id])
+  clt_members_trp_settlements_updated_byToclt_members clt_members?           @relation("trp_settlements_updated_byToclt_members", fields: [updated_by], references: [id])
 
   @@index([reconciled], map: "idx_settlements_not_reconciled")
   @@index([platform_account_id, settlement_date], map: "idx_settlements_platform_account_date")

@@ -127,7 +127,7 @@ const fetchAllOpportunities = cache(
                 },
               },
             },
-            adm_members_crm_opportunities_assigned_toToadm_members: {
+            clt_members_crm_opportunities_assigned_toToclt_members: {
               select: {
                 id: true,
                 first_name: true,
@@ -176,7 +176,7 @@ const fetchAllOpportunities = cache(
     > = rawOpportunities.map((opp) => {
       const lead = opp.crm_leads_crm_opportunities_lead_idTocrm_leads;
       const assignedTo =
-        opp.adm_members_crm_opportunities_assigned_toToadm_members;
+        opp.clt_members_crm_opportunities_assigned_toToclt_members;
 
       // Calculate days in stage
       const stageEnteredAt = new Date(opp.stage_entered_at);

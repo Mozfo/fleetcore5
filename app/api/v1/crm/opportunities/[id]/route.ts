@@ -121,7 +121,7 @@ export async function GET(
             },
           },
         },
-        adm_members_crm_opportunities_assigned_toToadm_members: {
+        clt_members_crm_opportunities_assigned_toToclt_members: {
           select: {
             id: true,
             first_name: true,
@@ -158,7 +158,7 @@ export async function GET(
     // Extract relations
     const lead = opportunity.crm_leads_crm_opportunities_lead_idTocrm_leads;
     const assignedTo =
-      opportunity.adm_members_crm_opportunities_assigned_toToadm_members;
+      opportunity.clt_members_crm_opportunities_assigned_toToclt_members;
 
     return NextResponse.json(
       {
@@ -318,7 +318,7 @@ export async function PATCH(
     // Build update data with business logic
     const updateData: Prisma.crm_opportunitiesUpdateInput = {
       updated_at: new Date(),
-      adm_members_crm_opportunities_updated_byToadm_members: userId
+      clt_members_crm_opportunities_updated_byToclt_members: userId
         ? { connect: { id: userId } }
         : undefined,
     };
@@ -355,11 +355,11 @@ export async function PATCH(
     // Handle relations via connect/disconnect
     if (validatedData.assigned_to !== undefined) {
       if (validatedData.assigned_to) {
-        updateData.adm_members_crm_opportunities_assigned_toToadm_members = {
+        updateData.clt_members_crm_opportunities_assigned_toToclt_members = {
           connect: { id: validatedData.assigned_to },
         };
       } else {
-        updateData.adm_members_crm_opportunities_assigned_toToadm_members = {
+        updateData.clt_members_crm_opportunities_assigned_toToclt_members = {
           disconnect: true,
         };
       }
@@ -441,7 +441,7 @@ export async function PATCH(
             country_code: true,
           },
         },
-        adm_members_crm_opportunities_assigned_toToadm_members: {
+        clt_members_crm_opportunities_assigned_toToclt_members: {
           select: {
             id: true,
             first_name: true,
@@ -469,7 +469,7 @@ export async function PATCH(
     // Extract relations for response
     const lead = updated.crm_leads_crm_opportunities_lead_idTocrm_leads;
     const assignedTo =
-      updated.adm_members_crm_opportunities_assigned_toToadm_members;
+      updated.clt_members_crm_opportunities_assigned_toToclt_members;
 
     return NextResponse.json(
       {
