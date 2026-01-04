@@ -103,6 +103,16 @@ export async function POST(request: NextRequest) {
 
     // 3. Parse and validate webhook payload
     const body = JSON.parse(rawBody);
+
+    // Handle Cal.com ping test (sends minimal payload)
+    if (body.triggerEvent === "PING" || !body.payload) {
+      logger.info("[Cal.com Webhook] Ping test received - responding OK");
+      return NextResponse.json(
+        { success: true, message: "Ping received" },
+        { status: 200 }
+      );
+    }
+
     const { triggerEvent, payload } = calcomWebhookSchema.parse(body);
 
     // 4. Extract attendee email (first attendee is the lead)
