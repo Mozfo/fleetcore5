@@ -7,10 +7,14 @@ import {
   TrendingUp,
   MapPin,
   FileText,
-  DollarSign,
+  Wallet,
   Fuel,
   Calculator,
 } from "lucide-react";
+import {
+  formatCurrency,
+  formatCurrencyCompact,
+} from "@/lib/utils/format-currency";
 
 interface FeatureItem {
   title: string;
@@ -19,7 +23,8 @@ interface FeatureItem {
 }
 
 export function FeatureSections() {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
+  const locale = i18n.language || "en";
 
   const features: Array<{
     key: "earnings" | "mileage" | "taxes";
@@ -31,19 +36,19 @@ export function FeatureSections() {
       key: "earnings",
       icon: TrendingUp,
       color: "from-green-500 to-emerald-600",
-      mockup: <EarningsMockup />,
+      mockup: <EarningsMockup locale={locale} />,
     },
     {
       key: "mileage",
       icon: MapPin,
       color: "from-blue-500 to-cyan-600",
-      mockup: <MileageMockup />,
+      mockup: <MileageMockup locale={locale} />,
     },
     {
       key: "taxes",
       icon: FileText,
       color: "from-purple-500 to-pink-600",
-      mockup: <TaxesMockup />,
+      mockup: <TaxesMockup locale={locale} />,
     },
   ];
 
@@ -128,7 +133,13 @@ export function FeatureSections() {
 }
 
 // Earnings Mockup Component
-function EarningsMockup() {
+function EarningsMockup({ locale }: { locale: string }) {
+  const platforms = [
+    { name: "Uber", amount: 687.3, percent: 55, color: "bg-gray-900" },
+    { name: "Bolt", amount: 412.2, percent: 33, color: "bg-green-500" },
+    { name: "Careem", amount: 148.0, percent: 12, color: "bg-green-600" },
+  ];
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between">
@@ -136,39 +147,20 @@ function EarningsMockup() {
           This Week
         </span>
         <span className="text-2xl font-bold text-gray-900 dark:text-white">
-          $1,247.50
+          {formatCurrency(1247.5, locale)}
         </span>
       </div>
 
       {/* Platform breakdown */}
       <div className="space-y-3">
-        {[
-          {
-            name: "Uber",
-            amount: "$687.30",
-            percent: 55,
-            color: "bg-gray-900",
-          },
-          {
-            name: "Bolt",
-            amount: "$412.20",
-            percent: 33,
-            color: "bg-green-500",
-          },
-          {
-            name: "Careem",
-            amount: "$148.00",
-            percent: 12,
-            color: "bg-green-600",
-          },
-        ].map((platform) => (
+        {platforms.map((platform) => (
           <div key={platform.name}>
             <div className="mb-1 flex items-center justify-between text-sm">
               <span className="text-gray-700 dark:text-gray-300">
                 {platform.name}
               </span>
               <span className="font-medium text-gray-900 dark:text-white">
-                {platform.amount}
+                {formatCurrency(platform.amount, locale)}
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -207,7 +199,12 @@ function EarningsMockup() {
 }
 
 // Mileage Mockup Component
-function MileageMockup() {
+function MileageMockup({ locale }: { locale: string }) {
+  const trips = [
+    { time: "2:45 PM", miles: "12.3 mi", deduction: 7.38 },
+    { time: "1:20 PM", miles: "8.7 mi", deduction: 5.22 },
+  ];
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
       {/* Map placeholder */}
@@ -251,24 +248,21 @@ function MileageMockup() {
         </div>
         <div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            $52.44
+            {formatCurrency(52.44, locale)}
           </div>
           <div className="text-xs text-gray-500">Deduction</div>
         </div>
         <div className="flex items-center justify-center">
           <Fuel className="h-5 w-5 text-orange-500" />
           <span className="ml-1 text-sm font-medium text-gray-900 dark:text-white">
-            $24.50
+            {formatCurrency(24.5, locale)}
           </span>
         </div>
       </div>
 
       {/* Trip log */}
       <div className="mt-4 space-y-2">
-        {[
-          { time: "2:45 PM", miles: "12.3 mi", deduction: "$7.38" },
-          { time: "1:20 PM", miles: "8.7 mi", deduction: "$5.22" },
-        ].map((trip, i) => (
+        {trips.map((trip, i) => (
           <div
             key={i}
             className="flex items-center justify-between rounded-lg bg-white p-3 dark:bg-gray-800"
@@ -279,7 +273,9 @@ function MileageMockup() {
             <span className="text-sm font-medium text-gray-900 dark:text-white">
               {trip.miles}
             </span>
-            <span className="text-sm text-green-600">{trip.deduction}</span>
+            <span className="text-sm text-green-600">
+              {formatCurrency(trip.deduction, locale)}
+            </span>
           </div>
         ))}
       </div>
@@ -288,7 +284,13 @@ function MileageMockup() {
 }
 
 // Taxes Mockup Component
-function TaxesMockup() {
+function TaxesMockup({ locale }: { locale: string }) {
+  const deductions = [
+    { label: "Mileage Deduction", value: 3240, icon: MapPin },
+    { label: "Phone & Data", value: 720, icon: Wallet },
+    { label: "Car Expenses", value: 867, icon: Fuel },
+  ];
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 shadow-xl dark:border-gray-800 dark:bg-gray-900">
       {/* Header */}
@@ -297,18 +299,16 @@ function TaxesMockup() {
           <div className="text-sm text-gray-600 dark:text-gray-400">
             2024 Tax Summary
           </div>
-          <div className="text-2xl font-bold text-green-600">$4,827 saved</div>
+          <div className="text-2xl font-bold text-green-600">
+            {formatCurrencyCompact(4827, locale)} saved
+          </div>
         </div>
         <Calculator className="h-8 w-8 text-purple-500" />
       </div>
 
       {/* Deduction categories */}
       <div className="space-y-4">
-        {[
-          { label: "Mileage Deduction", value: "$3,240", icon: MapPin },
-          { label: "Phone & Data", value: "$720", icon: DollarSign },
-          { label: "Car Expenses", value: "$867", icon: Fuel },
-        ].map((item, i) => {
+        {deductions.map((item, i) => {
           const Icon = item.icon;
           return (
             <motion.div
@@ -328,7 +328,7 @@ function TaxesMockup() {
                 </span>
               </div>
               <span className="font-semibold text-gray-900 dark:text-white">
-                {item.value}
+                {formatCurrencyCompact(item.value, locale)}
               </span>
             </motion.div>
           );

@@ -23,9 +23,16 @@
       "solutions": "Solutions",
       "resources": "Ressources",
       "plan": "Plan",
-      "company": "Entreprise",
+      "about": "À propos",
+      "aboutDropdown": {
+        "story": "Notre histoire",
+        "careers": "Carrières",
+        "blog": "Blog",
+        "contact": "Contact",
+        "legacy": "Ancienne page"
+      },
       "login": "Connexion",
-      "demo": "Planifier Démo"
+      "demo": "Réserver une Démo"
     },
     "productMenu": {
       "tabs": {

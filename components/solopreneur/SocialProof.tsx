@@ -15,7 +15,7 @@ function AnimatedCounter({
   const count = useMotionValue(0);
   const rounded = useTransform(count, (latest) => {
     if (value >= 1000000) {
-      return `$${(latest / 1000000).toFixed(1)}M`;
+      return `€${(latest / 1000000).toFixed(1)}M`;
     }
     if (value >= 1000) {
       return `${(latest / 1000).toFixed(0)}K`;

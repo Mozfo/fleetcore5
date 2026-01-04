@@ -14,7 +14,7 @@ export function FinalCTA() {
       title: "Start Your Journey Today",
       subtitle:
         "Join hundreds of fleet operators who've already transformed their operations",
-      cta1: "Schedule a Demo",
+      cta1: "Book a Demo",
       cta1Sub: "30-min personalized walkthrough",
       cta2: "Contact Sales",
       cta2Sub: "Talk to our team",

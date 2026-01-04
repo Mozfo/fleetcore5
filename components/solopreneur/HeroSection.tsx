@@ -3,9 +3,11 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Star, Download } from "lucide-react";
+import { formatCurrency } from "@/lib/utils/format-currency";
 
 export function HeroSection() {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
+  const locale = i18n.language || "en";
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white py-20 lg:py-32 dark:from-gray-900 dark:to-gray-950">
@@ -129,7 +131,9 @@ export function HeroSection() {
                       <div className="mb-1 text-xs opacity-70">
                         Today&apos;s Earnings
                       </div>
-                      <div className="text-3xl font-bold">$247.50</div>
+                      <div className="text-3xl font-bold">
+                        {formatCurrency(247.5, locale)}
+                      </div>
                     </div>
 
                     {/* Mini Cards */}
@@ -137,13 +141,13 @@ export function HeroSection() {
                       <div className="rounded-xl bg-white/20 p-3 backdrop-blur">
                         <div className="text-xs text-white/70">Uber</div>
                         <div className="text-lg font-semibold text-white">
-                          $142.30
+                          {formatCurrency(142.3, locale)}
                         </div>
                       </div>
                       <div className="rounded-xl bg-white/20 p-3 backdrop-blur">
                         <div className="text-xs text-white/70">Bolt</div>
                         <div className="text-lg font-semibold text-white">
-                          $105.20
+                          {formatCurrency(105.2, locale)}
                         </div>
                       </div>
                     </div>

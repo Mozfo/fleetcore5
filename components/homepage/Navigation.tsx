@@ -658,17 +658,7 @@ export function Navigation() {
               )}
             </div>
 
-            {/* Regular Links */}
-            <Link
-              href={`/${locale}/resources`}
-              className={`font-medium transition-colors ${
-                pathname === `/${locale}/resources`
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-              }`}
-            >
-              {t("homepage.nav.resources")}
-            </Link>
+            {/* Plan Link */}
             <Link
               href={`/${locale}/plan`}
               className={`font-medium transition-colors ${
@@ -679,16 +669,54 @@ export function Navigation() {
             >
               {t("homepage.nav.plan")}
             </Link>
-            <Link
-              href={`/${locale}/company`}
-              className={`font-medium transition-colors ${
-                pathname === `/${locale}/company`
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-              }`}
+
+            {/* About Us Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setOpenDropdown("about")}
+              onMouseLeave={() => setOpenDropdown(null)}
             >
-              {t("homepage.nav.company")}
-            </Link>
+              <button className="flex items-center gap-1 py-4 font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                {t("homepage.nav.about")}
+                <ChevronRight className="h-4 w-4 rotate-90" />
+              </button>
+
+              {openDropdown === "about" && (
+                <div className="absolute top-full left-0 z-50 w-56 rounded-xl border border-gray-200 bg-white py-2 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                  <Link
+                    href={`/${locale}/about`}
+                    className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    {t("homepage.nav.aboutDropdown.story")}
+                  </Link>
+                  <Link
+                    href={`/${locale}/careers`}
+                    className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    {t("homepage.nav.aboutDropdown.careers")}
+                  </Link>
+                  <Link
+                    href={`/${locale}/blog`}
+                    className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    {t("homepage.nav.aboutDropdown.blog")}
+                  </Link>
+                  <Link
+                    href={`/${locale}/contact`}
+                    className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    {t("homepage.nav.aboutDropdown.contact")}
+                  </Link>
+                  <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                  <Link
+                    href={`/${locale}/homepage-old`}
+                    className="block px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+                  >
+                    {t("homepage.nav.aboutDropdown.legacy")}
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Actions */}
@@ -716,7 +744,7 @@ export function Navigation() {
             </Link>
 
             <Link
-              href={localizedPath("request-demo")}
+              href={localizedPath("/request-demo")}
               className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 px-5 py-2.5 font-semibold text-white transition-all hover:shadow-lg"
             >
               {t("homepage.nav.demo")}

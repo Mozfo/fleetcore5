@@ -1,8 +1,11 @@
 export { HeroSection } from "./HeroSection";
+export { ValueProps } from "./ValueProps";
+export { Features } from "./Features";
+export { MobileAppSection } from "./MobileAppSection";
+export { SocialProof } from "./SocialProof";
+export { FinalCTA } from "./FinalCTA";
 export { AnimatedStory } from "./AnimatedStory";
 export { WebAppFeatures } from "./WebAppFeatures";
 export { LiveDashboardPreview } from "./LiveDashboardPreview";
 export { MobileAppTeaser } from "./MobileAppTeaser";
 export { IntegrationsSection } from "./IntegrationsSection";
-export { SocialProof } from "./SocialProof";
-export { FinalCTA } from "./FinalCTA";

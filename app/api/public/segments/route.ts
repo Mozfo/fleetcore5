@@ -157,8 +157,8 @@ function getDefaultSegments() {
           { en: "Real-time analytics", fr: "Analytics temps réel" },
         ],
         cta: {
-          text: { en: "Schedule Demo", fr: "Réserver une Démo" },
-          link: "/book-demo",
+          text: { en: "Book a Demo", fr: "Réserver une Démo" },
+          link: "/request-demo",
           show_app_badges: false,
         },
       },
