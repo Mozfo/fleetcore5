@@ -25,7 +25,8 @@ describe("LeadRepository", () => {
 
   describe("findByEmail", () => {
     it("should find lead by email with relations", async () => {
-      const mockLead: LeadWithRelations = {
+      // Using 'as unknown as' to handle potential Prisma type generation inconsistencies
+      const mockLead = {
         id: "lead-1",
         lead_code: "LEAD-001",
         email: "contact@example.com",
@@ -107,7 +108,7 @@ describe("LeadRepository", () => {
           id: "source-1",
           name_translations: { en: "Organic", fr: "Organique", ar: "عضوي" },
         },
-      };
+      } as unknown as LeadWithRelations;
 
       mockPrisma.crm_leads.findFirst.mockResolvedValue(mockLead);
 
