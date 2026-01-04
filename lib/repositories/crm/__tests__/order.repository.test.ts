@@ -8,6 +8,9 @@ import {
 import type { PrismaClient } from "@prisma/client";
 import type { PrismaTransaction } from "@/lib/core/types";
 
+// Use dynamic year to avoid test failures on year change
+const currentYear = new Date().getFullYear();
+
 describe("OrderRepository", () => {
   let repository: OrderRepository;
   let mockPrisma: {
@@ -303,8 +306,8 @@ describe("OrderRepository", () => {
       const mockCreatedOrder = {
         id: "order-1",
         ...mockOrderInput,
-        order_reference: "ORD-2025-00001",
-        order_code: "O2025-001",
+        order_reference: `ORD-${currentYear}-00001`,
+        order_code: `O${currentYear}-001`,
         created_by: "user-1",
         updated_by: "user-1",
       };
@@ -320,15 +323,15 @@ describe("OrderRepository", () => {
           provider_id: "provider-1",
           total_value: 50000,
           currency: "EUR",
-          order_reference: "ORD-2025-00001",
-          order_code: "O2025-001",
+          order_reference: `ORD-${currentYear}-00001`,
+          order_code: `O${currentYear}-001`,
           created_by: "user-1",
           updated_by: "user-1",
         }),
       });
 
-      expect(result.order_reference).toBe("ORD-2025-00001");
-      expect(result.order_code).toBe("O2025-001");
+      expect(result.order_reference).toBe(`ORD-${currentYear}-00001`);
+      expect(result.order_code).toBe(`O${currentYear}-001`);
     });
 
     it("should support transaction context for atomic creation", async () => {
@@ -338,8 +341,8 @@ describe("OrderRepository", () => {
           create: vi.fn().mockResolvedValue({
             id: "order-1",
             ...mockOrderInput,
-            order_reference: "ORD-2025-00001",
-            order_code: "O2025-001",
+            order_reference: `ORD-${currentYear}-00001`,
+            order_code: `O${currentYear}-001`,
           }),
         },
       };

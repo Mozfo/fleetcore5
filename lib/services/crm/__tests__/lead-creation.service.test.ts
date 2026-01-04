@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import type { CreateLeadInput } from "@/lib/validators/crm/lead.validators";
 import { Prisma } from "@prisma/client";
 
+// Use dynamic year to avoid test failures on year change
+const currentYear = new Date().getFullYear();
+
 describe("LeadCreationService", () => {
   let service: LeadCreationService;
   const mockTenantId = "tenant-123";
@@ -247,7 +250,7 @@ describe("LeadCreationService", () => {
 
     // Mock LeadRepository.generateLeadCode
     vi.spyOn(service["leadRepo"], "generateLeadCode").mockResolvedValue(
-      "LEAD-2025-001"
+      `LEAD-${currentYear}-001`
     );
 
     // Mock LeadRepository.create
@@ -374,7 +377,7 @@ describe("LeadCreationService", () => {
 
       // Verify lead created
       expect(result.lead.id).toBeDefined();
-      expect(result.lead.lead_code).toBe("LEAD-2025-001");
+      expect(result.lead.lead_code).toBe(`LEAD-${currentYear}-001`);
       expect(result.lead.email).toBe("ceo@bigfleet.com");
       expect(result.lead.status).toBe("new");
 
@@ -901,8 +904,10 @@ describe("LeadCreationService", () => {
 
       const result = await service.createLead(input, mockTenantId);
 
-      expect(result.lead.lead_code).toBe("LEAD-2025-001");
-      expect(service["leadRepo"].generateLeadCode).toHaveBeenCalledWith(2025);
+      expect(result.lead.lead_code).toBe(`LEAD-${currentYear}-001`);
+      expect(service["leadRepo"].generateLeadCode).toHaveBeenCalledWith(
+        currentYear
+      );
     });
 
     it("should preserve metadata in created lead", async () => {
