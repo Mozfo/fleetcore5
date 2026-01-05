@@ -66,6 +66,21 @@ export async function POST(request: NextRequest) {
     // 1. Get raw body for signature verification
     const rawBody = await request.text();
 
+    // Debug: Log incoming webhook (temporarily for debugging)
+    const allHeaders: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+      allHeaders[key] = value;
+    });
+    logger.info(
+      {
+        headers: allHeaders,
+        bodyPreview: rawBody.substring(0, 500),
+        bodyLength: rawBody.length,
+        hasSignatureHeader: !!request.headers.get("x-cal-signature-256"),
+      },
+      "[Cal.com Webhook] Incoming request"
+    );
+
     // 2. Verify webhook signature
     if (CALCOM_WEBHOOK_SECRET) {
       const signature = request.headers.get("x-cal-signature-256");
