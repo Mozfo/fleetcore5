@@ -158,7 +158,7 @@ export async function qualifyLeadAction(
       where: { id: leadId },
       data: updateData,
       include: {
-        adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
+        eu1f9qh: {
           select: {
             id: true,
             first_name: true,

@@ -225,7 +225,7 @@ export class AmendmentService {
     const subscription = await this.prisma.clt_subscriptions.findUnique({
       where: { id: input.subscriptionId },
       include: {
-        bil_billing_plans_clt_subscriptions_plan_idTobil_billing_plans: true,
+        xgunea8: true,
       },
     });
 
@@ -279,8 +279,7 @@ export class AmendmentService {
     }
 
     // Get current plan price
-    const currentPlan =
-      subscription.bil_billing_plans_clt_subscriptions_plan_idTobil_billing_plans;
+    const currentPlan = subscription.xgunea8;
     const currentPrice = currentPlan?.monthly_fee ?? null;
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -623,8 +622,7 @@ export class AmendmentService {
       };
 
       if (amendment.new_plan_id) {
-        updateData.bil_billing_plans_clt_subscriptions_plan_idTobil_billing_plans =
-          { connect: { id: amendment.new_plan_id } };
+        updateData.xgunea8 = { connect: { id: amendment.new_plan_id } };
       }
       if (amendment.new_billing_cycle) {
         updateData.billing_cycle = amendment.new_billing_cycle;

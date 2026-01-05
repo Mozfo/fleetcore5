@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
 
     // Search across lead fields
     if (search) {
-      where.crm_leads_crm_opportunities_lead_idTocrm_leads = {
+      where.xva1wvf = {
         OR: [
           { email: { contains: search, mode: "insensitive" } },
           { company_name: { contains: search, mode: "insensitive" } },
@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
       db.crm_opportunities.findMany({
         where,
         include: {
-          crm_leads_crm_opportunities_lead_idTocrm_leads: {
+          xva1wvf: {
             select: {
               id: true,
               first_name: true,
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          clt_members_crm_opportunities_assigned_toToclt_members: {
+          mfiaerr: {
             select: {
               id: true,
               first_name: true,
@@ -194,9 +194,8 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let formattedOpportunities = opportunities.map((opp: any) => {
-      const lead = opp.crm_leads_crm_opportunities_lead_idTocrm_leads;
-      const assignedTo =
-        opp.clt_members_crm_opportunities_assigned_toToclt_members;
+      const lead = opp.xva1wvf;
+      const assignedTo = opp.mfiaerr;
 
       // Calculate days in stage
       const stageEnteredAt = new Date(opp.stage_entered_at);

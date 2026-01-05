@@ -101,7 +101,7 @@ export async function GET(
     const opportunity = await db.crm_opportunities.findFirst({
       where: { id, deleted_at: null },
       include: {
-        crm_leads_crm_opportunities_lead_idTocrm_leads: {
+        xva1wvf: {
           select: {
             id: true,
             first_name: true,
@@ -121,7 +121,7 @@ export async function GET(
             },
           },
         },
-        clt_members_crm_opportunities_assigned_toToclt_members: {
+        mfiaerr: {
           select: {
             id: true,
             first_name: true,
@@ -156,9 +156,8 @@ export async function GET(
     const isRotting = daysInStage > maxDays && opportunity.status === "open";
 
     // Extract relations
-    const lead = opportunity.crm_leads_crm_opportunities_lead_idTocrm_leads;
-    const assignedTo =
-      opportunity.clt_members_crm_opportunities_assigned_toToclt_members;
+    const lead = opportunity.xva1wvf;
+    const assignedTo = opportunity.mfiaerr;
 
     return NextResponse.json(
       {
@@ -318,9 +317,7 @@ export async function PATCH(
     // Build update data with business logic
     const updateData: Prisma.crm_opportunitiesUpdateInput = {
       updated_at: new Date(),
-      clt_members_crm_opportunities_updated_byToclt_members: userId
-        ? { connect: { id: userId } }
-        : undefined,
+      mkdn2e2: userId ? { connect: { id: userId } } : undefined,
     };
 
     // Copy validated fields
@@ -355,11 +352,11 @@ export async function PATCH(
     // Handle relations via connect/disconnect
     if (validatedData.assigned_to !== undefined) {
       if (validatedData.assigned_to) {
-        updateData.clt_members_crm_opportunities_assigned_toToclt_members = {
+        updateData.mfiaerr = {
           connect: { id: validatedData.assigned_to },
         };
       } else {
-        updateData.clt_members_crm_opportunities_assigned_toToclt_members = {
+        updateData.mfiaerr = {
           disconnect: true,
         };
       }
@@ -431,7 +428,7 @@ export async function PATCH(
       where: { id },
       data: updateData,
       include: {
-        crm_leads_crm_opportunities_lead_idTocrm_leads: {
+        xva1wvf: {
           select: {
             id: true,
             first_name: true,
@@ -441,7 +438,7 @@ export async function PATCH(
             country_code: true,
           },
         },
-        clt_members_crm_opportunities_assigned_toToclt_members: {
+        mfiaerr: {
           select: {
             id: true,
             first_name: true,
@@ -467,9 +464,8 @@ export async function PATCH(
     );
 
     // Extract relations for response
-    const lead = updated.crm_leads_crm_opportunities_lead_idTocrm_leads;
-    const assignedTo =
-      updated.clt_members_crm_opportunities_assigned_toToclt_members;
+    const lead = updated.xva1wvf;
+    const assignedTo = updated.mfiaerr;
 
     return NextResponse.json(
       {
@@ -594,7 +590,7 @@ export async function DELETE(
     const existing = await db.crm_opportunities.findFirst({
       where: { id, deleted_at: null },
       include: {
-        crm_leads_crm_opportunities_lead_idTocrm_leads: {
+        xva1wvf: {
           select: { email: true, company_name: true },
         },
       },
@@ -633,7 +629,7 @@ export async function DELETE(
     });
 
     // Audit log
-    const lead = existing.crm_leads_crm_opportunities_lead_idTocrm_leads;
+    const lead = existing.xva1wvf;
     logger.warn(
       {
         opportunityId: id,

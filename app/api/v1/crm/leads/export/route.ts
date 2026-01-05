@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     const leads = await db.crm_leads.findMany({
       where,
       include: {
-        adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
+        eu1f9qh: {
           select: {
             id: true,
             first_name: true,
@@ -205,8 +205,7 @@ export async function POST(request: NextRequest) {
 
     // STEP 5: Transform data
     const exportData = leads.map((lead) => {
-      const assigned =
-        lead.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees;
+      const assigned = lead.eu1f9qh;
       const country = lead.crm_countries;
 
       return {

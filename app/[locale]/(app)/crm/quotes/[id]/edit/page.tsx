@@ -22,7 +22,7 @@ async function fetchOpportunities() {
       deleted_at: null,
     },
     include: {
-      crm_leads_crm_opportunities_lead_idTocrm_leads: {
+      xva1wvf: {
         select: {
           company_name: true,
           first_name: true,
@@ -37,21 +37,16 @@ async function fetchOpportunities() {
 
   return opportunities.map((opp) => ({
     id: opp.id,
-    title:
-      opp.crm_leads_crm_opportunities_lead_idTocrm_leads?.company_name ||
-      "Unknown",
+    title: opp.xva1wvf?.company_name || "Unknown",
     stage: opp.stage,
     expected_value: opp.expected_value ? Number(opp.expected_value) : null,
     currency: opp.currency || "EUR",
-    lead: opp.crm_leads_crm_opportunities_lead_idTocrm_leads
+    lead: opp.xva1wvf
       ? {
-          company_name:
-            opp.crm_leads_crm_opportunities_lead_idTocrm_leads.company_name,
-          first_name:
-            opp.crm_leads_crm_opportunities_lead_idTocrm_leads.first_name,
-          last_name:
-            opp.crm_leads_crm_opportunities_lead_idTocrm_leads.last_name,
-          email: opp.crm_leads_crm_opportunities_lead_idTocrm_leads.email,
+          company_name: opp.xva1wvf.company_name,
+          first_name: opp.xva1wvf.first_name,
+          last_name: opp.xva1wvf.last_name,
+          email: opp.xva1wvf.email,
         }
       : null,
   }));

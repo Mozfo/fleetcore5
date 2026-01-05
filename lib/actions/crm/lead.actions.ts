@@ -259,7 +259,7 @@ export async function updateLeadAction(
       where: { id: leadId },
       data: updateData,
       include: {
-        adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
+        eu1f9qh: {
           select: {
             id: true,
             first_name: true,
@@ -341,22 +341,13 @@ export async function updateLeadAction(
         ? Number(updatedLead.qualification_score)
         : null,
       // Format assigned_to relation
-      assigned_to:
-        updatedLead.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-          ? {
-              id: updatedLead
-                .adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-                .id,
-              first_name:
-                updatedLead
-                  .adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-                  .first_name,
-              last_name:
-                updatedLead
-                  .adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-                  .last_name,
-            }
-          : null,
+      assigned_to: updatedLead.eu1f9qh
+        ? {
+            id: updatedLead.eu1f9qh.id,
+            first_name: updatedLead.eu1f9qh.first_name,
+            last_name: updatedLead.eu1f9qh.last_name,
+          }
+        : null,
       gdpr_consent: updatedLead.gdpr_consent,
       consent_at: updatedLead.consent_at?.toISOString() || null,
       consent_ip: updatedLead.consent_ip,

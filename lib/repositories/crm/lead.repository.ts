@@ -37,7 +37,7 @@ export const LEAD_SORT_FIELDS = [
  * Note: crm_lead_sources uses JSONB translations (name_translations, description_translations)
  */
 export type LeadWithRelations = crm_leads & {
-  adm_provider_employees_crm_leads_assigned_toToadm_provider_employees?: {
+  eu1f9qh?: {
     id: string;
     first_name: string;
     last_name: string;
@@ -84,7 +84,7 @@ export class LeadRepository
    * const lead = await leadRepo.findByEmail('contact@example.com');
    * if (lead) {
    *   // Access assigned employee and source
-   *   const employee = lead.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees;
+   *   const employee = lead.eu1f9qh;
    *   const source = lead.crm_lead_sources;
    * }
    * ```
@@ -100,7 +100,7 @@ export class LeadRepository
       },
       include: {
         // Include assigned employee (if any)
-        adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
+        eu1f9qh: {
           select: {
             id: true,
             first_name: true,
@@ -458,14 +458,13 @@ export class LeadRepository
         expected_value: true,
         currency: true,
         created_at: true,
-        adm_provider_employees_crm_opportunities_created_byToadm_provider_employees:
-          {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-            },
+        eqtkd3: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
           },
+        },
       },
       orderBy: { created_at: "desc" },
     });
@@ -481,8 +480,7 @@ export class LeadRepository
           : null,
         metadata: { stage: opp.stage, expected_value: value },
         created_at: opp.created_at,
-        created_by:
-          opp.adm_provider_employees_crm_opportunities_created_byToadm_provider_employees,
+        created_by: opp.eqtkd3,
         entity_id: opp.id,
         entity_type: "opportunity",
       });

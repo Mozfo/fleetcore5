@@ -108,7 +108,7 @@ describe("LeadRepository", () => {
         // V6.2: Conversion columns
         tenant_id: null,
         converted_at: null,
-        adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
+        eu1f9qh: {
           id: "emp-1",
           first_name: "Marie",
           last_name: "Martin",
@@ -133,15 +133,14 @@ describe("LeadRepository", () => {
           deleted_at: null,
         },
         include: {
-          adm_provider_employees_crm_leads_assigned_toToadm_provider_employees:
-            {
-              select: {
-                id: true,
-                first_name: true,
-                last_name: true,
-                email: true,
-              },
+          eu1f9qh: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
             },
+          },
           crm_lead_sources: {
             select: {
               id: true,
@@ -217,7 +216,7 @@ describe("LeadRepository", () => {
       const mockLead: Partial<LeadWithRelations> = {
         id: "lead-1",
         email: "test@example.com",
-        adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
+        eu1f9qh: {
           id: "emp-1",
           first_name: "Marie",
           last_name: "Martin",
@@ -237,14 +236,8 @@ describe("LeadRepository", () => {
 
       const result = await repository.findByEmail("test@example.com");
 
-      expect(
-        result?.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-      ).toBeDefined();
-      expect(
-        result
-          ?.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-          ?.first_name
-      ).toBe("Marie");
+      expect(result?.eu1f9qh).toBeDefined();
+      expect(result?.eu1f9qh?.first_name).toBe("Marie");
       expect(result?.crm_lead_sources).toBeDefined();
       expect(result?.crm_lead_sources?.name_translations?.en).toBe(
         "Paid Search"

@@ -111,7 +111,7 @@ export async function convertLeadToOpportunityAction(
     const currentLead = await db.crm_leads.findFirst({
       where: { id: leadId, ...buildProviderFilter(providerId) },
       include: {
-        adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: {
+        eu1f9qh: {
           select: { id: true },
         },
       },
@@ -204,14 +204,13 @@ export async function convertLeadToOpportunityAction(
           updated_at: new Date(),
         },
         include: {
-          adm_provider_employees_crm_leads_assigned_toToadm_provider_employees:
-            {
-              select: {
-                id: true,
-                first_name: true,
-                last_name: true,
-              },
+          eu1f9qh: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
             },
+          },
           crm_countries: true,
         },
       });

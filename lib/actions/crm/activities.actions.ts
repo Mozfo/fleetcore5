@@ -264,7 +264,7 @@ export async function createActivityAction(
           id: validated.data.opportunityId,
           deleted_at: null,
           // Provider isolation via lead relation
-          crm_leads_crm_opportunities_lead_idTocrm_leads: {
+          xva1wvf: {
             ...buildProviderFilter(providerId),
           },
         },

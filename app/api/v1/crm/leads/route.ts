@@ -357,15 +357,14 @@ export async function GET(request: NextRequest) {
       db.crm_leads.findMany({
         where,
         include: {
-          adm_provider_employees_crm_leads_assigned_toToadm_provider_employees:
-            {
-              select: {
-                id: true,
-                first_name: true,
-                last_name: true,
-                email: true,
-              },
+          eu1f9qh: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
             },
+          },
           crm_countries: {
             select: {
               country_code: true,
@@ -410,26 +409,14 @@ export async function GET(request: NextRequest) {
           qualification_score: lead.qualification_score
             ? Number(lead.qualification_score)
             : null,
-          assigned_to:
-            lead.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-              ? {
-                  id: lead
-                    .adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-                    .id,
-                  first_name:
-                    lead
-                      .adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-                      .first_name,
-                  last_name:
-                    lead
-                      .adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-                      .last_name,
-                  email:
-                    lead
-                      .adm_provider_employees_crm_leads_assigned_toToadm_provider_employees
-                      .email,
-                }
-              : null,
+          assigned_to: lead.eu1f9qh
+            ? {
+                id: lead.eu1f9qh.id,
+                first_name: lead.eu1f9qh.first_name,
+                last_name: lead.eu1f9qh.last_name,
+                email: lead.eu1f9qh.email,
+              }
+            : null,
           created_at: lead.created_at.toISOString(),
           updated_at: lead.updated_at?.toISOString() || null,
         })),

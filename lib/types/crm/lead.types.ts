@@ -75,7 +75,7 @@ export interface CountryWithLocale {
  * Used in list views and detail pages
  */
 export interface LeadWithRelations extends crm_leads {
-  adm_provider_employees_crm_leads_assigned_toToadm_provider_employees: Pick<
+  eu1f9qh: Pick<
     adm_provider_employees,
     "id" | "first_name" | "last_name" | "email"
   > | null;

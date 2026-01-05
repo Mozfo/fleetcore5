@@ -91,15 +91,14 @@ const fetchAllLeads = cache(
             deleted_at: null, // Exclude soft-deleted only
           },
           include: {
-            adm_provider_employees_crm_leads_assigned_toToadm_provider_employees:
-              {
-                select: {
-                  id: true,
-                  first_name: true,
-                  last_name: true,
-                  email: true,
-                },
+            eu1f9qh: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                email: true,
               },
+            },
             crm_countries: {
               select: {
                 country_code: true,
@@ -143,8 +142,7 @@ const fetchAllLeads = cache(
 
     // Map to frontend-friendly format with ALL fields from schema
     const leads: Lead[] = rawLeads.map((lead) => {
-      const assignedTo =
-        lead.adm_provider_employees_crm_leads_assigned_toToadm_provider_employees;
+      const assignedTo = lead.eu1f9qh;
 
       return {
         // Core identifiers

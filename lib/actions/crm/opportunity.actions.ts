@@ -567,11 +567,11 @@ export async function updateOpportunityAction(
     // Handle assigned_to relation
     if (validatedData.assigned_to !== undefined) {
       if (validatedData.assigned_to) {
-        updateData.clt_members_crm_opportunities_assigned_toToclt_members = {
+        updateData.mfiaerr = {
           connect: { id: validatedData.assigned_to },
         };
       } else {
-        updateData.clt_members_crm_opportunities_assigned_toToclt_members = {
+        updateData.mfiaerr = {
           disconnect: true,
         };
       }
@@ -601,7 +601,7 @@ export async function updateOpportunityAction(
       where: { id: opportunityId },
       data: updateData,
       include: {
-        crm_leads_crm_opportunities_lead_idTocrm_leads: {
+        xva1wvf: {
           select: {
             id: true,
             first_name: true,
@@ -611,7 +611,7 @@ export async function updateOpportunityAction(
             company_name: true,
           },
         },
-        clt_members_crm_opportunities_assigned_toToclt_members: {
+        mfiaerr: {
           select: { id: true, first_name: true, last_name: true },
         },
       },
@@ -981,7 +981,7 @@ export async function getOpportunitiesAction(options?: {
       db.crm_opportunities.findMany({
         where,
         include: {
-          crm_leads_crm_opportunities_lead_idTocrm_leads: {
+          xva1wvf: {
             select: {
               id: true,
               first_name: true,
@@ -999,7 +999,7 @@ export async function getOpportunitiesAction(options?: {
               },
             },
           },
-          clt_members_crm_opportunities_assigned_toToclt_members: {
+          mfiaerr: {
             select: { id: true, first_name: true, last_name: true },
           },
         },
