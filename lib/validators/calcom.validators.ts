@@ -23,7 +23,7 @@ export const calcomAttendeeSchema = z.object({
   email: z.string().email(),
   name: z.string().optional(),
   timeZone: z.string().optional(),
-  language: z.string().optional(),
+  language: z.union([z.string(), z.object({ locale: z.string() })]).optional(),
 });
 
 /**
