@@ -2,37 +2,11 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /**
-   * Build Optimization for Vercel 8GB Memory Limit
-   *
-   * Problem: TypeScript type-checking and ESLint with type-aware rules load
-   * the full project into memory. For 700+ files, this exceeds Vercel's 8GB limit.
-   *
-   * Solution: CI/CD Separation (industry best practice)
-   * - GitHub Actions CI: Full validation before merge
-   *   See: .github/workflows/api-tests.yml (lines 74-78)
-   *   - pnpm typecheck (TypeScript strict)
-   *   - pnpm lint (ESLint with type-aware rules)
-   * - Vercel: Build only (validation already passed in CI)
-   *
-   * Sources:
-   * - https://vercel.com/docs/errors/sigkill-out-of-memory
-   * - https://nextjs.org/docs/app/guides/memory-usage
-   * - https://www.zhyd1997.dev/blog/resolve-nextjs-build-oom-on-vercel
-   *
-   * Also set in Vercel Dashboard > Settings > Environment Variables:
-   * NODE_OPTIONS = --max-old-space-size=6144
-   */
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Temporarily skip type checking during build to speed up Vercel deployment
+  // TODO: Remove this once the root cause is identified
   typescript: {
     ignoreBuildErrors: true,
   },
-
-  // Disable source maps in production (significant memory savings)
-  productionBrowserSourceMaps: false,
-
   // Externaliser les packages Pino pour éviter le bundling qui casse les worker threads
   // Fix: "Error: the worker thread exited" lors du logging avec Pino
   // Ref: https://github.com/pinojs/pino/issues/1429
@@ -46,7 +20,6 @@ const nextConfig: NextConfig = {
   ],
 
   experimental: {
-    webpackMemoryOptimizations: true, // Reduce webpack memory usage
     turbo: {}, // Support pour Turbopack dans Next.js 15
   },
 };
@@ -83,3 +56,6 @@ export default withSentryConfig(nextConfig, {
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
 });
+// deploy test Thu Dec  4 13:47:03 +04 2025
+// test deploy Thu Dec  4 13:56:11 +04 2025
+// webhook test Thu Dec  4 14:02:38 +04 2025
