@@ -69,14 +69,29 @@ vi.mock("@/lib/utils/locale-mapping", () => ({
 }));
 
 // Mock EmailVerificationService (used by wizard_step1 mode)
+const mockEmailVerificationService = {
+  sendVerificationCode: vi.fn().mockResolvedValue({
+    success: true,
+    leadId: "wizard-lead-uuid",
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+  }),
+  verifyCode: vi.fn(),
+  canResendCode: vi.fn(),
+  getVerificationStatus: vi.fn(),
+};
+
 vi.mock("@/lib/services/crm/email-verification.service", () => ({
-  EmailVerificationService: vi.fn().mockImplementation(() => ({
-    sendVerificationCode: vi.fn().mockResolvedValue({
-      success: true,
-      leadId: "wizard-lead-uuid",
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-    }),
-  })),
+  EmailVerificationService: vi
+    .fn()
+    .mockImplementation(() => mockEmailVerificationService),
+  emailVerificationService: mockEmailVerificationService, // Singleton export
+  VERIFICATION_CONSTANTS: {
+    CODE_LENGTH: 6,
+    BCRYPT_COST: 10,
+    CODE_EXPIRATION_MINUTES: 15,
+    RESEND_COOLDOWN_SECONDS: 60,
+    MAX_VERIFICATION_ATTEMPTS: 5,
+  },
 }));
 
 // Mock logger
