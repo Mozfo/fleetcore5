@@ -2,11 +2,6 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Temporarily skip type checking during build to speed up Vercel deployment
-  // TODO: Remove this once the root cause is identified
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   // Externaliser les packages Pino pour éviter le bundling qui casse les worker threads
   // Fix: "Error: the worker thread exited" lors du logging avec Pino
   // Ref: https://github.com/pinojs/pino/issues/1429
@@ -56,6 +51,3 @@ export default withSentryConfig(nextConfig, {
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
 });
-// deploy test Thu Dec  4 13:47:03 +04 2025
-// test deploy Thu Dec  4 13:56:11 +04 2025
-// webhook test Thu Dec  4 14:02:38 +04 2025
