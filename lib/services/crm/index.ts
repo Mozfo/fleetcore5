@@ -33,3 +33,15 @@ export type {
   RecordProviderSignatureParams,
   SendForSignatureResult,
 } from "./agreement.service";
+
+// Email Verification Service (V6.2.2 - Book Demo Wizard)
+export {
+  EmailVerificationService,
+  emailVerificationService,
+  VERIFICATION_CONSTANTS,
+} from "./email-verification.service";
+export type {
+  SendVerificationResult,
+  VerifyCodeResult,
+  ResendCheckResult,
+} from "./email-verification.service";
