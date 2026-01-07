@@ -3,27 +3,31 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /**
-   * ESLint Configuration for Vercel Builds
+   * Build Optimization for Vercel (8GB RAM limit)
    *
-   * ESLint with type-aware rules (parserOptions.project in eslint.config.mjs)
-   * requires loading the full TypeScript project into memory. For 700+ files,
-   * this exceeds Vercel's 8GB memory limit, causing OOM errors.
+   * Problem: Type-aware linting and TypeScript checking require loading the
+   * full project into memory. For 700+ TypeScript files, this exceeds Vercel's
+   * 8GB memory limit, causing OOM errors and build timeouts.
    *
-   * Architecture (industry best practice):
+   * Solution (industry best practice):
    * - GitHub Actions CI: Full validation (ESLint + TypeScript + Tests)
    *   See: .github/workflows/api-tests.yml lines 74-81
    * - Vercel: Build only (validation already done in CI before merge)
    *
    * Sources:
-   * - Next.js docs: "not recommended unless you already have ESLint
+   * - Next.js docs: "not recommended unless you already have ESLint/TypeScript
    *   configured to run in a separate part of your workflow (for example, in CI)"
    * - typescript-eslint docs: "most users primarily run complete lint via their CI"
    * - Vercel docs: 8GB memory limit per build container
    *
    * @see https://nextjs.org/docs/app/api-reference/config/next-config-js/eslint
+   * @see https://nextjs.org/docs/app/api-reference/config/next-config-js/typescript
    */
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   },
   // Externaliser les packages Pino pour éviter le bundling qui casse les worker threads
   // Fix: "Error: the worker thread exited" lors du logging avec Pino
