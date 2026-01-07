@@ -329,7 +329,7 @@ describe("EmailVerificationService", () => {
 
       expect(mockQueueNotification).toHaveBeenCalledWith(
         expect.objectContaining({
-          templateCode: "email_verification",
+          templateCode: "email_verification_code",
           recipientEmail: "test@example.com",
           locale: "fr",
           variables: expect.objectContaining({
