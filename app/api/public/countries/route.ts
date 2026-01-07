@@ -26,6 +26,7 @@ export async function GET(_request: NextRequest) {
         country_name_ar: true,
         flag_emoji: true,
         is_operational: true,
+        country_gdpr: true,
         display_order: true,
       },
       orderBy: {

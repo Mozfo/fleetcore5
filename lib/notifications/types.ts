@@ -89,6 +89,12 @@ export const NOTIFICATION_REGISTRY = {
     priority: "high" as NotificationPriority,
     description: "Sent to sales rep when lead is assigned",
   },
+  "crm.lead.email_verification": {
+    templateCode: "email_verification_code",
+    channels: ["email"] as NotificationChannel[],
+    priority: "critical" as NotificationPriority,
+    description: "6-digit verification code for Book Demo wizard (V6.2.2)",
+  },
 
   // Admin Domain
   "admin.member.welcome": {
@@ -330,6 +336,15 @@ export interface WebhookTestPayload {
 }
 
 /**
+ * Email Verification Code Payload - V6.2.2
+ * @see emails/templates/EmailVerificationCode.tsx
+ */
+export interface EmailVerificationCodePayload {
+  verification_code: string;
+  expires_in_minutes: number;
+}
+
+/**
  * Customer Verification Payload - V6.2-8.5
  * @see emails/templates/CustomerVerification.tsx
  */
@@ -353,6 +368,7 @@ export interface NotificationPayloadMap {
   "crm.lead.expansion": ExpansionOpportunityPayload;
   "crm.lead.followup": LeadFollowupPayload;
   "crm.sales.assignment": SalesRepAssignmentPayload;
+  "crm.lead.email_verification": EmailVerificationCodePayload;
   "admin.member.welcome": MemberWelcomePayload;
   "admin.member.password_reset": MemberPasswordResetPayload;
   "fleet.vehicle.inspection_reminder": VehicleInspectionReminderPayload;
@@ -456,7 +472,7 @@ export function isValidNotificationType(
  * @example getNotificationsByDomain("crm") -> ["crm.lead.confirmation", ...]
  */
 export function getNotificationsByDomain(
-  domain: "crm" | "admin" | "fleet" | "system"
+  domain: "crm" | "admin" | "fleet" | "billing" | "system"
 ): NotificationType[] {
   return (Object.keys(NOTIFICATION_REGISTRY) as NotificationType[]).filter(
     (key) => key.startsWith(`${domain}.`)

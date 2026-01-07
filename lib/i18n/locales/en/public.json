@@ -1,4 +1,106 @@
 {
+  "bookDemo": {
+    "progress": {
+      "step": "Step",
+      "of": "of"
+    },
+    "step1": {
+      "title": "Book Your Personalized Demo",
+      "subtitle": "In 20 minutes, our fleet expert will show you how FleetCore helps you earn more and save 10+ hours/week on admin tasks.",
+      "emailLabel": "Your professional email",
+      "emailPlaceholder": "you@company.com",
+      "cta": "Continue",
+      "submitting": "Sending...",
+      "socialProof": "Join 500+ fleet managers already using FleetCore",
+      "errors": {
+        "invalidEmail": "Please enter a valid email address",
+        "alreadyCustomer": "You're already a FleetCore customer",
+        "loginLink": "Go to Login",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "verify": {
+      "title": "Check Your Email",
+      "subtitle": "We sent a 6-digit code to",
+      "inputLabel": "Enter verification code",
+      "expiresIn": "Code expires in",
+      "expired": "Code expired",
+      "resend": "Didn't receive it?",
+      "resendButton": "Resend code",
+      "resendCooldown": "Resend code ({{seconds}}s)",
+      "resendSuccess": "New code sent!",
+      "changeEmail": "Change email",
+      "verifying": "Verifying...",
+      "errors": {
+        "invalid": "Invalid code. {{attempts}} attempts remaining.",
+        "expired": "Code expired. Please request a new one.",
+        "maxAttempts": "Too many attempts. Please request a new code.",
+        "generic": "Verification failed. Please try again."
+      }
+    },
+    "step2": {
+      "title": "Choose Your Demo Time",
+      "subtitle": "Select a time that works best for you. We'll call you at the exact time you choose.",
+      "loading": "Loading calendar...",
+      "error": "Failed to load calendar. Please refresh the page.",
+      "booked": "Demo time selected!",
+      "afterBooking": "After selecting your time, click Continue",
+      "continue": "Continue",
+      "checking": "Checking...",
+      "noBooking": "Please select a time slot first",
+      "back": "Back"
+    },
+    "step3": {
+      "title": "Tell Us About Your Business",
+      "subtitle": "Help us prepare a demo tailored to your needs.",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "John",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Doe",
+      "companyName": "Company Name",
+      "companyNamePlaceholder": "Acme Fleet Services",
+      "phone": "Phone Number (Optional)",
+      "phonePlaceholder": "+1 234 567 8900",
+      "country": "Country",
+      "selectCountry": "Select your country",
+      "fleetSize": "Fleet Size",
+      "selectFleetSize": "Select fleet size",
+      "vehicles": "vehicles",
+      "fleetSizeOptions": {
+        "moreThan100": "100+ vehicles"
+      },
+      "platformsUsed": "Platforms You Work With (Optional)",
+      "platforms": {
+        "uber": "Uber",
+        "bolt": "Bolt",
+        "careem": "Careem",
+        "yango": "Yango",
+        "freenow": "FreeNow",
+        "other": "Other"
+      },
+      "submit": "Complete Booking",
+      "submitting": "Submitting...",
+      "back": "Back",
+      "error": "Something went wrong",
+      "errors": {
+        "required": "This field is required",
+        "gdprRequired": "GDPR consent is required for EU countries",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "confirmation": {
+      "title": "You're All Set!",
+      "subtitle": "Your demo is booked. We'll see you soon!",
+      "checkEmail": "Check your email for confirmation details.",
+      "whatNext": "What happens next?",
+      "step1": "You'll receive a calendar invite at your email",
+      "step2": "Our fleet expert will call you at the scheduled time",
+      "step3": "We'll prepare a demo tailored to your fleet size and needs",
+      "addToCalendar": "Add to Calendar",
+      "backToHome": "Back to Homepage"
+    },
+    "backToHome": "Back to Homepage"
+  },
   "homepage": {
     "title": "FleetCore",
     "subtitle": "Enterprise Fleet Management Platform",

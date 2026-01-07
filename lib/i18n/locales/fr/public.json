@@ -1,4 +1,106 @@
 {
+  "bookDemo": {
+    "progress": {
+      "step": "Etape",
+      "of": "sur"
+    },
+    "step1": {
+      "title": "Reservez votre demo personnalisee",
+      "subtitle": "En 20 minutes, notre expert flotte vous montrera comment FleetCore vous aide a gagner plus et economiser plus de 10h/semaine sur les taches administratives.",
+      "emailLabel": "Votre email professionnel",
+      "emailPlaceholder": "vous@entreprise.com",
+      "cta": "Continuer",
+      "submitting": "Envoi...",
+      "socialProof": "Rejoignez plus de 500 gestionnaires de flotte utilisant FleetCore",
+      "errors": {
+        "invalidEmail": "Veuillez saisir une adresse email valide",
+        "alreadyCustomer": "Vous etes deja client FleetCore",
+        "loginLink": "Aller a la connexion",
+        "generic": "Une erreur s'est produite. Veuillez reessayer."
+      }
+    },
+    "verify": {
+      "title": "Verifiez votre email",
+      "subtitle": "Nous avons envoye un code a 6 chiffres a",
+      "inputLabel": "Entrez le code de verification",
+      "expiresIn": "Le code expire dans",
+      "expired": "Code expire",
+      "resend": "Vous n'avez pas recu le code ?",
+      "resendButton": "Renvoyer le code",
+      "resendCooldown": "Renvoyer ({{seconds}}s)",
+      "resendSuccess": "Nouveau code envoye !",
+      "changeEmail": "Changer d'email",
+      "verifying": "Verification...",
+      "errors": {
+        "invalid": "Code invalide. {{attempts}} tentatives restantes.",
+        "expired": "Code expire. Veuillez en demander un nouveau.",
+        "maxAttempts": "Trop de tentatives. Veuillez demander un nouveau code.",
+        "generic": "La verification a echoue. Veuillez reessayer."
+      }
+    },
+    "step2": {
+      "title": "Choisissez votre creneau",
+      "subtitle": "Selectionnez le moment qui vous convient. Nous vous appellerons a l'heure exacte choisie.",
+      "loading": "Chargement du calendrier...",
+      "error": "Impossible de charger le calendrier. Veuillez rafraichir la page.",
+      "booked": "Creneau selectionne !",
+      "afterBooking": "Apres avoir selectionne votre creneau, cliquez sur Continuer",
+      "continue": "Continuer",
+      "checking": "Verification...",
+      "noBooking": "Veuillez d'abord selectionner un creneau",
+      "back": "Retour"
+    },
+    "step3": {
+      "title": "Parlez-nous de votre activite",
+      "subtitle": "Aidez-nous a preparer une demo adaptee a vos besoins.",
+      "firstName": "Prenom",
+      "firstNamePlaceholder": "Jean",
+      "lastName": "Nom",
+      "lastNamePlaceholder": "Dupont",
+      "companyName": "Nom de l'entreprise",
+      "companyNamePlaceholder": "Ma Flotte Services",
+      "phone": "Numero de telephone (Optionnel)",
+      "phonePlaceholder": "+33 1 23 45 67 89",
+      "country": "Pays",
+      "selectCountry": "Selectionnez votre pays",
+      "fleetSize": "Taille de la flotte",
+      "selectFleetSize": "Selectionnez la taille",
+      "vehicles": "vehicules",
+      "fleetSizeOptions": {
+        "moreThan100": "100+ vehicules"
+      },
+      "platformsUsed": "Plateformes utilisees (Optionnel)",
+      "platforms": {
+        "uber": "Uber",
+        "bolt": "Bolt",
+        "careem": "Careem",
+        "yango": "Yango",
+        "freenow": "FreeNow",
+        "other": "Autre"
+      },
+      "submit": "Finaliser la reservation",
+      "submitting": "Envoi...",
+      "back": "Retour",
+      "error": "Une erreur s'est produite",
+      "errors": {
+        "required": "Ce champ est requis",
+        "gdprRequired": "Le consentement RGPD est requis pour les pays de l'UE",
+        "generic": "Une erreur s'est produite. Veuillez reessayer."
+      }
+    },
+    "confirmation": {
+      "title": "C'est tout bon !",
+      "subtitle": "Votre demo est reservee. A bientot !",
+      "checkEmail": "Verifiez votre email pour les details de confirmation.",
+      "whatNext": "Et ensuite ?",
+      "step1": "Vous recevrez une invitation calendrier par email",
+      "step2": "Notre expert flotte vous appellera a l'heure prevue",
+      "step3": "Nous preparerons une demo adaptee a la taille de votre flotte et vos besoins",
+      "addToCalendar": "Ajouter au calendrier",
+      "backToHome": "Retour a l'accueil"
+    },
+    "backToHome": "Retour a l'accueil"
+  },
   "homepage": {
     "title": "FleetCore",
     "subtitle": "Plateforme de gestion de flotte d'entreprise",

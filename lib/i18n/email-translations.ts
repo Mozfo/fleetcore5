@@ -573,6 +573,36 @@ export const criticalAlertTranslations = {
 } as const;
 
 // ============================================================================
+// EMAIL VERIFICATION CODE (V6.2.2 - Book Demo Wizard)
+// ============================================================================
+
+export const emailVerificationCodeTranslations = {
+  en: {
+    preview: "Your FleetCore verification code",
+    title: "Your verification code",
+    codeLabel: "Enter this code to continue booking your demo:",
+    expires: "This code expires in {{minutes}} minutes",
+    ignore:
+      "If you didn't request this code, you can safely ignore this email.",
+  },
+  fr: {
+    preview: "Votre code de vérification FleetCore",
+    title: "Votre code de vérification",
+    codeLabel: "Entrez ce code pour continuer votre réservation de démo :",
+    expires: "Ce code expire dans {{minutes}} minutes",
+    ignore:
+      "Si vous n'avez pas demandé ce code, vous pouvez ignorer cet email.",
+  },
+  ar: {
+    preview: "رمز التحقق من FleetCore",
+    title: "رمز التحقق الخاص بك",
+    codeLabel: "أدخل هذا الرمز لمتابعة حجز العرض التوضيحي:",
+    expires: "ينتهي هذا الرمز خلال {{minutes}} دقيقة",
+    ignore: "إذا لم تطلب هذا الرمز، يمكنك تجاهل هذا البريد الإلكتروني.",
+  },
+} as const;
+
+// ============================================================================
 // CUSTOMER VERIFICATION (V6.2-8.5)
 // ============================================================================
 

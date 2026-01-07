@@ -30,17 +30,22 @@ const TEST_IP = process.env.TEST_IP || "0.0.0.0";
 const mockCreate = vi.fn();
 const mockFindFirst = vi.fn();
 const mockFindUnique = vi.fn();
+const mockUpdate = vi.fn();
+
+const mockPrismaClient = {
+  crm_leads: {
+    create: (...args: unknown[]) => mockCreate(...args),
+    findFirst: (...args: unknown[]) => mockFindFirst(...args),
+    update: (...args: unknown[]) => mockUpdate(...args),
+  },
+  crm_countries: {
+    findUnique: (...args: unknown[]) => mockFindUnique(...args),
+  },
+};
 
 vi.mock("@/lib/prisma", () => ({
-  db: {
-    crm_leads: {
-      create: (...args: unknown[]) => mockCreate(...args),
-      findFirst: (...args: unknown[]) => mockFindFirst(...args),
-    },
-    crm_countries: {
-      findUnique: (...args: unknown[]) => mockFindUnique(...args),
-    },
-  },
+  db: mockPrismaClient,
+  prisma: mockPrismaClient, // For EmailVerificationService
 }));
 
 // Mock NotificationQueueService - CRITICAL: This mock tracks if queueNotification is called
@@ -61,6 +66,17 @@ vi.mock("@/lib/services/crm/country.service", () => ({
 // Mock getTemplateLocale
 vi.mock("@/lib/utils/locale-mapping", () => ({
   getTemplateLocale: vi.fn().mockResolvedValue("en"),
+}));
+
+// Mock EmailVerificationService (used by wizard_step1 mode)
+vi.mock("@/lib/services/crm/email-verification.service", () => ({
+  EmailVerificationService: vi.fn().mockImplementation(() => ({
+    sendVerificationCode: vi.fn().mockResolvedValue({
+      success: true,
+      leadId: "wizard-lead-uuid",
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    }),
+  })),
 }));
 
 // Mock logger
@@ -193,5 +209,156 @@ describe("CRITICAL: Demo Lead Email Flow (Queue-Based)", () => {
     expect(routeContent).toContain("lead_confirmation");
     expect(routeContent).toContain("expansion_opportunity");
     expect(routeContent).toContain("idempotencyKey"); // Prevents duplicates
+  });
+});
+
+/**
+ * V6.2.2: Book Demo Wizard - Step 1 Email Verification
+ *
+ * Tests for the wizard_step1 mode which:
+ * - Accepts email only
+ * - Creates minimal lead
+ * - Sends 6-digit verification code
+ */
+describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
+  const createMockRequest = (body: Record<string, unknown>) => {
+    return new NextRequest(
+      `${process.env.TEST_API_URL || "http://test.local:3000"}/api/demo-leads`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should send verification code for new email", async () => {
+    // No existing lead
+    mockFindFirst.mockResolvedValue(null);
+
+    const { POST } = await import("@/app/api/demo-leads/route");
+
+    const request = createMockRequest({
+      mode: "wizard_step1",
+      email: "newuser@test.local",
+      locale: "en",
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.leadId).toBe("wizard-lead-uuid");
+    expect(data.requiresVerification).toBe(true);
+    expect(data.expiresAt).toBeDefined();
+  });
+
+  it("should return alreadyVerified for verified email", async () => {
+    // Existing lead with verified email
+    mockFindFirst.mockResolvedValue({
+      id: "existing-lead-uuid",
+      email_verified: true,
+      status: "qualified",
+    });
+
+    const { POST } = await import("@/app/api/demo-leads/route");
+
+    const request = createMockRequest({
+      mode: "wizard_step1",
+      email: "verified@test.local",
+      locale: "en",
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.alreadyVerified).toBe(true);
+    expect(data.leadId).toBe("existing-lead-uuid");
+  });
+
+  it("should reject converted lead", async () => {
+    // Existing lead that is converted
+    mockFindFirst.mockResolvedValue({
+      id: "converted-lead-uuid",
+      email_verified: true,
+      status: "converted",
+    });
+
+    const { POST } = await import("@/app/api/demo-leads/route");
+
+    const request = createMockRequest({
+      mode: "wizard_step1",
+      email: "converted@test.local",
+      locale: "en",
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(data.success).toBe(false);
+    expect(data.error.code).toBe("ALREADY_CONVERTED");
+  });
+
+  it("should reject invalid email format", async () => {
+    const { POST } = await import("@/app/api/demo-leads/route");
+
+    const request = createMockRequest({
+      mode: "wizard_step1",
+      email: "not-an-email",
+      locale: "en",
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.success).toBe(false);
+    expect(data.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("should reject wizard_step1 without email", async () => {
+    const { POST } = await import("@/app/api/demo-leads/route");
+
+    const request = createMockRequest({
+      mode: "wizard_step1",
+      // Missing email
+      locale: "en",
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.success).toBe(false);
+    expect(data.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  /**
+   * STATIC CODE CHECK: Verify wizard_step1 mode exists in route file
+   */
+  it("MUST have wizard_step1 handler in demo-leads route", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+
+    const routePath = path.join(process.cwd(), "app/api/demo-leads/route.ts");
+    const routeContent = fs.readFileSync(routePath, "utf-8");
+
+    // Check for wizard_step1 mode handling
+    expect(routeContent).toContain("wizard_step1");
+    expect(routeContent).toContain("EmailVerificationService");
+    expect(routeContent).toContain("sendVerificationCode");
+    expect(routeContent).toContain("requiresVerification");
+    expect(routeContent).toContain("ALREADY_CONVERTED");
+    expect(routeContent).toContain("RATE_LIMITED");
   });
 });

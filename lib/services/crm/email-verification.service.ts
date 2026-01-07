@@ -284,9 +284,9 @@ export class EmailVerificationService {
         );
       }
 
-      // 5. Queue verification email
+      // 5. Queue verification email (V6.2.2 template: email_verification_code)
       await this.notificationQueue.queueNotification({
-        templateCode: "email_verification",
+        templateCode: "email_verification_code",
         recipientEmail: email,
         locale,
         variables: {
