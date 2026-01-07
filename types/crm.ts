@@ -62,8 +62,8 @@ export interface Lead {
 
   // Contact information
   email: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   phone: string | null;
 
   // Company information

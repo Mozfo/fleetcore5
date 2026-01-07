@@ -357,6 +357,11 @@ describe("LeadCreationService", () => {
           stripe_payment_link_url: null,
           payment_link_created_at: null,
           payment_link_expires_at: null,
+          // V6.2.2: Email Verification columns
+          email_verified: false,
+          email_verification_code: null,
+          email_verification_expires_at: null,
+          email_verification_attempts: 0,
         };
         return lead;
       }

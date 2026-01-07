@@ -9,8 +9,8 @@ import { Search } from "lucide-react";
 
 type Lead = {
   id: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   email: string;
   company_name: string | null;
   fleet_size: string | null;

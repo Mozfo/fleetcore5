@@ -23,8 +23,8 @@ import { cn } from "@/lib/utils";
 interface LeadSearchResult {
   id: string;
   lead_code: string | null;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   email: string;
   phone: string | null;
   company_name: string | null;

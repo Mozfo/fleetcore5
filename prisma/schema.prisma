@@ -2044,8 +2044,8 @@ model crm_leads {
   deleted_by                                                           String?                 @db.Uuid
   deletion_reason                                                      String?
   lead_code                                                            String?                 @unique @db.VarChar(50)
-  first_name                                                           String
-  last_name                                                            String
+  first_name                                                           String?
+  last_name                                                            String?
   company_name                                                         String?
   industry                                                             String?
   company_size                                                         Int?
@@ -2104,6 +2104,11 @@ model crm_leads {
   stripe_payment_link_url                                              String?
   payment_link_created_at                                              DateTime?               @db.Timestamptz(6)
   payment_link_expires_at                                              DateTime?               @db.Timestamptz(6)
+  // V6.2.2: Colonnes EMAIL VERIFICATION (Book Demo Wizard)
+  email_verified                                                       Boolean                 @default(false)
+  email_verification_code                                              String?                 @db.VarChar(255)
+  email_verification_expires_at                                        DateTime?               @db.Timestamptz(6)
+  email_verification_attempts                                          Int                     @default(0)
   // Relations
   crm_activities                                                       crm_activities[]
   crm_contracts                                                        crm_contracts[]
@@ -2147,6 +2152,8 @@ model crm_leads {
   @@index([booking_calcom_uid], map: "idx_crm_leads_booking_calcom_uid")
   @@index([wizard_completed], map: "idx_crm_leads_wizard_completed")
   @@index([tenant_id], map: "idx_crm_leads_tenant")
+  // V6.2.2: Index email verification
+  @@index([email, email_verified], map: "idx_crm_leads_email_verification")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

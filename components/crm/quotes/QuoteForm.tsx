@@ -48,8 +48,8 @@ interface OpportunityOption {
   currency: string;
   lead: {
     company_name: string | null;
-    first_name: string;
-    last_name: string;
+    first_name: string | null;
+    last_name: string | null;
     email: string;
   } | null;
 }

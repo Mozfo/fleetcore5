@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 interface LeadSearchResult {
   id: string;
   lead_code: string | null;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   email: string;
   company_name: string | null;
   status: string;
@@ -209,15 +209,15 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
                 >
                   {/* Avatar */}
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
-                    {lead.first_name.charAt(0)}
-                    {lead.last_name.charAt(0)}
+                    {(lead.first_name ?? "").charAt(0)}
+                    {(lead.last_name ?? "").charAt(0)}
                   </div>
 
                   {/* Info */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                        {lead.first_name} {lead.last_name}
+                        {lead.first_name ?? ""} {lead.last_name ?? ""}
                       </span>
                       <span
                         className={cn(
