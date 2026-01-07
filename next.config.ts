@@ -3,25 +3,25 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /**
-   * Build Optimization for Vercel (8GB RAM limit)
+   * Build Optimization for Vercel 8GB Memory Limit
    *
-   * Problem: Type-aware linting and TypeScript checking require loading the
-   * full project into memory. For 700+ TypeScript files, this exceeds Vercel's
-   * 8GB memory limit, causing OOM errors and build timeouts.
+   * Problem: TypeScript type-checking and ESLint with type-aware rules load
+   * the full project into memory. For 700+ files, this exceeds Vercel's 8GB limit.
    *
-   * Solution (industry best practice):
-   * - GitHub Actions CI: Full validation (ESLint + TypeScript + Tests)
-   *   See: .github/workflows/api-tests.yml lines 74-81
-   * - Vercel: Build only (validation already done in CI before merge)
+   * Solution: CI/CD Separation (industry best practice)
+   * - GitHub Actions CI: Full validation before merge
+   *   See: .github/workflows/api-tests.yml (lines 74-78)
+   *   - pnpm typecheck (TypeScript strict)
+   *   - pnpm lint (ESLint with type-aware rules)
+   * - Vercel: Build only (validation already passed in CI)
    *
    * Sources:
-   * - Next.js docs: "not recommended unless you already have ESLint/TypeScript
-   *   configured to run in a separate part of your workflow (for example, in CI)"
-   * - typescript-eslint docs: "most users primarily run complete lint via their CI"
-   * - Vercel docs: 8GB memory limit per build container
+   * - https://vercel.com/docs/errors/sigkill-out-of-memory
+   * - https://nextjs.org/docs/app/guides/memory-usage
+   * - https://www.zhyd1997.dev/blog/resolve-nextjs-build-oom-on-vercel
    *
-   * @see https://nextjs.org/docs/app/api-reference/config/next-config-js/eslint
-   * @see https://nextjs.org/docs/app/api-reference/config/next-config-js/typescript
+   * Also set in Vercel Dashboard > Settings > Environment Variables:
+   * NODE_OPTIONS = --max-old-space-size=6144
    */
   eslint: {
     ignoreDuringBuilds: true,
@@ -29,6 +29,10 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+
+  // Disable source maps in production (significant memory savings)
+  productionBrowserSourceMaps: false,
+
   // Externaliser les packages Pino pour éviter le bundling qui casse les worker threads
   // Fix: "Error: the worker thread exited" lors du logging avec Pino
   // Ref: https://github.com/pinojs/pino/issues/1429
@@ -42,6 +46,7 @@ const nextConfig: NextConfig = {
   ],
 
   experimental: {
+    webpackMemoryOptimizations: true, // Reduce webpack memory usage
     turbo: {}, // Support pour Turbopack dans Next.js 15
   },
 };
