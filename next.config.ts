@@ -2,12 +2,26 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Skip type checking during build - CI tests already verify types
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  // Skip ESLint during build - CI tests already run linting
-  // This prevents OOM errors on Vercel's 8GB build machines
+  /**
+   * ESLint Configuration for Vercel Builds
+   *
+   * ESLint with type-aware rules (parserOptions.project in eslint.config.mjs)
+   * requires loading the full TypeScript project into memory. For 700+ files,
+   * this exceeds Vercel's 8GB memory limit, causing OOM errors.
+   *
+   * Architecture (industry best practice):
+   * - GitHub Actions CI: Full validation (ESLint + TypeScript + Tests)
+   *   See: .github/workflows/api-tests.yml lines 74-81
+   * - Vercel: Build only (validation already done in CI before merge)
+   *
+   * Sources:
+   * - Next.js docs: "not recommended unless you already have ESLint
+   *   configured to run in a separate part of your workflow (for example, in CI)"
+   * - typescript-eslint docs: "most users primarily run complete lint via their CI"
+   * - Vercel docs: 8GB memory limit per build container
+   *
+   * @see https://nextjs.org/docs/app/api-reference/config/next-config-js/eslint
+   */
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -60,6 +74,3 @@ export default withSentryConfig(nextConfig, {
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
 });
-// deploy test Thu Dec  4 13:47:03 +04 2025
-// test deploy Thu Dec  4 13:56:11 +04 2025
-// webhook test Thu Dec  4 14:02:38 +04 2025
