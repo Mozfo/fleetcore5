@@ -15,6 +15,8 @@ import Stripe from "stripe";
 import { stripeClientService } from "./stripe-client.service";
 import { extractFleetCoreIds } from "@/lib/config/stripe.config";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { customerConversionService } from "@/lib/services/billing/customer-conversion.service";
 
 // =============================================================================
 // INTERFACES
@@ -56,6 +58,8 @@ export interface WebhookLogData {
  * Types d'événements supportés
  */
 export type SupportedEventType =
+  // Checkout Session (V6.2.1)
+  | "checkout.session.completed"
   // Subscription Schedule
   | "subscription_schedule.created"
   | "subscription_schedule.updated"
@@ -111,6 +115,8 @@ export class WebhookHandlerService {
   /**
    * Traite un événement Stripe
    * Dispatcher vers le handler approprié selon le type d'événement
+   *
+   * V6.2.1: Added idempotence check via stripe_webhook_logs
    */
   async handleWebhookEvent(event: Stripe.Event): Promise<WebhookHandlerResult> {
     const eventType = event.type as SupportedEventType;
@@ -121,9 +127,31 @@ export class WebhookHandlerService {
       "[WebhookHandler] Received Stripe webhook event"
     );
 
+    // =========================================================================
+    // IDEMPOTENCE CHECK (V6.2.1)
+    // =========================================================================
+    const idempotenceResult = await this.checkIdempotence(eventId, eventType);
+    if (idempotenceResult.skip) {
+      return {
+        success: true,
+        eventType,
+        eventId,
+        action: "skipped_duplicate",
+      };
+    }
+
     try {
       // Dispatcher vers le handler approprié
       switch (eventType) {
+        // =====================================================================
+        // CHECKOUT SESSION (V6.2.1)
+        // =====================================================================
+        case "checkout.session.completed":
+          return this.handleCheckoutSessionCompleted(
+            event,
+            idempotenceResult.logId
+          );
+
         // =====================================================================
         // SUBSCRIPTION SCHEDULE EVENTS (6)
         // =====================================================================
@@ -1056,6 +1084,201 @@ export class WebhookHandlerService {
   }
 
   // =========================================================================
+  // CHECKOUT SESSION HANDLER (V6.2.1)
+  // =========================================================================
+
+  /**
+   * checkout.session.completed
+   * Convert lead to customer after successful payment
+   *
+   * V6.2.1: Main handler for lead conversion flow
+   */
+  private async handleCheckoutSessionCompleted(
+    event: Stripe.Event,
+    webhookLogId?: string
+  ): Promise<WebhookHandlerResult> {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const startTime = Date.now();
+
+    logger.info(
+      {
+        eventId: event.id,
+        sessionId: session.id,
+        paymentStatus: session.payment_status,
+        metadata: session.metadata,
+      },
+      "[WebhookHandler] Checkout session completed"
+    );
+
+    // Only process successful payments
+    if (session.payment_status !== "paid") {
+      logger.warn(
+        { sessionId: session.id, paymentStatus: session.payment_status },
+        "[WebhookHandler] Checkout session not paid - skipping conversion"
+      );
+      await this.updateWebhookLog(
+        webhookLogId,
+        "ignored",
+        null,
+        Date.now() - startTime
+      );
+      return {
+        success: true,
+        eventType: event.type,
+        eventId: event.id,
+        action: "checkout_not_paid",
+      };
+    }
+
+    // Check if this session has leadId metadata (our payment links)
+    if (!session.metadata?.leadId) {
+      logger.info(
+        { sessionId: session.id },
+        "[WebhookHandler] No leadId in metadata - not a FleetCore lead checkout"
+      );
+      await this.updateWebhookLog(
+        webhookLogId,
+        "ignored",
+        null,
+        Date.now() - startTime
+      );
+      return {
+        success: true,
+        eventType: event.type,
+        eventId: event.id,
+        action: "no_lead_metadata",
+      };
+    }
+
+    // Convert lead to customer
+    const result =
+      await customerConversionService.convertLeadToCustomer(session);
+
+    if (!result.success) {
+      await this.updateWebhookLog(
+        webhookLogId,
+        "failed",
+        result.error,
+        Date.now() - startTime
+      );
+      return {
+        success: false,
+        eventType: event.type,
+        eventId: event.id,
+        action: "conversion_failed",
+        error: result.error,
+      };
+    }
+
+    // Update webhook log as processed
+    await this.updateWebhookLog(
+      webhookLogId,
+      "processed",
+      null,
+      Date.now() - startTime
+    );
+
+    return {
+      success: true,
+      eventType: event.type,
+      eventId: event.id,
+      action: result.alreadyConverted ? "already_converted" : "lead_converted",
+      fleetcoreIds: {
+        tenantId: result.tenantId,
+      },
+    };
+  }
+
+  // =========================================================================
+  // IDEMPOTENCE METHODS (V6.2.1)
+  // =========================================================================
+
+  /**
+   * Check idempotence via stripe_webhook_logs
+   *
+   * Returns { skip: true } if event was already processed
+   * Returns { skip: false, logId } if new event (creates log entry)
+   */
+  private async checkIdempotence(
+    eventId: string,
+    eventType: string
+  ): Promise<{ skip: boolean; logId?: string }> {
+    try {
+      // Check if event already exists
+      const existingLog = await prisma.stripe_webhook_logs.findFirst({
+        where: { event_id: eventId },
+      });
+
+      if (existingLog) {
+        if (existingLog.status === "processed") {
+          logger.info(
+            { eventId, status: existingLog.status },
+            "[WebhookHandler] Event already processed - idempotent skip"
+          );
+          return { skip: true };
+        }
+
+        // Event exists but not processed (maybe failed before)
+        // Allow retry but don't create new log
+        logger.info(
+          { eventId, status: existingLog.status },
+          "[WebhookHandler] Retrying previously failed event"
+        );
+        return { skip: false, logId: existingLog.id };
+      }
+
+      // Create new log entry with status 'processing'
+      const newLog = await prisma.stripe_webhook_logs.create({
+        data: {
+          event_id: eventId,
+          event_type: eventType,
+          payload: {},
+          status: "processing",
+          processed_at: new Date(),
+        },
+      });
+
+      return { skip: false, logId: newLog.id };
+    } catch (error) {
+      // If idempotence check fails, log but continue processing
+      logger.error(
+        { error, eventId },
+        "[WebhookHandler] Idempotence check failed - continuing anyway"
+      );
+      return { skip: false };
+    }
+  }
+
+  /**
+   * Update webhook log status after processing
+   */
+  private async updateWebhookLog(
+    logId: string | undefined,
+    status: "processed" | "failed" | "ignored",
+    errorMessage: string | null | undefined,
+    durationMs: number
+  ): Promise<void> {
+    if (!logId) return;
+
+    try {
+      await prisma.stripe_webhook_logs.update({
+        where: { id: logId },
+        data: {
+          status,
+          error_message: errorMessage,
+          processing_duration_ms: durationMs,
+          processed_at: new Date(),
+        },
+      });
+    } catch (error) {
+      logger.error(
+        { error, logId },
+        "[WebhookHandler] Failed to update webhook log"
+      );
+    }
+  }
+
+  // =========================================================================
   // UTILITY METHODS
   // =========================================================================
 
@@ -1091,6 +1314,8 @@ export class WebhookHandlerService {
    */
   getSupportedEventTypes(): SupportedEventType[] {
     return [
+      // Checkout Session (V6.2.1)
+      "checkout.session.completed",
       // Subscription Schedule
       "subscription_schedule.created",
       "subscription_schedule.updated",

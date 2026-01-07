@@ -573,6 +573,56 @@ export const criticalAlertTranslations = {
 } as const;
 
 // ============================================================================
+// CUSTOMER VERIFICATION (V6.2-8.5)
+// ============================================================================
+
+export const customerVerificationTranslations = {
+  en: {
+    preview: "Complete your FleetCore account setup",
+    paymentSuccess: "Payment successful!",
+    thankYou: "Thank you for choosing FleetCore.",
+    yourAccountCode: "Your account code",
+    nextStep: "One last step to activate your account:",
+    instructions:
+      "Please complete your company information and designate an administrator who will receive an invitation to set up the account.",
+    completeButton: "Complete My Registration",
+    expiresIn: "This link expires in",
+    hours: "hours",
+    needHelp: "Need help? Contact us at",
+    warning: "Important: You must complete this step to access FleetCore.",
+  },
+  fr: {
+    preview: "Finalisez votre compte FleetCore",
+    paymentSuccess: "Paiement réussi !",
+    thankYou: "Merci d'avoir choisi FleetCore.",
+    yourAccountCode: "Votre code client",
+    nextStep: "Une dernière étape pour activer votre compte :",
+    instructions:
+      "Veuillez compléter les informations de votre entreprise et désigner un administrateur qui recevra une invitation pour configurer le compte.",
+    completeButton: "Compléter mon inscription",
+    expiresIn: "Ce lien expire dans",
+    hours: "heures",
+    needHelp: "Besoin d'aide ? Contactez-nous à",
+    warning:
+      "Important : Vous devez compléter cette étape pour accéder à FleetCore.",
+  },
+  ar: {
+    preview: "أكمل إعداد حسابك في FleetCore",
+    paymentSuccess: "تم الدفع بنجاح!",
+    thankYou: "شكراً لاختيارك FleetCore.",
+    yourAccountCode: "رمز حسابك",
+    nextStep: "خطوة أخيرة لتفعيل حسابك:",
+    instructions:
+      "يرجى إكمال معلومات شركتك وتعيين مسؤول سيتلقى دعوة لإعداد الحساب.",
+    completeButton: "إكمال تسجيلي",
+    expiresIn: "ينتهي هذا الرابط خلال",
+    hours: "ساعة",
+    needHelp: "تحتاج مساعدة؟ تواصل معنا على",
+    warning: "هام: يجب إكمال هذه الخطوة للوصول إلى FleetCore.",
+  },
+} as const;
+
+// ============================================================================
 // WEBHOOK TEST
 // ============================================================================
 

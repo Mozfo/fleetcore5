@@ -352,6 +352,11 @@ describe("LeadCreationService", () => {
           // V6.2: Conversion columns
           tenant_id: null,
           converted_at: null,
+          // V6.2.1: Stripe Payment Link columns
+          stripe_checkout_session_id: null,
+          stripe_payment_link_url: null,
+          payment_link_created_at: null,
+          payment_link_expires_at: null,
         };
         return lead;
       }

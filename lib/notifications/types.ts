@@ -130,6 +130,14 @@ export const NOTIFICATION_REGISTRY = {
     description: "Welcome email for new driver",
   },
 
+  // Billing Domain
+  "billing.customer.verification": {
+    templateCode: "customer_verification",
+    channels: ["email"] as NotificationChannel[],
+    priority: "high" as NotificationPriority,
+    description: "Sent after Stripe checkout for customer account verification",
+  },
+
   // System Domain
   "system.alert.critical": {
     templateCode: "critical_alert",
@@ -321,6 +329,17 @@ export interface WebhookTestPayload {
   test_id: string;
 }
 
+/**
+ * Customer Verification Payload - V6.2-8.5
+ * @see emails/templates/CustomerVerification.tsx
+ */
+export interface CustomerVerificationPayload {
+  company_name: string;
+  tenant_code: string;
+  verification_url: string;
+  expires_in_hours: number;
+}
+
 // ============================================================================
 // PAYLOAD TYPE MAP (Discriminated Union)
 // ============================================================================
@@ -340,6 +359,7 @@ export interface NotificationPayloadMap {
   "fleet.vehicle.insurance_expiry": InsuranceExpiryAlertPayload;
   "fleet.vehicle.maintenance_scheduled": MaintenanceScheduledPayload;
   "fleet.driver.onboarding": DriverOnboardingPayload;
+  "billing.customer.verification": CustomerVerificationPayload;
   "system.alert.critical": CriticalAlertPayload;
   "system.webhook.test": WebhookTestPayload;
 }

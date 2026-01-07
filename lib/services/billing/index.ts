@@ -49,3 +49,15 @@ export type {
 // =============================================================================
 
 export { CatalogueService, catalogueService } from "./catalogue.service";
+
+// =============================================================================
+// PAYMENT LINK SERVICE (V6.2.1)
+// =============================================================================
+
+export { PaymentLinkService, paymentLinkService } from "./payment-link.service";
+
+export type {
+  PaymentSettings,
+  CreatePaymentLinkInput,
+  PaymentLinkResult,
+} from "./payment-link.service";

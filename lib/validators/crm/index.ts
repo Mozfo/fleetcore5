@@ -108,3 +108,23 @@ export {
   type UpdateSettingInput,
   type BulkUpdateSettingsInput,
 } from "./settings.validators";
+
+// =============================================================================
+// LEAD STATUS & QUALIFICATION VALIDATORS (V6.2-6)
+// =============================================================================
+export {
+  // Enums
+  leadStatusEnum,
+  cptChallengesScore,
+  cptPriorityScore,
+  cptTimingScore,
+  // Schemas
+  updateStatusSchema,
+  qualifyLeadSchema,
+  // Types
+  type LeadStatus,
+  type UpdateStatusInput,
+  type QualifyLeadInput,
+  type StatusTransitionResult,
+  type QualificationResult,
+} from "./lead-status.validators";

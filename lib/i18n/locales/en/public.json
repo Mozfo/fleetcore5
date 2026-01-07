@@ -8,6 +8,131 @@
       "cta": "Get Started"
     }
   },
+  "verify": {
+    "loading": "Validating your verification link...",
+    "title": "Complete Your Account Setup",
+    "subtitle": "Please provide your company details to finalize your FleetCore account.",
+    "accountCode": "Your account ID in FleetCore CRM",
+    "support": "Need help?",
+    "errors": {
+      "missingToken": "No verification token provided",
+      "invalidToken": "Invalid verification token",
+      "networkError": "Unable to validate token. Please try again."
+    },
+    "expired": {
+      "title": "Link Expired",
+      "help": "Please contact support to request a new verification link."
+    },
+    "alreadyUsed": {
+      "title": "Already Verified",
+      "loginButton": "Go to Login"
+    },
+    "invalid": {
+      "title": "Invalid Link",
+      "help": "Please check your email for the correct verification link."
+    },
+    "error": {
+      "title": "Something Went Wrong",
+      "retryButton": "Try Again"
+    },
+    "form": {
+      "companySection": "Company Information",
+      "companyLegalName": "Legal Company Name",
+      "companyLegalNamePlaceholder": "Company Ltd.",
+      "country": "Country",
+      "taxId": {
+        "label": "Tax ID",
+        "placeholder": "Tax identification number",
+        "FR": {
+          "label": "SIRET",
+          "placeholder": "14-digit SIRET number",
+          "help": "French company identification (14 digits)"
+        },
+        "DE": {
+          "label": "Steuernummer / USt-IdNr",
+          "placeholder": "Tax number or VAT ID",
+          "help": "German tax number (10-11 digits) or VAT ID (DE + 9 digits)"
+        },
+        "ES": {
+          "label": "NIF / CIF",
+          "placeholder": "9-character tax ID",
+          "help": "Spanish tax identification number (9 characters)"
+        },
+        "IT": {
+          "label": "Partita IVA / Codice Fiscale",
+          "placeholder": "VAT or fiscal code",
+          "help": "Italian VAT (11 digits) or fiscal code (16 characters)"
+        },
+        "BE": {
+          "label": "Enterprise Number / VAT",
+          "placeholder": "10-digit enterprise number",
+          "help": "Belgian enterprise number (10 digits)"
+        },
+        "NL": {
+          "label": "KvK / BTW",
+          "placeholder": "Chamber of Commerce or VAT number",
+          "help": "Dutch KvK (8 digits) or VAT number"
+        },
+        "AE": {
+          "label": "TRN (Tax Registration Number)",
+          "placeholder": "15-digit TRN",
+          "help": "UAE Tax Registration Number (15 digits)"
+        },
+        "SA": {
+          "label": "VAT Number",
+          "placeholder": "15-digit VAT number",
+          "help": "Saudi Arabia VAT number (15 digits)"
+        },
+        "QA": {
+          "label": "Tax ID",
+          "placeholder": "Tax identification number",
+          "help": "Qatar tax identification number"
+        }
+      },
+      "address": "Company Address",
+      "street": "Street address",
+      "city": "City",
+      "postalCode": "Postal code",
+      "adminSection": "Account Administrator",
+      "adminDescription": "This person will receive an invitation to set up their admin account.",
+      "adminName": "Admin Full Name",
+      "adminNamePlaceholder": "John Doe",
+      "adminEmail": "Admin Email",
+      "adminEmailPlaceholder": "admin@company.com",
+      "termsSection": "Terms and Conditions",
+      "termsText": "I have read and accept the General Terms and Conditions (CGI/CGU) and the Privacy Policy.",
+      "readTerms": "Read Terms",
+      "submit": "Get Started",
+      "submitting": "Processing...",
+      "errors": {
+        "required": "This field is required",
+        "invalidEmail": "Invalid email address",
+        "invalidSiret": "SIRET must be 14 digits",
+        "invalidTaxId": "Invalid tax ID format",
+        "mustAcceptTerms": "You must accept the Terms and Conditions"
+      }
+    },
+    "success": {
+      "title": "Verification Complete!",
+      "accountCode": "Your account ID in FleetCore CRM",
+      "nextSteps": "What happens next?",
+      "step1": {
+        "title": "Check your inbox",
+        "description": "The designated admin will receive an email invitation from Clerk to set up their account."
+      },
+      "step2": {
+        "title": "Accept the invitation",
+        "description": "Click the link in the email and create your password. The invitation expires in 7 days."
+      },
+      "step3": {
+        "title": "Start using FleetCore",
+        "description": "Once logged in, you can invite team members and start managing your fleet."
+      },
+      "loginButton": "Go to Login",
+      "homeButton": "Return to Homepage",
+      "needHelp": "Need help?"
+    }
+  },
   "requestDemo": {
     "title": "Transform Your Fleet Operations",
     "subtitle": "Car Rental & Ride-Hailing Management Platform",
@@ -61,5 +186,52 @@
       }
     }
   },
-  "watchDemoVideo": "Watch Demo Video"
+  "watchDemoVideo": "Watch Demo Video",
+  "terms": {
+    "title": "Terms and Conditions",
+    "lastUpdated": "Last updated",
+    "updateDate": "January 2026",
+    "backToHome": "Back to Home",
+    "backButton": "Go Back",
+    "allRightsReserved": "All rights reserved.",
+    "introduction": "Welcome to FleetCore. These Terms and Conditions govern your use of our fleet management platform and services. By accessing or using FleetCore, you agree to be bound by these terms. Please read them carefully before using our services.",
+    "sections": {
+      "acceptance": {
+        "title": "Acceptance of Terms",
+        "content": "By creating an account, accessing, or using FleetCore services, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.\n\nIf you are accepting these terms on behalf of a company or other legal entity, you represent that you have the authority to bind such entity to these terms.\n\nIf you do not agree to these terms, you may not access or use our services."
+      },
+      "services": {
+        "title": "Description of Services",
+        "content": "FleetCore provides a comprehensive fleet management platform including:\n\n- Vehicle tracking and management\n- Driver management and scheduling\n- Maintenance tracking and alerts\n- Financial reporting and analytics\n- Integration with ride-hailing platforms\n- Customer relationship management (CRM)\n\nWe reserve the right to modify, suspend, or discontinue any part of the services at any time with reasonable notice."
+      },
+      "obligations": {
+        "title": "User Obligations",
+        "content": "As a user of FleetCore, you agree to:\n\n- Provide accurate and complete registration information\n- Maintain the security of your account credentials\n- Use the services only for lawful purposes\n- Not attempt to gain unauthorized access to our systems\n- Not interfere with or disrupt the services\n- Comply with all applicable laws and regulations\n- Notify us immediately of any security breaches"
+      },
+      "payment": {
+        "title": "Payment Terms",
+        "content": "Subscription fees are billed in advance on a monthly or annual basis depending on your chosen plan.\n\nAll fees are non-refundable except as expressly stated in these terms or required by law.\n\nWe may change our fees with 30 days' notice. Continued use after price changes constitutes acceptance of new pricing.\n\nFailed payments may result in service suspension until the account is brought current."
+      },
+      "data": {
+        "title": "Data Protection & Privacy",
+        "content": "We take your privacy seriously. Our data practices are governed by our Privacy Policy.\n\nYou retain ownership of your data. We process your data only to provide our services.\n\nWe implement industry-standard security measures to protect your data.\n\nFor EU customers: We comply with GDPR requirements and provide data processing agreements upon request.\n\nYou can request data export or deletion in accordance with applicable laws."
+      },
+      "liability": {
+        "title": "Limitation of Liability",
+        "content": "To the maximum extent permitted by law, FleetCore shall not be liable for:\n\n- Indirect, incidental, or consequential damages\n- Loss of profits, data, or business opportunities\n- Service interruptions beyond our reasonable control\n- Third-party actions or content\n\nOur total liability shall not exceed the fees paid by you in the 12 months preceding the claim.\n\nThese limitations apply regardless of the legal theory of the claim."
+      },
+      "termination": {
+        "title": "Termination",
+        "content": "Either party may terminate this agreement:\n\n- At any time with 30 days' written notice\n- Immediately if the other party breaches these terms\n- Immediately if required by law\n\nUpon termination:\n- Your access to services will be revoked\n- You may request export of your data within 30 days\n- Outstanding fees remain due\n- Provisions that should survive termination will remain in effect"
+      },
+      "governing": {
+        "title": "Governing Law",
+        "content": "These terms are governed by the laws of France.\n\nAny disputes shall be resolved in the courts of Paris, France.\n\nIf any provision is found unenforceable, the remaining provisions will continue in effect.\n\nThese terms constitute the entire agreement between you and FleetCore regarding the services.\n\nWe may update these terms from time to time. Material changes will be communicated via email or platform notification."
+      }
+    },
+    "contact": {
+      "title": "Questions?",
+      "description": "If you have any questions about these Terms and Conditions, please contact us at:"
+    }
+  }
 }

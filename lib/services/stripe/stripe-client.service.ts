@@ -201,6 +201,25 @@ export class StripeClientService {
   }
 
   // =========================================================================
+  // CHECKOUT SESSION OPERATIONS (V6.2.1)
+  // =========================================================================
+
+  async createCheckoutSession(
+    params: Stripe.Checkout.SessionCreateParams
+  ): Promise<Stripe.Checkout.Session> {
+    const client = this.requireClient();
+    return client.checkout.sessions.create(params);
+  }
+
+  async retrieveCheckoutSession(
+    sessionId: string,
+    params?: Stripe.Checkout.SessionRetrieveParams
+  ): Promise<Stripe.Checkout.Session> {
+    const client = this.requireClient();
+    return client.checkout.sessions.retrieve(sessionId, params);
+  }
+
+  // =========================================================================
   // USAGE-BASED BILLING (Billing Meters API - Stripe v20+)
   // =========================================================================
 
@@ -335,5 +354,19 @@ export const stripeClientService = {
     params: Parameters<StripeClientService["createMeterEvent"]>[0]
   ) {
     return this.getInstance().createMeterEvent(params);
+  },
+
+  // V6.2.1: Checkout Session methods
+  createCheckoutSession(
+    params: Parameters<StripeClientService["createCheckoutSession"]>[0]
+  ) {
+    return this.getInstance().createCheckoutSession(params);
+  },
+
+  retrieveCheckoutSession(
+    sessionId: string,
+    params?: Parameters<StripeClientService["retrieveCheckoutSession"]>[1]
+  ) {
+    return this.getInstance().retrieveCheckoutSession(sessionId, params);
   },
 };

@@ -175,4 +175,54 @@ export class CountryRepository extends BaseRepository<crm_countries> {
       },
     });
   }
+
+  /**
+   * Get notification locale for a country (V6.2-8.5)
+   *
+   * Used for email template language selection.
+   * Returns locale from crm_countries.notification_locale column.
+   *
+   * Mapping:
+   * - FR → 'fr' (French)
+   * - AE → 'en' (UAE = B2B anglophone)
+   * - SA → 'ar' (Saudi Arabia = Arabic)
+   * - Others → 'en' (fallback)
+   *
+   * @param countryCode - ISO 3166-1 alpha-2 (e.g., 'FR', 'AE')
+   * @returns Locale code ('en', 'fr', 'ar') - defaults to 'en'
+   *
+   * @example
+   * ```typescript
+   * await countryRepository.getNotificationLocale('FR'); // 'fr'
+   * await countryRepository.getNotificationLocale('AE'); // 'en'
+   * await countryRepository.getNotificationLocale('SA'); // 'ar'
+   * await countryRepository.getNotificationLocale('XX'); // 'en' (fallback)
+   * ```
+   */
+  async getNotificationLocale(
+    countryCode: string
+  ): Promise<"en" | "fr" | "ar"> {
+    try {
+      const country = await this.prisma.crm_countries.findFirst({
+        where: {
+          country_code: countryCode.toUpperCase(),
+        },
+        select: {
+          notification_locale: true,
+        },
+      });
+
+      const locale = country?.notification_locale || "en";
+
+      // Validate it's a supported EmailLocale
+      if (locale === "fr" || locale === "ar") {
+        return locale;
+      }
+
+      return "en";
+    } catch (_error) {
+      // Safe default: English
+      return "en";
+    }
+  }
 }

@@ -1,11 +1,11 @@
 # FLEETCORE - SPÉCIFICATION CRM V6.2 FINALE
 
-## ARCHITECTURE 3 MODULES + WIZARD CAL.COM + QUALIFICATION CPT
+## ARCHITECTURE 3 MODULES + WIZARD CAL.COM + QUALIFICATION CPT + STRIPE PAYMENT FLOW
 
-**Version :** 6.2.0-FINAL  
-**Date :** 03 Janvier 2026  
+**Version :** 6.2.1  
+**Date :** 06 Janvier 2026  
 **Statut :** SPÉCIFICATION CONSOLIDÉE - VALIDÉE  
-**Sources :** V6.2 OLD (Wizard/Cal.com/CPT) + V6.2 COMPLETE (Architecture 3 Modules/CLT)
+**Sources :** V6.2 FINAL + V6.2.1 (Flow Conversion Stripe + bil_settings)
 
 ---
 
@@ -15,6 +15,7 @@
 
 Ce document REMPLACE INTÉGRALEMENT :
 
+- FLEETCORE_CRM_SPECIFICATION_V6_2_FINAL.md (V6.2.0)
 - FLEETCORE_CRM_SPECIFICATION_V6_2_OLD.md
 - FLEETCORE_CRM_SPECIFICATION_V6_2_COMPLETE.md
 - FLEETCORE_CRM_SPECIFICATION_V6.1_FINAL.md
@@ -23,7 +24,7 @@ Ce document REMPLACE INTÉGRALEMENT :
 
 ### Principe CARDINAL
 
-**ZERO HARDCODING** - Toutes les règles métier dans tables settings (crm_settings, adm_settings)
+**ZERO HARDCODING** - Toutes les règles métier dans tables settings (crm_settings, bil_settings, adm_settings)
 
 ---
 
@@ -31,7 +32,7 @@ Ce document REMPLACE INTÉGRALEMENT :
 
 1. [Résumé Exécutif](#1-résumé-exécutif)
 2. [Architecture 3 Modules](#2-architecture-3-modules)
-3. [Les 9 Statuts Lead V6.2](#3-les-9-statuts-lead-v62)
+3. [Les 10 Statuts Lead V6.2.1](#3-les-10-statuts-lead-v621)
 4. [Segmentation Business](#4-segmentation-business)
 5. [UX/Frontend : Wizard Booking](#5-uxfrontend--wizard-booking)
 6. [Intégration Cal.com](#6-intégration-calcom)
@@ -41,34 +42,38 @@ Ce document REMPLACE INTÉGRALEMENT :
 10. [Notifications](#10-notifications)
 11. [Module CLT - Client](#11-module-clt---client)
 12. [Module ADM - Tenant](#12-module-adm---tenant)
-13. [Flux Lead-to-Client](#13-flux-lead-to-client)
+13. [Flux Lead-to-Client (Stripe Payment Flow)](#13-flux-lead-to-client-stripe-payment-flow)
 14. [Quote Management (Segment 4)](#14-quote-management-segment-4)
 15. [Opportunity Pipeline (FREEZE)](#15-opportunity-pipeline-freeze)
 16. [Règles Commerciales](#16-règles-commerciales)
-17. [Modifications Schema V6.2](#17-modifications-schema-v62)
-18. [Configuration crm_settings V6.2](#18-configuration-crm_settings-v62)
-19. [Pages et Routes](#19-pages-et-routes)
-20. [Métriques et KPIs](#20-métriques-et-kpis)
-21. [Plan d'Exécution](#21-plan-dexécution)
-22. [Règles de Gestion Verrouillées](#22-règles-de-gestion-verrouillées)
+17. [Modifications Schema V6.2.1](#17-modifications-schema-v621)
+18. [Configuration crm_settings V6.2.1](#18-configuration-crm_settings-v621)
+19. [Configuration bil_settings V6.2.1](#19-configuration-bil_settings-v621)
+20. [Pages et Routes](#20-pages-et-routes)
+21. [Métriques et KPIs](#21-métriques-et-kpis)
+22. [Plan d'Exécution](#22-plan-dexécution)
+23. [Règles de Gestion Verrouillées](#23-règles-de-gestion-verrouillées)
 
 ---
 
 ## 1. RÉSUMÉ EXÉCUTIF
 
-### 1.1 Changements majeurs V6.1 → V6.2
+### 1.1 Changements majeurs V6.1 → V6.2.1
 
-| Élément                     | V6.1 (OBSOLÈTE)           | V6.2 FINAL (VALIDÉ)                          |
-| --------------------------- | ------------------------- | -------------------------------------------- |
-| **Statuts Lead**            | 12+ statuts               | **9 statuts**                                |
-| **Architecture**            | CRM monolithique          | **3 modules : CRM → CLT → ADM**              |
-| **Formulaire**              | 1 page / 8 champs         | **Wizard 3 étapes + Cal.com**                |
-| **Calendrier**              | Non intégré               | **Cal.com Free intégré étape 2**             |
-| **Contact commercial**      | "sous 24h"                | **À L'HEURE EXACTE du RDV booké**            |
-| **Framework qualification** | BANT/CHAMP                | **CPT (Challenges-Priority-Timing)**         |
-| **Segment 1**               | Téléchargement app direct | **Page /solopreneur + vidéo + liens stores** |
-| **Opportunity Pipeline**    | Actif                     | **FREEZE (futur upsell)**                    |
-| **Compte Client**           | = adm_tenants             | **Nouveau module CLT**                       |
+| Élément                     | V6.1 (OBSOLÈTE)           | V6.2.1 FINAL (VALIDÉ)                         |
+| --------------------------- | ------------------------- | --------------------------------------------- |
+| **Statuts Lead**            | 12+ statuts               | **10 statuts** (ajout payment_pending)        |
+| **Architecture**            | CRM monolithique          | **3 modules : CRM → CLT → ADM**               |
+| **Formulaire**              | 1 page / 8 champs         | **Wizard 3 étapes + Cal.com**                 |
+| **Calendrier**              | Non intégré               | **Cal.com Free intégré étape 2**              |
+| **Contact commercial**      | "sous 24h"                | **À L'HEURE EXACTE du RDV booké**             |
+| **Framework qualification** | BANT/CHAMP                | **CPT (Challenges-Priority-Timing)**          |
+| **Segment 1**               | Téléchargement app direct | **Page /solopreneur + vidéo + liens stores**  |
+| **Opportunity Pipeline**    | Actif                     | **FREEZE (futur upsell)**                     |
+| **Compte Client**           | = adm_tenants             | **Nouveau module CLT**                        |
+| **Conversion**              | Action manuelle           | **Webhook Stripe checkout.session.completed** |
+| **1er mois**                | Non défini                | **Coupon Stripe 100% (pas trial)**            |
+| **Settings Billing**        | N/A                       | **Nouvelle table bil_settings**               |
 
 ### 1.2 Données factuelles justifiant le Wizard
 
@@ -95,7 +100,7 @@ Ce document REMPLACE INTÉGRALEMENT :
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │                  MODULE CRM (Acquisition)                            │    │
 │  │  ─────────────────────────────────────────────────────────────────   │    │
-│  │  crm_leads (9 statuts) ──→ crm_quotes (Segment 4) ──→ crm_orders    │    │
+│  │  crm_leads (10 statuts) ──→ crm_quotes (Segment 4) ──→ crm_orders   │    │
 │  │                                                                      │    │
 │  │  Tables : crm_leads, crm_quotes, crm_quote_items, crm_orders,       │    │
 │  │           crm_activities, crm_lead_sources, crm_countries,          │    │
@@ -155,13 +160,13 @@ Ce document REMPLACE INTÉGRALEMENT :
 
 ---
 
-## 3. LES 9 STATUTS LEAD V6.2
+## 3. LES 10 STATUTS LEAD V6.2.1
 
 ### 3.1 Vue d'ensemble
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         9 STATUTS LEAD V6.2                                  │
+│                         10 STATUTS LEAD V6.2.1                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
@@ -189,7 +194,8 @@ Ce document REMPLACE INTÉGRALEMENT :
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │                     PHASE: CLOSING                                   │    │
 │  ├─────────────────────────────────────────────────────────────────────┤    │
-│  │  proposal_sent    Lien paiement Stripe envoyé            [Commercial]│    │
+│  │  proposal_sent    Lien paiement Stripe généré            [Commercial]│    │
+│  │  payment_pending  Lien envoyé, attente paiement          [Stripe]   │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                    │                                         │
 │                                    ▼                                         │
@@ -207,17 +213,18 @@ Ce document REMPLACE INTÉGRALEMENT :
 
 ### 3.2 Détail des statuts
 
-| Statut           | Phase         | Description                         | Déclencheur     | Probabilité |
-| ---------------- | ------------- | ----------------------------------- | --------------- | ----------- |
-| `new`            | Acquisition   | Email entré, pas de booking Cal.com | Wizard étape 1  | 5%          |
-| `demo_scheduled` | Acquisition   | Créneau Cal.com confirmé            | Webhook Cal.com | 50%         |
-| `qualified`      | Qualification | Qualifié CPT pendant l'appel        | Commercial      | 70%         |
-| `demo_completed` | Demo          | Demo réalisée, en attente décision  | Commercial      | 75%         |
-| `proposal_sent`  | Closing       | Lien paiement Stripe envoyé         | Commercial      | 85%         |
-| `converted`      | Résultat      | Paiement reçu, tenant créé          | Stripe webhook  | 100%        |
-| `lost`           | Résultat      | Perdu définitivement                | Commercial      | 0%          |
-| `nurturing`      | Résultat      | Timing pas bon, relance programmée  | Commercial      | 15%         |
-| `disqualified`   | Résultat      | Hors cible / Red flag               | Commercial      | 0%          |
+| Statut            | Phase         | Description                         | Déclencheur     | Probabilité |
+| ----------------- | ------------- | ----------------------------------- | --------------- | ----------- |
+| `new`             | Acquisition   | Email entré, pas de booking Cal.com | Wizard étape 1  | 5%          |
+| `demo_scheduled`  | Acquisition   | Créneau Cal.com confirmé            | Webhook Cal.com | 50%         |
+| `qualified`       | Qualification | Qualifié CPT pendant l'appel        | Commercial      | 70%         |
+| `demo_completed`  | Demo          | Demo réalisée, en attente décision  | Commercial      | 75%         |
+| `proposal_sent`   | Closing       | Lien paiement Stripe généré         | Commercial      | 85%         |
+| `payment_pending` | Closing       | Lien envoyé, attente paiement       | Commercial      | 90%         |
+| `converted`       | Résultat      | Paiement reçu, tenant créé          | Stripe webhook  | 100%        |
+| `lost`            | Résultat      | Perdu définitivement                | Commercial      | 0%          |
+| `nurturing`       | Résultat      | Timing pas bon, relance programmée  | Commercial      | 15%         |
+| `disqualified`    | Résultat      | Hors cible / Red flag               | Commercial      | 0%          |
 
 ### 3.3 Transitions autorisées
 
@@ -230,7 +237,9 @@ qualified → demo_completed | lost
 
 demo_completed → proposal_sent | nurturing | lost
 
-proposal_sent → converted | lost | nurturing
+proposal_sent → payment_pending | lost | nurturing
+
+payment_pending → converted | lost
 
 converted → (terminal)
 
@@ -1604,56 +1613,217 @@ adm_tenants (1) ←──────────────→ (1) clt_masterd
 
 ---
 
-## 13. FLUX LEAD-TO-CLIENT
+## 13. FLUX LEAD-TO-CLIENT (STRIPE PAYMENT FLOW)
 
-### 13.1 Déclencheur
+### 13.1 Vue d'ensemble V6.2.1
 
-Le flux est déclenché quand `crm_leads.status` passe à `converted`.
-
-### 13.2 Étapes de conversion
+Le flux de conversion a été refactorisé pour être déclenché par le **paiement Stripe** plutôt qu'une action manuelle.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  FLUX LEAD-TO-CLIENT (status = converted)                                   │
+│                    FLOW CONVERSION V6.2.1 (5 ÉTAPES)                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  1. CRÉATION CLERK ORGANIZATION                                             │
-│     - API Clerk: createOrganization()                                       │
-│     - Récupération clerk_organization_id                                    │
+│  ÉTAPE 1: GÉNÉRATION LIEN PAIEMENT                                          │
+│  ══════════════════════════════════                                          │
+│  Lead qualifié → Commercial génère lien Stripe → lead.status=payment_pending │
+│  Trigger: Bouton UI "Générer lien paiement"                                  │
 │                                                                              │
-│  2. CRÉATION adm_tenants                                                    │
-│     - clerk_organization_id = résultat étape 1                              │
-│     - status = 'active'                                                     │
-│     - timezone, currency = selon country_code du lead                       │
-│     - Génération tenant_code (TNT-XXXXXX)                                   │
+│  ÉTAPE 2: PAIEMENT CLIENT + CONVERSION AUTO                                  │
+│  ══════════════════════════════════════════                                  │
+│  Client paie (CB collectée, 1er mois 0€) → Webhook Stripe                    │
+│  Trigger: checkout.session.completed                                         │
+│  Actions: Créer tenant + Clerk org + clt_masterdata + email vérification    │
 │                                                                              │
-│  3. CRÉATION clt_masterdata                                                 │
-│     - tenant_id = id étape 2                                                │
-│     - origin_lead_id = crm_leads.id                                         │
-│     - origin_lead_code = crm_leads.lead_code (copie)                        │
-│     - Transfert données: company_name, email, phone, country_code, etc.     │
-│     - Génération customer_code (CLT-XXXXXX)                                 │
+│  ÉTAPE 3: VÉRIFICATION DONNÉES CLIENT                                        │
+│  ════════════════════════════════════                                        │
+│  Client reçoit email → Formulaire 24h → Vérifie données + désigne admin     │
+│  Trigger: Clic sur lien email (token 24h)                                   │
+│  Actions: Update tenant + CGI acceptées + trigger invitation                │
 │                                                                              │
-│  4. CRÉATION clt_subscriptions                                              │
-│     - customer_id = clt_masterdata.id                                       │
-│     - plan = selon segment (starter/pro/premium)                            │
-│     - status = 'active'                                                     │
-│     - free_months = 1 (+ bonus si offert)                                   │
+│  ÉTAPE 4: INVITATION ADMIN CLERK                                             │
+│  ═══════════════════════════════                                             │
+│  Email Clerk envoyé à l'admin désigné → Création compte                     │
+│  Trigger: Validation formulaire vérification                                │
+│  Actions: Clerk createInvitation() → tenant.status=active après join       │
 │                                                                              │
-│  5. MISE À JOUR crm_leads                                                   │
-│     - converted_at = NOW()                                                  │
-│     - tenant_id = id étape 2 (référence croisée)                            │
-│                                                                              │
-│  6. CRÉATION PREMIER MEMBRE (clt_members)                                   │
-│     - tenant_id = id étape 2                                                │
-│     - email = contact principal du lead                                     │
-│     - role = 'owner'                                                        │
-│     - Invitation Clerk envoyée                                              │
+│  ÉTAPE 5: ONBOARDING SUPPORT (FUTUR)                                         │
+│  ════════════════════════════════════                                        │
+│  Support FleetCore pour intégration données client                          │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 13.3 Mapping Lead → Client
+### 13.2 Étape 1 - Génération lien paiement
+
+**Acteur:** Commercial FleetCore
+
+**Prérequis:** Lead avec status IN (qualified, demo_completed, proposal_sent)
+
+**Flow:**
+
+```
+Lead (status=proposal_sent)
+       │
+       │ Commercial clique "Générer lien paiement"
+       ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ POST /api/v1/bil/payment-links                                               │
+│ ├─► Vérifier status autorisé (depuis bil_settings)                           │
+│ ├─► Déterminer segment via crm_settings.segment_thresholds                   │
+│ ├─► Stripe: createCheckoutSession()                                          │
+│ │     - mode: subscription                                                   │
+│ │     - discounts: [{ coupon: FIRST_MONTH_FREE }]                            │
+│ │     - metadata: { lead_id, lead_code, performed_by }                       │
+│ │     - expires_at: NOW() + expiry_hours (depuis bil_settings)               │
+│ ├─► Update lead:                                                             │
+│ │     - status = "payment_pending"                                           │
+│ │     - stripe_checkout_session_id                                           │
+│ │     - stripe_payment_link_url                                              │
+│ │     - payment_link_created_at, payment_link_expires_at                     │
+│ ├─► Créer crm_lead_activities type="payment_link_generated"                  │
+│ └─► Return: { payment_url, session_id, expires_at }                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 13.3 Étape 2 - Paiement + Conversion automatique
+
+**Acteur:** Client + Webhook Stripe
+
+**Flow:**
+
+```
+Client clique lien → Stripe Checkout → Entre CB et valide (même si 0€)
+       │
+       ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ WEBHOOK: checkout.session.completed                                          │
+│                                                                              │
+│ TRANSACTION ATOMIQUE:                                                        │
+│ ├─► 1. Créer adm_tenants                                                     │
+│ │       - status = "pending_verification"                                    │
+│ │       - stripe_customer_id, stripe_subscription_id                         │
+│ │       - verification_token (expire 24h)                                    │
+│ │       - clerk_organization_id = NULL (pas encore)                          │
+│ │                                                                            │
+│ ├─► 2. Créer organisation Clerk                                              │
+│ │       - Clerk API: createOrganization()                                    │
+│ │       - tenant.clerk_organization_id = org.id                              │
+│ │                                                                            │
+│ ├─► 3. Créer clt_masterdata                                                  │
+│ │       - tenant_id = nouveau tenant                                         │
+│ │       - Copie données du lead                                              │
+│ │                                                                            │
+│ ├─► 4. Update crm_leads                                                      │
+│ │       - status = "converted"                                               │
+│ │       - tenant_id = nouveau tenant                                         │
+│ │       - converted_at = NOW()                                               │
+│ │                                                                            │
+│ └─► 5. Envoyer email vérification                                            │
+│         - Template: "Vérifiez vos informations"                              │
+│         - Lien: /verify?token=xxx (expire 24h)                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 13.4 Étape 3 - Formulaire vérification client
+
+**Acteur:** Client (page publique)
+
+**Route:** `/[locale]/verify?token=xxx`
+
+**Conditions d'accès:**
+
+- Token valide (existe en DB)
+- Token non expiré (< 24h)
+- Token non utilisé (verification_completed_at IS NULL)
+
+**Formulaire:**
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  SECTION 1: INFORMATIONS SOCIÉTÉ                                             │
+│  ─────────────────────────────────                                           │
+│  company_name *          (pré-rempli depuis lead, modifiable)                │
+│  legal_name              (raison sociale)                                    │
+│  tax_id                  (SIRET / Registre commerce)                         │
+│  billing_email *         (pré-rempli)                                        │
+│  billing_address                                                             │
+│                                                                              │
+│  ⚠️ Mention: "Informations déclarées par le client"                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  SECTION 2: ADMINISTRATEUR DÉSIGNÉ                                           │
+│  ─────────────────────────────────                                           │
+│  admin_name *            (saisi par le client)                               │
+│  admin_email *           (recevra l'invitation Clerk)                        │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  SECTION 3: CONDITIONS GÉNÉRALES                                             │
+│  ─────────────────────────────────                                           │
+│  ☐ J'accepte les CGI et CGU *                                               │
+│  Liens: Lire les CGI | Lire les CGU                                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Actions POST /api/public/verify:**
+
+- Valider token
+- Update adm_tenants (données société + admin_name + admin_email)
+- Set cgi_accepted_at, cgi_version, cgi_accepted_ip
+- Set tenant.status = "pending_onboarding"
+- Set verification_completed_at = NOW()
+- Update clt_masterdata (données société)
+- Trigger invitation admin (étape 4)
+
+### 13.5 Étape 4 - Invitation Admin Clerk
+
+**Acteur:** Système FleetCore
+
+**Flow:**
+
+```
+Validation formulaire vérification
+       │
+       ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ CLERK: createInvitation()                                                    │
+│                                                                              │
+│ ├─► email: admin_email (saisi par le client)                                 │
+│ ├─► organization_id: tenant.clerk_organization_id                            │
+│ ├─► role: "org:admin"                                                        │
+│ └─► Update tenant.admin_invited_at = NOW()                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+       │
+       │ Admin reçoit email Clerk
+       ▼
+Admin clique → Crée compte Clerk → Accède à FleetCore
+       │
+       ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ WEBHOOK CLERK: organization_membership.created                               │
+│                                                                              │
+│ └─► tenant.status = "active"                                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 13.6 1er mois gratuit (pas trial)
+
+**Justification business:**
+
+| Aspect            | Trial 14-30j         | 1er mois gratuit ✅    |
+| ----------------- | -------------------- | ---------------------- |
+| **CB requise**    | Non                  | **Oui**                |
+| **Statut client** | "En test"            | **Client dès jour 1**  |
+| **À la fin**      | Doit AGIR pour payer | Doit AGIR pour annuler |
+| **Conversion**    | 15-25%               | **60-80%**             |
+
+**Implémentation Stripe:**
+
+```javascript
+// COUPON 100% off (PAS trial_period_days)
+discounts: [{ coupon: "FIRST_MONTH_FREE" }];
+// duration: 'once' dans config Stripe Dashboard
+```
+
+### 13.7 Mapping Lead → Client
 
 | Champ crm_leads | Champ clt_masterdata         |
 | --------------- | ---------------------------- |
@@ -1790,15 +1960,15 @@ crm_orders (additionnel)
 
 ---
 
-## 17. MODIFICATIONS SCHEMA V6.2
+## 17. MODIFICATIONS SCHEMA V6.2.1
 
 ### 17.1 Migration crm_leads
 
 ```sql
 -- =============================================================================
--- FLEETCORE CRM V6.2 FINAL - MIGRATION LEADS
--- Date: 2026-01-03
--- Description: 9 statuts, colonnes booking Cal.com, wizard_completed
+-- FLEETCORE CRM V6.2.1 - MIGRATION LEADS
+-- Date: 2026-01-06
+-- Description: 10 statuts (+payment_pending), colonnes booking Cal.com, Stripe
 -- =============================================================================
 
 BEGIN;
@@ -1826,7 +1996,18 @@ ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;
 COMMENT ON COLUMN crm_leads.tenant_id IS 'V6.2: Référence vers tenant créé après conversion';
 COMMENT ON COLUMN crm_leads.converted_at IS 'V6.2: Date/heure de conversion';
 
--- 4. Index
+-- 4. V6.2.1: Colonnes Stripe Payment Link
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS stripe_checkout_session_id VARCHAR(255);
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS stripe_payment_link_url TEXT;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS payment_link_created_at TIMESTAMPTZ;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS payment_link_expires_at TIMESTAMPTZ;
+
+COMMENT ON COLUMN crm_leads.stripe_checkout_session_id IS 'V6.2.1: Stripe Checkout Session ID';
+COMMENT ON COLUMN crm_leads.stripe_payment_link_url IS 'V6.2.1: URL lien paiement envoyé';
+COMMENT ON COLUMN crm_leads.payment_link_created_at IS 'V6.2.1: Date création lien paiement';
+COMMENT ON COLUMN crm_leads.payment_link_expires_at IS 'V6.2.1: Date expiration lien paiement';
+
+-- 5. Index
 CREATE INDEX IF NOT EXISTS idx_crm_leads_booking_slot
 ON crm_leads(booking_slot_at)
 WHERE booking_slot_at IS NOT NULL;
@@ -1842,7 +2023,11 @@ CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant
 ON crm_leads(tenant_id)
 WHERE tenant_id IS NOT NULL;
 
--- 5. Mise à jour CHECK constraint status (9 statuts)
+CREATE INDEX IF NOT EXISTS idx_crm_leads_stripe_checkout
+ON crm_leads(stripe_checkout_session_id)
+WHERE stripe_checkout_session_id IS NOT NULL;
+
+-- 6. Mise à jour CHECK constraint status (10 statuts V6.2.1)
 
 -- D'abord, migrer les anciens statuts si présents
 UPDATE crm_leads SET status = 'new' WHERE status = 'demo_requested';
@@ -1850,7 +2035,7 @@ UPDATE crm_leads SET status = 'new' WHERE status = 'demo_requested';
 -- Supprimer ancienne contrainte
 ALTER TABLE crm_leads DROP CONSTRAINT IF EXISTS crm_leads_status_check;
 
--- Nouvelle contrainte avec 9 statuts V6.2
+-- Nouvelle contrainte avec 10 statuts V6.2.1
 ALTER TABLE crm_leads ADD CONSTRAINT crm_leads_status_check
 CHECK (status IN (
   'new',
@@ -1858,23 +2043,99 @@ CHECK (status IN (
   'qualified',
   'demo_completed',
   'proposal_sent',
+  'payment_pending',
   'converted',
   'lost',
   'nurturing',
   'disqualified'
 ));
 
--- 6. Marquer colonnes deprecated
+-- 7. Marquer colonnes deprecated
 COMMENT ON COLUMN crm_leads.callback_requested_at IS 'DEPRECATED V6.2 - Flux callback supprimé';
 COMMENT ON COLUMN crm_leads.callback_scheduled_at IS 'DEPRECATED V6.2 - Flux callback supprimé';
 
--- 7. Commentaire table
-COMMENT ON TABLE crm_leads IS 'V6.2: Leads CRM - 9 statuts, wizard booking 3 étapes, CPT qualification';
+-- 8. Commentaire table
+COMMENT ON TABLE crm_leads IS 'V6.2.1: Leads CRM - 10 statuts, wizard booking, Stripe payment flow';
 
 COMMIT;
 ```
 
-### 17.2 Migration crm_quotes
+### 17.2 Migration adm_tenants (V6.2.1)
+
+```sql
+-- =============================================================================
+-- FLEETCORE V6.2.1 - MIGRATION ADM_TENANTS
+-- Date: 2026-01-06
+-- Description: Colonnes Stripe, vérification client, admin désigné, CGI
+-- =============================================================================
+
+BEGIN;
+
+-- 1. Colonnes Stripe
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255);
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS stripe_subscription_id VARCHAR(255);
+
+COMMENT ON COLUMN adm_tenants.stripe_customer_id IS 'V6.2.1: Stripe Customer ID';
+COMMENT ON COLUMN adm_tenants.stripe_subscription_id IS 'V6.2.1: Stripe Subscription ID';
+
+-- 2. Colonnes vérification client (lien 24h)
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS verification_token VARCHAR(100);
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMPTZ;
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS verification_completed_at TIMESTAMPTZ;
+
+COMMENT ON COLUMN adm_tenants.verification_token IS 'V6.2.1: Token vérification email (24h)';
+COMMENT ON COLUMN adm_tenants.verification_token_expires_at IS 'V6.2.1: Expiration token vérification';
+COMMENT ON COLUMN adm_tenants.verification_completed_at IS 'V6.2.1: Date complétion vérification';
+
+-- 3. Colonnes admin désigné par le client
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS admin_name VARCHAR(255);
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS admin_email VARCHAR(255);
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS admin_invited_at TIMESTAMPTZ;
+
+COMMENT ON COLUMN adm_tenants.admin_name IS 'V6.2.1: Nom admin désigné par client';
+COMMENT ON COLUMN adm_tenants.admin_email IS 'V6.2.1: Email admin désigné par client';
+COMMENT ON COLUMN adm_tenants.admin_invited_at IS 'V6.2.1: Date envoi invitation Clerk';
+
+-- 4. Colonnes CGI / CGU
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS cgi_accepted_at TIMESTAMPTZ;
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS cgi_accepted_ip VARCHAR(45);
+ALTER TABLE adm_tenants ADD COLUMN IF NOT EXISTS cgi_version VARCHAR(20);
+
+COMMENT ON COLUMN adm_tenants.cgi_accepted_at IS 'V6.2.1: Date acceptation CGI/CGU';
+COMMENT ON COLUMN adm_tenants.cgi_accepted_ip IS 'V6.2.1: IP acceptation CGI/CGU';
+COMMENT ON COLUMN adm_tenants.cgi_version IS 'V6.2.1: Version CGI acceptées (format: YYYY-MM-DD)';
+
+-- 5. Index
+CREATE INDEX IF NOT EXISTS idx_adm_tenants_stripe_customer
+ON adm_tenants(stripe_customer_id) WHERE stripe_customer_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_adm_tenants_verification_token
+ON adm_tenants(verification_token) WHERE verification_token IS NOT NULL;
+
+COMMIT;
+```
+
+### 17.3 Migration bil_plans (V6.2.1)
+
+```sql
+-- =============================================================================
+-- FLEETCORE V6.2.1 - MIGRATION BIL_PLANS
+-- Date: 2026-01-06
+-- Description: Colonne max_users par forfait
+-- =============================================================================
+
+ALTER TABLE bil_plans ADD COLUMN IF NOT EXISTS max_users INT DEFAULT 5;
+
+COMMENT ON COLUMN bil_plans.max_users IS 'V6.2.1: Nombre max utilisateurs par forfait';
+
+-- Valeurs par défaut selon segment
+UPDATE bil_plans SET max_users = 1 WHERE code = 'solo';
+UPDATE bil_plans SET max_users = 5 WHERE code = 'starter';
+UPDATE bil_plans SET max_users = 20 WHERE code = 'pro';
+UPDATE bil_plans SET max_users = 9999 WHERE code = 'premium';
+```
+
+### 17.4 Migration crm_quotes
 
 ```sql
 -- Ajout lead_id
@@ -1892,7 +2153,7 @@ ALTER TABLE crm_quotes
 CREATE INDEX IF NOT EXISTS idx_crm_quotes_lead ON crm_quotes(lead_id) WHERE lead_id IS NOT NULL;
 ```
 
-### 17.3 Création module CLT
+### 17.5 Création module CLT
 
 Voir Section 11 pour les scripts complets :
 
@@ -1904,13 +2165,13 @@ Voir Section 11 pour les scripts complets :
 
 ---
 
-## 18. CONFIGURATION CRM_SETTINGS V6.2
+## 18. CONFIGURATION CRM_SETTINGS V6.2.1
 
 ### 18.1 Mise à jour `lead_status_workflow`
 
 ```json
 {
-  "version": "6.2.0-final",
+  "version": "6.2.1",
   "statuses": [
     {
       "value": "new",
@@ -1967,10 +2228,22 @@ Voir Section 11 pour les scripts complets :
       "probability": 85,
       "color": "#F59E0B",
       "icon": "send",
-      "description": "Lien paiement Stripe envoyé",
-      "allowed_transitions": ["converted", "lost", "nurturing"],
+      "description": "Lien paiement Stripe généré",
+      "allowed_transitions": ["payment_pending", "lost", "nurturing"],
       "auto_assign": false,
       "sla_hours": 24
+    },
+    {
+      "value": "payment_pending",
+      "label": "Paiement en attente",
+      "phase": "closing",
+      "probability": 90,
+      "color": "#F59E0B",
+      "icon": "credit-card",
+      "description": "Lien envoyé, attente paiement client",
+      "allowed_transitions": ["converted", "lost"],
+      "auto_assign": false,
+      "sla_hours": 72
     },
     {
       "value": "converted",
@@ -2190,47 +2463,121 @@ Voir Section 11 pour les scripts complets :
 
 ---
 
-## 19. PAGES ET ROUTES
+## 19. CONFIGURATION BIL_SETTINGS V6.2.1
 
-### 19.1 Pages publiques
+### 19.1 Table bil_settings
 
-| Route                                       | Description                           | Statut V6.2   |
-| ------------------------------------------- | ------------------------------------- | ------------- |
-| `/[locale]/(public)/book-demo`              | **Wizard 3 étapes + Cal.com**         | À CRÉER       |
-| `/[locale]/(public)/book-demo/step-2`       | Étape 2 : Calendrier Cal.com          | À CRÉER       |
-| `/[locale]/(public)/book-demo/step-3`       | Étape 3 : Infos + Téléphone           | À CRÉER       |
-| `/[locale]/(public)/book-demo/confirmation` | Page confirmation post-submit         | À CRÉER       |
-| `/[locale]/(public)/book-demo/confirmed`    | Page après clic "I'll be there"       | À CRÉER       |
-| `/[locale]/(public)/solopreneur`            | Page Segment 1 + vidéo + liens stores | À CRÉER       |
-| ~`/[locale]/(public)/request-demo`~         | Ancien formulaire                     | **SUPPRIMER** |
+```sql
+CREATE TABLE IF NOT EXISTS bil_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  setting_key VARCHAR(100) NOT NULL UNIQUE,
+  setting_value JSONB NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  data_type VARCHAR(20) NOT NULL DEFAULT 'object',
+  is_system BOOLEAN NOT NULL DEFAULT false,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  provider_id UUID REFERENCES adm_providers(id),
+  display_label VARCHAR(255),
+  description TEXT,
+  schema_version VARCHAR(20),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-### 19.2 Pages admin CRM
+  CONSTRAINT bil_settings_category_check CHECK (
+    category IN ('payment', 'subscription', 'invoice', 'pricing', 'stripe', 'promotion')
+  ),
+  CONSTRAINT bil_settings_data_type_check CHECK (
+    data_type IN ('object', 'array', 'string', 'number', 'boolean')
+  )
+);
 
-| Route                               | Description              | Statut V6.2                |
-| ----------------------------------- | ------------------------ | -------------------------- |
-| `/admin/crm/leads`                  | Liste leads avec filtres | EXISTE - adapter 9 statuts |
-| `/admin/crm/leads/[id]`             | Fiche lead détaillée     | ENRICHIR - afficher CPT    |
-| `/admin/crm/pipeline`               | Vue Kanban pipeline      | EXISTE - adapter 5 phases  |
-| `/admin/crm/settings/qualification` | Config framework CPT     | À CRÉER                    |
+CREATE INDEX idx_bil_settings_category ON bil_settings(category);
 
-### 19.3 API endpoints
+COMMENT ON TABLE bil_settings IS 'V6.2.1: Configuration module Billing';
+```
 
-| Endpoint                      | Méthode | Description                           |
-| ----------------------------- | ------- | ------------------------------------- |
-| `/api/crm/leads`              | POST    | Créer lead (wizard step 1)            |
-| `/api/crm/leads/[id]`         | GET     | Récupérer lead                        |
-| `/api/crm/leads/[id]`         | PATCH   | Mettre à jour lead (wizard steps 2-3) |
-| `/api/crm/leads/[id]/qualify` | POST    | Enregistrer qualification CPT         |
-| `/api/crm/leads/[id]/status`  | PATCH   | Changer statut                        |
-| `/api/crm/leads/[id]/confirm` | GET     | Confirmer RDV (bouton email J-1)      |
-| `/api/crm/leads/[id]/convert` | POST    | Convertir lead → client               |
-| `/api/crm/webhooks/calcom`    | POST    | Webhook Cal.com                       |
+### 19.2 Clé `payment_settings`
+
+```json
+{
+  "version": "6.2.1",
+  "payment_link": {
+    "allowed_statuses": ["qualified", "demo_completed", "proposal_sent"],
+    "expiry_hours": 24,
+    "reminder_hours": 12
+  },
+  "first_month_free": {
+    "enabled": true,
+    "coupon_id": "FIRST_MONTH_FREE"
+  },
+  "checkout": {
+    "success_path": "/payment-success",
+    "cancel_path": "/payment-cancelled"
+  },
+  "verification": {
+    "token_expiry_hours": 24
+  }
+}
+```
+
+### 19.3 Séparation des settings par module
+
+| Module  | Périmètre                                       | Table settings |
+| ------- | ----------------------------------------------- | -------------- |
+| **CRM** | Leads, Opportunities, Quotes (AVANT conversion) | `crm_settings` |
+| **BIL** | Subscriptions, Invoices, Payments, Stripe       | `bil_settings` |
+| **CLT** | Client masterdata, membres (APRÈS conversion)   | -              |
+| **ADM** | Tenants, Providers, Config système              | `adm_settings` |
 
 ---
 
-## 20. MÉTRIQUES ET KPIS
+## 20. PAGES ET ROUTES
 
-### 20.1 Métriques Funnel
+### 20.1 Pages publiques
+
+| Route                                       | Description                              | Statut V6.2.1  |
+| ------------------------------------------- | ---------------------------------------- | -------------- |
+| `/[locale]/(public)/book-demo`              | **Wizard 3 étapes + Cal.com**            | À CRÉER        |
+| `/[locale]/(public)/book-demo/step-2`       | Étape 2 : Calendrier Cal.com             | À CRÉER        |
+| `/[locale]/(public)/book-demo/step-3`       | Étape 3 : Infos + Téléphone              | À CRÉER        |
+| `/[locale]/(public)/book-demo/confirmation` | Page confirmation post-submit            | À CRÉER        |
+| `/[locale]/(public)/book-demo/confirmed`    | Page après clic "I'll be there"          | À CRÉER        |
+| `/[locale]/(public)/solopreneur`            | Page Segment 1 + vidéo + liens stores    | À CRÉER        |
+| `/[locale]/(public)/verify`                 | **Formulaire vérification client (24h)** | À CRÉER V6.2.1 |
+| `/[locale]/(public)/payment-success`        | **Page succès paiement Stripe**          | À CRÉER V6.2.1 |
+| `/[locale]/(public)/payment-cancelled`      | **Page annulation paiement**             | À CRÉER V6.2.1 |
+| ~`/[locale]/(public)/request-demo`~         | Ancien formulaire                        | **SUPPRIMER**  |
+
+### 20.2 Pages admin CRM
+
+| Route                               | Description              | Statut V6.2.1               |
+| ----------------------------------- | ------------------------ | --------------------------- |
+| `/admin/crm/leads`                  | Liste leads avec filtres | EXISTE - adapter 10 statuts |
+| `/admin/crm/leads/[id]`             | Fiche lead détaillée     | ENRICHIR - afficher CPT     |
+| `/admin/crm/pipeline`               | Vue Kanban pipeline      | EXISTE - adapter 5 phases   |
+| `/admin/crm/settings/qualification` | Config framework CPT     | À CRÉER                     |
+
+### 20.3 API endpoints
+
+| Endpoint                      | Méthode | Description                             |
+| ----------------------------- | ------- | --------------------------------------- |
+| `/api/crm/leads`              | POST    | Créer lead (wizard step 1)              |
+| `/api/crm/leads/[id]`         | GET     | Récupérer lead                          |
+| `/api/crm/leads/[id]`         | PATCH   | Mettre à jour lead (wizard steps 2-3)   |
+| `/api/crm/leads/[id]/qualify` | POST    | Enregistrer qualification CPT           |
+| `/api/crm/leads/[id]/status`  | PATCH   | Changer statut                          |
+| `/api/crm/leads/[id]/confirm` | GET     | Confirmer RDV (bouton email J-1)        |
+| `/api/v1/bil/payment-links`   | POST    | **Générer lien paiement Stripe** V6.2.1 |
+| `/api/webhooks/stripe`        | POST    | **Webhook Stripe** V6.2.1               |
+| `/api/webhooks/clerk`         | POST    | **Webhook Clerk membership** V6.2.1     |
+| `/api/public/verify`          | POST    | **Vérification données client** V6.2.1  |
+| `/api/crm/webhooks/calcom`    | POST    | Webhook Cal.com                         |
+
+---
+
+## 21. MÉTRIQUES ET KPIS
+
+### 21.1 Métriques Funnel
 
 | Métrique                   | Formule                            | Target V6.2 |
 | -------------------------- | ---------------------------------- | ----------- |
@@ -2244,7 +2591,7 @@ Voir Section 11 pour les scripts complets :
 | **Demo-to-Close Rate**     | Converted / Qualified demos        | > 40%       |
 | **Overall Conversion**     | Converted / Wizard starts          | > 20%       |
 
-### 20.2 Funnel V6.2 (exemple avec 1000 wizard starts)
+### 21.2 Funnel V6.2.1 (exemple avec 1000 wizard starts)
 
 ```
 Wizard Step 1 (email) ────────────────────────── 1000
@@ -2282,62 +2629,62 @@ Overall: 86/1000 = 8.6% conversion
 
 ---
 
-## 21. PLAN D'EXÉCUTION
+## 22. PLAN D'EXÉCUTION
 
-### 21.1 Phases
+### 22.1 Phases
 
-| Phase       | Description                                             | Durée estimée |
-| ----------- | ------------------------------------------------------- | ------------- |
-| **V6.2-1**  | Migration SQL crm_leads (9 statuts, colonnes booking)   | 1 jour        |
-| **V6.2-2**  | Migration SQL crm_quotes (lead_id, XOR constraint)      | 0.5 jour      |
-| **V6.2-3**  | Création module CLT (clt_masterdata + renommages)       | 1 jour        |
-| **V6.2-4**  | Configuration crm_settings (statuts, CPT, loss_reasons) | 0.5 jour      |
-| **V6.2-5**  | Configurer Cal.com (Event Type, Webhooks)               | 0.5 jour      |
-| **V6.2-6**  | Backend Lead (9 statuts, webhook Cal.com, qualify)      | 2 jours       |
-| **V6.2-7**  | Backend CLT (CustomerService, conversion)               | 2 jours       |
-| **V6.2-8**  | Notifications (emails Resend, SMS Twilio)               | 1.5 jours     |
-| **V6.2-9**  | Frontend Wizard 3 étapes + Cal.com embed                | 2 jours       |
-| **V6.2-10** | Page /solopreneur (vidéo + liens stores)                | 0.5 jour      |
-| **V6.2-11** | Frontend Admin (Kanban 9 statuts, CPT modal)            | 1.5 jours     |
-| **V6.2-12** | Tests E2E flux complet                                  | 2 jours       |
+| Phase       | Description                                             | Durée     | Statut      |
+| ----------- | ------------------------------------------------------- | --------- | ----------- |
+| **V6.2-1**  | Migration SQL crm_leads (10 statuts, colonnes booking)  | 1 jour    | ✅ FAIT     |
+| **V6.2-2**  | Migration SQL crm_quotes (lead_id, XOR constraint)      | 0.5 jour  | ✅ FAIT     |
+| **V6.2-3**  | Création module CLT (clt_masterdata + renommages)       | 1 jour    | ✅ FAIT     |
+| **V6.2-4**  | Configuration crm_settings (statuts, CPT, loss_reasons) | 0.5 jour  | ✅ FAIT     |
+| **V6.2-5**  | Configurer Cal.com (Event Type, Webhooks)               | 0.5 jour  | ✅ FAIT     |
+| **V6.2-6**  | Backend Lead (10 statuts, webhook Cal.com, qualify)     | 2 jours   | ✅ FAIT     |
+| **V6.2-7**  | **Stripe Payment Link + bil_settings**                  | 1.5 jours | ⏳ EN COURS |
+| **V6.2-8**  | **Webhook Stripe + Conversion auto**                    | 2 jours   | ⏳          |
+| **V6.2-8b** | **Formulaire vérification client (24h)**                | 1 jour    | ⏳          |
+| **V6.2-8c** | **Invitation Admin Clerk**                              | 0.5 jour  | ⏳          |
+| **V6.2-9**  | Frontend Wizard 3 étapes + Cal.com embed                | 2 jours   | ⏳          |
+| **V6.2-10** | Page /solopreneur (vidéo + liens stores)                | 0.5 jour  | ✅ FAIT     |
+| **V6.2-11** | Frontend Admin (Kanban 10 statuts, CPT modal)           | 1.5 jours | ⏳          |
+| **V6.2-12** | Tests E2E flux complet                                  | 2 jours   | ⏳          |
 
-**Total estimé : 15 jours**
+**Total estimé : 17 jours**
 
-### 21.2 Dépendances
+### 22.2 Dépendances
 
 ```
-V6.2-1 (SQL Leads)
+V6.2-1 (SQL Leads) ✅
     │
-    ├──→ V6.2-2 (SQL Quotes)
+    ├──→ V6.2-2 (SQL Quotes) ✅
     │
-    ├──→ V6.2-3 (Module CLT)
-    │         │
-    │         └──→ V6.2-7 (Backend CLT)
+    ├──→ V6.2-3 (Module CLT) ✅
     │
-    ├──→ V6.2-4 (Config)
+    ├──→ V6.2-4 (Config) ✅
     │
-    └──→ V6.2-5 (Cal.com)
+    └──→ V6.2-5 (Cal.com) ✅
               │
-              └──→ V6.2-6 (Backend Lead)
+              └──→ V6.2-6 (Backend Lead) ✅
                         │
-                        ├──→ V6.2-8 (Notifications)
-                        │
-                        └──→ V6.2-9 (Frontend Wizard)
+                        └──→ V6.2-7 (Stripe Payment Link) ⏳
                                   │
-                                  ├──→ V6.2-10 (Page Solopreneur)
-                                  │
-                                  └──→ V6.2-11 (Frontend Admin)
+                                  └──→ V6.2-8 (Webhook Stripe)
                                             │
-                                            └──→ V6.2-12 (Tests E2E)
+                                            └──→ V6.2-8b (Formulaire vérification)
+                                                      │
+                                                      └──→ V6.2-8c (Invitation Clerk)
+                                                                │
+                                                                └──→ V6.2-12 (Tests E2E)
 ```
 
 ---
 
-## 22. RÈGLES DE GESTION VERROUILLÉES
+## 23. RÈGLES DE GESTION VERROUILLÉES
 
 > **Ces décisions sont FINALES et ne doivent PAS être remises en question :**
 >
-> 1. **9 statuts Lead** (new, demo_scheduled, qualified, demo_completed, proposal_sent, converted, lost, nurturing, disqualified)
+> 1. **10 statuts Lead** (new, demo_scheduled, qualified, demo_completed, proposal_sent, payment_pending, converted, lost, nurturing, disqualified)
 > 2. **Wizard 3 étapes** (Email → Cal.com → Infos + Téléphone)
 > 3. **Cal.com Free** (1 commercial, distribution interne manuelle)
 > 4. **Téléphone OBLIGATOIRE** en étape 3 pour confirmer le booking
@@ -2355,17 +2702,26 @@ V6.2-1 (SQL Leads)
 > 16. **crm_quote = XOR lead/opportunity** (sert les 2 modules exclusivement)
 > 17. **lead_code conservé** dans clt_masterdata.origin_lead_code
 > 18. **Opportunity Pipeline = FREEZE** (futur upsell depuis compte client)
-> 19. **ZERO HARDCODING** - Toutes valeurs paramétrables (escalation_fleet_threshold, escalation_alert_hours, etc.)
+> 19. **ZERO HARDCODING** - Toutes valeurs paramétrables (bil_settings, crm_settings, adm_settings)
 > 20. **Satisfait/Remboursé 30 jours** (remplace trial comme porte d'entrée)
+> 21. **Conversion = Webhook Stripe** (pas action manuelle commercial)
+> 22. **1er mois gratuit via coupon** (PAS trial_period_days)
+> 23. **CB collectée obligatoirement** (engagement fort)
+> 24. **bil_settings** pour paramètres paiement (séparation modules)
+> 25. **Formulaire vérification 24h** (données société + admin désigné)
+> 26. **Admin désigné par le client** (pas par FleetCore)
+> 27. **CGI/CGU obligatoires** avec tracking (cgi_accepted_at, cgi_version, cgi_ip)
+> 28. **Format CGI version** = YYYY-MM-DD (ou YYYY-MM-DD.rN si révision)
+> 29. **max_users dans bil_plans** (limité par forfait, compté en temps réel)
 
 ---
 
-## CHECKLIST VALIDATION FINALE V6.2
+## CHECKLIST VALIDATION FINALE V6.2.1
 
 ### Schema
 
 ```
-□ crm_leads CHECK status = 9 valeurs
+□ crm_leads CHECK status = 10 valeurs (ajout payment_pending)
 □ crm_leads.booking_slot_at EXISTS
 □ crm_leads.booking_confirmed_at EXISTS
 □ crm_leads.booking_calcom_uid EXISTS
@@ -2373,8 +2729,13 @@ V6.2-1 (SQL Leads)
 □ crm_leads.wizard_completed EXISTS
 □ crm_leads.tenant_id EXISTS
 □ crm_leads.converted_at EXISTS
+□ crm_leads.stripe_checkout_session_id EXISTS (V6.2.1)
+□ crm_leads.stripe_payment_link_url EXISTS (V6.2.1)
+□ crm_leads.payment_link_created_at EXISTS (V6.2.1)
+□ crm_leads.payment_link_expires_at EXISTS (V6.2.1)
 □ Index booking_slot_at EXISTS
 □ Index booking_calcom_uid EXISTS
+□ Index stripe_checkout_session_id EXISTS (V6.2.1)
 □ Colonnes existantes scoring/qualification_* intactes
 □ crm_quotes.lead_id ajouté
 □ crm_quotes contrainte XOR lead/opportunity
@@ -2383,30 +2744,51 @@ V6.2-1 (SQL Leads)
 □ clt_invoices (ex bil_tenant_invoices) renommé
 □ clt_invoice_lines renommé
 □ clt_subscriptions renommé
+□ adm_tenants.stripe_customer_id EXISTS (V6.2.1)
+□ adm_tenants.stripe_subscription_id EXISTS (V6.2.1)
+□ adm_tenants.verification_token EXISTS (V6.2.1)
+□ adm_tenants.verification_token_expires_at EXISTS (V6.2.1)
+□ adm_tenants.verification_completed_at EXISTS (V6.2.1)
+□ adm_tenants.admin_name EXISTS (V6.2.1)
+□ adm_tenants.admin_email EXISTS (V6.2.1)
+□ adm_tenants.admin_invited_at EXISTS (V6.2.1)
+□ adm_tenants.cgi_accepted_at EXISTS (V6.2.1)
+□ adm_tenants.cgi_accepted_ip EXISTS (V6.2.1)
+□ adm_tenants.cgi_version EXISTS (V6.2.1)
+□ bil_plans.max_users EXISTS (V6.2.1)
+□ bil_settings table créée (V6.2.1)
+□ bil_settings.payment_settings configuré (V6.2.1)
 ```
 
 ### Configuration
 
 ```
-□ crm_settings.lead_status_workflow = 9 statuts V6.2
+□ crm_settings.lead_status_workflow = 10 statuts V6.2.1
 □ crm_settings.qualification_framework = CPT
 □ crm_settings.lead_loss_reasons créé
 □ crm_settings.escalation_settings créé
+□ bil_settings.payment_settings créé (V6.2.1)
 □ Cal.com Event Type configuré
 □ Cal.com Webhooks configurés
+□ Stripe Coupon FIRST_MONTH_FREE créé (V6.2.1)
 ```
 
 ### Backend
 
 ```
-□ LeadService adapté 9 statuts
+□ LeadService adapté 10 statuts
 □ LeadService.qualify() avec CPT
-□ LeadService.convert() → CLT + ADM
-□ CustomerService.createFromLead()
+□ POST /api/v1/bil/payment-links fonctionnel (V6.2.1)
+□ Webhook Stripe checkout.session.completed fonctionnel (V6.2.1)
+□ POST /api/public/verify fonctionnel (V6.2.1)
+□ Clerk createOrganization() intégré (V6.2.1)
+□ Clerk createInvitation() intégré (V6.2.1)
+□ Webhook Clerk organization_membership.created fonctionnel (V6.2.1)
 □ Webhook Cal.com handler
 □ Email "Bookez votre demo" fonctionnel
 □ Email "Complétez vos infos" fonctionnel
 □ Email J-1 fonctionnel
+□ Email vérification 24h fonctionnel (V6.2.1)
 □ Endpoint /confirm fonctionnel
 ```
 
@@ -2419,31 +2801,38 @@ V6.2-1 (SQL Leads)
 □ Étape 3 : Infos + Téléphone obligatoire
 □ Page confirmation
 □ /solopreneur avec vidéo + liens stores
+□ /verify formulaire vérification client (V6.2.1)
+□ /payment-success page succès paiement (V6.2.1)
+□ /payment-cancelled page annulation (V6.2.1)
 □ /request-demo supprimé
 ```
 
 ### Frontend Admin
 
 ```
-□ Kanban 5 phases / 9 statuts
+□ Kanban 5 phases / 10 statuts
 □ Fiche lead - section CPT
 □ Bouton "Qualifier" avec modal CPT
+□ Bouton "Générer lien paiement" (V6.2.1)
 □ Filtres par booking_slot_at
 □ Filtres par wizard_completed
+□ Filtres par payment_pending (V6.2.1)
 ```
 
 ### Prisma
 
 ```
-□ Modèle crm_leads avec colonnes booking + wizard
+□ Modèle crm_leads avec colonnes booking + wizard + stripe
 □ Modèle crm_quotes avec lead_id
 □ Modèle clt_masterdata créé
+□ Modèle bil_settings créé (V6.2.1)
+□ Modèle adm_tenants avec colonnes stripe/verification/cgi (V6.2.1)
 □ pnpm prisma generate ✓
 ```
 
 ---
 
-**FIN DE LA SPÉCIFICATION V6.2 FINALE**
+**FIN DE LA SPÉCIFICATION V6.2.1 FINALE**
 
-_Version 6.2.0-FINAL - Architecture 3 Modules + Wizard Cal.com + CPT_
-_Consolidation V6.2 OLD (Wizard/Cal.com/CPT) + V6.2 COMPLETE (Architecture 3 Modules/CLT)_
+_Version 6.2.1 - Architecture 3 Modules + Wizard Cal.com + CPT + Stripe Payment Flow_
+_Mise à jour V6.2 FINAL avec flow conversion Stripe et bil_settings_

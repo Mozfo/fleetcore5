@@ -8,6 +8,131 @@
       "cta": "Commencer"
     }
   },
+  "verify": {
+    "loading": "Validation de votre lien de vérification...",
+    "title": "Finalisez votre compte",
+    "subtitle": "Veuillez fournir les informations de votre entreprise pour finaliser votre compte FleetCore.",
+    "accountCode": "Votre identifiant de compte dans FleetCore CRM",
+    "support": "Besoin d'aide ?",
+    "errors": {
+      "missingToken": "Aucun jeton de vérification fourni",
+      "invalidToken": "Jeton de vérification invalide",
+      "networkError": "Impossible de valider le jeton. Veuillez réessayer."
+    },
+    "expired": {
+      "title": "Lien expiré",
+      "help": "Veuillez contacter le support pour demander un nouveau lien de vérification."
+    },
+    "alreadyUsed": {
+      "title": "Déjà vérifié",
+      "loginButton": "Aller à la connexion"
+    },
+    "invalid": {
+      "title": "Lien invalide",
+      "help": "Veuillez vérifier votre email pour trouver le bon lien de vérification."
+    },
+    "error": {
+      "title": "Une erreur s'est produite",
+      "retryButton": "Réessayer"
+    },
+    "form": {
+      "companySection": "Informations de l'entreprise",
+      "companyLegalName": "Raison sociale",
+      "companyLegalNamePlaceholder": "Société SAS",
+      "country": "Pays",
+      "taxId": {
+        "label": "Numéro fiscal",
+        "placeholder": "Numéro d'identification fiscale",
+        "FR": {
+          "label": "SIRET",
+          "placeholder": "Numéro SIRET à 14 chiffres",
+          "help": "Identifiant français de l'entreprise (14 chiffres)"
+        },
+        "DE": {
+          "label": "Steuernummer / USt-IdNr",
+          "placeholder": "Numéro fiscal ou TVA",
+          "help": "Numéro fiscal allemand (10-11 chiffres) ou TVA (DE + 9 chiffres)"
+        },
+        "ES": {
+          "label": "NIF / CIF",
+          "placeholder": "Identifiant fiscal à 9 caractères",
+          "help": "Numéro d'identification fiscale espagnol (9 caractères)"
+        },
+        "IT": {
+          "label": "Partita IVA / Codice Fiscale",
+          "placeholder": "TVA ou code fiscal",
+          "help": "TVA italienne (11 chiffres) ou code fiscal (16 caractères)"
+        },
+        "BE": {
+          "label": "Numéro d'entreprise / TVA",
+          "placeholder": "Numéro d'entreprise à 10 chiffres",
+          "help": "Numéro d'entreprise belge (10 chiffres)"
+        },
+        "NL": {
+          "label": "KvK / BTW",
+          "placeholder": "Chambre de commerce ou TVA",
+          "help": "KvK néerlandais (8 chiffres) ou numéro TVA"
+        },
+        "AE": {
+          "label": "TRN (Numéro d'enregistrement fiscal)",
+          "placeholder": "TRN à 15 chiffres",
+          "help": "Numéro d'enregistrement fiscal EAU (15 chiffres)"
+        },
+        "SA": {
+          "label": "Numéro de TVA",
+          "placeholder": "Numéro de TVA à 15 chiffres",
+          "help": "Numéro de TVA Arabie Saoudite (15 chiffres)"
+        },
+        "QA": {
+          "label": "Numéro fiscal",
+          "placeholder": "Numéro d'identification fiscale",
+          "help": "Numéro d'identification fiscale Qatar"
+        }
+      },
+      "address": "Adresse de l'entreprise",
+      "street": "Adresse",
+      "city": "Ville",
+      "postalCode": "Code postal",
+      "adminSection": "Administrateur du compte",
+      "adminDescription": "Cette personne recevra une invitation pour configurer son compte administrateur.",
+      "adminName": "Nom complet de l'administrateur",
+      "adminNamePlaceholder": "Jean Dupont",
+      "adminEmail": "Email de l'administrateur",
+      "adminEmailPlaceholder": "admin@entreprise.com",
+      "termsSection": "Conditions générales",
+      "termsText": "J'ai lu et j'accepte les Conditions Générales d'Inscription (CGI/CGU) et la Politique de Confidentialité.",
+      "readTerms": "Lire les conditions",
+      "submit": "Commencer",
+      "submitting": "Traitement en cours...",
+      "errors": {
+        "required": "Ce champ est requis",
+        "invalidEmail": "Adresse email invalide",
+        "invalidSiret": "Le SIRET doit contenir 14 chiffres",
+        "invalidTaxId": "Format de numéro fiscal invalide",
+        "mustAcceptTerms": "Vous devez accepter les conditions générales"
+      }
+    },
+    "success": {
+      "title": "Vérification terminée !",
+      "accountCode": "Votre identifiant de compte dans FleetCore CRM",
+      "nextSteps": "Et maintenant ?",
+      "step1": {
+        "title": "Vérifiez votre boîte mail",
+        "description": "L'administrateur désigné recevra une invitation par email de Clerk pour configurer son compte."
+      },
+      "step2": {
+        "title": "Acceptez l'invitation",
+        "description": "Cliquez sur le lien dans l'email et créez votre mot de passe. L'invitation expire dans 7 jours."
+      },
+      "step3": {
+        "title": "Commencez à utiliser FleetCore",
+        "description": "Une fois connecté, vous pouvez inviter des membres d'équipe et commencer à gérer votre flotte."
+      },
+      "loginButton": "Aller à la connexion",
+      "homeButton": "Retour à l'accueil",
+      "needHelp": "Besoin d'aide ?"
+    }
+  },
   "requestDemo": {
     "title": "Transformez vos opérations de flotte",
     "subtitle": "Plateforme de gestion de location de voitures et VTC",
@@ -61,5 +186,52 @@
       }
     }
   },
-  "watchDemoVideo": "Voir la Vidéo de Démo"
+  "watchDemoVideo": "Voir la Vidéo de Démo",
+  "terms": {
+    "title": "Conditions Générales d'Utilisation",
+    "lastUpdated": "Dernière mise à jour",
+    "updateDate": "Janvier 2026",
+    "backToHome": "Retour à l'accueil",
+    "backButton": "Retour",
+    "allRightsReserved": "Tous droits réservés.",
+    "introduction": "Bienvenue sur FleetCore. Les présentes Conditions Générales d'Utilisation régissent votre utilisation de notre plateforme de gestion de flotte et de nos services. En accédant à FleetCore ou en l'utilisant, vous acceptez d'être lié par ces conditions. Veuillez les lire attentivement avant d'utiliser nos services.",
+    "sections": {
+      "acceptance": {
+        "title": "Acceptation des Conditions",
+        "content": "En créant un compte, en accédant ou en utilisant les services FleetCore, vous reconnaissez avoir lu, compris et accepté d'être lié par les présentes Conditions Générales.\n\nSi vous acceptez ces conditions au nom d'une entreprise ou d'une autre entité juridique, vous déclarez avoir l'autorité nécessaire pour lier cette entité à ces conditions.\n\nSi vous n'acceptez pas ces conditions, vous ne pouvez pas accéder à nos services ni les utiliser."
+      },
+      "services": {
+        "title": "Description des Services",
+        "content": "FleetCore fournit une plateforme complète de gestion de flotte comprenant :\n\n- Suivi et gestion des véhicules\n- Gestion et planification des chauffeurs\n- Suivi et alertes de maintenance\n- Rapports financiers et analyses\n- Intégration avec les plateformes VTC\n- Gestion de la relation client (CRM)\n\nNous nous réservons le droit de modifier, suspendre ou interrompre tout ou partie des services à tout moment avec un préavis raisonnable."
+      },
+      "obligations": {
+        "title": "Obligations de l'Utilisateur",
+        "content": "En tant qu'utilisateur de FleetCore, vous vous engagez à :\n\n- Fournir des informations d'inscription exactes et complètes\n- Maintenir la sécurité de vos identifiants de compte\n- Utiliser les services uniquement à des fins légales\n- Ne pas tenter d'accéder de manière non autorisée à nos systèmes\n- Ne pas interférer avec ou perturber les services\n- Respecter toutes les lois et réglementations applicables\n- Nous informer immédiatement de toute violation de sécurité"
+      },
+      "payment": {
+        "title": "Conditions de Paiement",
+        "content": "Les frais d'abonnement sont facturés à l'avance sur une base mensuelle ou annuelle selon le plan choisi.\n\nTous les frais sont non remboursables sauf mention expresse dans ces conditions ou obligation légale.\n\nNous pouvons modifier nos tarifs avec un préavis de 30 jours. L'utilisation continue après les changements de prix vaut acceptation des nouveaux tarifs.\n\nLes paiements échoués peuvent entraîner une suspension du service jusqu'à la régularisation du compte."
+      },
+      "data": {
+        "title": "Protection des Données et Confidentialité",
+        "content": "Nous prenons votre vie privée au sérieux. Nos pratiques en matière de données sont régies par notre Politique de Confidentialité.\n\nVous conservez la propriété de vos données. Nous traitons vos données uniquement pour fournir nos services.\n\nNous mettons en œuvre des mesures de sécurité conformes aux standards de l'industrie pour protéger vos données.\n\nPour les clients de l'UE : Nous respectons les exigences du RGPD et fournissons des accords de traitement des données sur demande.\n\nVous pouvez demander l'exportation ou la suppression de vos données conformément aux lois applicables."
+      },
+      "liability": {
+        "title": "Limitation de Responsabilité",
+        "content": "Dans les limites autorisées par la loi, FleetCore ne pourra être tenu responsable de :\n\n- Dommages indirects, accessoires ou consécutifs\n- Perte de profits, de données ou d'opportunités commerciales\n- Interruptions de service indépendantes de notre volonté\n- Actions ou contenus de tiers\n\nNotre responsabilité totale ne saurait excéder les frais payés par vous au cours des 12 mois précédant la réclamation.\n\nCes limitations s'appliquent quelle que soit la théorie juridique de la réclamation."
+      },
+      "termination": {
+        "title": "Résiliation",
+        "content": "Chaque partie peut résilier le présent accord :\n\n- À tout moment avec un préavis écrit de 30 jours\n- Immédiatement si l'autre partie viole ces conditions\n- Immédiatement si la loi l'exige\n\nEn cas de résiliation :\n- Votre accès aux services sera révoqué\n- Vous pouvez demander l'exportation de vos données dans les 30 jours\n- Les frais impayés restent dus\n- Les dispositions devant survivre à la résiliation resteront en vigueur"
+      },
+      "governing": {
+        "title": "Droit Applicable",
+        "content": "Les présentes conditions sont régies par le droit français.\n\nTout litige sera soumis aux tribunaux de Paris, France.\n\nSi une disposition est jugée inapplicable, les autres dispositions resteront en vigueur.\n\nCes conditions constituent l'intégralité de l'accord entre vous et FleetCore concernant les services.\n\nNous pouvons mettre à jour ces conditions de temps à autre. Les modifications importantes seront communiquées par email ou notification sur la plateforme."
+      }
+    },
+    "contact": {
+      "title": "Des questions ?",
+      "description": "Si vous avez des questions concernant ces Conditions Générales, veuillez nous contacter à :"
+    }
+  }
 }
