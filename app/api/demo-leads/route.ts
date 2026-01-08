@@ -11,12 +11,13 @@ import { EmailVerificationService } from "@/lib/services/crm/email-verification.
 // ===== ZOD SCHEMAS =====
 
 /**
- * Schema for wizard_step1 mode (email verification only)
- * V6.2.2 Book Demo Wizard - Step 1
+ * Schema for wizard_step1 mode (email + country)
+ * V6.2.4 Book Demo Wizard - Step 1 (Gate pays only, fleet_size moved to step 3)
  */
 const WizardStep1Schema = z.object({
   mode: z.literal("wizard_step1"),
   email: z.string().email("Invalid email format"),
+  country_code: z.string().min(2).max(2, "Country code required"),
   locale: z.string().optional().default("en"),
 });
 
@@ -57,11 +58,13 @@ type FullFormBody = z.infer<typeof FullFormSchema>;
 // ===== HANDLERS =====
 
 /**
- * Handle wizard_step1 mode - Email verification only
- * Creates lead with email only and sends 6-digit verification code
+ * Handle wizard_step1 mode - Email + Country verification
+ * V6.2.4: Creates lead with email, country_code and sends 6-digit verification code
+ * Note: fleet_size is now collected in step 3
  */
 async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
   const normalizedEmail = body.email.toLowerCase().trim();
+  const countryCode = body.country_code.toUpperCase().trim();
   const locale = body.locale || "en";
 
   // Check for existing lead
@@ -156,8 +159,19 @@ async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
     );
   }
 
+  // V6.2.4: Update lead with country_code only (fleet_size collected in step 3)
+  if (result.leadId) {
+    await db.crm_leads.update({
+      where: { id: result.leadId },
+      data: {
+        country_code: countryCode,
+        updated_at: new Date(),
+      },
+    });
+  }
+
   logger.info(
-    { email: normalizedEmail, leadId: result.leadId },
+    { email: normalizedEmail, leadId: result.leadId, countryCode },
     "[Wizard Step1] Verification code sent"
   );
 
