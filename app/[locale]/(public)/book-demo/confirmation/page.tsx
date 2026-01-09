@@ -398,16 +398,6 @@ export default function BookDemoConfirmationPage() {
             </Link>
           </motion.div>
         </div>
-
-        {/* Footer */}
-        <div className="mt-6 text-center">
-          <Link
-            href={`/${locale}`}
-            className="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
-          >
-            {t("bookDemo.backToHome")}
-          </Link>
-        </div>
       </motion.div>
     </div>
   );
