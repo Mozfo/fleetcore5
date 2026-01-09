@@ -1,67 +1,50 @@
 /**
  * Cal.com Webhook Validators
  * V6.2-5: Validation schemas for Cal.com webhook payloads
+ *
+ * CUSTOM PAYLOAD: Cal.com is configured to send a flat structure
+ * instead of the default nested { responses: { field: { label, value } } }
+ *
+ * @see https://cal.com/docs/developing/guides/automation/webhooks
  */
 
 import { z } from "zod";
 
 /**
- * Cal.com webhook trigger events
+ * Cal.com custom webhook payload schema
+ *
+ * Cal.com is configured with a custom payload template that sends
+ * a flat structure with direct field access.
+ *
+ * Template configured in Cal.com:
+ * {
+ *   "event": "{{triggerEvent}}",
+ *   "uid": "{{uid}}",
+ *   "startTime": "{{startTime}}",
+ *   "endTime": "{{endTime}}",
+ *   "attendee_email": "{{attendees.0.email}}",
+ *   "attendee_first_name": "{{attendees.0.firstName}}",
+ *   "attendee_last_name": "{{attendees.0.lastName}}",
+ *   "notes": "{{responses.notes.value}}"
+ * }
  */
-export const CalcomTriggerEvent = z.enum([
-  "BOOKING_CREATED",
-  "BOOKING_RESCHEDULED",
-  "BOOKING_CANCELLED",
-]);
-
-export type CalcomTriggerEvent = z.infer<typeof CalcomTriggerEvent>;
-
-/**
- * Attendee schema
- */
-export const calcomAttendeeSchema = z.object({
-  email: z.string().email(),
-  name: z.string().optional(),
-  timeZone: z.string().optional(),
-  language: z.union([z.string(), z.object({ locale: z.string() })]).optional(),
-});
-
-/**
- * Cal.com webhook payload schema
- * Based on Cal.com documentation: https://cal.com/docs/developing/guides/automation/webhooks
- */
-export const calcomWebhookPayloadSchema = z.object({
+export const calcomCustomPayloadSchema = z.object({
+  event: z.enum([
+    "BOOKING_CREATED",
+    "BOOKING_RESCHEDULED",
+    "BOOKING_CANCELLED",
+    "PING",
+  ]),
   uid: z.string().min(1, "Booking UID is required"),
-  startTime: z.string().datetime({ offset: true }).or(z.string().min(1)),
+  startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().optional(),
-  title: z.string().optional(),
-  description: z.string().nullable().optional(),
-  location: z.string().nullable().optional(),
-  status: z.string().optional(),
-  attendees: z
-    .array(calcomAttendeeSchema)
-    .min(1, "At least one attendee required"),
-  organizer: z
-    .object({
-      email: z.string().email().optional(),
-      name: z.string().optional(),
-      timeZone: z.string().optional(),
-    })
-    .optional(),
+  attendee_email: z.string().email("Valid email required"),
+  attendee_first_name: z.string().optional(),
+  attendee_last_name: z.string().optional(),
+  notes: z.string().optional(),
 });
 
-/**
- * Full Cal.com webhook request schema
- */
-export const calcomWebhookSchema = z.object({
-  triggerEvent: CalcomTriggerEvent,
-  createdAt: z.string().optional(),
-  payload: calcomWebhookPayloadSchema,
-});
-
-export type CalcomWebhookRequest = z.infer<typeof calcomWebhookSchema>;
-export type CalcomWebhookPayload = z.infer<typeof calcomWebhookPayloadSchema>;
-export type CalcomAttendee = z.infer<typeof calcomAttendeeSchema>;
+export type CalcomCustomPayload = z.infer<typeof calcomCustomPayloadSchema>;
 
 /**
  * Activity types for crm_lead_activities

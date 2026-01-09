@@ -3,10 +3,17 @@
  * Cal.com webhook handler for booking events
  * V6.2-5: Handles BOOKING_CREATED, BOOKING_RESCHEDULED, BOOKING_CANCELLED
  *
- * Flow: Lead MUST exist when webhook arrives (Wizard Step 2)
- * - Step 1: Email → lead created (status = new)
- * - Step 2: Cal.com booking → webhook received (THIS ENDPOINT)
- * - Step 3: Phone required → wizard_completed = true
+ * CUSTOM PAYLOAD: Cal.com is configured to send a flat structure:
+ * {
+ *   "event": "BOOKING_CREATED",
+ *   "uid": "abc123",
+ *   "startTime": "2026-01-10T10:00:00Z",
+ *   "endTime": "2026-01-10T10:30:00Z",
+ *   "attendee_email": "john@company.com",
+ *   "attendee_first_name": "John",
+ *   "attendee_last_name": "Doe",
+ *   "notes": "I manage 25 vehicles"
+ * }
  *
  * @see https://cal.com/docs/developing/guides/automation/webhooks
  */
@@ -17,17 +24,15 @@ import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import {
-  calcomWebhookSchema,
+  calcomCustomPayloadSchema,
   CALCOM_ACTIVITY_TYPES,
   CALCOM_ACTIVITY_TITLES,
-  type CalcomTriggerEvent,
 } from "@/lib/validators/calcom.validators";
 
 const CALCOM_WEBHOOK_SECRET = process.env.CALCOM_WEBHOOK_SECRET;
 
 /**
  * Verify Cal.com webhook signature using HMAC-SHA256
- * @see https://cal.com/docs/developing/guides/automation/webhooks
  */
 function verifyCalcomSignature(
   payload: string,
@@ -40,7 +45,6 @@ function verifyCalcomSignature(
       .update(payload)
       .digest("hex");
 
-    // Use timing-safe comparison to prevent timing attacks
     return crypto.timingSafeEqual(
       Buffer.from(signature),
       Buffer.from(expected)
@@ -50,36 +54,12 @@ function verifyCalcomSignature(
   }
 }
 
-/**
- * Get activity title based on trigger event and locale
- */
-function getActivityTitle(triggerEvent: CalcomTriggerEvent): string {
-  return (
-    CALCOM_ACTIVITY_TITLES[triggerEvent] || `Cal.com event: ${triggerEvent}`
-  );
-}
-
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
     // 1. Get raw body for signature verification
     const rawBody = await request.text();
-
-    // Debug: Log incoming webhook (temporarily for debugging)
-    const allHeaders: Record<string, string> = {};
-    request.headers.forEach((value, key) => {
-      allHeaders[key] = value;
-    });
-    logger.info(
-      {
-        headers: allHeaders,
-        bodyPreview: rawBody.substring(0, 500),
-        bodyLength: rawBody.length,
-        hasSignatureHeader: !!request.headers.get("x-cal-signature-256"),
-      },
-      "[Cal.com Webhook] Incoming request"
-    );
 
     // 2. Verify webhook signature
     if (CALCOM_WEBHOOK_SECRET) {
@@ -116,38 +96,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Parse and validate webhook payload
+    // 3. Parse and validate custom payload
     const body = JSON.parse(rawBody);
 
-    // Handle Cal.com ping test (sends minimal payload)
-    if (body.triggerEvent === "PING" || !body.payload) {
-      logger.info("[Cal.com Webhook] Ping test received - responding OK");
-      return NextResponse.json(
-        { success: true, message: "Ping received" },
-        { status: 200 }
-      );
+    // Handle ping test
+    if (body.event === "PING") {
+      logger.info("[Cal.com Webhook] Ping test received");
+      return NextResponse.json({ success: true, message: "Ping received" });
     }
 
-    const { triggerEvent, payload } = calcomWebhookSchema.parse(body);
+    // Validate with Zod schema
+    const payload = calcomCustomPayloadSchema.parse(body);
 
-    // 4. Extract attendee email (first attendee is the lead)
-    const attendeeEmail = payload.attendees[0]?.email;
-    if (!attendeeEmail) {
-      logger.error(
-        { uid: payload.uid, triggerEvent },
-        "[Cal.com Webhook] No attendee email in payload"
-      );
-      // Return 200 to avoid retries - this is a data issue
-      return NextResponse.json(
-        { success: false, error: "No attendee email in payload" },
-        { status: 200 }
-      );
-    }
+    logger.info(
+      {
+        event: payload.event,
+        uid: payload.uid,
+        email: payload.attendee_email,
+      },
+      "[Cal.com Webhook] Received"
+    );
 
-    // 5. Look up lead by email
+    // 4. Look up lead by email
     const lead = await prisma.crm_leads.findFirst({
       where: {
-        email: attendeeEmail.toLowerCase(),
+        email: payload.attendee_email.toLowerCase(),
         deleted_at: null,
       },
       select: {
@@ -160,45 +133,40 @@ export async function POST(request: NextRequest) {
     });
 
     if (!lead) {
-      // CRITICAL: Lead MUST exist in V6.2 wizard flow
-      // This is ABNORMAL - log ERROR not warning
       logger.error(
-        {
-          email: attendeeEmail,
-          calcom_uid: payload.uid,
-          triggerEvent,
-          startTime: payload.startTime,
-        },
-        "[Cal.com Webhook] Lead not found for booking - this should not happen in V6.2 wizard flow"
+        { email: payload.attendee_email, uid: payload.uid },
+        "[Cal.com Webhook] Lead not found"
       );
-      // Return 200 to avoid retries
       return NextResponse.json(
-        {
-          success: false,
-          error: "Lead not found for email",
-          email: attendeeEmail,
-        },
+        { success: false, error: "Lead not found" },
         { status: 200 }
       );
     }
 
-    // 6. Process based on trigger event
+    // 5. Extract data directly from flat payload
+    const firstName = payload.attendee_first_name?.trim() || null;
+    const lastName = payload.attendee_last_name?.trim() || null;
+    const notes = payload.notes?.trim() || null;
+
+    // 6. Process based on event type
     let updateData: Record<string, unknown> = {};
     let newStatus: string | null = null;
 
-    switch (triggerEvent) {
+    switch (payload.event) {
       case "BOOKING_CREATED":
         newStatus = "demo_scheduled";
         updateData = {
           status: newStatus,
           booking_slot_at: new Date(payload.startTime),
           booking_calcom_uid: payload.uid,
+          ...(firstName && !lead.first_name && { first_name: firstName }),
+          ...(lastName && !lead.last_name && { last_name: lastName }),
+          ...(notes && { message: notes }),
           updated_at: new Date(),
         };
         break;
 
       case "BOOKING_RESCHEDULED":
-        // Only update the booking time, don't change status
         updateData = {
           booking_slot_at: new Date(payload.startTime),
           updated_at: new Date(),
@@ -215,15 +183,21 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    // 7. Update lead in database
+    // 7. Update lead
     await prisma.crm_leads.update({
       where: { id: lead.id },
       data: updateData,
     });
 
-    // 8. Create activity log in crm_lead_activities
-    const activityType = CALCOM_ACTIVITY_TYPES[triggerEvent];
-    const activityTitle = getActivityTitle(triggerEvent);
+    // 8. Create activity log
+    const activityType =
+      CALCOM_ACTIVITY_TYPES[
+        payload.event as keyof typeof CALCOM_ACTIVITY_TYPES
+      ];
+    const activityTitle =
+      CALCOM_ACTIVITY_TITLES[
+        payload.event as keyof typeof CALCOM_ACTIVITY_TITLES
+      ] || `Cal.com: ${payload.event}`;
 
     await prisma.crm_lead_activities.create({
       data: {
@@ -243,9 +217,11 @@ export async function POST(request: NextRequest) {
         metadata: {
           calcom_uid: payload.uid,
           start_time: payload.startTime,
-          attendee_email: attendeeEmail,
-          attendee_name: payload.attendees[0]?.name || null,
-          trigger_event: triggerEvent,
+          attendee_email: payload.attendee_email,
+          attendee_first_name: firstName,
+          attendee_last_name: lastName,
+          notes: notes,
+          event: payload.event,
           previous_status: lead.status,
           new_status: newStatus || lead.status,
         },
@@ -259,66 +235,44 @@ export async function POST(request: NextRequest) {
     const duration = Date.now() - startTime;
     logger.info(
       {
-        triggerEvent,
+        event: payload.event,
         lead_id: lead.id,
-        lead_email: lead.email,
-        calcom_uid: payload.uid,
-        previous_status: lead.status,
-        new_status: newStatus || "(unchanged)",
+        uid: payload.uid,
         duration_ms: duration,
       },
       "[Cal.com Webhook] Processed successfully"
     );
 
-    // 10. Return success response
-    return NextResponse.json(
-      {
-        success: true,
-        event: triggerEvent,
-        lead_id: lead.id,
-        calcom_uid: payload.uid,
-        status_changed: newStatus !== null,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      success: true,
+      event: payload.event,
+      lead_id: lead.id,
+      uid: payload.uid,
+    });
   } catch (error: unknown) {
     const duration = Date.now() - startTime;
 
-    // Validation error
     if (error instanceof ZodError) {
       logger.warn(
         { issues: error.issues, duration_ms: duration },
         "[Cal.com Webhook] Validation failed"
       );
       return NextResponse.json(
-        {
-          success: false,
-          error: "Validation failed",
-          details: error.issues.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
-          })),
-        },
+        { success: false, error: "Validation failed", details: error.issues },
         { status: 400 }
       );
     }
 
-    // Log unexpected errors
     logger.error(
       {
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
         duration_ms: duration,
       },
-      "[Cal.com Webhook] Unexpected error"
+      "[Cal.com Webhook] Error"
     );
 
-    // Return 200 to avoid Cal.com retries on permanent failures
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
+      { success: false, error: "Internal error" },
       { status: 200 }
     );
   }
