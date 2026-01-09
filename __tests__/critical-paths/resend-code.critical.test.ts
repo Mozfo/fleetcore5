@@ -105,7 +105,7 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.expiresAt).toBeDefined();
+      expect(data.data.expiresAt).toBeDefined();
       expect(data.message).toBe("Verification code sent");
 
       // Verify service calls

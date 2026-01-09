@@ -262,6 +262,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
     const request = createMockRequest({
       mode: "wizard_step1",
       email: "newuser@test.local",
+      country_code: "FR",
       locale: "en",
     });
 
@@ -270,9 +271,9 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.leadId).toBe("wizard-lead-uuid");
-    expect(data.requiresVerification).toBe(true);
-    expect(data.expiresAt).toBeDefined();
+    expect(data.data.leadId).toBe("wizard-lead-uuid");
+    expect(data.data.requiresVerification).toBe(true);
+    expect(data.data.expiresAt).toBeDefined();
   });
 
   it("should return alreadyVerified for verified email", async () => {
@@ -288,6 +289,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
     const request = createMockRequest({
       mode: "wizard_step1",
       email: "verified@test.local",
+      country_code: "FR",
       locale: "en",
     });
 
@@ -296,8 +298,8 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.alreadyVerified).toBe(true);
-    expect(data.leadId).toBe("existing-lead-uuid");
+    expect(data.data.alreadyVerified).toBe(true);
+    expect(data.data.leadId).toBe("existing-lead-uuid");
   });
 
   it("should reject converted lead", async () => {
@@ -313,6 +315,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
     const request = createMockRequest({
       mode: "wizard_step1",
       email: "converted@test.local",
+      country_code: "FR",
       locale: "en",
     });
 
@@ -330,6 +333,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
     const request = createMockRequest({
       mode: "wizard_step1",
       email: "not-an-email",
+      country_code: "FR",
       locale: "en",
     });
 
@@ -346,6 +350,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
 
     const request = createMockRequest({
       mode: "wizard_step1",
+      country_code: "FR",
       // Missing email
       locale: "en",
     });

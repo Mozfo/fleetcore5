@@ -100,9 +100,9 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.verified).toBe(true);
-      expect(data.redirectUrl).toContain("/book-demo/step-2");
-      expect(data.redirectUrl).toContain(`leadId=${VALID_LEAD_ID}`);
+      expect(data.data.verified).toBe(true);
+      expect(data.data.redirectUrl).toContain("/book-demo/step-2");
+      expect(data.data.redirectUrl).toContain(`leadId=${VALID_LEAD_ID}`);
     });
 
     it("should return success if email is already verified", async () => {
@@ -123,8 +123,8 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.verified).toBe(true);
-      expect(data.alreadyVerified).toBe(true);
+      expect(data.data.verified).toBe(true);
+      expect(data.data.alreadyVerified).toBe(true);
       // verifyCode should NOT be called since already verified
       expect(mockVerifyCode).not.toHaveBeenCalled();
     });
