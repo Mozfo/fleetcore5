@@ -1,14 +1,14 @@
 /**
  * PATCH /api/crm/leads/[id]/complete-wizard
  *
- * V6.2.3 - Mark wizard as completed (after Cal.com booking)
+ * V6.2.3 - Save business info and mark wizard as completed
  *
  * Called from step-3 after successful Cal.com booking.
+ * Saves company_name, phone, fleet_size, gdpr_consent.
  * Sets wizard_completed=true and updates status to "demo_scheduled".
  *
  * Prerequisites:
  * - Lead must exist and have email_verified = true
- * - Business info should already be saved via /business-info endpoint
  *
  * Security:
  * - Public endpoint (no auth required)
@@ -27,6 +27,10 @@ import { z } from "zod";
 // ============================================================================
 
 const completeWizardSchema = z.object({
+  company_name: z.string().min(1),
+  phone: z.string().min(1),
+  fleet_size: z.string().min(1),
+  gdpr_consent: z.boolean().optional().default(false),
   wizard_completed: z.literal(true),
 });
 
@@ -67,7 +71,8 @@ export async function PATCH(
           success: false,
           error: {
             code: "VALIDATION_ERROR",
-            message: "wizard_completed must be true",
+            message:
+              validationResult.error.issues[0]?.message || "Invalid data",
           },
         },
         { status: 400 }
@@ -134,10 +139,18 @@ export async function PATCH(
     const hasBooking = !!(lead.booking_slot_at && lead.booking_calcom_uid);
     const newStatus = hasBooking ? "demo_scheduled" : lead.status;
 
-    // Update lead - mark wizard as completed
+    // Update lead - save business info and mark wizard as completed
+    const { company_name, phone, fleet_size, gdpr_consent } =
+      validationResult.data;
+
     const updatedLead = await prisma.crm_leads.update({
       where: { id: leadId },
       data: {
+        company_name,
+        phone,
+        fleet_size,
+        gdpr_consent,
+        consent_at: gdpr_consent ? new Date() : null,
         wizard_completed: true,
         status: newStatus,
         updated_at: new Date(),
