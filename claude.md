@@ -232,3 +232,11 @@ Code Conventions
 ---
 
 Project Health: 🟢 ExcellentReady for: Production deployment and feature development
+
+REGLE ABSOLUE #0 - VALIDATION OBLIGATOIRE
+
+AVANT TOUTE ACTION, Claude DOIT:
+
+1. Presenter un PLAN CLAIR
+2. Attendre le OK FORMEL du user
+3. NE RIEN FAIRE sans validation explicite

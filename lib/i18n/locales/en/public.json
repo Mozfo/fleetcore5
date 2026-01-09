@@ -9,6 +9,19 @@
       "subtitle": "In 20 minutes, our fleet expert will show you how FleetCore helps you earn more and save 10+ hours/week on admin tasks.",
       "emailLabel": "Your professional email",
       "emailPlaceholder": "you@company.com",
+      "countryLabel": "Country",
+      "countryDetected": "Detected from your location",
+      "selectCountry": "Select your country",
+      "fleetSizeLabel": "Fleet size",
+      "fleetSizeOptions": {
+        "1": "1 vehicle (Solo)",
+        "2-5": "2-5 vehicles",
+        "6-10": "6-10 vehicles",
+        "11-20": "11-20 vehicles",
+        "21-50": "21-50 vehicles",
+        "51-100": "51-100 vehicles",
+        "100+": "100+ vehicles"
+      },
       "cta": "Continue",
       "submitting": "Sending...",
       "socialProof": "Join 500+ fleet managers already using FleetCore",
@@ -16,8 +29,62 @@
         "invalidEmail": "Please enter a valid email address",
         "alreadyCustomer": "You're already a FleetCore customer",
         "loginLink": "Go to Login",
-        "generic": "Something went wrong. Please try again."
+        "generic": "Something went wrong. Please try again.",
+        "countryRequired": "Please select a country",
+        "fleetSizeRequired": "Please select your fleet size"
+      },
+      "existingBooking": {
+        "title": "Request Already Submitted",
+        "message": "Your email is already registered. Your request is being processed.",
+        "contact": "If you have any concerns, please contact",
+        "supportEmail": "support@fleetcore.io",
+        "reschedulePrompt": "If you'd like to reschedule or cancel your demo, click below.",
+        "rescheduleButton": "Modify my booking",
+        "sending": "Sending...",
+        "emailSent": "Check your inbox!",
+        "emailSentMessage": "You should receive an email shortly with a link to modify or cancel your booking.",
+        "testingModeError": "Email service unavailable. Please contact support@fleetcore.io to modify your booking."
       }
+    },
+    "reschedule": {
+      "title": "Modify Your Demo",
+      "subtitle": "Select a new time or cancel your booking below.",
+      "hello": "Hello",
+      "loading": "Verifying your booking...",
+      "errorTitle": "Booking Not Found",
+      "contactSupport": "If you believe this is an error, please contact",
+      "bookNew": "Book a new demo",
+      "successTitle": "Changes Saved!",
+      "successMessage": "Your booking has been updated. You'll receive a confirmation email shortly.",
+      "poweredBy": "Scheduling powered by Cal.com",
+      "errors": {
+        "missingUid": "Invalid reschedule link. No booking reference found.",
+        "invalidBooking": "This booking could not be found or has already been cancelled.",
+        "generic": "Unable to verify your booking. Please try again later."
+      }
+    },
+    "comingSoon": {
+      "title": "We're Coming to {{country}}!",
+      "subtitle": "FleetCore isn't available in {{country}} yet. But we're working on it!",
+      "incentive": "As an early subscriber, you'll get 1 MONTH FREE when we launch.",
+      "confirmed": "You're on the list! We'll notify you at {{email}}",
+      "availableIn": "Currently available in:",
+      "backHome": "Back to Homepage",
+      "footerNote": "We're expanding to new markets soon"
+    },
+    "solopreneur": {
+      "title": "Coming Soon for Solo Drivers!",
+      "subtitle": "FleetCore SaaS is designed for fleets. For solo drivers, we're building something special.",
+      "appComingSoon": "The FleetCore Driver App is coming soon with features tailored for independent drivers.",
+      "features": {
+        "title": "What you'll get:",
+        "earnings": "Track your earnings across platforms",
+        "expenses": "Log expenses and fuel costs",
+        "mileage": "Automatic mileage tracking",
+        "reports": "Tax-ready reports"
+      },
+      "waitlist": "Join the waitlist to be first in line!",
+      "backHome": "Back to Homepage"
     },
     "verify": {
       "title": "Check Your Email",
@@ -48,7 +115,9 @@
       "continue": "Continue",
       "checking": "Checking...",
       "noBooking": "Please select a time slot first",
-      "back": "Back"
+      "back": "Back",
+      "next": "Next",
+      "selectCountryFirst": "Select a country first to see phone prefix"
     },
     "step3": {
       "title": "Tell Us About Your Business",
@@ -98,6 +167,20 @@
       "step3": "We'll prepare a demo tailored to your fleet size and needs",
       "addToCalendar": "Add to Calendar",
       "backToHome": "Back to Homepage"
+    },
+    "confirmed": {
+      "title": "Great! See You Tomorrow!",
+      "thanks": "Thanks for confirming, {{firstName}}!",
+      "preparing": "Our team is preparing a personalized demo for {{companyName}}.",
+      "whatToPrepare": "What to Prepare",
+      "prepare1": "Your current fleet management challenges",
+      "prepare2": "Questions about FleetCore features",
+      "prepare3": "Your phone ready at demo time",
+      "reschedule": "Need to reschedule after all?",
+      "rescheduleButton": "Reschedule Demo",
+      "invalidToken": "This confirmation link is invalid or has expired.",
+      "alreadyConfirmed": "You've already confirmed your attendance. See you soon!",
+      "loading": "Confirming your attendance..."
     },
     "backToHome": "Back to Homepage"
   },

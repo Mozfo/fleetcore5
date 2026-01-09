@@ -69,6 +69,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.19",
+    "geoip-lite": "^1.4.10",
     "i18next": "^25.5.2",
     "i18next-resources-to-backend": "^1.2.1",
     "jose": "^5.10.0",

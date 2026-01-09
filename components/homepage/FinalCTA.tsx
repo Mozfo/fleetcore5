@@ -92,7 +92,7 @@ export function FinalCTA() {
         >
           {/* Primary CTA */}
           <Link
-            href={localizedPath("/request-demo")}
+            href={localizedPath("/book-demo")}
             className="group relative flex flex-col items-center rounded-2xl bg-white px-8 py-4 shadow-xl shadow-black/20 transition-all hover:scale-105 hover:shadow-2xl"
           >
             <div className="flex items-center gap-2 font-semibold text-gray-900">

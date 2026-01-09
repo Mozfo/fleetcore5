@@ -106,9 +106,10 @@ async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
     );
     return NextResponse.json({
       success: true,
-      leadId: existingLead.id,
-      alreadyVerified: true,
-      message: "Email already verified. You can proceed to the next step.",
+      data: {
+        leadId: existingLead.id,
+        alreadyVerified: true,
+      },
     });
   }
 
@@ -177,10 +178,11 @@ async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
 
   return NextResponse.json({
     success: true,
-    leadId: result.leadId,
-    requiresVerification: true,
-    expiresAt: result.expiresAt?.toISOString(),
-    message: "Verification code sent to your email",
+    data: {
+      leadId: result.leadId,
+      requiresVerification: true,
+      expiresAt: result.expiresAt?.toISOString(),
+    },
   });
 }
 

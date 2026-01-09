@@ -149,6 +149,8 @@ describe("CountryService", () => {
         flag_emoji: "🇫🇷",
         is_operational: true,
         country_gdpr: true,
+        phone_prefix: "+33",
+        phone_example: "6 12 34 56 78",
         notification_locale: "fr",
         country_preposition_en: "in",
         country_preposition_fr: "en",

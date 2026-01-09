@@ -6,17 +6,25 @@ const prisma = new PrismaClient();
 
 /**
  * GET /api/public/countries
- * Returns list of visible countries for request-demo dropdown
- * Operational countries (UAE, FR) → lead_confirmation
- * Expansion countries (ES, IT, DE...) → expansion_opportunity
+ * Returns list of countries for dropdowns
+ *
+ * Query params:
+ * - operational=true → Only operational countries (for book-demo wizard)
+ * - (default) → All visible countries (for request-demo, includes expansion)
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    logger.info("[API] GET /api/public/countries - Fetching visible countries");
+    const { searchParams } = new URL(request.url);
+    const operationalOnly = searchParams.get("operational") === "true";
+
+    logger.info(
+      `[API] GET /api/public/countries - operationalOnly=${operationalOnly}`
+    );
 
     const countries = await prisma.crm_countries.findMany({
       where: {
         is_visible: true,
+        ...(operationalOnly && { is_operational: true }),
       },
       select: {
         id: true,
@@ -27,6 +35,8 @@ export async function GET(_request: NextRequest) {
         flag_emoji: true,
         is_operational: true,
         country_gdpr: true,
+        phone_prefix: true,
+        phone_example: true,
         display_order: true,
       },
       orderBy: {

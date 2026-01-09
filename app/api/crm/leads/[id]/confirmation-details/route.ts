@@ -1,18 +1,16 @@
 /**
- * GET /api/crm/leads/[id]/booking-status
+ * GET /api/crm/leads/[id]/confirmation-details
  *
- * V6.2.3 - Check lead booking status for Book Demo wizard
+ * V6.2.2 - Get lead confirmation details for Book Demo wizard
  *
  * Returns:
- * - Lead basic info (email, email_verified, first_name, last_name, country_code)
- * - Booking status (hasBooking, bookingSlotAt, canProceed)
+ * - Lead info (email, first_name, last_name, company_name)
+ * - Booking details (date/time, Cal.com UID for reschedule link)
+ * - Wizard completion status
  *
- * V6.2.3 Changes:
- * - Added country_code to lead response (needed for PhoneInput in Step 2)
+ * Public endpoint (no auth required) - called from confirmation page
  *
- * Public endpoint (no auth required) - called from Book Demo wizard
- *
- * @module app/api/crm/leads/[id]/booking-status/route
+ * @module app/api/crm/leads/[id]/confirmation-details/route
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -42,7 +40,7 @@ export async function GET(
       );
     }
 
-    // Fetch lead with booking info
+    // Fetch lead with confirmation details
     const lead = await prisma.crm_leads.findFirst({
       where: {
         id: leadId,
@@ -51,13 +49,12 @@ export async function GET(
       select: {
         id: true,
         email: true,
-        email_verified: true,
         first_name: true,
         last_name: true,
         company_name: true,
-        country_code: true,
         booking_slot_at: true,
         booking_calcom_uid: true,
+        wizard_completed: true,
         status: true,
       },
     });
@@ -75,40 +72,55 @@ export async function GET(
       );
     }
 
-    // Determine booking status
+    // Check if wizard is completed (or has booking)
     const hasBooking = !!(lead.booking_slot_at && lead.booking_calcom_uid);
-    const bookingSlotAt = lead.booking_slot_at?.toISOString() || null;
+    const isComplete = lead.wizard_completed || hasBooking;
 
-    // Lead can proceed to step 3 if:
-    // 1. Email is verified
-    // 2. Has a booking (optional for now - allow without booking)
-    const canProceed = lead.email_verified && hasBooking;
+    if (!isComplete) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "WIZARD_NOT_COMPLETED",
+            message: "Booking wizard not completed",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Build Cal.com reschedule URL (using cal.eu for EU instance)
+    const calcomOrigin =
+      process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
+    const calcomRescheduleUrl = lead.booking_calcom_uid
+      ? `${calcomOrigin}/reschedule/${lead.booking_calcom_uid}`
+      : null;
 
     logger.info(
       {
         leadId,
         hasBooking,
-        emailVerified: lead.email_verified,
-        canProceed,
+        wizardCompleted: lead.wizard_completed,
       },
-      "[BookingStatus] Lead status checked"
+      "[ConfirmationDetails] Lead confirmation retrieved"
     );
 
     return NextResponse.json({
       success: true,
-      lead: {
-        id: lead.id,
-        email: lead.email,
-        email_verified: lead.email_verified,
-        first_name: lead.first_name,
-        last_name: lead.last_name,
-        company_name: lead.company_name,
-        country_code: lead.country_code,
-      },
       data: {
-        hasBooking,
-        bookingSlotAt,
-        canProceed,
+        lead: {
+          id: lead.id,
+          email: lead.email,
+          firstName: lead.first_name,
+          lastName: lead.last_name,
+          companyName: lead.company_name,
+        },
+        booking: {
+          dateTime: lead.booking_slot_at?.toISOString() || null,
+          calcomUid: lead.booking_calcom_uid,
+          rescheduleUrl: calcomRescheduleUrl,
+        },
+        status: lead.status,
       },
     });
   } catch (error) {
@@ -116,7 +128,7 @@ export async function GET(
       error instanceof Error ? error.message : "Unknown error";
     logger.error(
       { error: errorMessage },
-      "[BookingStatus] Failed to check booking status"
+      "[ConfirmationDetails] Failed to get confirmation details"
     );
 
     return NextResponse.json(
@@ -124,7 +136,7 @@ export async function GET(
         success: false,
         error: {
           code: "INTERNAL_ERROR",
-          message: "Failed to check booking status",
+          message: "Failed to get confirmation details",
         },
       },
       { status: 500 }

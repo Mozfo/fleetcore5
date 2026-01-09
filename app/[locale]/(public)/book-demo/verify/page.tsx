@@ -222,12 +222,17 @@ export default function VerifyCodePage() {
 
         const result: VerifyResponse = await response.json();
 
-        if (result.success && result.data) {
+        if (result.success) {
           // Success - redirect to step 2
-          router.push(
-            `/${locale}/book-demo/step-2?leadId=${result.data.leadId}`
-          );
-        } else if (result.error) {
+          // Use leadId from response if available, fallback to URL param
+          const targetLeadId = result.data?.leadId || leadId;
+          router.push(`/${locale}/book-demo/step-2?leadId=${targetLeadId}`);
+          // Don't reset isVerifying - let navigation happen
+          return;
+        }
+
+        // Handle error case
+        if (result.error) {
           setError({
             code: result.error.code,
             message: getErrorMessage(
@@ -246,12 +251,13 @@ export default function VerifyCodePage() {
             setClearTrigger((prev) => prev + 1);
           }
         }
+
+        setIsVerifying(false);
       } catch (_err) {
         setError({
           code: "NETWORK_ERROR",
           message: t("bookDemo.verify.errors.generic"),
         });
-      } finally {
         setIsVerifying(false);
       }
     },
@@ -316,7 +322,7 @@ export default function VerifyCodePage() {
   const isLocked = error?.code === "MAX_ATTEMPTS";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -327,19 +333,21 @@ export default function VerifyCodePage() {
         <WizardProgressBar currentStep={1} totalSteps={3} className="mb-8" />
 
         {/* Card */}
-        <div className="rounded-2xl bg-slate-800/50 p-8 backdrop-blur-sm">
+        <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           {/* Header */}
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/20">
-              <Mail className="h-8 w-8 text-blue-500" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/20">
+              <Mail className="h-8 w-8 text-blue-600 dark:text-blue-500" />
             </div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {t("bookDemo.verify.title")}
             </h1>
-            <p className="mt-2 text-slate-400">
+            <p className="mt-2 text-gray-600 dark:text-slate-400">
               {t("bookDemo.verify.subtitle")}
             </p>
-            <p className="mt-1 font-medium text-white">{maskEmail(email)}</p>
+            <p className="mt-1 font-medium text-gray-900 dark:text-white">
+              {maskEmail(email)}
+            </p>
           </div>
 
           {/* Timer */}
@@ -366,7 +374,7 @@ export default function VerifyCodePage() {
 
           {/* Code Input */}
           <div className="mb-6">
-            <label className="mb-3 block text-center text-sm font-medium text-slate-300">
+            <label className="mb-3 block text-center text-sm font-medium text-gray-700 dark:text-slate-300">
               {t("bookDemo.verify.inputLabel")}
             </label>
             <VerificationCodeInput
@@ -382,7 +390,7 @@ export default function VerifyCodePage() {
 
           {/* Verifying State */}
           {isVerifying && (
-            <div className="mb-6 flex items-center justify-center gap-2 text-blue-400">
+            <div className="mb-6 flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400">
               <Loader2 className="h-5 w-5 animate-spin" />
               <span>{t("bookDemo.verify.verifying")}</span>
             </div>
@@ -393,9 +401,11 @@ export default function VerifyCodePage() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 rounded-lg bg-red-500/10 p-4 text-center"
+              className="mb-6 rounded-lg bg-red-50 p-4 text-center dark:bg-red-500/10"
             >
-              <p className="text-sm text-red-400">{error.message}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {error.message}
+              </p>
             </motion.div>
           )}
 
@@ -404,7 +414,7 @@ export default function VerifyCodePage() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 flex items-center justify-center gap-2 rounded-lg bg-green-500/10 p-4 text-green-400"
+              className="mb-6 flex items-center justify-center gap-2 rounded-lg bg-green-50 p-4 text-green-600 dark:bg-green-500/10 dark:text-green-400"
             >
               <CheckCircle className="h-5 w-5" />
               <span className="text-sm">
@@ -415,7 +425,7 @@ export default function VerifyCodePage() {
 
           {/* Resend Section */}
           <div className="text-center">
-            <p className="mb-2 text-sm text-slate-500">
+            <p className="mb-2 text-sm text-gray-500 dark:text-slate-500">
               {t("bookDemo.verify.resend")}
             </p>
             <button
@@ -424,7 +434,7 @@ export default function VerifyCodePage() {
               disabled={
                 isResending || (cooldown > 0 && !isExpired && !isLocked)
               }
-              className="inline-flex items-center gap-2 text-sm font-medium text-blue-400 transition-colors hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300"
             >
               {isResending ? (
                 <>
@@ -449,7 +459,7 @@ export default function VerifyCodePage() {
           <div className="mt-6 text-center">
             <Link
               href={`/${locale}/book-demo`}
-              className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-slate-300"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
             >
               <ArrowLeft className="h-4 w-4" />
               {t("bookDemo.verify.changeEmail")}
@@ -461,7 +471,7 @@ export default function VerifyCodePage() {
         <div className="mt-6 text-center">
           <Link
             href={`/${locale}`}
-            className="text-sm text-slate-500 transition-colors hover:text-slate-300"
+            className="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
           >
             {t("bookDemo.backToHome")}
           </Link>

@@ -158,7 +158,7 @@ function getDefaultSegments() {
         ],
         cta: {
           text: { en: "Book a Demo", fr: "Réserver une Démo" },
-          link: "/request-demo",
+          link: "/book-demo",
           show_app_badges: false,
         },
       },

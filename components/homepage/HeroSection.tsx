@@ -90,7 +90,7 @@ export function HeroSection() {
             transition={{ delay: 0.3 }}
           >
             <Link
-              href={localizedPath("/request-demo")}
+              href={localizedPath("/book-demo")}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-blue-700 hover:shadow-xl"
             >
               {t.cta}

@@ -38,7 +38,7 @@ export function WizardProgressBar({
   return (
     <div className={`w-full ${className}`}>
       {/* Step label */}
-      <div className="mb-3 text-center text-sm font-medium text-slate-400">
+      <div className="mb-3 text-center text-sm font-medium text-gray-600 dark:text-slate-400">
         {t("bookDemo.progress.step")} {currentStep} {t("bookDemo.progress.of")}{" "}
         {totalSteps}
       </div>
@@ -46,7 +46,7 @@ export function WizardProgressBar({
       {/* Progress bar with circles */}
       <div className="relative flex items-center justify-between">
         {/* Background track */}
-        <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-slate-700 rtl:scale-x-[-1]" />
+        <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-gray-300 rtl:scale-x-[-1] dark:bg-slate-700" />
 
         {/* Filled progress */}
         <div
@@ -67,8 +67,8 @@ export function WizardProgressBar({
                 isCompleted
                   ? "border-blue-500 bg-blue-500 text-white"
                   : isActive
-                    ? "border-blue-500 bg-slate-900 text-blue-500 ring-4 ring-blue-500/20"
-                    : "border-slate-600 bg-slate-800 text-slate-500"
+                    ? "border-blue-500 bg-white text-blue-500 ring-4 ring-blue-500/20 dark:bg-slate-900"
+                    : "border-gray-300 bg-gray-100 text-gray-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-500"
               }`}
             >
               {isCompleted ? (

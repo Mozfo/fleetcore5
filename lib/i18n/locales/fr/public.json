@@ -1,75 +1,144 @@
 {
   "bookDemo": {
     "progress": {
-      "step": "Etape",
+      "step": "Étape",
       "of": "sur"
     },
     "step1": {
-      "title": "Reservez votre demo personnalisee",
-      "subtitle": "En 20 minutes, notre expert flotte vous montrera comment FleetCore vous aide a gagner plus et economiser plus de 10h/semaine sur les taches administratives.",
+      "title": "Réservez votre démo personnalisée",
+      "subtitle": "En 20 minutes, notre expert flotte vous montrera comment FleetCore vous aide à gagner plus et économiser plus de 10h/semaine sur les tâches administratives.",
       "emailLabel": "Votre email professionnel",
       "emailPlaceholder": "vous@entreprise.com",
+      "countryLabel": "Pays",
+      "countryDetected": "Détecté depuis votre localisation",
+      "selectCountry": "Sélectionnez votre pays",
+      "fleetSizeLabel": "Taille de la flotte",
+      "fleetSizeOptions": {
+        "1": "1 véhicule (Solo)",
+        "2-5": "2-5 véhicules",
+        "6-10": "6-10 véhicules",
+        "11-20": "11-20 véhicules",
+        "21-50": "21-50 véhicules",
+        "51-100": "51-100 véhicules",
+        "100+": "100+ véhicules"
+      },
       "cta": "Continuer",
       "submitting": "Envoi...",
       "socialProof": "Rejoignez plus de 500 gestionnaires de flotte utilisant FleetCore",
       "errors": {
         "invalidEmail": "Veuillez saisir une adresse email valide",
-        "alreadyCustomer": "Vous etes deja client FleetCore",
-        "loginLink": "Aller a la connexion",
-        "generic": "Une erreur s'est produite. Veuillez reessayer."
+        "alreadyCustomer": "Vous êtes déjà client FleetCore",
+        "loginLink": "Aller à la connexion",
+        "generic": "Une erreur s'est produite. Veuillez réessayer.",
+        "countryRequired": "Veuillez sélectionner un pays",
+        "fleetSizeRequired": "Veuillez sélectionner la taille de votre flotte"
+      },
+      "existingBooking": {
+        "title": "Demande déjà soumise",
+        "message": "Votre email est déjà enregistré. Votre demande est en cours de traitement.",
+        "contact": "En cas de souci, veuillez contacter",
+        "supportEmail": "support@fleetcore.io",
+        "reschedulePrompt": "Si vous souhaitez reprogrammer ou annuler votre démo, cliquez ci-dessous.",
+        "rescheduleButton": "Modifier ma réservation",
+        "sending": "Envoi...",
+        "emailSent": "Vérifiez votre boîte mail !",
+        "emailSentMessage": "Vous devriez recevoir un email sous peu avec un lien pour modifier ou annuler votre réservation.",
+        "testingModeError": "Service email indisponible. Veuillez contacter support@fleetcore.io pour modifier votre réservation."
       }
     },
+    "reschedule": {
+      "title": "Modifier votre démo",
+      "subtitle": "Sélectionnez un nouveau créneau ou annulez votre réservation ci-dessous.",
+      "hello": "Bonjour",
+      "loading": "Vérification de votre réservation...",
+      "errorTitle": "Réservation introuvable",
+      "contactSupport": "Si vous pensez qu'il s'agit d'une erreur, veuillez contacter",
+      "bookNew": "Réserver une nouvelle démo",
+      "successTitle": "Modifications enregistrées !",
+      "successMessage": "Votre réservation a été mise à jour. Vous recevrez un email de confirmation sous peu.",
+      "poweredBy": "Planification assurée par Cal.com",
+      "errors": {
+        "missingUid": "Lien de modification invalide. Aucune référence de réservation trouvée.",
+        "invalidBooking": "Cette réservation n'a pas été trouvée ou a déjà été annulée.",
+        "generic": "Impossible de vérifier votre réservation. Veuillez réessayer plus tard."
+      }
+    },
+    "comingSoon": {
+      "title": "Nous arrivons bientôt en {{country}} !",
+      "subtitle": "FleetCore n'est pas encore disponible en {{country}}. Mais nous y travaillons !",
+      "incentive": "En vous inscrivant maintenant, vous bénéficierez de 1 MOIS GRATUIT au lancement.",
+      "confirmed": "Vous êtes sur la liste ! Nous vous préviendrons à {{email}}",
+      "availableIn": "Actuellement disponible dans :",
+      "backHome": "Retour à l'accueil",
+      "footerNote": "Nous nous étendons bientôt à de nouveaux marchés"
+    },
+    "solopreneur": {
+      "title": "Bientôt disponible pour les conducteurs solo !",
+      "subtitle": "FleetCore SaaS est conçu pour les flottes. Pour les conducteurs indépendants, nous préparons quelque chose de spécial.",
+      "appComingSoon": "L'application FleetCore Driver arrive bientôt avec des fonctionnalités adaptées aux chauffeurs indépendants.",
+      "features": {
+        "title": "Ce que vous aurez :",
+        "earnings": "Suivi de vos revenus sur toutes les plateformes",
+        "expenses": "Enregistrement des dépenses et frais de carburant",
+        "mileage": "Suivi automatique du kilométrage",
+        "reports": "Rapports prêts pour la déclaration fiscale"
+      },
+      "waitlist": "Inscrivez-vous sur la liste d'attente pour être parmi les premiers !",
+      "backHome": "Retour à l'accueil"
+    },
     "verify": {
-      "title": "Verifiez votre email",
-      "subtitle": "Nous avons envoye un code a 6 chiffres a",
-      "inputLabel": "Entrez le code de verification",
+      "title": "Vérifiez votre email",
+      "subtitle": "Nous avons envoyé un code à 6 chiffres à",
+      "inputLabel": "Entrez le code de vérification",
       "expiresIn": "Le code expire dans",
-      "expired": "Code expire",
-      "resend": "Vous n'avez pas recu le code ?",
+      "expired": "Code expiré",
+      "resend": "Vous n'avez pas reçu le code ?",
       "resendButton": "Renvoyer le code",
       "resendCooldown": "Renvoyer ({{seconds}}s)",
-      "resendSuccess": "Nouveau code envoye !",
+      "resendSuccess": "Nouveau code envoyé !",
       "changeEmail": "Changer d'email",
-      "verifying": "Verification...",
+      "verifying": "Vérification...",
       "errors": {
         "invalid": "Code invalide. {{attempts}} tentatives restantes.",
-        "expired": "Code expire. Veuillez en demander un nouveau.",
+        "expired": "Code expiré. Veuillez en demander un nouveau.",
         "maxAttempts": "Trop de tentatives. Veuillez demander un nouveau code.",
-        "generic": "La verification a echoue. Veuillez reessayer."
+        "generic": "La vérification a échoué. Veuillez réessayer."
       }
     },
     "step2": {
-      "title": "Choisissez votre creneau",
-      "subtitle": "Selectionnez le moment qui vous convient. Nous vous appellerons a l'heure exacte choisie.",
+      "title": "Choisissez votre créneau",
+      "subtitle": "Sélectionnez le moment qui vous convient. Nous vous appellerons à l'heure exacte choisie.",
       "loading": "Chargement du calendrier...",
-      "error": "Impossible de charger le calendrier. Veuillez rafraichir la page.",
-      "booked": "Creneau selectionne !",
-      "afterBooking": "Apres avoir selectionne votre creneau, cliquez sur Continuer",
+      "error": "Impossible de charger le calendrier. Veuillez rafraîchir la page.",
+      "booked": "Créneau sélectionné !",
+      "afterBooking": "Après avoir sélectionné votre créneau, cliquez sur Continuer",
       "continue": "Continuer",
-      "checking": "Verification...",
-      "noBooking": "Veuillez d'abord selectionner un creneau",
-      "back": "Retour"
+      "checking": "Vérification...",
+      "noBooking": "Veuillez d'abord sélectionner un créneau",
+      "back": "Retour",
+      "next": "Suivant",
+      "selectCountryFirst": "Sélectionnez d'abord un pays pour voir l'indicatif"
     },
     "step3": {
-      "title": "Parlez-nous de votre activite",
-      "subtitle": "Aidez-nous a preparer une demo adaptee a vos besoins.",
-      "firstName": "Prenom",
+      "title": "Parlez-nous de votre activité",
+      "subtitle": "Aidez-nous à préparer une démo adaptée à vos besoins.",
+      "firstName": "Prénom",
       "firstNamePlaceholder": "Jean",
       "lastName": "Nom",
       "lastNamePlaceholder": "Dupont",
       "companyName": "Nom de l'entreprise",
       "companyNamePlaceholder": "Ma Flotte Services",
-      "phone": "Numero de telephone (Optionnel)",
+      "phone": "Numéro de téléphone (Optionnel)",
       "phonePlaceholder": "+33 1 23 45 67 89",
       "country": "Pays",
-      "selectCountry": "Selectionnez votre pays",
+      "selectCountry": "Sélectionnez votre pays",
       "fleetSize": "Taille de la flotte",
-      "selectFleetSize": "Selectionnez la taille",
-      "vehicles": "vehicules",
+      "selectFleetSize": "Sélectionnez la taille",
+      "vehicles": "véhicules",
       "fleetSizeOptions": {
-        "moreThan100": "100+ vehicules"
+        "moreThan100": "100+ véhicules"
       },
-      "platformsUsed": "Plateformes utilisees (Optionnel)",
+      "platformsUsed": "Plateformes utilisées (Optionnel)",
       "platforms": {
         "uber": "Uber",
         "bolt": "Bolt",
@@ -78,28 +147,42 @@
         "freenow": "FreeNow",
         "other": "Autre"
       },
-      "submit": "Finaliser la reservation",
+      "submit": "Finaliser la réservation",
       "submitting": "Envoi...",
       "back": "Retour",
       "error": "Une erreur s'est produite",
       "errors": {
         "required": "Ce champ est requis",
         "gdprRequired": "Le consentement RGPD est requis pour les pays de l'UE",
-        "generic": "Une erreur s'est produite. Veuillez reessayer."
+        "generic": "Une erreur s'est produite. Veuillez réessayer."
       }
     },
     "confirmation": {
       "title": "C'est tout bon !",
-      "subtitle": "Votre demo est reservee. A bientot !",
-      "checkEmail": "Verifiez votre email pour les details de confirmation.",
+      "subtitle": "Votre démo est réservée. À bientôt !",
+      "checkEmail": "Vérifiez votre email pour les détails de confirmation.",
       "whatNext": "Et ensuite ?",
       "step1": "Vous recevrez une invitation calendrier par email",
-      "step2": "Notre expert flotte vous appellera a l'heure prevue",
-      "step3": "Nous preparerons une demo adaptee a la taille de votre flotte et vos besoins",
+      "step2": "Notre expert flotte vous appellera à l'heure prévue",
+      "step3": "Nous préparerons une démo adaptée à la taille de votre flotte et vos besoins",
       "addToCalendar": "Ajouter au calendrier",
-      "backToHome": "Retour a l'accueil"
+      "backToHome": "Retour à l'accueil"
     },
-    "backToHome": "Retour a l'accueil"
+    "confirmed": {
+      "title": "Super ! À demain !",
+      "thanks": "Merci pour la confirmation, {{firstName}} !",
+      "preparing": "Notre équipe prépare une démo personnalisée pour {{companyName}}.",
+      "whatToPrepare": "À préparer",
+      "prepare1": "Vos défis actuels de gestion de flotte",
+      "prepare2": "Vos questions sur les fonctionnalités FleetCore",
+      "prepare3": "Votre téléphone prêt à l'heure de la démo",
+      "reschedule": "Besoin de reprogrammer finalement ?",
+      "rescheduleButton": "Reprogrammer la démo",
+      "invalidToken": "Ce lien de confirmation est invalide ou a expiré.",
+      "alreadyConfirmed": "Vous avez déjà confirmé votre présence. À bientôt !",
+      "loading": "Confirmation de votre présence..."
+    },
+    "backToHome": "Retour à l'accueil"
   },
   "homepage": {
     "title": "FleetCore",

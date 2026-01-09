@@ -1966,9 +1966,12 @@ model crm_countries {
   country_preposition_fr String?        @default("en") @db.VarChar(5)
   country_preposition_en String?        @default("in") @db.VarChar(10)
   country_gdpr           Boolean        @default(false)
+  phone_prefix           String?        @db.VarChar(10)
+  phone_example          String?        @db.VarChar(20)
   is_system              Boolean        @default(false)
   provider_id            String?        @db.Uuid
   crm_leads              crm_leads[]
+  crm_waitlist           crm_waitlist[]
   adm_providers          adm_providers? @relation("crm_countries_provider", fields: [provider_id], references: [id], onDelete: SetNull, map: "fk_crm_countries_provider")
 
   @@index([country_code], map: "idx_crm_countries_code")
@@ -2109,6 +2112,10 @@ model crm_leads {
   email_verification_code                                              String?                 @db.VarChar(255)
   email_verification_expires_at                                        DateTime?               @db.Timestamptz(6)
   email_verification_attempts                                          Int                     @default(0)
+  // V6.2.6: Colonnes ATTENDANCE CONFIRMATION (J-1 Email Reminder)
+  confirmation_token                                                   String?                 @db.VarChar(255)
+  attendance_confirmed                                                 Boolean                 @default(false)
+  attendance_confirmed_at                                              DateTime?               @db.Timestamptz(6)
   // Relations
   crm_activities                                                       crm_activities[]
   crm_contracts                                                        crm_contracts[]
@@ -2274,6 +2281,49 @@ model crm_settings {
   @@index([deleted_at], map: "idx_crm_settings_deleted")
   @@index([updated_by], map: "idx_crm_settings_updated_by")
   @@index([setting_value], map: "idx_crm_settings_value", type: Gin)
+}
+
+/// V6.2.3: Waitlist pour leads de pays non-opérationnels
+model crm_waitlist {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  // Contact
+  email                  String    @db.VarChar(255)
+  country_code           String    @db.VarChar(2)
+  fleet_size             String    @db.VarChar(20)
+
+  // Détection GeoIP
+  detected_country_code  String?   @db.VarChar(2)
+  ip_address             String?   @db.VarChar(45)
+
+  // Consent GDPR
+  marketing_consent      Boolean   @default(true)
+  gdpr_consent           Boolean?
+  gdpr_consent_at        DateTime? @db.Timestamptz(6)
+  gdpr_consent_ip        String?   @db.VarChar(45)
+
+  // Anti-spam
+  honeypot_triggered     Boolean   @default(false)
+
+  // Tracking
+  source                 String    @default("wizard") @db.VarChar(50)
+  locale                 String    @default("en") @db.VarChar(5)
+  utm_source             String?   @db.VarChar(100)
+  utm_medium             String?   @db.VarChar(100)
+  utm_campaign           String?   @db.VarChar(100)
+
+  // Timestamps
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  notified_at            DateTime? @db.Timestamptz(6)
+
+  // Relations
+  crm_countries          crm_countries @relation(fields: [country_code], references: [country_code])
+
+  @@unique([email, country_code], map: "crm_waitlist_email_country_unique")
+  @@index([country_code], map: "idx_crm_waitlist_country")
+  @@index([fleet_size], map: "idx_crm_waitlist_fleet")
+  @@index([created_at], map: "idx_crm_waitlist_created")
+  @@index([email], map: "idx_crm_waitlist_email")
 }
 
 /// V6.2.1: Billing settings - same structure as crm_settings

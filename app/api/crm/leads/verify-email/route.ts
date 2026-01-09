@@ -103,9 +103,12 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        verified: true,
-        alreadyVerified: true,
-        redirectUrl: `/book-demo/step-2?leadId=${leadId}`,
+        data: {
+          leadId: leadId,
+          verified: true,
+          alreadyVerified: true,
+          redirectUrl: `/book-demo/step-2?leadId=${leadId}`,
+        },
       });
     }
 
@@ -125,8 +128,11 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        verified: true,
-        redirectUrl: `/book-demo/step-2?leadId=${leadId}`,
+        data: {
+          leadId: leadId,
+          verified: true,
+          redirectUrl: `/book-demo/step-2?leadId=${leadId}`,
+        },
       });
     }
 

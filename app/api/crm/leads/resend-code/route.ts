@@ -188,7 +188,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      expiresAt: result.expiresAt?.toISOString(),
+      data: {
+        expiresAt: result.expiresAt?.toISOString(),
+      },
       message: "Verification code sent",
     });
   } catch (error) {

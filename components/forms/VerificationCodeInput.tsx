@@ -210,12 +210,12 @@ export function VerificationCodeInput({
           onFocus={handleFocus}
           disabled={disabled}
           autoComplete="one-time-code"
-          className={`h-14 w-11 rounded-lg border-2 bg-slate-900/50 text-center font-mono text-2xl font-bold text-white transition-all focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:h-16 sm:w-14 sm:text-3xl ${
+          className={`h-14 w-11 rounded-lg border-2 bg-white text-center font-mono text-2xl font-bold text-gray-900 transition-all focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:h-16 sm:w-14 sm:text-3xl dark:bg-slate-900/50 dark:text-white ${
             error
               ? "border-red-500 focus:ring-red-500"
               : values[index]
                 ? "border-blue-500 focus:ring-blue-500"
-                : "border-slate-600 focus:ring-blue-500"
+                : "border-gray-300 focus:ring-blue-500 dark:border-slate-600"
           }`}
           aria-label={`Digit ${index + 1} of ${length}`}
         />

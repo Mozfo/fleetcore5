@@ -81,6 +81,10 @@ describe("EmailVerificationService", () => {
     email_verification_code: null,
     email_verification_expires_at: null,
     email_verification_attempts: 0,
+    // V6.2.6: Attendance Confirmation columns
+    confirmation_token: null,
+    attendance_confirmed: false,
+    attendance_confirmed_at: null,
   };
 
   const mockLeadWithCode = {
@@ -333,8 +337,8 @@ describe("EmailVerificationService", () => {
           recipientEmail: "test@example.com",
           locale: "fr",
           variables: expect.objectContaining({
-            verification_code: "123456",
-            expires_in_minutes: 15,
+            code: "123456",
+            expiresIn: 15,
           }),
         })
       );

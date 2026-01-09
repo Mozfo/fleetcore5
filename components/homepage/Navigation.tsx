@@ -744,7 +744,7 @@ export function Navigation() {
             </Link>
 
             <Link
-              href={localizedPath("/request-demo")}
+              href={localizedPath("/book-demo")}
               className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 px-5 py-2.5 font-semibold text-white transition-all hover:shadow-lg"
             >
               {t("homepage.nav.demo")}

@@ -36,6 +36,8 @@ import {
   Sparkles,
   CheckCircle,
   ChevronDown,
+  Calendar,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
 import { WizardProgressBar } from "@/components/booking/WizardProgressBar";
@@ -134,6 +136,30 @@ export default function BookDemoPage() {
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
 
+  // Existing booking state (V6.2.4 - email check)
+  const [existingBooking, setExistingBooking] = useState<{
+    hasBooking: boolean;
+    leadId: string;
+  } | null>(null);
+  const [isSendingReschedule, setIsSendingReschedule] = useState(false);
+  const [rescheduleEmailSent, setRescheduleEmailSent] = useState(false);
+
+  // Handle browser back button for waitlist state
+  useEffect(() => {
+    const handlePopState = () => {
+      // When browser back is pressed, return to form state
+      if (showWaitlist) {
+        setShowWaitlist(false);
+        setWaitlistStep(1);
+        setSelectedFleetSize(null);
+        setWaitlistSuccess(false);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [showWaitlist]);
+
   // Debounced email validation feedback
   const [debouncedEmail, setDebouncedEmail] = useState("");
 
@@ -193,6 +219,10 @@ export default function BookDemoPage() {
   // Form submission
   const onSubmit = useCallback(
     async (data: FormData) => {
+      // Reset existing booking state
+      setExistingBooking(null);
+      setRescheduleEmailSent(false);
+
       // Check if country is operational
       const country = countries.find(
         (c) => c.country_code === data.country_code
@@ -205,16 +235,38 @@ export default function BookDemoPage() {
 
       // If country is NOT operational, show waitlist
       if (!country.is_operational) {
+        // Push history state so browser back returns to form
+        window.history.pushState({ waitlist: true }, "");
         setShowWaitlist(true);
         setWaitlistStep(1);
         return;
       }
 
-      // Country is operational - proceed with normal flow
+      // Country is operational - check if email already has a booking
       setIsSubmitting(true);
       setApiError(null);
 
       try {
+        // V6.2.4: Check if email exists with booking
+        const checkEmailResponse = await fetch(
+          `/api/crm/leads/check-email?email=${encodeURIComponent(data.email.toLowerCase().trim())}`
+        );
+        const checkEmailResult = await checkEmailResponse.json();
+
+        if (checkEmailResult.success && checkEmailResult.data) {
+          const { exists, hasBooking, leadId } = checkEmailResult.data;
+
+          // CAS 2: Email exists WITH booking → show reschedule option
+          if (exists && hasBooking && leadId) {
+            setExistingBooking({ hasBooking: true, leadId });
+            setIsSubmitting(false);
+            return;
+          }
+
+          // CAS 1 & CAS 3: Email doesn't exist OR exists without booking → normal flow
+        }
+
+        // Proceed with normal flow
         const response = await fetch("/api/demo-leads", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -267,6 +319,49 @@ export default function BookDemoPage() {
     },
     [countries, locale, router, setError, t]
   );
+
+  // Send reschedule link
+  const handleSendRescheduleLink = async () => {
+    if (!emailValue) return;
+
+    setIsSendingReschedule(true);
+    setApiError(null);
+
+    try {
+      const response = await fetch("/api/crm/leads/send-reschedule-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailValue.toLowerCase().trim(),
+          locale,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setRescheduleEmailSent(true);
+      } else {
+        const errorCode = result.error?.code || "RESCHEDULE_ERROR";
+        const errorMessage =
+          errorCode === "RESEND_TESTING_MODE"
+            ? t("bookDemo.step1.existingBooking.testingModeError")
+            : result.error?.message || t("bookDemo.step1.errors.generic");
+
+        setApiError({
+          code: errorCode,
+          message: errorMessage,
+        });
+      }
+    } catch {
+      setApiError({
+        code: "NETWORK_ERROR",
+        message: t("bookDemo.step1.errors.generic"),
+      });
+    } finally {
+      setIsSendingReschedule(false);
+    }
+  };
 
   // Submit waitlist
   const handleWaitlistSubmit = async () => {
@@ -326,7 +421,114 @@ export default function BookDemoPage() {
         {/* Card */}
         <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           <AnimatePresence mode="wait">
-            {!showWaitlist ? (
+            {existingBooking ? (
+              // ============================================================
+              // EXISTING BOOKING (V6.2.4 - Email already has a booking)
+              // ============================================================
+              <motion.div
+                key="existing-booking"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center"
+              >
+                {rescheduleEmailSent ? (
+                  // Email sent confirmation
+                  <>
+                    <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
+                      <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-500" />
+                    </div>
+                    <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">
+                      {t("bookDemo.step1.existingBooking.emailSent")}
+                    </h2>
+                    <p className="mb-6 text-gray-600 dark:text-slate-400">
+                      {t("bookDemo.step1.existingBooking.emailSentMessage")}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setExistingBooking(null);
+                        setRescheduleEmailSent(false);
+                      }}
+                      className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {t("bookDemo.waitlist.goBack", {
+                        defaultValue: "Go back",
+                      })}
+                    </button>
+                  </>
+                ) : (
+                  // Show existing booking message with reschedule option
+                  <>
+                    <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-500/20">
+                      <Calendar className="h-8 w-8 text-amber-600 dark:text-amber-500" />
+                    </div>
+                    <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">
+                      {t("bookDemo.step1.existingBooking.title")}
+                    </h2>
+                    <p className="mb-2 text-gray-600 dark:text-slate-400">
+                      {t("bookDemo.step1.existingBooking.message")}
+                    </p>
+                    <p className="mb-6 text-sm text-gray-500 dark:text-slate-500">
+                      {t("bookDemo.step1.existingBooking.contact")}{" "}
+                      <a
+                        href={`mailto:${t("bookDemo.step1.existingBooking.supportEmail")}`}
+                        className="text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {t("bookDemo.step1.existingBooking.supportEmail")}
+                      </a>
+                    </p>
+
+                    {/* Reschedule section */}
+                    <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                      <p className="mb-4 text-sm text-blue-700 dark:text-blue-300">
+                        {t("bookDemo.step1.existingBooking.reschedulePrompt")}
+                      </p>
+                      <button
+                        onClick={handleSendRescheduleLink}
+                        disabled={isSendingReschedule}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isSendingReschedule ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            {t("bookDemo.step1.existingBooking.sending")}
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-4 w-4" />
+                            {t(
+                              "bookDemo.step1.existingBooking.rescheduleButton"
+                            )}
+                            <ArrowRight className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* API Error */}
+                    {apiError && (
+                      <div className="mb-4 rounded-lg bg-red-50 p-3 dark:bg-red-500/10">
+                        <p className="text-sm text-red-600 dark:text-red-400">
+                          {apiError.message}
+                        </p>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setExistingBooking(null);
+                        setApiError(null);
+                      }}
+                      className="text-sm text-gray-500 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
+                    >
+                      {t("bookDemo.waitlist.goBack", {
+                        defaultValue: "Go back",
+                      })}
+                    </button>
+                  </>
+                )}
+              </motion.div>
+            ) : !showWaitlist ? (
               // ============================================================
               // MAIN FORM (Email + Country)
               // ============================================================
