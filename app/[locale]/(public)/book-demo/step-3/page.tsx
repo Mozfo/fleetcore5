@@ -126,6 +126,7 @@ export default function BookDemoStep3Page() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [phonePrefixCountry, setPhonePrefixCountry] = useState<string>("");
 
   // Form
   const {
@@ -161,6 +162,15 @@ export default function BookDemoStep3Page() {
     return countries.find((c) => c.country_code === leadCountryCode) || null;
   }, [leadCountryCode, countries]);
 
+  // Get phone prefix from the selected prefix country
+  const phonePrefix = useMemo(() => {
+    if (!phonePrefixCountry || !countries.length) return "";
+    const country = countries.find(
+      (c) => c.country_code === phonePrefixCountry
+    );
+    return country?.phone_prefix || "";
+  }, [phonePrefixCountry, countries]);
+
   // Redirect if missing leadId
   useEffect(() => {
     if (!leadId) {
@@ -191,6 +201,11 @@ export default function BookDemoStep3Page() {
           }
 
           setLeadData(leadResult.lead);
+
+          // Initialize phone prefix country from lead
+          if (leadResult.lead.country_code) {
+            setPhonePrefixCountry(leadResult.lead.country_code);
+          }
 
           // Pre-fill company_name if available
           if (leadResult.lead.company_name) {
@@ -230,12 +245,17 @@ export default function BookDemoStep3Page() {
     setSubmitError(null);
 
     try {
+      // Combine phone prefix with phone number (E.164 format)
+      const fullPhone = phonePrefix
+        ? `${phonePrefix}${data.phone}`
+        : data.phone;
+
       const response = await fetch(`/api/crm/leads/${leadId}/complete-wizard`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           company_name: data.company_name,
-          phone: data.phone,
+          phone: fullPhone,
           fleet_size: data.fleet_size,
           gdpr_consent: data.gdpr_consent || false,
           wizard_completed: true,
@@ -372,9 +392,12 @@ export default function BookDemoStep3Page() {
               </label>
               <PhoneInput
                 countries={countries}
-                selectedCountryCode={leadCountryCode}
+                selectedCountryCode={phonePrefixCountry || leadCountryCode}
                 value={phoneValue}
                 onChange={(val) => setValue("phone", val)}
+                onPrefixChange={(countryCode) =>
+                  setPhonePrefixCountry(countryCode)
+                }
                 placeholder={t("bookDemo.step3.phonePlaceholder")}
                 locale={locale}
               />
