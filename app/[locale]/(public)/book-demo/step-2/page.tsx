@@ -1,53 +1,37 @@
 /**
  * Book Demo Wizard - Step 2: Cal.com Booking
  *
- * V6.2.2 - Demo booking via Cal.com embed.
+ * V6.2.4 - Demo booking via Cal.com INLINE embed.
  *
  * URL: /[locale]/book-demo/step-2?leadId=xxx
  *
  * Prerequisites:
  * - Lead must have email_verified = true
- * - If not verified → redirect to /book-demo/verify
  *
  * Flow:
- * 1. Fetch lead data to verify email is verified
- * 2. Display Cal.com embed with pre-filled email
- * 3. After booking, Cal.com webhook updates lead status
- * 4. User clicks Continue → redirect to step-3
+ * 1. Fetch lead data to verify prerequisites
+ * 2. Display Cal.com INLINE embed with pre-filled email
+ * 3. After booking → redirect to step-3 (business info)
  *
  * @module app/[locale]/(public)/book-demo/step-2/page
  */
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import {
   Calendar,
   ArrowLeft,
-  ArrowRight,
   Loader2,
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import Cal, { getCalApi } from "@calcom/embed-react";
 import { WizardProgressBar } from "@/components/booking/WizardProgressBar";
-
-// Dynamic import for Cal.com embed to avoid SSR issues
-const Cal = dynamic(
-  () => import("@calcom/embed-react").then((mod) => mod.default),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[500px] items-center justify-center rounded-lg bg-slate-900/50">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    ),
-  }
-);
 
 // ============================================================================
 // TYPES
@@ -59,6 +43,7 @@ interface LeadData {
   email_verified: boolean;
   first_name: string | null;
   last_name: string | null;
+  country_code: string | null;
 }
 
 interface BookingStatusResponse {
@@ -79,8 +64,36 @@ interface BookingStatusResponse {
 // CONSTANTS
 // ============================================================================
 
-// Cal.com link - can be overridden via env
-const CALCOM_LINK = process.env.NEXT_PUBLIC_CALCOM_LINK || "fleetcore/demo";
+// Cal.com event link - format: username/event-slug
+const CALCOM_LINK = process.env.NEXT_PUBLIC_CALCOM_LINK || "fleetcore/30min";
+const CALCOM_ORIGIN =
+  process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
+
+// Country to timezone mapping (for Cal.com)
+const COUNTRY_TIMEZONES: Record<string, string> = {
+  FR: "Europe/Paris",
+  AE: "Asia/Dubai",
+  SA: "Asia/Riyadh",
+  QA: "Asia/Qatar",
+  KW: "Asia/Kuwait",
+  BH: "Asia/Bahrain",
+  OM: "Asia/Muscat",
+  MA: "Africa/Casablanca",
+  TN: "Africa/Tunis",
+  DZ: "Africa/Algiers",
+  EG: "Africa/Cairo",
+  BE: "Europe/Brussels",
+  CH: "Europe/Zurich",
+  LU: "Europe/Luxembourg",
+  DE: "Europe/Berlin",
+  GB: "Europe/London",
+  ES: "Europe/Madrid",
+  IT: "Europe/Rome",
+  NL: "Europe/Amsterdam",
+  PT: "Europe/Lisbon",
+  US: "America/New_York",
+  CA: "America/Toronto",
+};
 
 // ============================================================================
 // COMPONENT
@@ -108,8 +121,10 @@ export default function BookDemoStep2Page() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hasBooking, setHasBooking] = useState(false);
-  const [isCheckingBooking, setIsCheckingBooking] = useState(false);
-  const [calLoaded, setCalLoaded] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Ref to track if Cal.com has been initialized (prevents re-initialization)
+  const calInitializedRef = useRef(false);
 
   // Redirect if missing leadId
   useEffect(() => {
@@ -137,12 +152,19 @@ export default function BookDemoStep2Page() {
             return;
           }
 
+          // CRITICAL: If booking already exists, redirect to step 3
+          // This prevents multiple bookings
+          if (result.data?.hasBooking) {
+            router.replace(`/${locale}/book-demo/step-3?leadId=${leadId}`);
+            return;
+          }
+
           setLeadData(result.lead);
-          setHasBooking(result.data?.hasBooking || false);
+          setHasBooking(false);
         } else {
           setLoadError(result.error?.message || "Failed to load");
         }
-      } catch (_err) {
+      } catch {
         setLoadError("Network error");
       } finally {
         setIsLoading(false);
@@ -152,84 +174,72 @@ export default function BookDemoStep2Page() {
     void fetchLead();
   }, [leadId, locale, router]);
 
-  // Initialize Cal.com UI
+  // Initialize Cal.com and listen for booking events
+  // IMPORTANT: Only initialize ONCE to prevent Cal.com embed from resetting
   useEffect(() => {
-    if (!calLoaded) return;
+    // Skip if already initialized or still loading
+    if (calInitializedRef.current || isLoading || !leadData) {
+      return;
+    }
 
     const initCal = async () => {
       try {
-        const { getCalApi } = await import("@calcom/embed-react");
-        const cal = await getCalApi();
-        cal("ui", {
-          theme: "dark",
-          styles: { branding: { brandColor: "#3b82f6" } },
-          hideEventTypeDetails: false,
+        const cal = await getCalApi({ namespace: "fleetcore-inline" });
+
+        // Listen for booking success
+        // Name is captured via webhook (custom payload), not from this callback
+        cal("on", {
+          action: "bookingSuccessful",
+          callback: () => {
+            setHasBooking(true);
+            setIsRedirecting(true);
+
+            // Redirect to step 3 after short delay
+            // Webhook will have already updated the lead with name from Cal.com
+            setTimeout(() => {
+              if (leadId) {
+                router.push(`/${locale}/book-demo/step-3?leadId=${leadId}`);
+              }
+            }, 2000);
+          },
         });
+
+        // Mark as initialized to prevent future re-initialization
+        calInitializedRef.current = true;
       } catch {
-        // Cal.com initialization failed - embed will still work
+        // Cal.com initialization failed silently
       }
     };
 
     void initCal();
-  }, [calLoaded]);
+  }, [isLoading, leadData, leadId, locale, router]);
 
-  // Check booking status
+  // Poll for booking status (backup in case event doesn't fire)
   const checkBookingStatus = useCallback(async () => {
-    if (!leadId) return;
+    if (!leadId || hasBooking) return;
 
-    setIsCheckingBooking(true);
     try {
       const response = await fetch(`/api/crm/leads/${leadId}/booking-status`);
       const result: BookingStatusResponse = await response.json();
 
-      if (result.success && result.data) {
-        setHasBooking(result.data.hasBooking);
-        if (result.data.canProceed) {
-          // Proceed to step 3
-          router.push(`/${locale}/book-demo/step-3?leadId=${leadId}`);
-        }
+      if (result.success && result.data?.hasBooking) {
+        setHasBooking(true);
       }
     } catch {
       // Silently fail
-    } finally {
-      setIsCheckingBooking(false);
     }
-  }, [leadId, locale, router]);
+  }, [leadId, hasBooking]);
 
-  // Handle continue button
-  const handleContinue = useCallback(async () => {
-    if (!leadId) return;
-
-    setIsCheckingBooking(true);
-    try {
-      const response = await fetch(`/api/crm/leads/${leadId}/booking-status`);
-      const result: BookingStatusResponse = await response.json();
-
-      if (result.success && result.data?.canProceed) {
-        router.push(`/${locale}/book-demo/step-3?leadId=${leadId}`);
-      } else {
-        // Show message that booking is required
-        setHasBooking(false);
-      }
-    } catch {
-      // Allow proceeding anyway in case of network issues
-      router.push(`/${locale}/book-demo/step-3?leadId=${leadId}`);
-    } finally {
-      setIsCheckingBooking(false);
-    }
-  }, [leadId, locale, router]);
-
-  // Poll for booking status periodically (Cal.com doesn't have client-side events)
+  // Poll every 10 seconds as backup
   useEffect(() => {
-    if (!leadId || !calLoaded || hasBooking) return;
+    if (!leadId || hasBooking || isLoading) return;
 
-    // Poll every 5 seconds to check if booking was made
     const interval = setInterval(() => {
       void checkBookingStatus();
-    }, 5000);
+    }, 10000);
 
     return () => clearInterval(interval);
-  }, [leadId, calLoaded, hasBooking, checkBookingStatus]);
+  }, [leadId, hasBooking, isLoading, checkBookingStatus]);
 
   // Don't render if missing leadId
   if (!leadId) {
@@ -239,7 +249,7 @@ export default function BookDemoStep2Page() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
@@ -248,13 +258,13 @@ export default function BookDemoStep2Page() {
   // Error state
   if (loadError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-        <div className="w-full max-w-md rounded-2xl bg-slate-800/50 p-8 text-center backdrop-blur-sm">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
-          <h1 className="mt-4 text-xl font-bold text-white">
+          <h1 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">
             {t("bookDemo.step2.error")}
           </h1>
-          <p className="mt-2 text-slate-400">{loadError}</p>
+          <p className="mt-2 text-gray-600 dark:text-slate-400">{loadError}</p>
           <Link
             href={`/${locale}/book-demo`}
             className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
@@ -267,30 +277,55 @@ export default function BookDemoStep2Page() {
     );
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-3xl"
-      >
-        {/* Progress Bar */}
-        <WizardProgressBar currentStep={2} totalSteps={3} className="mb-8" />
+  // Redirecting state after booking
+  if (isRedirecting) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
+            <CheckCircle className="h-10 w-10 text-green-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            {locale === "fr" ? "Réservation confirmée !" : "Booking confirmed!"}
+          </h2>
+          <p className="mt-2 text-gray-600 dark:text-slate-400">
+            {locale === "fr" ? "Redirection en cours..." : "Redirecting..."}
+          </p>
+          <Loader2 className="mx-auto mt-4 h-6 w-6 animate-spin text-blue-500" />
+        </motion.div>
+      </div>
+    );
+  }
 
-        {/* Card */}
-        <div className="rounded-2xl bg-slate-800/50 p-6 backdrop-blur-sm sm:p-8">
-          {/* Header */}
-          <div className="mb-6 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/20">
-              <Calendar className="h-8 w-8 text-blue-500" />
+  return (
+    <div className="min-h-screen bg-gray-50 px-4 py-6 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="mx-auto max-w-4xl">
+        {/* Progress Bar - Step 2 of 3 */}
+        <WizardProgressBar currentStep={2} totalSteps={3} className="mb-6" />
+
+        {/* Header Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-6 rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/20">
+              <Calendar className="h-7 w-7 text-blue-600 dark:text-blue-500" />
             </div>
-            <h1 className="text-2xl font-bold text-white">
-              {t("bookDemo.step2.title")}
-            </h1>
-            <p className="mt-2 text-sm text-slate-400">
-              {t("bookDemo.step2.subtitle")}
-            </p>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                {t("bookDemo.step2.title")}
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-slate-400">
+                {t("bookDemo.step2.subtitle")}
+              </p>
+            </div>
           </div>
 
           {/* Booking Success Indicator */}
@@ -298,92 +333,69 @@ export default function BookDemoStep2Page() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 flex items-center justify-center gap-2 rounded-lg bg-green-500/10 p-4 text-green-400"
+              className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-green-600 dark:bg-green-500/10 dark:text-green-400"
             >
               <CheckCircle className="h-5 w-5" />
               <span className="font-medium">{t("bookDemo.step2.booked")}</span>
             </motion.div>
           )}
+        </motion.div>
 
-          {/* Cal.com Embed */}
-          <div className="mb-6 overflow-hidden rounded-lg">
-            <Cal
-              calLink={CALCOM_LINK}
-              style={{
-                width: "100%",
-                height: "500px",
-                overflow: "scroll",
-              }}
-              config={{
-                layout: "month_view",
-                theme: "dark",
-                ...(leadData?.email && { email: leadData.email }),
-                ...(leadData?.first_name &&
-                  leadData?.last_name && {
-                    name: `${leadData.first_name} ${leadData.last_name}`,
-                  }),
-              }}
-              onLoad={() => setCalLoaded(true)}
-            />
-          </div>
+        {/* Cal.com Inline Embed */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm"
+        >
+          <Cal
+            namespace="fleetcore-inline"
+            calLink={CALCOM_LINK}
+            calOrigin={CALCOM_ORIGIN}
+            style={{ width: "100%", height: "100%", overflow: "auto" }}
+            config={{
+              layout: "month_view",
+              theme: "auto",
+              locale: locale,
+              // Pre-fill email from lead
+              ...(leadData?.email && { email: leadData.email }),
+              // Pre-fill name if available
+              ...(leadData?.first_name &&
+                leadData?.last_name && {
+                  name: `${leadData.first_name} ${leadData.last_name}`,
+                }),
+              // Set timezone based on country selected in step 1
+              ...(leadData?.country_code &&
+                COUNTRY_TIMEZONES[leadData.country_code] && {
+                  timezone: COUNTRY_TIMEZONES[leadData.country_code],
+                }),
+            }}
+          />
+        </motion.div>
 
-          {/* After Booking Instructions */}
-          <p className="mb-6 text-center text-sm text-slate-400">
-            {t("bookDemo.step2.afterBooking")}
-          </p>
+        {/* Navigation */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mt-6 flex items-center justify-between"
+        >
+          <Link
+            href={`/${locale}/book-demo/verify?leadId=${leadId}&email=${encodeURIComponent(leadData?.email || "")}`}
+            className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t("bookDemo.step2.back")}
+          </Link>
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/book-demo/verify?leadId=${leadId}&email=${encodeURIComponent(leadData?.email || "")}`}
-              className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-200"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t("bookDemo.step2.back")}
-            </Link>
-
-            <button
-              type="button"
-              onClick={handleContinue}
-              disabled={isCheckingBooking}
-              className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-all ${
-                hasBooking
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-              } disabled:cursor-not-allowed disabled:opacity-50`}
-            >
-              {isCheckingBooking ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("bookDemo.step2.checking")}
-                </>
-              ) : (
-                <>
-                  {t("bookDemo.step2.continue")}
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* No Booking Warning */}
-          {!hasBooking && !isCheckingBooking && (
-            <p className="mt-4 text-center text-sm text-amber-400">
-              {t("bookDemo.step2.noBooking")}
-            </p>
-          )}
-        </div>
-
-        {/* Back to home */}
-        <div className="mt-6 text-center">
           <Link
             href={`/${locale}`}
-            className="text-sm text-slate-500 transition-colors hover:text-slate-300"
+            className="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
           >
             {t("bookDemo.backToHome")}
           </Link>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

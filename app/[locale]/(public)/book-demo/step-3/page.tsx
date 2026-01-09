@@ -1,26 +1,12 @@
 /**
  * Book Demo Wizard - Step 3: Business Information
  *
- * V6.2.2 - Collect business info with conditional GDPR consent.
+ * V6.2.5 - Collect business info after Cal.com booking.
+ *
+ * Name is now captured via Cal.com webhook (custom payload).
+ * This step only collects: company_name, phone, fleet_size, GDPR consent.
  *
  * URL: /[locale]/book-demo/step-3?leadId=xxx
- *
- * Prerequisites:
- * - Lead must have email_verified = true
- * - Lead should have a booking (optional, allow skip for UX)
- *
- * Flow:
- * 1. Verify lead prerequisites
- * 2. Display form with:
- *    - first_name, last_name (required)
- *    - company_name (required)
- *    - phone (optional)
- *    - country_code (required - from dropdown)
- *    - fleet_size (required)
- *    - platforms_used (multi-select)
- *    - GDPR consent (conditional based on EU country)
- * 3. On submit → PATCH lead + wizard_completed: true
- * 4. Redirect to /book-demo/confirmation
  *
  * @module app/[locale]/(public)/book-demo/step-3/page
  */
@@ -36,18 +22,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   Building2,
-  ArrowLeft,
   Loader2,
   AlertCircle,
-  User,
-  Phone,
-  Globe,
-  Truck,
   CheckCircle2,
+  Truck,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { WizardProgressBar } from "@/components/booking/WizardProgressBar";
 import { GdprConsentField } from "@/components/forms/GdprConsentField";
+import { PhoneInput } from "@/components/forms/PhoneInput";
 import { useGdprValidation } from "@/hooks/useGdprValidation";
 
 // ============================================================================
@@ -63,6 +47,8 @@ interface Country {
   flag_emoji: string | null;
   is_operational: boolean;
   country_gdpr: boolean;
+  phone_prefix: string | null;
+  phone_example: string | null;
   display_order: number;
 }
 
@@ -72,6 +58,8 @@ interface LeadData {
   email_verified: boolean;
   first_name: string | null;
   last_name: string | null;
+  company_name: string | null;
+  country_code: string | null;
 }
 
 interface BookingStatusResponse {
@@ -93,36 +81,19 @@ interface BookingStatusResponse {
 // ============================================================================
 
 const FLEET_SIZE_OPTIONS = [
-  "1",
-  "2-5",
-  "6-10",
-  "11-20",
-  "21-50",
-  "51-100",
-  "100+",
-];
-
-const PLATFORM_OPTIONS = [
-  "uber",
-  "bolt",
-  "careem",
-  "yango",
-  "freenow",
-  "other",
+  { value: "2-10", label: "2-10" },
+  { value: "11-50", label: "11-50" },
+  { value: "50+", label: "50+" },
 ];
 
 // ============================================================================
-// SCHEMA
+// SCHEMA - No longer includes first_name/last_name (from webhook)
 // ============================================================================
 
 const step3Schema = z.object({
-  first_name: z.string().min(1, "Required"),
-  last_name: z.string().min(1, "Required"),
   company_name: z.string().min(1, "Required"),
-  phone: z.string().optional(),
-  country_code: z.string().min(1, "Required"),
+  phone: z.string().min(1, "Required"),
   fleet_size: z.string().min(1, "Required"),
-  platforms_used: z.array(z.string()).optional(),
   gdpr_consent: z.boolean().optional(),
 });
 
@@ -139,7 +110,6 @@ export default function BookDemoStep3Page() {
   const locale = (params.locale as string) || "en";
   const { t, i18n } = useTranslation("public");
 
-  // Query params
   const leadId = searchParams.get("leadId");
 
   // Initialize i18n
@@ -167,51 +137,29 @@ export default function BookDemoStep3Page() {
   } = useForm<Step3FormData>({
     resolver: zodResolver(step3Schema),
     defaultValues: {
-      first_name: "",
-      last_name: "",
       company_name: "",
       phone: "",
-      country_code: "",
       fleet_size: "",
-      platforms_used: [],
       gdpr_consent: false,
     },
   });
 
-  // Watch form values
-  const selectedCountryCode = watch("country_code");
+  const phoneValue = watch("phone") || "";
   const gdprConsent = watch("gdpr_consent") || false;
-  const platformsUsed = watch("platforms_used") || [];
+  const fleetSize = watch("fleet_size") || "";
 
-  // GDPR validation
+  const leadCountryCode = leadData?.country_code || "";
+
   const { requiresGdpr, isValid: isGdprValid } = useGdprValidation(
     countries,
-    selectedCountryCode,
+    leadCountryCode,
     gdprConsent
   );
 
-  // Get country name based on locale
-  const getCountryName = (country: Country) => {
-    switch (locale) {
-      case "fr":
-        return country.country_name_fr;
-      case "ar":
-        return country.country_name_ar;
-      default:
-        return country.country_name_en;
-    }
-  };
-
-  // Sorted countries: operational first, then by display_order
-  const sortedCountries = useMemo(() => {
-    return [...countries].sort((a, b) => {
-      // Operational countries first
-      if (a.is_operational && !b.is_operational) return -1;
-      if (!a.is_operational && b.is_operational) return 1;
-      // Then by display_order
-      return a.display_order - b.display_order;
-    });
-  }, [countries]);
+  const selectedCountry = useMemo(() => {
+    if (!leadCountryCode || !countries.length) return null;
+    return countries.find((c) => c.country_code === leadCountryCode) || null;
+  }, [leadCountryCode, countries]);
 
   // Redirect if missing leadId
   useEffect(() => {
@@ -220,24 +168,21 @@ export default function BookDemoStep3Page() {
     }
   }, [leadId, locale, router]);
 
-  // Fetch lead data and countries on mount
+  // Fetch lead data and countries
   useEffect(() => {
     if (!leadId) return;
 
     const fetchData = async () => {
       try {
-        // Fetch lead and countries in parallel
         const [leadResponse, countriesResponse] = await Promise.all([
           fetch(`/api/crm/leads/${leadId}/booking-status`),
-          fetch("/api/public/countries"),
+          fetch("/api/public/countries?operational=true"),
         ]);
 
         const leadResult: BookingStatusResponse = await leadResponse.json();
         const countriesResult = await countriesResponse.json();
 
-        // Handle lead result
         if (leadResult.success && leadResult.lead) {
-          // Check if email is verified
           if (!leadResult.lead.email_verified) {
             router.replace(
               `/${locale}/book-demo/verify?leadId=${leadId}&email=${encodeURIComponent(leadResult.lead.email)}`
@@ -247,23 +192,19 @@ export default function BookDemoStep3Page() {
 
           setLeadData(leadResult.lead);
 
-          // Pre-fill form with existing lead data
-          if (leadResult.lead.first_name) {
-            setValue("first_name", leadResult.lead.first_name);
-          }
-          if (leadResult.lead.last_name) {
-            setValue("last_name", leadResult.lead.last_name);
+          // Pre-fill company_name if available
+          if (leadResult.lead.company_name) {
+            setValue("company_name", leadResult.lead.company_name);
           }
         } else {
           setLoadError(leadResult.error?.message || "Failed to load lead");
           return;
         }
 
-        // Handle countries result
         if (countriesResult.success && countriesResult.data) {
           setCountries(countriesResult.data);
         }
-      } catch (_err) {
+      } catch {
         setLoadError("Network error");
       } finally {
         setIsLoading(false);
@@ -273,24 +214,13 @@ export default function BookDemoStep3Page() {
     void fetchData();
   }, [leadId, locale, router, setValue]);
 
-  // Handle platform checkbox toggle
-  const handlePlatformToggle = (platform: string) => {
-    const current = platformsUsed || [];
-    if (current.includes(platform)) {
-      setValue(
-        "platforms_used",
-        current.filter((p) => p !== platform)
-      );
-    } else {
-      setValue("platforms_used", [...current, platform]);
-    }
+  const handleFleetSizeSelect = (value: string) => {
+    setValue("fleet_size", value);
   };
 
-  // Handle form submission
   const onSubmit = async (data: Step3FormData) => {
     if (!leadId) return;
 
-    // Check GDPR if required
     if (requiresGdpr && !data.gdpr_consent) {
       setSubmitError(t("bookDemo.step3.errors.gdprRequired"));
       return;
@@ -302,17 +232,11 @@ export default function BookDemoStep3Page() {
     try {
       const response = await fetch(`/api/crm/leads/${leadId}/complete-wizard`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          first_name: data.first_name,
-          last_name: data.last_name,
           company_name: data.company_name,
-          phone: data.phone || null,
-          country_code: data.country_code,
+          phone: data.phone,
           fleet_size: data.fleet_size,
-          platforms_used: data.platforms_used || [],
           gdpr_consent: data.gdpr_consent || false,
           wizard_completed: true,
         }),
@@ -321,49 +245,42 @@ export default function BookDemoStep3Page() {
       const result = await response.json();
 
       if (result.success) {
-        // Redirect to confirmation page
         router.push(`/${locale}/book-demo/confirmation?leadId=${leadId}`);
       } else {
         setSubmitError(
           result.error?.message || t("bookDemo.step3.errors.generic")
         );
       }
-    } catch (_err) {
+    } catch {
       setSubmitError(t("bookDemo.step3.errors.generic"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Don't render if missing leadId
-  if (!leadId) {
-    return null;
-  }
+  if (!leadId) return null;
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
-  // Error state
   if (loadError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-        <div className="w-full max-w-md rounded-2xl bg-slate-800/50 p-8 text-center backdrop-blur-sm">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
-          <h1 className="mt-4 text-xl font-bold text-white">
+          <h1 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">
             {t("bookDemo.step3.error")}
           </h1>
-          <p className="mt-2 text-slate-400">{loadError}</p>
+          <p className="mt-2 text-gray-600 dark:text-slate-400">{loadError}</p>
           <Link
             href={`/${locale}/book-demo`}
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+            className="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
           >
-            <ArrowLeft className="h-4 w-4" />
             {t("bookDemo.step3.back")}
           </Link>
         </div>
@@ -371,104 +288,72 @@ export default function BookDemoStep3Page() {
     );
   }
 
+  // Build welcome message
+  const firstName = leadData?.first_name;
+  const welcomeMessage = firstName
+    ? locale === "fr"
+      ? `Bonjour ${firstName} !`
+      : `Welcome, ${firstName}!`
+    : null;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 py-8">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 py-8 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-2xl"
       >
-        {/* Progress Bar */}
         <WizardProgressBar currentStep={3} totalSteps={3} className="mb-8" />
 
-        {/* Card */}
-        <div className="rounded-2xl bg-slate-800/50 p-6 backdrop-blur-sm sm:p-8">
+        <div className="rounded-2xl bg-white p-6 shadow-xl sm:p-8 dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           {/* Header */}
           <div className="mb-6 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/20">
-              <Building2 className="h-8 w-8 text-blue-500" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/20">
+              <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-500" />
             </div>
-            <h1 className="text-2xl font-bold text-white">
+
+            {/* Welcome message with name (from webhook) */}
+            {welcomeMessage && (
+              <div className="mb-3 flex items-center justify-center gap-2 text-lg font-medium text-green-600 dark:text-green-400">
+                <User className="h-5 w-5" />
+                {welcomeMessage}
+              </div>
+            )}
+
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {t("bookDemo.step3.title")}
             </h1>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
               {t("bookDemo.step3.subtitle")}
             </p>
             {leadData?.email && (
-              <p className="mt-1 text-xs text-slate-500">{leadData.email}</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">
+                {leadData.email}
+              </p>
             )}
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Name Row */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* First Name */}
-              <div>
-                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-300">
-                  <User className="h-4 w-4" />
-                  {t("bookDemo.step3.firstName")} *
-                </label>
-                <input
-                  {...register("first_name")}
-                  type="text"
-                  className={`w-full rounded-lg border bg-slate-900/50 px-4 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.first_name
-                      ? "border-red-500"
-                      : "border-slate-700 focus:border-blue-500"
-                  }`}
-                  placeholder={t("bookDemo.step3.firstNamePlaceholder")}
-                />
-                {errors.first_name && (
-                  <p className="mt-1 text-xs text-red-400">
-                    {t("bookDemo.step3.errors.required")}
-                  </p>
-                )}
-              </div>
-
-              {/* Last Name */}
-              <div>
-                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-300">
-                  <User className="h-4 w-4" />
-                  {t("bookDemo.step3.lastName")} *
-                </label>
-                <input
-                  {...register("last_name")}
-                  type="text"
-                  className={`w-full rounded-lg border bg-slate-900/50 px-4 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.last_name
-                      ? "border-red-500"
-                      : "border-slate-700 focus:border-blue-500"
-                  }`}
-                  placeholder={t("bookDemo.step3.lastNamePlaceholder")}
-                />
-                {errors.last_name && (
-                  <p className="mt-1 text-xs text-red-400">
-                    {t("bookDemo.step3.errors.required")}
-                  </p>
-                )}
-              </div>
-            </div>
-
             {/* Company Name */}
             <div>
-              <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-300">
+              <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                 <Building2 className="h-4 w-4" />
                 {t("bookDemo.step3.companyName")} *
               </label>
               <input
                 {...register("company_name")}
                 type="text"
-                className={`w-full rounded-lg border bg-slate-900/50 px-4 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                className={`w-full rounded-lg border bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500 ${
                   errors.company_name
                     ? "border-red-500"
-                    : "border-slate-700 focus:border-blue-500"
+                    : "border-gray-300 focus:border-blue-500 dark:border-slate-700"
                 }`}
                 placeholder={t("bookDemo.step3.companyNamePlaceholder")}
               />
               {errors.company_name && (
-                <p className="mt-1 text-xs text-red-400">
+                <p className="mt-1 text-xs text-red-500 dark:text-red-400">
                   {t("bookDemo.step3.errors.required")}
                 </p>
               )}
@@ -476,129 +361,66 @@ export default function BookDemoStep3Page() {
 
             {/* Phone */}
             <div>
-              <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-300">
-                <Phone className="h-4 w-4" />
-                {t("bookDemo.step3.phone")}
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300">
+                {t("bookDemo.step3.phone")} *
+                {selectedCountry && (
+                  <span className="ml-2 text-xs text-gray-500 dark:text-slate-500">
+                    ({selectedCountry.flag_emoji} {selectedCountry.phone_prefix}
+                    )
+                  </span>
+                )}
               </label>
-              <input
-                {...register("phone")}
-                type="tel"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900/50 px-4 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              <PhoneInput
+                countries={countries}
+                selectedCountryCode={leadCountryCode}
+                value={phoneValue}
+                onChange={(val) => setValue("phone", val)}
                 placeholder={t("bookDemo.step3.phonePlaceholder")}
+                locale={locale}
               />
+              {errors.phone && (
+                <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+                  {t("bookDemo.step3.errors.required")}
+                </p>
+              )}
             </div>
 
-            {/* Country & Fleet Size Row */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Country */}
-              <div>
-                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-300">
-                  <Globe className="h-4 w-4" />
-                  {t("bookDemo.step3.country")} *
-                </label>
-                <select
-                  {...register("country_code")}
-                  className={`w-full rounded-lg border bg-slate-900/50 px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.country_code
-                      ? "border-red-500"
-                      : "border-slate-700 focus:border-blue-500"
-                  }`}
-                >
-                  <option value="">{t("bookDemo.step3.selectCountry")}</option>
-                  {sortedCountries.map((country) => (
-                    <option
-                      key={country.country_code}
-                      value={country.country_code}
-                    >
-                      {country.flag_emoji} {getCountryName(country)}
-                      {country.is_operational && " *"}
-                    </option>
-                  ))}
-                </select>
-                {errors.country_code && (
-                  <p className="mt-1 text-xs text-red-400">
-                    {t("bookDemo.step3.errors.required")}
-                  </p>
-                )}
-              </div>
-
-              {/* Fleet Size */}
-              <div>
-                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-300">
-                  <Truck className="h-4 w-4" />
-                  {t("bookDemo.step3.fleetSize")} *
-                </label>
-                <select
-                  {...register("fleet_size")}
-                  className={`w-full rounded-lg border bg-slate-900/50 px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.fleet_size
-                      ? "border-red-500"
-                      : "border-slate-700 focus:border-blue-500"
-                  }`}
-                >
-                  <option value="">
-                    {t("bookDemo.step3.selectFleetSize")}
-                  </option>
-                  {FLEET_SIZE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>
-                      {size === "100+"
-                        ? t("bookDemo.step3.fleetSizeOptions.moreThan100")
-                        : `${size} ${t("bookDemo.step3.vehicles")}`}
-                    </option>
-                  ))}
-                </select>
-                {errors.fleet_size && (
-                  <p className="mt-1 text-xs text-red-400">
-                    {t("bookDemo.step3.errors.required")}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Platforms Used */}
+            {/* Fleet Size */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                {t("bookDemo.step3.platformsUsed")}
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
+                <Truck className="h-4 w-4" />
+                {t("bookDemo.step3.fleetSize")} *
               </label>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {PLATFORM_OPTIONS.map((platform) => (
-                  <label
-                    key={platform}
-                    className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 transition-colors ${
-                      platformsUsed.includes(platform)
-                        ? "border-blue-500 bg-blue-500/10"
-                        : "border-slate-700 bg-slate-900/30 hover:border-slate-600"
+              <div className="flex gap-3">
+                {FLEET_SIZE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleFleetSizeSelect(option.value)}
+                    className={`flex-1 rounded-lg border p-4 transition-all ${
+                      fleetSize === option.value
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                        : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:border-slate-500"
                     }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={platformsUsed.includes(platform)}
-                      onChange={() => handlePlatformToggle(platform)}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`flex h-5 w-5 items-center justify-center rounded border ${
-                        platformsUsed.includes(platform)
-                          ? "border-blue-500 bg-blue-500"
-                          : "border-slate-600"
-                      }`}
-                    >
-                      {platformsUsed.includes(platform) && (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-white" />
-                      )}
-                    </div>
-                    <span className="text-sm text-slate-300">
-                      {t(`bookDemo.step3.platforms.${platform}`)}
+                    <span className="block font-semibold">{option.label}</span>
+                    <span className="block text-xs text-gray-500 dark:text-slate-500">
+                      {t("bookDemo.step3.vehicles")}
                     </span>
-                  </label>
+                  </button>
                 ))}
               </div>
+              {errors.fleet_size && (
+                <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+                  {t("bookDemo.step3.errors.required")}
+                </p>
+              )}
             </div>
 
-            {/* GDPR Consent (conditional) */}
+            {/* GDPR Consent */}
             <GdprConsentField
               countries={countries}
-              selectedCountryCode={selectedCountryCode}
+              selectedCountryCode={leadCountryCode}
               value={gdprConsent}
               onChange={(consented) => setValue("gdpr_consent", consented)}
               locale={locale}
@@ -606,22 +428,14 @@ export default function BookDemoStep3Page() {
 
             {/* Submit Error */}
             {submitError && (
-              <div className="flex items-center gap-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <span>{submitError}</span>
               </div>
             )}
 
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4">
-              <Link
-                href={`/${locale}/book-demo/step-2?leadId=${leadId}`}
-                className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-200"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                {t("bookDemo.step3.back")}
-              </Link>
-
+            {/* Submit Button */}
+            <div className="flex items-center justify-end pt-4">
               <button
                 type="submit"
                 disabled={isSubmitting || (requiresGdpr && !isGdprValid)}
@@ -633,7 +447,10 @@ export default function BookDemoStep3Page() {
                     {t("bookDemo.step3.submitting")}
                   </>
                 ) : (
-                  t("bookDemo.step3.submit")
+                  <>
+                    {t("bookDemo.step3.submit")}
+                    <CheckCircle2 className="h-4 w-4" />
+                  </>
                 )}
               </button>
             </div>
@@ -644,7 +461,7 @@ export default function BookDemoStep3Page() {
         <div className="mt-6 text-center">
           <Link
             href={`/${locale}`}
-            className="text-sm text-slate-500 transition-colors hover:text-slate-300"
+            className="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
           >
             {t("bookDemo.backToHome")}
           </Link>
