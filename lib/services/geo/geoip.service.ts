@@ -3,24 +3,50 @@
  *
  * V6.2.3 - Détection du pays via IP pour pré-remplir le formulaire
  *
+ * Uses ip-api.com for serverless compatibility (geoip-lite doesn't work on Vercel)
+ * Free tier: 45 requests/minute (sufficient for demo booking)
+ *
  * @module lib/services/geo/geoip.service
  */
-
-import geoip from "geoip-lite";
 
 // Fallback IP when no proxy header found (localhost)
 const LOCALHOST_IP = ["127", "0", "0", "1"].join(".");
 
 export class GeoIPService {
   /**
-   * Get country code from IP address
+   * Get country code from IP address using ip-api.com
    * @param ip - IP address (IPv4 or IPv6)
    * @returns ISO 3166-1 alpha-2 country code or null
    */
-  getCountryFromIP(ip: string): string | null {
-    // geoip.lookup returns null for localhost/private IPs
-    const geo = geoip.lookup(ip);
-    return geo?.country ?? null;
+  async getCountryFromIP(ip: string): Promise<string | null> {
+    // Don't query for localhost/private IPs
+    if (
+      ip === LOCALHOST_IP ||
+      ip.startsWith("192.168.") ||
+      ip.startsWith("10.")
+    ) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(
+        `http://ip-api.com/json/${ip}?fields=countryCode`,
+        {
+          // 5 second timeout
+          signal: AbortSignal.timeout(5000),
+        }
+      );
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = (await response.json()) as { countryCode?: string };
+      return data.countryCode ?? null;
+    } catch {
+      // Network error, timeout, etc - fail silently
+      return null;
+    }
   }
 
   /**
@@ -55,13 +81,13 @@ export class GeoIPService {
   /**
    * Full detection: get IP and country in one call
    */
-  detectCountry(request: Request): {
+  async detectCountry(request: Request): Promise<{
     ip: string;
     countryCode: string | null;
     detected: boolean;
-  } {
+  }> {
     const ip = this.getClientIP(request);
-    const countryCode = this.getCountryFromIP(ip);
+    const countryCode = await this.getCountryFromIP(ip);
 
     return {
       ip,

@@ -21,7 +21,7 @@ import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
-    const result = geoIPService.detectCountry(request);
+    const result = await geoIPService.detectCountry(request);
 
     logger.info(
       { ip: result.ip, countryCode: result.countryCode },
