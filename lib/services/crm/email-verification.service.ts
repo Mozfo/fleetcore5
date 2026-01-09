@@ -285,18 +285,18 @@ export class EmailVerificationService {
       }
 
       // 5. Queue verification email (V6.2.2 template: email_verification_code)
-      // Template uses {{code}} and {{expiresIn}} placeholders
+      // Template uses {{verification_code}} and {{expires_in_minutes}} placeholders
       await this.notificationQueue.queueNotification({
         templateCode: "email_verification_code",
         recipientEmail: email,
         locale,
         variables: {
-          code: plainCode,
-          expiresIn: CODE_EXPIRATION_MINUTES,
+          verification_code: plainCode,
+          expires_in_minutes: CODE_EXPIRATION_MINUTES,
         },
         leadId: lead.id,
         idempotencyKey: `email_verification_${lead.id}_${Date.now()}`,
-        processImmediately: true, // Send immediately in dev
+        processImmediately: true, // Always send immediately for verification codes
       });
 
       logger.info(

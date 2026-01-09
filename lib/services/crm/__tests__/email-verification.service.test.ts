@@ -337,8 +337,8 @@ describe("EmailVerificationService", () => {
           recipientEmail: "test@example.com",
           locale: "fr",
           variables: expect.objectContaining({
-            code: "123456",
-            expiresIn: 15,
+            verification_code: "123456",
+            expires_in_minutes: 15,
           }),
         })
       );
