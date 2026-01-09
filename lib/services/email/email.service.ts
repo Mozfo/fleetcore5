@@ -175,9 +175,9 @@ export class EmailService extends BaseService {
     }
 
     this.resend = new Resend(apiKey);
-    this.fromEmail = process.env.EMAIL_FROM || "notifications@fleetcore.app";
+    this.fromEmail = process.env.EMAIL_FROM || "notifications@fleetcore.io";
     this.fromName = process.env.EMAIL_FROM_NAME || "FleetCore";
-    this.replyTo = process.env.EMAIL_REPLY_TO || "support@fleetcore.app";
+    this.replyTo = process.env.EMAIL_REPLY_TO || "support@fleetcore.io";
     // Allow forcing real email sending in development with FORCE_SEND_EMAILS=true
     this.isDevelopment =
       process.env.NODE_ENV === "development" &&
