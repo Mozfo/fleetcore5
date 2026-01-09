@@ -3,16 +3,14 @@
  * Cal.com webhook handler for booking events
  * V6.2-5: Handles BOOKING_CREATED, BOOKING_RESCHEDULED, BOOKING_CANCELLED
  *
- * CUSTOM PAYLOAD: Cal.com is configured to send a flat structure:
+ * CUSTOM PAYLOAD from Cal.com (using their variable syntax):
  * {
- *   "event": "BOOKING_CREATED",
- *   "uid": "abc123",
- *   "startTime": "2026-01-10T10:00:00Z",
- *   "endTime": "2026-01-10T10:30:00Z",
- *   "attendee_email": "john@company.com",
- *   "attendee_first_name": "John",
- *   "attendee_last_name": "Doe",
- *   "notes": "I manage 25 vehicles"
+ *   "triggerEvent": "{{triggerEvent}}",
+ *   "uid": "{{uid}}",
+ *   "startTime": "{{startTime}}",
+ *   "endTime": "{{endTime}}",
+ *   "attendees.0.email": "{{attendees.0.email}}",
+ *   "attendees.0.name": "{{attendees.0.name}}"
  * }
  *
  * @see https://cal.com/docs/developing/guides/automation/webhooks
@@ -52,6 +50,30 @@ function verifyCalcomSignature(
   } catch {
     return false;
   }
+}
+
+/**
+ * Split full name into first and last name
+ * "John Doe" → { firstName: "John", lastName: "Doe" }
+ * "John" → { firstName: "John", lastName: null }
+ * "John Middle Doe" → { firstName: "John", lastName: "Middle Doe" }
+ */
+function splitFullName(fullName: string | undefined | null): {
+  firstName: string | null;
+  lastName: string | null;
+} {
+  if (!fullName || !fullName.trim()) {
+    return { firstName: null, lastName: null };
+  }
+
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: null };
+  }
+
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(" ");
+  return { firstName, lastName };
 }
 
 export async function POST(request: NextRequest) {
@@ -99,8 +121,8 @@ export async function POST(request: NextRequest) {
     // 3. Parse and validate custom payload
     const body = JSON.parse(rawBody);
 
-    // Handle ping test
-    if (body.event === "PING") {
+    // Handle ping test (both formats)
+    if (body.triggerEvent === "PING" || body.event === "PING") {
       logger.info("[Cal.com Webhook] Ping test received");
       return NextResponse.json({ success: true, message: "Ping received" });
     }
@@ -108,11 +130,16 @@ export async function POST(request: NextRequest) {
     // Validate with Zod schema
     const payload = calcomCustomPayloadSchema.parse(body);
 
+    // Extract email and name from dot-notation keys
+    const attendeeEmail = payload["attendees.0.email"];
+    const attendeeName = payload["attendees.0.name"];
+
     logger.info(
       {
-        event: payload.event,
+        event: payload.triggerEvent,
         uid: payload.uid,
-        email: payload.attendee_email,
+        email: attendeeEmail,
+        name: attendeeName,
       },
       "[Cal.com Webhook] Received"
     );
@@ -120,7 +147,7 @@ export async function POST(request: NextRequest) {
     // 4. Look up lead by email
     const lead = await prisma.crm_leads.findFirst({
       where: {
-        email: payload.attendee_email.toLowerCase(),
+        email: attendeeEmail.toLowerCase(),
         deleted_at: null,
       },
       select: {
@@ -134,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     if (!lead) {
       logger.error(
-        { email: payload.attendee_email, uid: payload.uid },
+        { email: attendeeEmail, uid: payload.uid },
         "[Cal.com Webhook] Lead not found"
       );
       return NextResponse.json(
@@ -143,25 +170,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Extract data directly from flat payload
-    const firstName = payload.attendee_first_name?.trim() || null;
-    const lastName = payload.attendee_last_name?.trim() || null;
-    const notes = payload.notes?.trim() || null;
+    // 5. Split full name into first and last name
+    const { firstName, lastName } = splitFullName(attendeeName);
 
     // 6. Process based on event type
     let updateData: Record<string, unknown> = {};
     let newStatus: string | null = null;
 
-    switch (payload.event) {
+    switch (payload.triggerEvent) {
       case "BOOKING_CREATED":
         newStatus = "demo_scheduled";
         updateData = {
           status: newStatus,
           booking_slot_at: new Date(payload.startTime),
           booking_calcom_uid: payload.uid,
+          // Only update name if lead doesn't have one yet
           ...(firstName && !lead.first_name && { first_name: firstName }),
           ...(lastName && !lead.last_name && { last_name: lastName }),
-          ...(notes && { message: notes }),
           updated_at: new Date(),
         };
         break;
@@ -174,6 +199,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case "BOOKING_CANCELLED":
+      case "BOOKING_REJECTED":
         newStatus = "lost";
         updateData = {
           status: newStatus,
@@ -192,12 +218,12 @@ export async function POST(request: NextRequest) {
     // 8. Create activity log
     const activityType =
       CALCOM_ACTIVITY_TYPES[
-        payload.event as keyof typeof CALCOM_ACTIVITY_TYPES
-      ];
+        payload.triggerEvent as keyof typeof CALCOM_ACTIVITY_TYPES
+      ] || "booking_event";
     const activityTitle =
       CALCOM_ACTIVITY_TITLES[
-        payload.event as keyof typeof CALCOM_ACTIVITY_TITLES
-      ] || `Cal.com: ${payload.event}`;
+        payload.triggerEvent as keyof typeof CALCOM_ACTIVITY_TITLES
+      ] || `Cal.com: ${payload.triggerEvent}`;
 
     await prisma.crm_lead_activities.create({
       data: {
@@ -217,11 +243,11 @@ export async function POST(request: NextRequest) {
         metadata: {
           calcom_uid: payload.uid,
           start_time: payload.startTime,
-          attendee_email: payload.attendee_email,
-          attendee_first_name: firstName,
-          attendee_last_name: lastName,
-          notes: notes,
-          event: payload.event,
+          attendee_email: attendeeEmail,
+          attendee_name: attendeeName,
+          first_name: firstName,
+          last_name: lastName,
+          event: payload.triggerEvent,
           previous_status: lead.status,
           new_status: newStatus || lead.status,
         },
@@ -235,9 +261,11 @@ export async function POST(request: NextRequest) {
     const duration = Date.now() - startTime;
     logger.info(
       {
-        event: payload.event,
+        event: payload.triggerEvent,
         lead_id: lead.id,
         uid: payload.uid,
+        firstName,
+        lastName,
         duration_ms: duration,
       },
       "[Cal.com Webhook] Processed successfully"
@@ -245,7 +273,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      event: payload.event,
+      event: payload.triggerEvent,
       lead_id: lead.id,
       uid: payload.uid,
     });

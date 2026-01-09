@@ -18,30 +18,32 @@ import { z } from "zod";
  *
  * Template configured in Cal.com:
  * {
- *   "event": "{{triggerEvent}}",
+ *   "triggerEvent": "{{triggerEvent}}",
  *   "uid": "{{uid}}",
  *   "startTime": "{{startTime}}",
  *   "endTime": "{{endTime}}",
- *   "attendee_email": "{{attendees.0.email}}",
- *   "attendee_first_name": "{{attendees.0.firstName}}",
- *   "attendee_last_name": "{{attendees.0.lastName}}",
- *   "notes": "{{responses.notes.value}}"
+ *   "attendees.0.email": "{{attendees.0.email}}",
+ *   "attendees.0.name": "{{attendees.0.name}}"
  * }
+ *
+ * Note: Cal.com combines first + last name into a single "name" field.
+ * We split it in the webhook handler.
  */
 export const calcomCustomPayloadSchema = z.object({
-  event: z.enum([
+  // Cal.com uses "triggerEvent" not "event"
+  triggerEvent: z.enum([
     "BOOKING_CREATED",
     "BOOKING_RESCHEDULED",
     "BOOKING_CANCELLED",
+    "BOOKING_REJECTED",
     "PING",
   ]),
   uid: z.string().min(1, "Booking UID is required"),
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().optional(),
-  attendee_email: z.string().email("Valid email required"),
-  attendee_first_name: z.string().optional(),
-  attendee_last_name: z.string().optional(),
-  notes: z.string().optional(),
+  // Cal.com uses dot notation in the custom payload
+  "attendees.0.email": z.string().email("Valid email required"),
+  "attendees.0.name": z.string().optional(),
 });
 
 export type CalcomCustomPayload = z.infer<typeof calcomCustomPayloadSchema>;
