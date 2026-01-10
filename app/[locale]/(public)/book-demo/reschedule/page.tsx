@@ -48,7 +48,7 @@ export default function ReschedulePage() {
     leadName?: string;
     bookingDate?: string;
   } | null>(null);
-  const [rescheduleComplete, _setRescheduleComplete] = useState(false);
+  const [rescheduleComplete, setRescheduleComplete] = useState(false);
 
   // Initialize i18n with correct locale
   useEffect(() => {
@@ -106,6 +106,52 @@ export default function ReschedulePage() {
 
     void validateBooking();
   }, [bookingUid, t]);
+
+  // Listen for Cal.com postMessage events (reschedule success)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Cal.com embed sends postMessage for various events
+      // We're looking for reschedule/booking confirmation events
+      try {
+        const data = event.data;
+
+        // Cal.com sends different message formats
+        // Type 1: Direct event object
+        if (data?.type === "CAL:bookingSuccessful") {
+          setRescheduleComplete(true);
+          return;
+        }
+
+        // Type 2: Route change to booking confirmation
+        if (
+          data?.type === "__routeChanged" &&
+          typeof data?.data === "string" &&
+          data.data.includes("/booking/")
+        ) {
+          // When Cal.com navigates to /booking/[uid] it means success
+          setRescheduleComplete(true);
+          return;
+        }
+
+        // Type 3: Cal namespace event
+        if (data?.["Cal.namespace"]) {
+          const eventType = data.type || data.action;
+          if (
+            eventType === "bookingSuccessful" ||
+            eventType === "rescheduleBookingSuccessful"
+          ) {
+            setRescheduleComplete(true);
+            return;
+          }
+        }
+      } catch {
+        // Ignore parsing errors from other postMessages
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   // Cal.com reschedule URL
   const calcomOrigin =

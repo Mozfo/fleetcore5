@@ -101,11 +101,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build reschedule URL (using cal.eu for EU instance)
-    const calcomOrigin =
-      process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
+    // Build reschedule URL (internal FleetCore page with Cal.com iframe)
     const rescheduleUrl = lead.booking_calcom_uid
-      ? `${calcomOrigin}/reschedule/${lead.booking_calcom_uid}`
+      ? `/book-demo/reschedule?uid=${lead.booking_calcom_uid}`
       : null;
 
     return NextResponse.json({

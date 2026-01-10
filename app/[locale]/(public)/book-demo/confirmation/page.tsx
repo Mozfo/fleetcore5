@@ -95,6 +95,8 @@ export default function BookDemoConfirmationPage() {
   const [data, setData] = useState<ConfirmationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleSuccess, setRescheduleSuccess] = useState(false);
 
   // Redirect if missing leadId
   useEffect(() => {
@@ -128,6 +130,57 @@ export default function BookDemoConfirmationPage() {
 
     void fetchData();
   }, [leadId]);
+
+  // Listen for Cal.com postMessage events (reschedule success)
+  useEffect(() => {
+    if (!showRescheduleModal) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const eventData = event.data;
+
+        // Cal.com booking successful events
+        if (eventData?.type === "CAL:bookingSuccessful") {
+          setRescheduleSuccess(true);
+          setShowRescheduleModal(false);
+          return;
+        }
+
+        // Route change to booking confirmation
+        if (
+          eventData?.type === "__routeChanged" &&
+          typeof eventData?.data === "string" &&
+          eventData.data.includes("/booking/")
+        ) {
+          setRescheduleSuccess(true);
+          setShowRescheduleModal(false);
+          return;
+        }
+
+        // Cal namespace events
+        if (eventData?.["Cal.namespace"]) {
+          const type = eventData.type || eventData.action;
+          if (
+            type === "bookingSuccessful" ||
+            type === "rescheduleBookingSuccessful"
+          ) {
+            setRescheduleSuccess(true);
+            setShowRescheduleModal(false);
+            return;
+          }
+        }
+      } catch {
+        // Ignore parsing errors
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [showRescheduleModal]);
+
+  // Cal.com origin for reschedule iframe
+  const calcomOrigin =
+    process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
 
   // Don't render if missing leadId
   if (!leadId) {
@@ -363,23 +416,38 @@ export default function BookDemoConfirmationPage() {
             </motion.div>
           )}
 
-          {/* Reschedule Link */}
-          {data?.booking.rescheduleUrl && (
+          {/* Reschedule Button */}
+          {data?.booking.calcomUid && !rescheduleSuccess && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
               className="mb-6 text-center"
             >
-              <a
-                href={data.booking.rescheduleUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => setShowRescheduleModal(true)}
                 className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
               >
                 <RefreshCw className="h-4 w-4" />
                 {locale === "fr" ? "Reprogrammer" : "Reschedule"}
-              </a>
+              </button>
+            </motion.div>
+          )}
+
+          {/* Reschedule Success Message */}
+          {rescheduleSuccess && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 rounded-lg bg-green-50 p-4 text-center dark:bg-green-500/10"
+            >
+              <CheckCircle2 className="mx-auto h-8 w-8 text-green-500" />
+              <p className="mt-2 text-sm font-medium text-green-700 dark:text-green-300">
+                {locale === "fr"
+                  ? "Votre réservation a été modifiée avec succès !"
+                  : "Your booking has been updated successfully!"}
+              </p>
             </motion.div>
           )}
 
@@ -399,6 +467,69 @@ export default function BookDemoConfirmationPage() {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && data?.booking.calcomUid && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-slate-800"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-slate-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {locale === "fr"
+                  ? "Modifier votre réservation"
+                  : "Modify Your Booking"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowRescheduleModal(false)}
+                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Cal.com Reschedule Iframe */}
+            <div className="h-[500px] w-full overflow-hidden">
+              <iframe
+                src={`${calcomOrigin}/reschedule/${data.booking.calcomUid}?embed=true&theme=light`}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                }}
+                title="Reschedule Booking"
+                allow="camera; microphone"
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-200 p-4 text-center dark:border-slate-700">
+              <p className="text-xs text-gray-400 dark:text-slate-500">
+                {locale === "fr"
+                  ? "Planification via Cal.com"
+                  : "Scheduling powered by Cal.com"}
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

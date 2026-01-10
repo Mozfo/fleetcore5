@@ -366,6 +366,8 @@ describe("LeadCreationService", () => {
           confirmation_token: null,
           attendance_confirmed: false,
           attendance_confirmed_at: null,
+          // V6.2.9: J-1 Reminder column
+          j1_reminder_sent_at: null,
         };
         return lead;
       }

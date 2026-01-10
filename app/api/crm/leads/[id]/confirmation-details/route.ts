@@ -89,11 +89,10 @@ export async function GET(
       );
     }
 
-    // Build Cal.com reschedule URL (using cal.eu for EU instance)
-    const calcomOrigin =
-      process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
-    const calcomRescheduleUrl = lead.booking_calcom_uid
-      ? `${calcomOrigin}/reschedule/${lead.booking_calcom_uid}`
+    // Build internal reschedule URL (stays on FleetCore domain)
+    // The /book-demo/reschedule page embeds Cal.com iframe
+    const internalRescheduleUrl = lead.booking_calcom_uid
+      ? `/book-demo/reschedule?uid=${lead.booking_calcom_uid}`
       : null;
 
     logger.info(
@@ -118,7 +117,7 @@ export async function GET(
         booking: {
           dateTime: lead.booking_slot_at?.toISOString() || null,
           calcomUid: lead.booking_calcom_uid,
-          rescheduleUrl: calcomRescheduleUrl,
+          rescheduleUrl: internalRescheduleUrl,
         },
         status: lead.status,
       },

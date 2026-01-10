@@ -686,6 +686,72 @@ export const webhookTestTranslations = {
 } as const;
 
 // ============================================================================
+// DEMO REMINDER J-1 (V6.2.9)
+// ============================================================================
+
+export const demoReminderJ1Translations = {
+  en: {
+    preview: "Tomorrow at {{time}} - Please confirm your FleetCore demo",
+    subject: "Tomorrow at {{time}} - Please confirm your FleetCore demo",
+    reminder: "Quick reminder about your demo tomorrow!",
+    scheduledFor: "Your demo is scheduled for:",
+    date: "Date",
+    time: "Time",
+    phone: "Phone",
+    duration: "Duration",
+    durationValue: "~20-30 min",
+    preparing:
+      "We're preparing a personalized demo tailored to your fleet of {{fleetSize}}. Our expert will call you at the scheduled time.",
+    confirmQuestion: "Will you be available?",
+    confirmButton: "✅ I'll be there",
+    rescheduleButton: "📅 Need to reschedule",
+    commitment:
+      "If you confirm, we commit to calling you at the exact scheduled time.",
+    cantMakeIt:
+      "Can't make it? No problem! Use the reschedule button above to find a better time.",
+  },
+  fr: {
+    preview: "Demain à {{time}} - Merci de confirmer votre démo FleetCore",
+    subject: "Demain à {{time}} - Merci de confirmer votre démo FleetCore",
+    reminder: "Petit rappel pour votre démo demain !",
+    scheduledFor: "Votre démo est prévue pour :",
+    date: "Date",
+    time: "Heure",
+    phone: "Téléphone",
+    duration: "Durée",
+    durationValue: "~20-30 min",
+    preparing:
+      "Nous préparons une démo personnalisée adaptée à votre flotte de {{fleetSize}}. Notre expert vous appellera à l'heure prévue.",
+    confirmQuestion: "Serez-vous disponible ?",
+    confirmButton: "✅ Je serai là",
+    rescheduleButton: "📅 Reprogrammer",
+    commitment:
+      "Si vous confirmez, nous nous engageons à vous appeler à l'heure exacte prévue.",
+    cantMakeIt:
+      "Vous ne pouvez pas ? Pas de problème ! Utilisez le bouton ci-dessus pour trouver un meilleur créneau.",
+  },
+  ar: {
+    preview: "غداً في {{time}} - يرجى تأكيد عرض FleetCore التوضيحي",
+    subject: "غداً في {{time}} - يرجى تأكيد عرض FleetCore التوضيحي",
+    reminder: "تذكير سريع بشأن العرض التوضيحي غداً!",
+    scheduledFor: "العرض التوضيحي مجدول في:",
+    date: "التاريخ",
+    time: "الوقت",
+    phone: "الهاتف",
+    duration: "المدة",
+    durationValue: "~20-30 دقيقة",
+    preparing:
+      "نحن نجهز عرضاً توضيحياً مخصصاً لأسطولك المكون من {{fleetSize}}. سيتصل بك خبيرنا في الوقت المحدد.",
+    confirmQuestion: "هل ستكون متاحاً؟",
+    confirmButton: "✅ سأكون هناك",
+    rescheduleButton: "📅 إعادة الجدولة",
+    commitment: "إذا أكدت، نلتزم بالاتصال بك في الوقت المحدد بالضبط.",
+    cantMakeIt:
+      "لا يمكنك الحضور؟ لا مشكلة! استخدم زر إعادة الجدولة أعلاه للعثور على وقت أفضل.",
+  },
+} as const;
+
+// ============================================================================
 // HELPER FUNCTION
 // ============================================================================
 
