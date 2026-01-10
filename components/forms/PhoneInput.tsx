@@ -150,16 +150,48 @@ export function PhoneInput({
     onPrefixChange?.(countryCode);
   };
 
-  // Display value with proper formatting
+  // Parse the formatting pattern from phone_example
+  // e.g., "521 410 01" → [3, 3, 2] (group sizes)
+  const formatPattern = useMemo(() => {
+    if (!phoneExample) return null;
+    // Extract groups separated by spaces
+    const groups = phoneExample.trim().split(/\s+/);
+    // Get the length of each group
+    return groups.map((group) => group.replace(/\D/g, "").length);
+  }, [phoneExample]);
+
+  // Display value with proper formatting based on country's phone_example pattern
   const displayValue = useMemo(() => {
     if (!localValue) return "";
     const digits = localValue.replace(/\D/g, "");
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-    if (digits.length <= 9)
-      return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
-    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
-  }, [localValue]);
+
+    if (!formatPattern || formatPattern.length === 0) {
+      // Fallback: generic formatting if no pattern
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+      if (digits.length <= 9)
+        return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+      return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
+    }
+
+    // Apply the country-specific pattern
+    const parts: string[] = [];
+    let position = 0;
+
+    for (const groupSize of formatPattern) {
+      if (position >= digits.length) break;
+      const chunk = digits.slice(position, position + groupSize);
+      if (chunk) parts.push(chunk);
+      position += groupSize;
+    }
+
+    // Add remaining digits (if any) as the last group
+    if (position < digits.length) {
+      parts.push(digits.slice(position));
+    }
+
+    return parts.join(" ");
+  }, [localValue, formatPattern]);
 
   // Get country name based on locale
   const getCountryName = (country: Country) => {
