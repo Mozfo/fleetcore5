@@ -32,9 +32,19 @@ const BulkAssignSchema = z.object({
   assigneeId: z.string().uuid("Invalid assignee ID"),
 });
 
+// V6.3: 8 statuts (removed demo_scheduled, qualified, demo_completed)
 const BulkStatusSchema = z.object({
   leadIds: z.array(z.string().uuid()).min(1, "At least one lead required"),
-  status: z.enum(["new", "working", "qualified", "lost"]),
+  status: z.enum([
+    "new",
+    "demo",
+    "proposal_sent",
+    "payment_pending",
+    "converted",
+    "lost",
+    "nurturing",
+    "disqualified",
+  ]),
 });
 
 const BulkDeleteSchema = z.object({

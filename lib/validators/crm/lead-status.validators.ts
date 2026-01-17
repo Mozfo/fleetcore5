@@ -1,6 +1,6 @@
 /**
  * Lead Status & Qualification Validators
- * V6.2-6: Validation schemas for status transitions and CPT qualification
+ * V6.3: Validation schemas for status transitions and CPT qualification
  *
  * @module lib/validators/crm/lead-status.validators
  */
@@ -8,19 +8,17 @@
 import { z } from "zod";
 
 /**
- * 10 statuts V6.2.1 du workflow lead
+ * 8 statuts V6.3 du workflow lead (one-call close)
  * Source: crm_settings.lead_status_workflow
  *
- * V6.2.1 adds payment_pending between proposal_sent and converted
- * for Stripe checkout flow tracking.
+ * V6.3: Suppression qualified/demo_completed (one-call close philosophy)
+ * demo_scheduled → demo (renommé)
  */
 export const leadStatusEnum = z.enum([
   "new",
-  "demo_scheduled",
-  "qualified",
-  "demo_completed",
+  "demo", // V6.3: Renommé depuis demo_scheduled
   "proposal_sent",
-  "payment_pending", // V6.2.1: Stripe checkout flow
+  "payment_pending",
   "converted",
   "lost",
   "nurturing",
@@ -30,23 +28,27 @@ export const leadStatusEnum = z.enum([
 export type LeadStatus = z.infer<typeof leadStatusEnum>;
 
 /**
- * Update status request validation
+ * Update status request validation (V6.3)
  *
  * - status: Le nouveau statut cible
  * - loss_reason_code: Obligatoire si status = lost ou disqualified
- * - loss_reason_detail: Obligatoire si la raison a requires_detail = true
+ * - nurturing_reason_code: Obligatoire si status = nurturing (V6.3)
+ * - reason_detail: Détail optionnel si la raison a requires_detail = true
+ * - triggered_by: Source de la transition (V6.3: lead_action_only pour nurturing→demo)
  *
  * @example
  * const body = {
  *   status: "lost",
  *   loss_reason_code: "chose_competitor",
- *   loss_reason_detail: "Went with Tourmo"
+ *   reason_detail: "Went with Tourmo"
  * };
  */
 export const updateStatusSchema = z.object({
   status: leadStatusEnum,
   loss_reason_code: z.string().min(1).max(50).optional(),
-  loss_reason_detail: z.string().max(500).optional(),
+  nurturing_reason_code: z.string().min(1).max(50).optional(), // V6.3
+  reason_detail: z.string().max(500).optional(),
+  triggered_by: z.enum(["commercial", "lead", "system"]).optional(), // V6.3
 });
 
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;

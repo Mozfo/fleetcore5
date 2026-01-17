@@ -174,20 +174,20 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Qualified this period
+      // V6.3: Qualified this period (proposal_sent replaces qualified status)
       db.crm_leads.count({
         where: {
           deleted_at: null,
-          status: "qualified",
+          status: "proposal_sent",
           qualified_date: { gte: startDate, lte: endDate },
         },
       }),
 
-      // Qualified previous period
+      // V6.3: Qualified previous period
       db.crm_leads.count({
         where: {
           deleted_at: null,
-          status: "qualified",
+          status: "proposal_sent",
           qualified_date: { gte: previousStart, lte: previousEnd },
         },
       }),

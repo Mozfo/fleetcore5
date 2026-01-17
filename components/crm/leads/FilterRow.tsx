@@ -166,6 +166,30 @@ export function FilterRow({
       );
     }
 
+    // V6.2.1: Boolean field type
+    if (fieldType === "boolean") {
+      return (
+        <Select
+          value={value === true ? "true" : value === false ? "false" : ""}
+          onChange={(e) =>
+            onUpdate({
+              value:
+                e.target.value === "true"
+                  ? true
+                  : e.target.value === "false"
+                    ? false
+                    : undefined,
+            })
+          }
+          className="min-w-[100px] flex-1"
+        >
+          <option value="">{t("leads.filters.select_value")}</option>
+          <option value="true">{t("leads.filters.boolean.yes")}</option>
+          <option value="false">{t("leads.filters.boolean.no")}</option>
+        </Select>
+      );
+    }
+
     // Default: text input
     return (
       <Input

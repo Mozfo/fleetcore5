@@ -38,7 +38,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LeadDetailCards } from "./LeadDetailCards";
-import { QualifyModal } from "./QualifyModal";
+import { PaymentLinkSection } from "./PaymentLinkSection";
+import { LeadQuoteSection } from "./LeadQuoteSection";
+import { CPTQualificationModal } from "./CPTQualificationModal";
 import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
@@ -302,11 +304,10 @@ export function LeadsBrowserClient({
     setIsQualifyModalOpen(true);
   }, []);
 
-  // G2: Handle qualify success
-  const handleQualifySuccess = useCallback((updatedLead: Lead) => {
-    setLeads((prev) =>
-      prev.map((l) => (l.id === updatedLead.id ? updatedLead : l))
-    );
+  // G2: Handle qualify success (CPT framework)
+  const handleQualifySuccess = useCallback(() => {
+    // Refresh the page to get updated lead data
+    window.location.reload();
   }, []);
 
   // G3: Handle convert
@@ -617,6 +618,20 @@ export function LeadsBrowserClient({
                 onFieldChange={handleFieldChange}
                 owners={owners}
               />
+
+              {/* V6.2-11: Payment Link Section */}
+              {!isEditing && (
+                <div className="mt-6">
+                  <PaymentLinkSection lead={selectedLead} />
+                </div>
+              )}
+
+              {/* V6.2-11: Quote Section for Segment 4 */}
+              {!isEditing && (
+                <div className="mt-6">
+                  <LeadQuoteSection lead={selectedLead} />
+                </div>
+              )}
             </motion.div>
           </>
         ) : (
@@ -639,9 +654,9 @@ export function LeadsBrowserClient({
         )}
       </div>
 
-      {/* G2: Qualify Modal */}
+      {/* G2: CPT Qualification Modal */}
       {selectedLead && (
-        <QualifyModal
+        <CPTQualificationModal
           lead={selectedLead}
           isOpen={isQualifyModalOpen}
           onClose={() => setIsQualifyModalOpen(false)}

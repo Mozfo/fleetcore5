@@ -44,7 +44,7 @@ import {
   MessageSection,
   TimelineSection,
 } from "./LeadDrawerSections";
-import { QualifyModal } from "./QualifyModal";
+import { CPTQualificationModal } from "./CPTQualificationModal";
 import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { drawerContainerVariants } from "@/lib/animations/drawer-variants";
@@ -243,14 +243,14 @@ export function LeadDrawer({
     setIsQualifyModalOpen(true);
   }, []);
 
-  // G2: Handle qualify success
-  const handleQualifySuccess = useCallback(
-    (updatedLead: Lead) => {
-      setCurrentLead(updatedLead);
-      onLeadUpdated?.(updatedLead);
-    },
-    [onLeadUpdated]
-  );
+  // G2: Handle qualify success (CPT framework)
+  const handleQualifySuccess = useCallback(() => {
+    // Refresh lead data after qualification
+    // The parent component will handle the refresh
+    if (lead) {
+      onLeadUpdated?.(lead);
+    }
+  }, [lead, onLeadUpdated]);
 
   // G3: Handle convert
   const handleConvert = useCallback(() => {
@@ -523,9 +523,9 @@ export function LeadDrawer({
         )}
       </SheetContent>
 
-      {/* G2: Qualify Modal */}
+      {/* G2: CPT Qualification Modal */}
       {currentLead && (
-        <QualifyModal
+        <CPTQualificationModal
           lead={currentLead}
           isOpen={isQualifyModalOpen}
           onClose={() => setIsQualifyModalOpen(false)}

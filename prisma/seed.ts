@@ -315,7 +315,7 @@ async function main() {
       fleet_size: "11-50",
       current_software: "Custom Solution",
       message: "Looking for VTC management platform with driver payroll",
-      status: "qualified",
+      status: "proposal_sent", // V6.3: qualified → proposal_sent
       qualification_score: 75,
       qualification_notes: "Strong interest, budget confirmed, decision maker",
       utm_source: "google",
@@ -337,7 +337,7 @@ async function main() {
       fleet_size: "51-100",
       current_software: "Outdated System",
       message: "Enterprise fleet solution needed for 80 vehicles",
-      status: "qualified",
+      status: "proposal_sent", // V6.3: qualified → proposal_sent
       qualification_score: 90,
       qualification_notes:
         "Ready to sign, enterprise deal, needs multi-tenant support",

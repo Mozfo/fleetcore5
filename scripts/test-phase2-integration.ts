@@ -28,14 +28,14 @@ async function testCreateOpportunityWithAssignedTo(): Promise<void> {
   logger.info(`\n=== TEST: ${testName} ===`);
 
   try {
-    // Get a valid lead
+    // V6.3: Get a valid lead (qualified → proposal_sent)
     const lead = await db.crm_leads.findFirst({
-      where: { deleted_at: null, status: "qualified" },
+      where: { deleted_at: null, status: "proposal_sent" },
       select: { id: true, provider_id: true },
     });
 
     if (!lead) {
-      throw new Error("No qualified lead found for test");
+      throw new Error("No proposal_sent lead found for test");
     }
 
     // Get a valid employee for assigned_to

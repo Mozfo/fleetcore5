@@ -261,16 +261,17 @@ describe("CustomerConversionService", () => {
 
   describe("Status Validation", () => {
     it("should fail if lead status is not payment_pending", async () => {
+      // V6.3: Using proposal_sent (qualified status removed)
       vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
         ...mockLead,
-        status: "qualified",
+        status: "proposal_sent",
       } as never);
 
       const result = await service.convertLeadToCustomer(mockCheckoutSession);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Invalid lead status");
-      expect(result.error).toContain("qualified");
+      expect(result.error).toContain("proposal_sent");
     });
 
     it("should succeed with payment_pending status", async () => {

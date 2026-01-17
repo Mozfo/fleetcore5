@@ -277,11 +277,11 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
   });
 
   it("should return alreadyVerified for verified email", async () => {
-    // Existing lead with verified email
+    // Existing lead with verified email (V6.3: proposal_sent replaces qualified)
     mockFindFirst.mockResolvedValue({
       id: "existing-lead-uuid",
       email_verified: true,
-      status: "qualified",
+      status: "proposal_sent",
     });
 
     const { POST } = await import("@/app/api/demo-leads/route");

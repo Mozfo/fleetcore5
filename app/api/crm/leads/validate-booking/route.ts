@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
     const bookingDate = lead.booking_slot_at;
     const isPastBooking = bookingDate && new Date(bookingDate) < new Date();
 
-    // For demo_scheduled status, booking is valid
-    const isValidStatus = lead.status === "demo_scheduled";
+    // For demo status, booking is valid
+    const isValidStatus = lead.status === "demo";
 
     logger.info(
       {

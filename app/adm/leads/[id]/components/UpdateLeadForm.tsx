@@ -17,7 +17,7 @@ interface UpdateLeadFormProps {
 export default function UpdateLeadForm({ lead }: UpdateLeadFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState(lead.status || "pending");
+  const [status, setStatus] = useState(lead.status || "new"); // V6.3: default to "new"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,12 +51,16 @@ export default function UpdateLeadForm({ lead }: UpdateLeadFormProps) {
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Status *
           </label>
+          {/* V6.3: 8 statuts */}
           <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="pending">Pending</option>
-            <option value="contacted">Contacted</option>
-            <option value="qualified">Qualified</option>
-            <option value="accepted">Accepted</option>
-            <option value="refused">Refused</option>
+            <option value="new">New</option>
+            <option value="demo">Demo</option>
+            <option value="proposal_sent">Proposal Sent</option>
+            <option value="payment_pending">Payment Pending</option>
+            <option value="converted">Converted</option>
+            <option value="lost">Lost</option>
+            <option value="nurturing">Nurturing</option>
+            <option value="disqualified">Disqualified</option>
           </Select>
         </div>
 

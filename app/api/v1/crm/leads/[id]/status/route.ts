@@ -110,13 +110,13 @@ export async function PATCH(
       );
     }
 
-    const { status, loss_reason_code, loss_reason_detail } = parseResult.data;
+    const { status, loss_reason_code, reason_detail } = parseResult.data;
 
     // STEP 4: Call service to update status
     // Service handles: transition validation, loss reason validation, audit trail
     const result = await leadStatusService.updateStatus(id, status, {
       lossReasonCode: loss_reason_code,
-      lossReasonDetail: loss_reason_detail,
+      lossReasonDetail: reason_detail,
       performedBy: userId,
     });
 

@@ -214,12 +214,16 @@ export const LeadCreationResponseSchema = z.object({
     id: z.string().uuid(),
     lead_code: z.string(),
     email: z.string().email(),
+    // V6.3: 8 statuts
     status: z.enum([
       "new",
-      "contacted",
-      "qualified",
-      "disqualified",
+      "demo",
+      "proposal_sent",
+      "payment_pending",
       "converted",
+      "lost",
+      "nurturing",
+      "disqualified",
     ]),
     priority: z.enum(["low", "medium", "high", "urgent"]),
 
@@ -292,7 +296,7 @@ const emptyToNull = <T>(val: T): T | null => (val === "" ? null : val);
  * @example
  * const update = {
  *   first_name: "John",
- *   status: "working",
+ *   status: "demo",  // V6.3: 8 statuts
  *   notes: "Called customer, very interested"
  * };
  * const validated = UpdateLeadSchema.parse(update);
@@ -394,13 +398,22 @@ export const UpdateLeadSchema = z.object({
     z.string().max(5000, "Message too long").trim().nullable().optional()
   ),
 
-  // Lead management - CORRECT ENUMS (working not contacted, no converted)
+  // V6.3: 8 statuts
   status: z.preprocess(
     emptyToNull,
     z
-      .enum(["new", "working", "qualified", "lost"])
+      .enum([
+        "new",
+        "demo",
+        "proposal_sent",
+        "payment_pending",
+        "converted",
+        "lost",
+        "nurturing",
+        "disqualified",
+      ])
       .describe(
-        "Status must be: new, working, qualified, or lost. Use POST /leads/[id]/convert for converted status."
+        "Status must be: new, demo, proposal_sent, payment_pending, converted, lost, nurturing, or disqualified."
       )
       .nullable()
       .optional()

@@ -14,7 +14,9 @@ import { CheckCircle, ArrowRightCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadDetailHeader } from "./LeadDetailHeader";
 import { LeadDetailCards } from "./LeadDetailCards";
-import { QualifyModal } from "./QualifyModal";
+import { PaymentLinkSection } from "./PaymentLinkSection";
+import { LeadQuoteSection } from "./LeadQuoteSection";
+import { CPTQualificationModal } from "./CPTQualificationModal";
 import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
@@ -157,14 +159,11 @@ export function LeadDetailPage({
     setIsQualifyModalOpen(true);
   }, []);
 
-  // Handle qualify success
-  const handleQualifySuccess = useCallback(
-    (updatedLead: Lead) => {
-      setCurrentLead(updatedLead);
-      router.refresh();
-    },
-    [router]
-  );
+  // Handle qualify success (CPT framework)
+  const handleQualifySuccess = useCallback(() => {
+    // Refresh to get updated lead data after qualification
+    router.refresh();
+  }, [router]);
 
   // Convert to opportunity
   const handleConvert = useCallback(() => {
@@ -210,6 +209,22 @@ export function LeadDetailPage({
           onFieldChange={handleFieldChange}
           owners={owners}
         />
+
+        {/* Payment Link Section (V6.2-11) */}
+        <div className="mt-6">
+          <PaymentLinkSection
+            lead={currentLead}
+            onLinkGenerated={() => router.refresh()}
+          />
+        </div>
+
+        {/* Quote Section for Segment 4 Enterprise Leads (V6.2-11) */}
+        <div className="mt-6">
+          <LeadQuoteSection
+            lead={currentLead}
+            onQuoteCreated={() => router.refresh()}
+          />
+        </div>
       </motion.div>
 
       {/* Sticky Footer Actions Bar */}
@@ -260,8 +275,8 @@ export function LeadDetailPage({
         </div>
       )}
 
-      {/* Qualify Modal */}
-      <QualifyModal
+      {/* CPT Qualification Modal */}
+      <CPTQualificationModal
         lead={currentLead}
         isOpen={isQualifyModalOpen}
         onClose={() => setIsQualifyModalOpen(false)}

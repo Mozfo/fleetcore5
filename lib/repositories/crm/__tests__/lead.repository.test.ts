@@ -245,8 +245,9 @@ describe("LeadRepository", () => {
     });
   });
 
+  // V6.3: 8 statuts - new, demo, proposal_sent, payment_pending, converted, lost, nurturing, disqualified
   describe("countActiveLeads", () => {
-    it("should count leads with status 'new', 'working', or 'qualified'", async () => {
+    it("should count leads with active statuses (V6.3: new, demo, proposal_sent, payment_pending)", async () => {
       mockPrisma.crm_leads.count.mockResolvedValue(3);
 
       const result = await repository.countActiveLeads("emp-1");
@@ -255,7 +256,7 @@ describe("LeadRepository", () => {
         where: {
           assigned_to: "emp-1",
           status: {
-            in: ["new", "working", "qualified"],
+            in: ["new", "demo", "proposal_sent", "payment_pending"],
           },
           deleted_at: null,
         },
@@ -264,7 +265,7 @@ describe("LeadRepository", () => {
       expect(result).toBe(3);
     });
 
-    it("should count leads with status 'working'", async () => {
+    it("should count leads with status 'demo'", async () => {
       mockPrisma.crm_leads.count.mockResolvedValue(1);
 
       await repository.countActiveLeads("emp-1");
@@ -272,7 +273,7 @@ describe("LeadRepository", () => {
       expect(mockPrisma.crm_leads.count).toHaveBeenCalledWith({
         where: expect.objectContaining({
           status: {
-            in: expect.arrayContaining(["working"]),
+            in: expect.arrayContaining(["demo"]),
           },
         }),
       });
@@ -287,7 +288,12 @@ describe("LeadRepository", () => {
       const statusFilter = callArgs?.where?.status?.in;
 
       expect(statusFilter).not.toContain("converted");
-      expect(statusFilter).toEqual(["new", "working", "qualified"]);
+      expect(statusFilter).toEqual([
+        "new",
+        "demo",
+        "proposal_sent",
+        "payment_pending",
+      ]);
     });
 
     it("should NOT count leads with status 'lost'", async () => {
@@ -299,7 +305,12 @@ describe("LeadRepository", () => {
       const statusFilter = callArgs?.where?.status?.in;
 
       expect(statusFilter).not.toContain("lost");
-      expect(statusFilter).toEqual(["new", "working", "qualified"]);
+      expect(statusFilter).toEqual([
+        "new",
+        "demo",
+        "proposal_sent",
+        "payment_pending",
+      ]);
     });
   });
 

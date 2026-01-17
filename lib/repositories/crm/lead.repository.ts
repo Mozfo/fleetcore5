@@ -122,10 +122,10 @@ export class LeadRepository
   /**
    * Count active leads assigned to a specific employee
    *
-   * Active leads have status: 'new', 'working', or 'qualified'
+   * V6.3: Active leads have status: 'new', 'demo', 'proposal_sent', 'payment_pending'
    *
    * @param assignedTo - UUID of the assigned employee
-   * @returns Count of active leads (excludes converted, lost, soft-deleted)
+   * @returns Count of active leads (excludes terminal statuses, soft-deleted)
    *
    * @example
    * ```typescript
@@ -138,7 +138,7 @@ export class LeadRepository
       where: {
         assigned_to: assignedTo,
         status: {
-          in: ["new", "working", "qualified"], // Active statuses only
+          in: ["new", "demo", "proposal_sent", "payment_pending"], // V6.3: Active statuses only
         },
         deleted_at: null, // Exclude soft-deleted leads
       },

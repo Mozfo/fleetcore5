@@ -7,15 +7,20 @@ import type { Lead, LeadStatus, KanbanColumn } from "@/types/crm";
 
 /**
  * Groups leads into Kanban columns by status
+ * V6.3: 8 statuts
  * @param leads - Array of leads to group
- * @returns Array of KanbanColumn (new, working, qualified)
+ * @returns Array of KanbanColumn
  */
 export function groupLeadsIntoColumns(leads: Lead[]): KanbanColumn[] {
   const statusGroups: Record<LeadStatus, Lead[]> = {
     new: [],
-    working: [],
-    qualified: [],
+    demo: [],
+    proposal_sent: [],
+    payment_pending: [],
+    converted: [],
     lost: [],
+    nurturing: [],
+    disqualified: [],
   };
 
   leads.forEach((lead) => {
@@ -24,28 +29,35 @@ export function groupLeadsIntoColumns(leads: Lead[]): KanbanColumn[] {
     }
   });
 
-  // 3 colonnes affichées (sans "lost")
+  // V6.3: 4 colonnes principales (actives)
   const columns: KanbanColumn[] = [
     {
       id: "new",
       title: "New Leads",
-      color: "blue",
+      color: "gray",
       leads: statusGroups.new,
       count: statusGroups.new.length,
     },
     {
-      id: "working",
-      title: "In Progress",
-      color: "yellow",
-      leads: statusGroups.working,
-      count: statusGroups.working.length,
+      id: "demo",
+      title: "Demo",
+      color: "blue",
+      leads: statusGroups.demo,
+      count: statusGroups.demo.length,
     },
     {
-      id: "qualified",
-      title: "Qualified",
-      color: "green",
-      leads: statusGroups.qualified,
-      count: statusGroups.qualified.length,
+      id: "proposal_sent",
+      title: "Proposal Sent",
+      color: "orange",
+      leads: statusGroups.proposal_sent,
+      count: statusGroups.proposal_sent.length,
+    },
+    {
+      id: "payment_pending",
+      title: "Payment Pending",
+      color: "amber",
+      leads: statusGroups.payment_pending,
+      count: statusGroups.payment_pending.length,
     },
   ];
 
@@ -54,23 +66,28 @@ export function groupLeadsIntoColumns(leads: Lead[]): KanbanColumn[] {
 
 /**
  * Calculate stats for LeadsPageHeader
+ * V6.3: Updated to use new status names
  * @param leads - Array of leads to calculate stats from
  * @returns Stats object with counts and pipeline value
  */
 export function calculateStats(leads: Lead[]): {
   newCount: number;
-  workingCount: number;
-  qualifiedCount: number;
+  demoCount: number;
+  proposalCount: number;
   pipelineValue: string;
 } {
   const newCount = leads.filter((l) => l.status === "new").length;
-  const workingCount = leads.filter((l) => l.status === "working").length;
-  const qualifiedCount = leads.filter((l) => l.status === "qualified").length;
+  const demoCount = leads.filter((l) => l.status === "demo").length;
+  const proposalCount = leads.filter(
+    (l) => l.status === "proposal_sent" || l.status === "payment_pending"
+  ).length;
 
   // Pipeline value estimation (fleet_size * $500 per vehicle)
-  // RÈGLE MÉTIER: Seuls les leads actifs (non-lost) sont comptés dans le pipeline
+  // RÈGLE MÉTIER V6.3: Seuls les leads actifs sont comptés dans le pipeline
+  // Actifs = new, demo, proposal_sent, payment_pending
+  const activeStatuses = ["new", "demo", "proposal_sent", "payment_pending"];
   const pipelineValue = leads
-    .filter((l) => l.status !== "lost")
+    .filter((l) => activeStatuses.includes(l.status))
     .reduce((sum, lead) => {
       const fleetSize = parseInt(lead.fleet_size || "0");
       return sum + fleetSize * 500;
@@ -86,8 +103,8 @@ export function calculateStats(leads: Lead[]): {
 
   return {
     newCount,
-    workingCount,
-    qualifiedCount,
+    demoCount,
+    proposalCount,
     pipelineValue: formattedValue,
   };
 }

@@ -23,72 +23,64 @@ vi.mock("@/lib/prisma", () => ({
 describe("LeadStatusService", () => {
   let service: LeadStatusService;
 
-  // Mock status workflow from crm_settings (V6.2 - 9 statuts)
+  // Mock status workflow from crm_settings (V6.3 - 8 statuts)
   const mockStatusWorkflow: StatusWorkflow = {
-    version: "6.2",
+    version: "6.3",
     statuses: [
       {
         value: "new",
         label_fr: "Nouveau",
         label_en: "New",
-        phase: "discovery",
+        phase: "incomplete",
         probability: 10,
         color: "gray",
         icon: "sparkles",
         description: "Newly created lead",
-        allowed_transitions: ["demo_scheduled", "disqualified"],
+        allowed_transitions: ["demo", "nurturing", "disqualified"],
         auto_assign: true,
         sla_hours: 4,
       },
       {
-        value: "demo_scheduled",
-        label_fr: "Demo planifiée",
-        label_en: "Demo Scheduled",
-        phase: "discovery",
-        probability: 25,
+        value: "demo",
+        label_fr: "Démo",
+        label_en: "Demo",
+        phase: "demo",
+        probability: 40,
         color: "blue",
         icon: "calendar",
-        description: "Demo has been scheduled",
-        allowed_transitions: ["qualified", "nurturing", "lost", "disqualified"],
+        description: "Demo scheduled or in progress",
+        allowed_transitions: [
+          "proposal_sent",
+          "nurturing",
+          "lost",
+          "disqualified",
+        ],
         auto_assign: false,
         sla_hours: 24,
-      },
-      {
-        value: "qualified",
-        label_fr: "Qualifié",
-        label_en: "Qualified",
-        phase: "qualification",
-        probability: 40,
-        color: "green",
-        icon: "check-circle",
-        description: "Lead has been qualified via CPT",
-        allowed_transitions: ["demo_completed", "lost"],
-        auto_assign: false,
-        sla_hours: null,
-      },
-      {
-        value: "demo_completed",
-        label_fr: "Demo terminée",
-        label_en: "Demo Completed",
-        phase: "evaluation",
-        probability: 60,
-        color: "purple",
-        icon: "play-circle",
-        description: "Demo has been completed",
-        allowed_transitions: ["proposal_sent", "nurturing", "lost"],
-        auto_assign: false,
-        sla_hours: null,
       },
       {
         value: "proposal_sent",
         label_fr: "Proposition envoyée",
         label_en: "Proposal Sent",
-        phase: "negotiation",
-        probability: 75,
+        phase: "proposal",
+        probability: 60,
         color: "orange",
         icon: "document-text",
         description: "Proposal has been sent",
-        allowed_transitions: ["converted", "lost", "nurturing"],
+        allowed_transitions: ["payment_pending", "lost", "nurturing"],
+        auto_assign: false,
+        sla_hours: null,
+      },
+      {
+        value: "payment_pending",
+        label_fr: "Paiement en attente",
+        label_en: "Payment Pending",
+        phase: "proposal",
+        probability: 80,
+        color: "amber",
+        icon: "credit-card",
+        description: "Waiting for payment",
+        allowed_transitions: ["converted", "lost"],
         auto_assign: false,
         sla_hours: null,
       },
@@ -96,7 +88,7 @@ describe("LeadStatusService", () => {
         value: "converted",
         label_fr: "Converti",
         label_en: "Converted",
-        phase: "closed",
+        phase: "completed",
         probability: 100,
         color: "green",
         icon: "badge-check",
@@ -111,7 +103,7 @@ describe("LeadStatusService", () => {
         value: "lost",
         label_fr: "Perdu",
         label_en: "Lost",
-        phase: "closed",
+        phase: "completed",
         probability: 0,
         color: "red",
         icon: "x-circle",
@@ -125,12 +117,12 @@ describe("LeadStatusService", () => {
         value: "nurturing",
         label_fr: "En nurturing",
         label_en: "Nurturing",
-        phase: "nurturing",
+        phase: "completed",
         probability: 15,
-        color: "yellow",
+        color: "purple",
         icon: "clock",
         description: "Lead in nurturing program",
-        allowed_transitions: ["demo_scheduled", "lost"],
+        allowed_transitions: ["demo", "proposal_sent", "lost"],
         auto_assign: false,
         sla_hours: null,
       },
@@ -138,7 +130,7 @@ describe("LeadStatusService", () => {
         value: "disqualified",
         label_fr: "Disqualifié",
         label_en: "Disqualified",
-        phase: "closed",
+        phase: "completed",
         probability: 0,
         color: "gray",
         icon: "ban",
@@ -152,35 +144,28 @@ describe("LeadStatusService", () => {
     ],
     phases: [
       {
-        value: "discovery",
-        label_fr: "Découverte",
-        label_en: "Discovery",
+        value: "incomplete",
+        label_fr: "Incomplet",
+        label_en: "Incomplete",
         order: 1,
       },
       {
-        value: "qualification",
-        label_fr: "Qualification",
-        label_en: "Qualification",
+        value: "demo",
+        label_fr: "Démo",
+        label_en: "Demo",
         order: 2,
       },
       {
-        value: "evaluation",
-        label_fr: "Évaluation",
-        label_en: "Evaluation",
+        value: "proposal",
+        label_fr: "Proposition",
+        label_en: "Proposal",
         order: 3,
       },
       {
-        value: "negotiation",
-        label_fr: "Négociation",
-        label_en: "Negotiation",
+        value: "completed",
+        label_fr: "Terminé",
+        label_en: "Completed",
         order: 4,
-      },
-      { value: "closed", label_fr: "Fermé", label_en: "Closed", order: 5 },
-      {
-        value: "nurturing",
-        label_fr: "Nurturing",
-        label_en: "Nurturing",
-        order: 6,
       },
     ],
   };
@@ -278,9 +263,9 @@ describe("LeadStatusService", () => {
       const workflow = await service.getWorkflow();
 
       expect(workflow).toBeDefined();
-      expect(workflow.version).toBe("6.2");
-      expect(workflow.statuses).toHaveLength(9);
-      expect(workflow.phases).toHaveLength(6);
+      expect(workflow.version).toBe("6.3");
+      expect(workflow.statuses).toHaveLength(8); // V6.3: 8 statuts
+      expect(workflow.phases).toHaveLength(4); // V6.3: 4 phases
       expect(service["settingsRepo"].getSettingValue).toHaveBeenCalledWith(
         "lead_status_workflow"
       );
@@ -321,8 +306,8 @@ describe("LeadStatusService", () => {
   // ===== SUITE 2: Transition Validation (5 tests) =====
 
   describe("Transition Validation", () => {
-    it("should allow valid transition: new → demo_scheduled", async () => {
-      const isValid = await service.validateTransition("new", "demo_scheduled");
+    it("should allow valid transition: new → demo", async () => {
+      const isValid = await service.validateTransition("new", "demo"); // V6.3: demo instead of demo
       expect(isValid).toBe(true);
     });
 
@@ -335,7 +320,7 @@ describe("LeadStatusService", () => {
       // converted has no allowed transitions
       const isValid = await service.validateTransition(
         "converted",
-        "demo_scheduled"
+        "demo" // V6.3: demo instead of demo
       );
       expect(isValid).toBe(false);
 
@@ -349,11 +334,15 @@ describe("LeadStatusService", () => {
 
     it("should return allowed_transitions for status", async () => {
       const transitions = await service.getAllowedTransitions("new");
-      expect(transitions).toEqual(["demo_scheduled", "disqualified"]);
+      expect(transitions).toEqual(["demo", "nurturing", "disqualified"]); // V6.3
 
       const proposalTransitions =
         await service.getAllowedTransitions("proposal_sent");
-      expect(proposalTransitions).toEqual(["converted", "lost", "nurturing"]);
+      expect(proposalTransitions).toEqual([
+        "payment_pending",
+        "lost",
+        "nurturing",
+      ]); // V6.3
     });
 
     it("should validate against workflow from settings (not hardcoded)", async () => {
@@ -362,7 +351,7 @@ describe("LeadStatusService", () => {
         ...mockStatusWorkflow,
         statuses: mockStatusWorkflow.statuses.map((s) =>
           s.value === "new"
-            ? { ...s, allowed_transitions: ["qualified", "lost"] }
+            ? { ...s, allowed_transitions: ["proposal_sent", "lost"] } // V6.3: custom transitions
             : s
         ),
       };
@@ -376,15 +365,12 @@ describe("LeadStatusService", () => {
       );
       service.clearCache();
 
-      // Should now allow new → qualified (custom transition)
-      const isValid = await service.validateTransition("new", "qualified");
+      // Should now allow new → proposal_sent (custom transition)
+      const isValid = await service.validateTransition("new", "proposal_sent");
       expect(isValid).toBe(true);
 
-      // Should now reject new → demo_scheduled (removed from custom)
-      const isInvalid = await service.validateTransition(
-        "new",
-        "demo_scheduled"
-      );
+      // Should now reject new → demo (removed from custom)
+      const isInvalid = await service.validateTransition("new", "demo");
       expect(isInvalid).toBe(false);
     });
   });
@@ -477,20 +463,20 @@ describe("LeadStatusService", () => {
 
   describe("Status Update", () => {
     it("should update status with valid transition", async () => {
-      const result = await service.updateStatus(mockLead.id, "demo_scheduled", {
+      const result = await service.updateStatus(mockLead.id, "demo", {
         performedBy: "user-1",
       });
 
       expect(result.success).toBe(true);
       expect(result.leadId).toBe(mockLead.id);
       expect(result.previousStatus).toBe("new");
-      expect(result.newStatus).toBe("demo_scheduled");
+      expect(result.newStatus).toBe("demo");
 
       expect(prisma.crm_leads.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: mockLead.id },
           data: expect.objectContaining({
-            status: "demo_scheduled",
+            status: "demo",
           }),
         })
       );
@@ -512,7 +498,7 @@ describe("LeadStatusService", () => {
       // Set lead to a state that can transition to lost
       vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
         ...mockLead,
-        status: "demo_scheduled",
+        status: "demo",
       } as never);
 
       const result = await service.updateStatus(mockLead.id, "lost", {
@@ -557,7 +543,7 @@ describe("LeadStatusService", () => {
     });
 
     it("should create crm_lead_activities entry", async () => {
-      await service.updateStatus(mockLead.id, "demo_scheduled", {
+      await service.updateStatus(mockLead.id, "demo", {
         performedBy: "user-1",
       });
 
@@ -566,9 +552,7 @@ describe("LeadStatusService", () => {
           data: expect.objectContaining({
             lead_id: mockLead.id,
             activity_type: "status_change",
-            title: expect.stringContaining(
-              "Status changed from new to demo_scheduled"
-            ),
+            title: expect.stringContaining("Status changed from new to demo"),
             performed_by: "user-1",
           }),
         })
@@ -582,7 +566,7 @@ describe("LeadStatusService", () => {
     it("should require loss_reason_detail when reason has requires_detail=true", async () => {
       vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
         ...mockLead,
-        status: "demo_scheduled",
+        status: "demo",
       } as never);
 
       const result = await service.updateStatus(mockLead.id, "lost", {
@@ -600,7 +584,7 @@ describe("LeadStatusService", () => {
     it("should accept status update with loss_reason_detail when required", async () => {
       vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
         ...mockLead,
-        status: "demo_scheduled",
+        status: "demo",
       } as never);
 
       const result = await service.updateStatus(mockLead.id, "lost", {
@@ -624,7 +608,7 @@ describe("LeadStatusService", () => {
     it("should not require loss_reason_detail when reason has requires_detail=false", async () => {
       vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
         ...mockLead,
-        status: "demo_scheduled",
+        status: "demo",
       } as never);
 
       const result = await service.updateStatus(mockLead.id, "lost", {
@@ -643,11 +627,9 @@ describe("LeadStatusService", () => {
     it("should return not found error for non-existent lead", async () => {
       vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(null);
 
-      const result = await service.updateStatus(
-        "non-existent-id",
-        "demo_scheduled",
-        { performedBy: "user-1" }
-      );
+      const result = await service.updateStatus("non-existent-id", "demo", {
+        performedBy: "user-1",
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Lead not found");
@@ -690,7 +672,7 @@ describe("LeadStatusService", () => {
         status: null,
       } as never);
 
-      const result = await service.updateStatus(mockLead.id, "demo_scheduled", {
+      const result = await service.updateStatus(mockLead.id, "demo", {
         performedBy: "user-1",
       });
 
@@ -699,10 +681,7 @@ describe("LeadStatusService", () => {
     });
 
     it("should skip loss reason validation for non-terminal statuses", async () => {
-      const result = await service.validateLossReason(
-        "any_code",
-        "demo_scheduled"
-      );
+      const result = await service.validateLossReason("any_code", "demo");
 
       expect(result.valid).toBe(true);
       expect(result.requiresDetail).toBe(false);

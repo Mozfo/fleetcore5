@@ -35,12 +35,16 @@ import {
 } from "@/components/ui/context-menu";
 import type { Lead, LeadStatus } from "@/types/crm";
 
-// Status options for submenu
+// V6.3: 8 statuts
 const STATUS_OPTIONS: { value: LeadStatus; colorClass: string }[] = [
-  { value: "new", colorClass: "bg-blue-500" },
-  { value: "working", colorClass: "bg-yellow-500" },
-  { value: "qualified", colorClass: "bg-green-500" },
-  { value: "lost", colorClass: "bg-gray-500" },
+  { value: "new", colorClass: "bg-gray-500" },
+  { value: "demo", colorClass: "bg-blue-500" },
+  { value: "proposal_sent", colorClass: "bg-orange-500" },
+  { value: "payment_pending", colorClass: "bg-amber-500" },
+  { value: "converted", colorClass: "bg-green-500" },
+  { value: "lost", colorClass: "bg-red-500" },
+  { value: "nurturing", colorClass: "bg-purple-500" },
+  { value: "disqualified", colorClass: "bg-gray-400" },
 ];
 
 interface LeadContextMenuProps {

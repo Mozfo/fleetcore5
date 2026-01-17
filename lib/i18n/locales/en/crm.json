@@ -19,8 +19,8 @@
     },
     "stats": {
       "new": "NEW",
-      "working": "WORKING",
-      "qualified": "QUALIFIED",
+      "demo": "DEMO",
+      "proposal": "PROPOSAL",
       "pipeline": "PIPELINE VALUE"
     },
     "filters": {
@@ -61,8 +61,19 @@
         "fit_score": "Fit Score",
         "engagement_score": "Engagement Score",
         "fleet_size": "Fleet Size",
-        "created_at": "Created At"
+        "created_at": "Created At",
+        "has_booking": "Has demo booked",
+        "wizard_completed": "Wizard completed",
+        "booking_date": "Booking Date"
       },
+      "boolean": {
+        "yes": "Yes",
+        "no": "No"
+      },
+      "quick_filters": "Quick filters:",
+      "has_booking": "Demo booked",
+      "wizard_completed": "Wizard done",
+      "payment_pending": "Payment pending",
       "operators": {
         "equals": "equals",
         "not_equals": "does not equal",
@@ -108,6 +119,16 @@
       "column_qualified_desc": "Successfully qualified leads will appear here",
       "column_lost": "No lost leads",
       "column_lost_desc": "Leads marked as lost will appear here",
+      "phase_acquisition": "No leads in acquisition",
+      "phase_acquisition_desc": "New leads and scheduled demos will appear here",
+      "phase_qualification": "No leads in qualification",
+      "phase_qualification_desc": "Qualified leads will appear here",
+      "phase_demo": "No leads in demo",
+      "phase_demo_desc": "Leads with completed demos will appear here",
+      "phase_closing": "No leads in closing",
+      "phase_closing_desc": "Proposals sent and pending payments will appear here",
+      "phase_result": "No leads in results",
+      "phase_result_desc": "Converted, lost, nurturing and disqualified leads will appear here",
       "no_results": "No leads found",
       "no_results_desc": "Try adjusting your filters or search term",
       "create_lead": "Create Lead",
@@ -124,9 +145,27 @@
     },
     "status_change": {
       "success": "Lead status updated successfully",
-      "lost_success": "Lead marked as lost and closed",
+      "lost_success": "Lead marked as lost",
       "qualified_success": "Lead qualified successfully",
+      "converted_success": "Lead converted successfully",
+      "nurturing_success": "Lead moved to nurturing",
+      "disqualified_success": "Lead disqualified",
       "error": "Failed to update lead status"
+    },
+    "status_reason": {
+      "title": "Change Status",
+      "lost_title": "Mark as Lost",
+      "nurturing_title": "Move to Nurturing",
+      "disqualified_title": "Disqualify Lead",
+      "lost_description": "Please select a reason for marking this lead as lost.",
+      "nurturing_description": "Please select a reason for moving this lead to nurturing.",
+      "disqualified_description": "Please select a reason for disqualifying this lead.",
+      "reason_label": "Reason",
+      "select_reason": "Select a reason...",
+      "detail_label": "Details",
+      "detail_placeholder": "Please provide more details...",
+      "disqualified_warning": "Disqualified leads cannot be reactivated. This action is permanent.",
+      "confirm": "Confirm"
     },
     "time": {
       "just_now": "just now",
@@ -575,6 +614,76 @@
         },
         "generic": "Meets the requirements for this stage"
       }
+    },
+    "phases": {
+      "acquisition": "Acquisition",
+      "qualification": "Qualification",
+      "demo": "Demo",
+      "closing": "Closing",
+      "result": "Result"
+    },
+    "cpt": {
+      "title": "CPT Qualification",
+      "description": "Qualify {{company}} using the CPT framework (Challenges, Priority, Timing)",
+      "challenges": "Challenges",
+      "challengesPlaceholder": "Describe the main challenges the prospect is facing...",
+      "challengesScore": "Challenge intensity",
+      "priority": "Priority",
+      "priorityPlaceholder": "How urgent is the solution for them?",
+      "priorityScore": "Priority level",
+      "timing": "Timing",
+      "timingPlaceholder": "When do they want to implement?",
+      "timingScore": "Implementation timeline",
+      "submit": "Qualify Lead",
+      "scoreResult": "Qualification Score",
+      "calculatedScore": "Calculated Score",
+      "scores": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "hot": "Hot (< 1 month)",
+        "warm": "Warm (1-3 months)",
+        "cool": "Cool (3-6 months)",
+        "cold": "Cold (> 6 months)"
+      }
+    },
+    "paymentLink": {
+      "section": "Payment",
+      "generate": "Generate Payment Link",
+      "generateNew": "Generate New Link",
+      "description": "Create a Stripe checkout link for {{company}}",
+      "selectPlan": "Select Plan",
+      "selectCycle": "Billing Cycle",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "year": "year",
+      "month": "month",
+      "save2Months": "Save 2 months",
+      "firstMonthFree": "First month free",
+      "confirm": "Generate Link",
+      "generating": "Generating...",
+      "success": "Payment link generated successfully",
+      "error": "Failed to create payment link",
+      "copy": "Copy",
+      "copied": "Link copied to clipboard",
+      "sendEmail": "Send via Email",
+      "emailSubject": "Complete your FleetCore subscription",
+      "emailBody": "Please complete your subscription using the following link:\n\n{{link}}\n\nThis link will expire soon. If you have any questions, please contact us.",
+      "expires": "Expires",
+      "expired": "Expired",
+      "pending": "Pending",
+      "checkoutLink": "Checkout Link",
+      "noLink": "No payment link yet",
+      "noLinkDesc": "Generate a Stripe checkout link to send to this lead",
+      "converted": "Payment completed - Lead converted to customer"
+    },
+    "quotes": {
+      "section": "Quotes",
+      "segment4": "Enterprise",
+      "create": "New Quote",
+      "noQuotes": "No quotes yet",
+      "noQuotesDesc": "Create a custom quote for this enterprise lead",
+      "validUntil": "Valid until"
     },
     "convert": {
       "title": "Convert to Opportunity",

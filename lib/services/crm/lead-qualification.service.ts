@@ -1,13 +1,14 @@
 /**
- * Lead Qualification Service - V6.2-6
+ * Lead Qualification Service - V6.3
  * Gestion de la qualification CPT (Challenges, Priority, Timing)
  *
  * Ce service est le SEUL point d'acces pour:
  * - Charger le framework de qualification depuis crm_settings
  * - Calculer les scores CPT
  * - Determiner la recommandation (proceed/nurture/disqualify)
- * - Auto-update le statut si recommendation = proceed
+ * - Auto-update le statut si recommendation = proceed → proposal_sent
  *
+ * V6.3: 8 statuts - "qualified" remplacé par "proposal_sent"
  * ZERO HARDCODING: Toutes les regles viennent de crm_settings.qualification_framework
  *
  * @module lib/services/crm/lead-qualification.service
@@ -99,7 +100,7 @@ export interface QualificationNotes {
  * }, userId);
  *
  * if (result.recommendation === "proceed") {
- *   // Status auto-updated to "qualified"
+ *   // V6.3: Status auto-updated to "proposal_sent"
  * }
  * ```
  */
@@ -217,7 +218,7 @@ export class LeadQualificationService {
    * 3. Determine recommendation
    * 4. Update crm_leads with qualification data
    * 5. Create activity in crm_lead_activities
-   * 6. If proceed: auto-update status to "qualified"
+   * 6. If proceed: auto-update status to "proposal_sent" (V6.3)
    * 7. Return result with recommendation
    *
    * @param leadId - Lead UUID
@@ -315,12 +316,12 @@ export class LeadQualificationService {
       "[LeadQualificationService] Lead qualified"
     );
 
-    // 6. Auto-update status to "qualified" if recommendation = proceed
+    // 6. V6.3: Auto-update status to "proposal_sent" if recommendation = proceed
     let statusUpdated = false;
     if (recommendation === "proceed") {
       const statusResult = await leadStatusService.updateStatus(
         leadId,
-        "qualified",
+        "proposal_sent", // V6.3: qualified status removed
         { performedBy }
       );
       statusUpdated = statusResult.success;
@@ -328,7 +329,7 @@ export class LeadQualificationService {
       if (!statusResult.success) {
         logger.warn(
           { leadId, error: statusResult.error },
-          "[LeadQualificationService] Failed to auto-update status to qualified"
+          "[LeadQualificationService] Failed to auto-update status to proposal_sent"
         );
       }
     }

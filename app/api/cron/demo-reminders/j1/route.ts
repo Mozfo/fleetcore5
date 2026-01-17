@@ -223,7 +223,7 @@ export async function GET(request: Request) {
 
     const leadsToNotify = await prisma.crm_leads.findMany({
       where: {
-        status: "demo_scheduled",
+        status: "demo",
         booking_slot_at: {
           gte: minTime,
           lte: maxTime,

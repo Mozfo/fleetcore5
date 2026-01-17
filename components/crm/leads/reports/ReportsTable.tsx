@@ -111,19 +111,25 @@ export function ReportsTable({ coldFilter, locale }: ReportsTableProps) {
     router.push(`/${locale}/crm/leads/${leadId}`);
   };
 
-  // Status badge colors
+  // V6.3: 8 statuts
   const getStatusColor = (status: string) => {
     switch (status) {
       case "new":
+        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+      case "demo":
         return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
-      case "working":
+      case "proposal_sent":
+        return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300";
+      case "payment_pending":
         return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300";
-      case "qualified":
-        return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300";
-      case "lost":
-        return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
       case "converted":
+        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
+      case "lost":
+        return "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400";
+      case "nurturing":
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300";
+      case "disqualified":
+        return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
       default:
         return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
     }

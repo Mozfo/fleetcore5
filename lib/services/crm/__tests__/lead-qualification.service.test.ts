@@ -31,9 +31,9 @@ vi.mock("../lead-status.service", () => ({
 describe("LeadQualificationService", () => {
   let service: LeadQualificationService;
 
-  // Mock qualification framework from crm_settings
+  // Mock qualification framework from crm_settings (V6.3)
   const mockQualificationFramework: QualificationFramework = {
-    version: "6.2",
+    version: "6.3",
     framework: "CPT",
     questions: [
       { id: "challenges", label_en: "Challenges", label_fr: "Défis" },
@@ -79,12 +79,12 @@ describe("LeadQualificationService", () => {
       id: "activity-1",
     } as never);
 
-    // Mock leadStatusService
+    // Mock leadStatusService - V6.3: qualified → proposal_sent
     vi.mocked(leadStatusService.updateStatus).mockResolvedValue({
       success: true,
       leadId: mockLead.id,
       previousStatus: "new",
-      newStatus: "qualified",
+      newStatus: "proposal_sent",
     });
   });
 
@@ -99,7 +99,7 @@ describe("LeadQualificationService", () => {
       const framework = await service.getFramework();
 
       expect(framework).toBeDefined();
-      expect(framework.version).toBe("6.2");
+      expect(framework.version).toBe("6.3");
       expect(framework.framework).toBe("CPT");
       expect(framework.score_weights).toBeDefined();
       expect(framework.thresholds).toBeDefined();
@@ -290,13 +290,14 @@ describe("LeadQualificationService", () => {
       );
     });
 
-    it("should auto-update status to 'qualified' when recommendation=proceed", async () => {
+    it("should auto-update status to 'proposal_sent' when recommendation=proceed (V6.3)", async () => {
       const result = await service.qualifyLead(mockLead.id, validCpt, "user-1");
 
       expect(result.status_updated).toBe(true);
+      // V6.3: qualified status removed, use proposal_sent instead
       expect(leadStatusService.updateStatus).toHaveBeenCalledWith(
         mockLead.id,
-        "qualified",
+        "proposal_sent",
         { performedBy: "user-1" }
       );
     });
@@ -416,7 +417,7 @@ describe("LeadQualificationService", () => {
         success: false,
         leadId: mockLead.id,
         previousStatus: "new",
-        newStatus: "qualified",
+        newStatus: "proposal_sent", // V6.3
         error: "Invalid transition",
       });
 

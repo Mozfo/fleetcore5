@@ -129,13 +129,13 @@ export async function qualifyLeadAction(
       updated_at: new Date(),
     };
 
-    // AUTO STATUS SYNC: Update status based on stage progression
-    // marketing_qualified → status = "working" (if currently "new")
-    // sales_qualified → status = "qualified"
+    // V6.3: AUTO STATUS SYNC: Update status based on stage progression
+    // marketing_qualified → status = "demo" (if currently "new")
+    // sales_qualified → status = "proposal_sent"
     if (newStage === "marketing_qualified" && currentLead.status === "new") {
-      updateData.status = "working";
+      updateData.status = "demo";
     } else if (newStage === "sales_qualified") {
-      updateData.status = "qualified";
+      updateData.status = "proposal_sent";
     }
 
     // Set qualified_date when reaching sales_qualified

@@ -1,7 +1,8 @@
 /**
- * PaymentLinkService - Unit Tests V6.2.1
+ * PaymentLinkService - Unit Tests V6.3
  *
  * Tests for Stripe payment link generation and lead conversion flow.
+ * V6.3: 8 statuts (removed demo_scheduled, qualified, demo_completed)
  *
  * @module lib/services/billing/__tests__/payment-link.service.test
  */
@@ -57,9 +58,10 @@ vi.mock("@/lib/logger", () => ({
 // ===== TEST DATA =====
 
 const mockPaymentSettings = {
-  version: "6.2.1",
+  version: "6.3",
   payment_link: {
-    allowed_statuses: ["qualified", "demo_completed", "proposal_sent"],
+    // V6.3: 8 statuts - demo replaces demo_scheduled, qualified removed
+    allowed_statuses: ["demo", "proposal_sent"],
     expiry_hours: 24,
     reminder_hours: 12,
   },
@@ -84,7 +86,7 @@ const mockBillingPlan = {
 const mockLead = {
   id: "lead-uuid-123",
   email: "contact@company.com",
-  status: "qualified",
+  status: "demo", // V6.3: valid status for payment link creation
   first_name: "John",
   last_name: "Doe",
   company_name: "Test Company",
@@ -113,7 +115,7 @@ describe("PaymentLinkService", () => {
       category: "payment",
       data_type: "object",
       display_label: "Payment Settings",
-      schema_version: "6.2.1",
+      schema_version: "6.3",
       is_system: true,
       is_active: true,
       description: "Payment configuration",
@@ -238,7 +240,7 @@ describe("PaymentLinkService", () => {
     vi.mocked(leadStatusService.updateStatus).mockResolvedValue({
       success: true,
       leadId: mockLead.id,
-      previousStatus: "qualified",
+      previousStatus: "demo", // V6.3: demo is allowed status
       newStatus: "payment_pending",
     });
 
@@ -259,8 +261,9 @@ describe("PaymentLinkService", () => {
       const settings = await service.getPaymentSettings();
 
       expect(settings).toBeDefined();
-      expect(settings.version).toBe("6.2.1");
-      expect(settings.payment_link.allowed_statuses).toContain("qualified");
+      expect(settings.version).toBe("6.3");
+      // V6.3: demo replaces demo_scheduled, qualified removed
+      expect(settings.payment_link.allowed_statuses).toContain("demo");
       expect(prisma.bil_settings.findFirst).toHaveBeenCalledWith({
         where: {
           setting_key: "payment_settings",
@@ -290,16 +293,13 @@ describe("PaymentLinkService", () => {
 
   // ============================================
   // SUITE 2: Status Validation
+  // V6.3: 8 statuts - demo and proposal_sent are allowed
   // ============================================
 
   describe("Status Validation", () => {
-    it("should return true for allowed status 'qualified'", async () => {
-      const isAllowed = await service.isStatusAllowed("qualified");
-      expect(isAllowed).toBe(true);
-    });
-
-    it("should return true for allowed status 'demo_completed'", async () => {
-      const isAllowed = await service.isStatusAllowed("demo_completed");
+    it("should return true for allowed status 'demo'", async () => {
+      // V6.3: demo replaces demo_scheduled
+      const isAllowed = await service.isStatusAllowed("demo");
       expect(isAllowed).toBe(true);
     });
 
@@ -315,6 +315,12 @@ describe("PaymentLinkService", () => {
 
     it("should return false for disallowed status 'converted'", async () => {
       const isAllowed = await service.isStatusAllowed("converted");
+      expect(isAllowed).toBe(false);
+    });
+
+    it("should return false for disallowed status 'payment_pending'", async () => {
+      // V6.3: payment_pending is after payment link creation
+      const isAllowed = await service.isStatusAllowed("payment_pending");
       expect(isAllowed).toBe(false);
     });
   });
@@ -366,7 +372,7 @@ describe("PaymentLinkService", () => {
   // ============================================
 
   describe("Payment Link Creation - Success", () => {
-    it("should create payment link for qualified lead with monthly billing", async () => {
+    it("should create payment link for lead in demo status with monthly billing", async () => {
       const result = await service.createPaymentLink({
         leadId: mockLead.id,
         planCode: "starter",

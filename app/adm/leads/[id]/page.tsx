@@ -26,21 +26,30 @@ export default async function LeadDetailPage({
     notFound();
   }
 
+  // V6.3: 8 statuts
   const getStatusBadge = (status: string | null) => {
-    const statusMap: Record<
-      string,
-      "pending" | "contacted" | "qualified" | "accepted" | "refused"
-    > = {
-      pending: "pending",
-      contacted: "contacted",
-      qualified: "qualified",
-      accepted: "accepted",
-      refused: "refused",
+    const statusMap: Record<string, string> = {
+      new: "default",
+      demo: "secondary",
+      proposal_sent: "outline",
+      payment_pending: "secondary",
+      converted: "default",
+      lost: "destructive",
+      nurturing: "secondary",
+      disqualified: "outline",
     };
 
     return (
-      <Badge variant={statusMap[status || "pending"] || "default"}>
-        {status || "pending"}
+      <Badge
+        variant={
+          (statusMap[status || "new"] as
+            | "default"
+            | "secondary"
+            | "outline"
+            | "destructive") || "default"
+        }
+      >
+        {status || "new"}
       </Badge>
     );
   };
