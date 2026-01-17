@@ -68,3 +68,5 @@ test-integration.db-journal
 generated-emails/
 
 .env
+test-results/
+playwright-report/
