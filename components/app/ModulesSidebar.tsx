@@ -15,6 +15,7 @@ import {
   type SubNavItem,
 } from "@/lib/config/modules";
 import { hasPermission } from "@/lib/config/permissions";
+import { useCrmFeatureFlags } from "@/lib/hooks/useCrmFeatureFlags";
 
 interface ModulesSidebarProps {
   className?: string;
@@ -29,6 +30,7 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
   const pathname = usePathname();
   const { localizedPath } = useLocalizedPath();
   const { accessibleModules, orgRole } = useHasPermission();
+  const { opportunitiesEnabled, quotesEnabled } = useCrmFeatureFlags();
 
   // Track expanded modules
   const [expandedModules, setExpandedModules] = useState<string[]>(() => {
@@ -235,6 +237,24 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
                           if (
                             subNav.permission &&
                             !hasPermission(orgRole, subNav.permission)
+                          ) {
+                            return null;
+                          }
+
+                          // V6.2-11: Hide Opportunities and Quotes based on feature flags
+                          // Opportunities = FREEZE (future upsell for existing customers)
+                          // Quotes = INLINE in Lead detail (Segment 4 only)
+                          if (
+                            module.key === "crm" &&
+                            subNav.key === "opportunities" &&
+                            !opportunitiesEnabled
+                          ) {
+                            return null;
+                          }
+                          if (
+                            module.key === "crm" &&
+                            subNav.key === "quotes" &&
+                            !quotesEnabled
                           ) {
                             return null;
                           }

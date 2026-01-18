@@ -19,7 +19,7 @@ import { LeadsPageHeader } from "./LeadsPageHeader";
 import { LeadsFilterBar, type LeadsFilters } from "./LeadsFilterBar";
 import { LeadsTable } from "./LeadsTable";
 import { TablePagination } from "./TablePagination";
-import { KanbanBoard } from "./KanbanBoard";
+import { KanbanPhaseBoard } from "./KanbanPhaseBoard";
 import { LeadFormModal } from "./LeadFormModal";
 import { LeadDrawer } from "./LeadDrawer";
 import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
@@ -28,10 +28,16 @@ import { BulkActionsBar } from "./BulkActionsBar";
 import { BulkAssignModal } from "./BulkAssignModal";
 import { BulkStatusModal } from "./BulkStatusModal";
 import { BulkDeleteModal } from "./BulkDeleteModal";
+import {
+  StatusChangeReasonModal,
+  statusRequiresReason,
+  type StatusChangeReasonData,
+} from "./StatusChangeReasonModal";
 import { calculateStats } from "./utils/lead-utils";
 import { useColumnPreferences } from "@/lib/hooks/useColumnPreferences";
 import { useAdvancedFilters } from "@/lib/hooks/useAdvancedFilters";
 import { useSavedViews } from "@/lib/hooks/useSavedViews";
+import { useLeadPhases } from "@/lib/hooks/useLeadPhases";
 import {
   DEFAULT_LEADS_COLUMNS,
   generateCsvContent,
@@ -47,7 +53,12 @@ import {
 } from "@/lib/actions/crm/lead.actions";
 import type { SavedViewConfig } from "@/lib/types/views";
 import type { ViewMode } from "./ViewToggle";
-import type { Lead, KanbanColumn, LeadStatus } from "@/types/crm";
+import type {
+  Lead,
+  KanbanColumn,
+  KanbanPhaseColumn,
+  LeadStatus,
+} from "@/types/crm";
 
 const VIEW_MODE_STORAGE_KEY = "crm_leads_view";
 
@@ -96,6 +107,15 @@ export function LeadsPageClient({
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isBulkLoading, setIsBulkLoading] = useState(false);
 
+  // V6.3: Status change reason modal state
+  const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    leadId: string;
+    targetStatus: LeadStatus;
+    leadName?: string;
+  } | null>(null);
+  const [isStatusChangeLoading, setIsStatusChangeLoading] = useState(false);
+
   // Table selection state (E1-A)
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
 
@@ -138,6 +158,9 @@ export function LeadsPageClient({
     evaluateLeads,
     importFilterGroup,
   } = useAdvancedFilters();
+
+  // V6.2-11: Lead phases for phase-based Kanban
+  const { groupLeadsByPhase } = useLeadPhases();
 
   // View mode state with localStorage persistence (E1-C)
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
@@ -353,15 +376,36 @@ export function LeadsPageClient({
     return calculateStats(filteredLeads);
   }, [filteredLeads]);
 
-  // Transform filteredLeads into Kanban columns (E1-C)
-  const kanbanColumns: KanbanColumn[] = useMemo(() => {
+  // V6.2-11: Transform filteredLeads into phase-based Kanban columns
+  // 5 phases: Acquisition, Qualification, Demo, Closing, Result
+  const kanbanPhaseColumns: KanbanPhaseColumn[] = useMemo(() => {
+    return groupLeadsByPhase(filteredLeads);
+  }, [filteredLeads, groupLeadsByPhase]);
+
+  // Legacy: Transform filteredLeads into Kanban columns (E1-C)
+  // Keep for compatibility - will be removed after full migration
+  // V6.3: 8 statuts
+  const _kanbanColumns: KanbanColumn[] = useMemo(() => {
     const statusConfig: Record<LeadStatus, { title: string; color: string }> = {
-      new: { title: "new", color: "blue" },
-      working: { title: "working", color: "yellow" },
-      qualified: { title: "qualified", color: "green" },
-      lost: { title: "lost", color: "gray" },
+      new: { title: "new", color: "gray" },
+      demo: { title: "demo", color: "blue" },
+      proposal_sent: { title: "proposal_sent", color: "orange" },
+      payment_pending: { title: "payment_pending", color: "amber" },
+      converted: { title: "converted", color: "green" },
+      lost: { title: "lost", color: "red" },
+      nurturing: { title: "nurturing", color: "purple" },
+      disqualified: { title: "disqualified", color: "gray" },
     };
-    const statusOrder: LeadStatus[] = ["new", "working", "qualified", "lost"];
+    const statusOrder: LeadStatus[] = [
+      "new",
+      "demo",
+      "proposal_sent",
+      "payment_pending",
+      "converted",
+      "lost",
+      "nurturing",
+      "disqualified",
+    ];
     return statusOrder.map((status) => {
       const leadsInColumn = filteredLeads.filter(
         (lead) => lead.status === status
@@ -376,9 +420,13 @@ export function LeadsPageClient({
     });
   }, [filteredLeads]);
 
-  // Handle status change from Kanban drag and drop (optimistic update + API persist)
-  const handleStatusChange = useCallback(
-    async (leadId: string, newStatus: LeadStatus) => {
+  // V6.3: Execute the actual status change (with optional reason)
+  const executeStatusChange = useCallback(
+    async (
+      leadId: string,
+      newStatus: LeadStatus,
+      reasonData?: StatusChangeReasonData
+    ) => {
       // Find the lead to get its current status for potential rollback
       const leadToUpdate = localLeads.find((l) => l.id === leadId);
       const oldStatus = leadToUpdate?.status;
@@ -390,15 +438,32 @@ export function LeadsPageClient({
         )
       );
 
+      // Build options with reason codes if provided
+      const options = reasonData
+        ? {
+            lossReasonCode:
+              newStatus === "lost" || newStatus === "disqualified"
+                ? reasonData.reasonCode
+                : undefined,
+            nurturingReasonCode:
+              newStatus === "nurturing" ? reasonData.reasonCode : undefined,
+            reasonDetail: reasonData.reasonDetail,
+          }
+        : undefined;
+
       // Call API to persist status change
-      const result = await updateLeadStatusAction(leadId, newStatus);
+      const result = await updateLeadStatusAction(leadId, newStatus, options);
 
       if (result.success) {
         // Show success toast with appropriate message
         if (newStatus === "lost") {
           toast.success(_t("leads.status_change.lost_success"));
-        } else if (newStatus === "qualified") {
-          toast.success(_t("leads.status_change.qualified_success"));
+        } else if (newStatus === "converted") {
+          toast.success(_t("leads.status_change.converted_success"));
+        } else if (newStatus === "nurturing") {
+          toast.success(_t("leads.status_change.nurturing_success"));
+        } else if (newStatus === "disqualified") {
+          toast.success(_t("leads.status_change.disqualified_success"));
         } else {
           toast.success(_t("leads.status_change.success"));
         }
@@ -416,6 +481,55 @@ export function LeadsPageClient({
     },
     [localLeads, _t]
   );
+
+  // Handle status change from Kanban drag and drop (optimistic update + API persist)
+  // V6.3: Check if status requires reason and show modal if needed
+  const handleStatusChange = useCallback(
+    async (leadId: string, newStatus: LeadStatus) => {
+      // V6.3: If status requires reason, open modal instead of direct change
+      if (statusRequiresReason(newStatus)) {
+        const lead = localLeads.find((l) => l.id === leadId);
+        setPendingStatusChange({
+          leadId,
+          targetStatus: newStatus,
+          leadName: lead?.company_name || lead?.email || undefined,
+        });
+        setIsReasonModalOpen(true);
+        return;
+      }
+
+      // Direct status change for statuses that don't require reason
+      await executeStatusChange(leadId, newStatus);
+    },
+    [localLeads, executeStatusChange]
+  );
+
+  // V6.3: Handle reason modal confirmation
+  const handleReasonConfirm = useCallback(
+    async (reasonData: StatusChangeReasonData) => {
+      if (!pendingStatusChange) return;
+
+      setIsStatusChangeLoading(true);
+      try {
+        await executeStatusChange(
+          pendingStatusChange.leadId,
+          pendingStatusChange.targetStatus,
+          reasonData
+        );
+      } finally {
+        setIsStatusChangeLoading(false);
+        setIsReasonModalOpen(false);
+        setPendingStatusChange(null);
+      }
+    },
+    [pendingStatusChange, executeStatusChange]
+  );
+
+  // V6.3: Handle reason modal close
+  const handleReasonModalClose = useCallback(() => {
+    setIsReasonModalOpen(false);
+    setPendingStatusChange(null);
+  }, []);
 
   // Handle filter changes - NO router.push, just state update + URL sync
   const handleFiltersChange = useCallback(
@@ -785,10 +899,10 @@ export function LeadsPageClient({
         <div className="flex-1 overflow-auto">
           {/* Conditional rendering based on viewMode (E1-C) */}
           {viewMode === "kanban" ? (
-            /* Kanban Board */
+            /* V6.2-11: Phase-based Kanban Board (5 columns) */
             <div className="p-6">
-              <KanbanBoard
-                columns={kanbanColumns}
+              <KanbanPhaseBoard
+                columns={kanbanPhaseColumns}
                 onCardClick={handleCardClick}
                 onCardDoubleClick={handleCardDoubleClick}
                 onCreate={handleCreateLead}
@@ -918,6 +1032,18 @@ export function LeadsPageClient({
             setConvertLead(null);
           }}
           onSuccess={handleConvertSuccess}
+        />
+      )}
+
+      {/* V6.3: Status Change Reason Modal */}
+      {pendingStatusChange && (
+        <StatusChangeReasonModal
+          isOpen={isReasonModalOpen}
+          onClose={handleReasonModalClose}
+          onConfirm={handleReasonConfirm}
+          targetStatus={pendingStatusChange.targetStatus}
+          leadName={pendingStatusChange.leadName}
+          isLoading={isStatusChangeLoading}
         />
       )}
     </>

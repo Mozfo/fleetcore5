@@ -104,61 +104,98 @@ export const leadConfirmationTranslations = {
 } as const;
 
 // ============================================================================
-// EXPANSION OPPORTUNITY
+// EXPANSION OPPORTUNITY (V6.3 - Marketing-focused waitlist email)
 // ============================================================================
 
 export const expansionOpportunityTranslations = {
   en: {
-    preview: "Thank you for your interest - We'll notify you when we launch",
-    thankYou:
-      "Thank you for your interest in FleetCore! We appreciate you taking the time to request a demo.",
-    notYetAvailable: "FleetCore is not yet available in",
-    expanding:
-      ", but we're expanding rapidly and your interest is extremely valuable to us. We've recorded your details and you'll be among the first to know when we launch in your market.",
-    requestDetails: "Your request details:",
-    company: "Company",
-    fleetSize: "Fleet size",
-    country: "Country",
-    phone: "Phone",
-    message: "Message",
-    notifyButton: "Get Notified When We Launch",
-    meanwhile:
-      "In the meantime, feel free to explore our website to learn more about how FleetCore is revolutionizing fleet management.",
+    // Email preview
+    preview: "FleetCore: +30% revenue for rideshare fleets",
+
+    // Section 1: Why FleetCore (Marketing pitch) - ROI FIRST
+    whyFleetcoreTitle: "The platform built for rideshare fleets",
+    whyFleetcoreIntro:
+      "FleetCore is the first tool designed specifically for rideshare fleets. Connect your platforms, analyze profitability per driver, reduce dead mileage.",
+    benefit1Title: "+30% revenue",
+    benefit1Text:
+      "Our users optimize their operations and increase their revenue by up to 30% in the first 6 months.",
+    benefit2Title: "Profitability per driver",
+    benefit2Text:
+      "Know exactly which drivers are profitable. Identify who's costing you money and why.",
+    benefit3Title: "All platforms in one place",
+    benefit3Text:
+      "Uber, Bolt, Careem, Heetch... Connect all your apps and get a unified view of your entire fleet.",
+    benefit4Title: "10h saved per week",
+    benefit4Text:
+      "Automate payouts, reconciliation, and reports. No more Excel nightmares or manual calculations.",
+
+    // Section 2: Stay informed (Single CTA) - NO "waiting list"
+    stayInformedTitle: "Get notified at launch",
+    stayInformedMessage:
+      "Tell us about your fleet size so we can prepare the best offer for you when we launch in your country.",
+    optInButton: "Notify me at launch",
+
+    // Footer
+    visitWebsite: "Discover FleetCore",
   },
   fr: {
-    preview:
-      "Merci de votre intérêt - Nous vous informerons de notre lancement",
-    thankYou:
-      "Merci de votre intérêt pour FleetCore ! Nous apprécions que vous ayez pris le temps de demander une démo.",
-    notYetAvailable: "FleetCore n'est pas encore disponible",
-    expanding:
-      ", mais nous nous développons rapidement et votre intérêt nous est très précieux. Nous avons enregistré vos coordonnées et vous serez parmi les premiers informés de notre lancement sur votre marché.",
-    requestDetails: "Détails de votre demande :",
-    company: "Entreprise",
-    fleetSize: "Taille de flotte",
-    country: "Pays",
-    phone: "Téléphone",
-    message: "Message",
-    notifyButton: "Être informé du lancement",
-    meanwhile:
-      "En attendant, n'hésitez pas à explorer notre site web pour en savoir plus sur la façon dont FleetCore révolutionne la gestion de flotte.",
+    // Email preview
+    preview: "FleetCore : +30% de CA pour les flottes VTC",
+
+    // Section 1: Why FleetCore (Marketing pitch) - ROI FIRST
+    whyFleetcoreTitle: "La plateforme conçue pour les flottes VTC",
+    whyFleetcoreIntro:
+      "FleetCore est le premier outil conçu spécifiquement pour les flottes VTC. Connectez vos plateformes, analysez la rentabilité par chauffeur, réduisez vos kilomètres à vide.",
+    benefit1Title: "+30% de chiffre d'affaires",
+    benefit1Text:
+      "Nos utilisateurs optimisent leurs opérations et augmentent leur CA jusqu'à 30% dans les 6 premiers mois.",
+    benefit2Title: "Rentabilité par chauffeur",
+    benefit2Text:
+      "Sachez exactement quels chauffeurs sont rentables. Identifiez qui vous coûte de l'argent et pourquoi.",
+    benefit3Title: "Toutes les plateformes au même endroit",
+    benefit3Text:
+      "Uber, Bolt, Careem, Heetch... Connectez toutes vos apps et obtenez une vue unifiée de toute votre flotte.",
+    benefit4Title: "10h économisées par semaine",
+    benefit4Text:
+      "Automatisez les paiements, la réconciliation et les rapports. Fini les cauchemars Excel et les calculs manuels.",
+
+    // Section 2: Stay informed (Single CTA) - NO "liste d'attente"
+    stayInformedTitle: "Soyez informé au lancement",
+    stayInformedMessage:
+      "Dites-nous la taille de votre flotte pour qu'on puisse préparer la meilleure offre pour vous lors de notre lancement.",
+    optInButton: "Me prévenir au lancement",
+
+    // Footer
+    visitWebsite: "Découvrir FleetCore",
   },
   ar: {
-    preview: "شكراً لاهتمامك - سنبلغك عند إطلاقنا",
-    thankYou:
-      "شكراً لاهتمامك بـ FleetCore! نحن نقدر الوقت الذي استغرقته لطلب عرض توضيحي.",
-    notYetAvailable: "FleetCore غير متوفر بعد في",
-    expanding:
-      "، لكننا نتوسع بسرعة واهتمامك قيم جداً بالنسبة لنا. لقد سجلنا بياناتك وستكون من أوائل من يعلم عند إطلاقنا في سوقك.",
-    requestDetails: "تفاصيل طلبك:",
-    company: "الشركة",
-    fleetSize: "حجم الأسطول",
-    country: "الدولة",
-    phone: "الهاتف",
-    message: "الرسالة",
-    notifyButton: "أبلغني عند الإطلاق",
-    meanwhile:
-      "في غضون ذلك، لا تتردد في استكشاف موقعنا لمعرفة المزيد حول كيفية ثورة FleetCore في إدارة الأسطول.",
+    // Email preview
+    preview: "FleetCore: +30% إيرادات لأساطيل النقل التشاركي",
+
+    // Section 1: Why FleetCore (Marketing pitch) - ROI FIRST
+    whyFleetcoreTitle: "المنصة المصممة لأساطيل النقل التشاركي",
+    whyFleetcoreIntro:
+      "FleetCore هي الأداة الأولى المصممة خصيصاً لأساطيل النقل التشاركي. اربط منصاتك، حلل الربحية لكل سائق، قلل الكيلومترات الفارغة.",
+    benefit1Title: "+30% إيرادات",
+    benefit1Text:
+      "مستخدمونا يحسنون عملياتهم ويزيدون إيراداتهم حتى 30% في أول 6 أشهر.",
+    benefit2Title: "الربحية لكل سائق",
+    benefit2Text: "اعرف بالضبط أي السائقين مربحون. حدد من يكلفك المال ولماذا.",
+    benefit3Title: "جميع المنصات في مكان واحد",
+    benefit3Text:
+      "Uber، Bolt، Careem، Heetch... اربط جميع تطبيقاتك واحصل على رؤية موحدة لأسطولك بالكامل.",
+    benefit4Title: "10 ساعات توفير أسبوعياً",
+    benefit4Text:
+      "أتمت المدفوعات والتسوية والتقارير. لا مزيد من كوابيس Excel أو الحسابات اليدوية.",
+
+    // Section 2: Stay informed (Single CTA) - NO "waiting list"
+    stayInformedTitle: "احصل على إشعار عند الإطلاق",
+    stayInformedMessage:
+      "أخبرنا عن حجم أسطولك حتى نتمكن من إعداد أفضل عرض لك عند إطلاقنا في بلدك.",
+    optInButton: "أبلغني عند الإطلاق",
+
+    // Footer
+    visitWebsite: "اكتشف FleetCore",
   },
 } as const;
 

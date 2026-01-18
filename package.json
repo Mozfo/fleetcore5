@@ -33,7 +33,11 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "validate:sql": "dotenv -e .env.local -- tsx scripts/validate-sql.ts",
-    "test:critical": "vitest run __tests__/critical-paths/"
+    "test:critical": "vitest run __tests__/critical-paths/",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "playwright:install": "playwright install chromium"
   },
   "prisma": {
     "seed": "dotenv -e .env.local -- tsx prisma/seed.ts"
@@ -97,6 +101,7 @@
   "devDependencies": {
     "@clerk/backend": "^2.18.3",
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.57.0",
     "@react-email/preview-server": "^5.0.1",
     "@tailwindcss/postcss": "^4.1.13",
     "@testcontainers/postgresql": "^11.8.0",

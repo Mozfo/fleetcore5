@@ -108,13 +108,9 @@ describe("LeadConfirmation Template", () => {
 
 describe("ExpansionOpportunity Template", () => {
   const defaultProps = {
-    first_name: "Maria",
-    company_name: "Global Fleet",
-    fleet_size: "100",
     country_preposition: "in",
     country_name: "Spain",
-    phone_row: "+34 123 456 789",
-    message_row: "Interested in expansion",
+    survey_url: "https://fleetcore.io/en/waitlist-survey?id=test",
   };
 
   it.each(LOCALES)("renders correctly in %s locale", async (locale) => {
@@ -124,7 +120,8 @@ describe("ExpansionOpportunity Template", () => {
 
     checkRtlDirection(html, locale);
     checkLogoLink(html);
-    expect(html).toContain(defaultProps.first_name);
+    // V6.3: Email is generic marketing, ROI-focused
+    expect(html).toContain("+30%");
   });
 });
 
@@ -589,26 +586,22 @@ describe("Template Structure Consistency", () => {
     expect(html).not.toContain("France+1 555");
   });
 
-  it("ExpansionOpportunity renders phone and message on separate lines", async () => {
+  it("ExpansionOpportunity renders with survey link", async () => {
     const html = await render(
       ExpansionOpportunity({
         locale: "en",
-        first_name: "John",
-        company_name: "Test Corp",
-        fleet_size: "50",
         country_preposition: "in",
         country_name: "Germany",
-        phone_row: "+49 30 1234567",
-        message_row: "Interested in expansion",
+        survey_url: "https://fleetcore.io/en/waitlist-survey?id=123",
       })
     );
 
-    // Phone and message should be on separate lines
-    expect(html).toContain("Phone");
-    expect(html).toContain("Message");
-    // They should NOT be concatenated
-    expect(html).not.toContain("+49 30 1234567Interested");
-    expect(html).not.toContain("Germany+49");
+    // Should contain survey link
+    expect(html).toContain("waitlist-survey");
+    // Should contain ROI messaging
+    expect(html).toContain("+30%");
+    // Should contain CTA
+    expect(html).toContain("Notify me at launch");
   });
 });
 

@@ -134,12 +134,13 @@ describe("LeadQualifySchema", () => {
 
 describe("LeadQuerySchema", () => {
   it("should validate and coerce query parameters", () => {
+    // V6.3: Using proposal_sent (qualified status removed)
     const query = {
       page: "2",
       limit: "50",
       sortBy: "email",
       sortOrder: "asc",
-      status: "qualified",
+      status: "proposal_sent",
     };
 
     const result = LeadQuerySchema.parse(query);

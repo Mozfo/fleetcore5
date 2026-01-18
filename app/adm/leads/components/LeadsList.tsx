@@ -47,21 +47,30 @@ export default function LeadsList({ leads }: LeadsListProps) {
     updateFilter("search", searchInput);
   };
 
+  // V6.3: 8 statuts
   const getStatusBadge = (status: string | null) => {
-    const statusMap: Record<
-      string,
-      "pending" | "contacted" | "qualified" | "accepted" | "refused"
-    > = {
-      pending: "pending",
-      contacted: "contacted",
-      qualified: "qualified",
-      accepted: "accepted",
-      refused: "refused",
+    const statusMap: Record<string, string> = {
+      new: "default",
+      demo: "secondary",
+      proposal_sent: "outline",
+      payment_pending: "secondary",
+      converted: "default",
+      lost: "destructive",
+      nurturing: "secondary",
+      disqualified: "outline",
     };
 
     return (
-      <Badge variant={statusMap[status || "pending"] || "default"}>
-        {status || "pending"}
+      <Badge
+        variant={
+          (statusMap[status || "new"] as
+            | "default"
+            | "secondary"
+            | "outline"
+            | "destructive") || "default"
+        }
+      >
+        {status || "new"}
       </Badge>
     );
   };
@@ -90,17 +99,21 @@ export default function LeadsList({ leads }: LeadsListProps) {
           />
         </form>
 
+        {/* V6.3: 8 statuts */}
         <Select
           value={searchParams.get("status") || ""}
           onChange={(e) => updateFilter("status", e.target.value)}
           className="w-full sm:w-40"
         >
           <option value="">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="contacted">Contacted</option>
-          <option value="qualified">Qualified</option>
-          <option value="accepted">Accepted</option>
-          <option value="refused">Refused</option>
+          <option value="new">New</option>
+          <option value="demo">Demo</option>
+          <option value="proposal_sent">Proposal Sent</option>
+          <option value="payment_pending">Payment Pending</option>
+          <option value="converted">Converted</option>
+          <option value="lost">Lost</option>
+          <option value="nurturing">Nurturing</option>
+          <option value="disqualified">Disqualified</option>
         </Select>
 
         <Select

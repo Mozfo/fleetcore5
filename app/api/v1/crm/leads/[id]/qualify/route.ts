@@ -3,14 +3,14 @@
  * CPT Qualification with auto-status update
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * INTERNAL CRM API - FleetCore Admin Backoffice (V6.2-6)
+ * INTERNAL CRM API - FleetCore Admin Backoffice (V6.3)
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Context: Qualifies a lead using CPT framework (Challenges, Priority, Timing).
  * Score weights and thresholds are loaded from crm_settings.qualification_framework.
  *
  * Auto-Status Update:
- * - If recommendation = "proceed" (score >= 70): auto-update status to "qualified"
+ * - If recommendation = "proceed" (score >= 70): auto-update status to "proposal_sent" (V6.3)
  * - If recommendation = "nurture" or "disqualify": suggestion only, no auto-update
  *
  * Authentication: Middleware validates userId + FleetCore Admin org + CRM role
@@ -150,7 +150,7 @@ export async function POST(
         data: result,
         message:
           result.recommendation === "proceed"
-            ? `Lead qualified with score ${result.qualification_score}/100. Status updated to 'qualified'.`
+            ? `Lead qualified with score ${result.qualification_score}/100. Status updated to 'proposal_sent'.`
             : `Lead qualified with score ${result.qualification_score}/100. Recommendation: ${result.recommendation}.`,
       },
       { status: 200 }

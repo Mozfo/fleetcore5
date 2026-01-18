@@ -48,8 +48,9 @@ export const KanbanColumn = memo(
     const { t } = useTranslation("crm");
 
     // Hook dnd-kit pour rendre la colonne droppable
+    // V6.3: 8 statuts (new, demo, proposal_sent, payment_pending, converted, lost, nurturing, disqualified)
     const { setNodeRef, isOver } = useDroppable({
-      id: column.id, // "new" | "working" | "qualified"
+      id: column.id,
     });
 
     return (

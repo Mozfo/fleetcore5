@@ -193,12 +193,12 @@ export async function convertLeadToOpportunityAction(
       });
 
       // Update the lead
-      // AUTO STATUS SYNC: Set status to "qualified" when converting to opportunity
+      // V6.3 AUTO STATUS SYNC: Set status to "converted" when converting to opportunity
       const updatedLead = await tx.crm_leads.update({
         where: { id: leadId },
         data: {
           lead_stage: "opportunity",
-          status: "qualified", // Auto-sync status with stage
+          status: "converted", // V6.3: Auto-sync status with stage
           converted_date: new Date(),
           opportunity_id: opportunity.id,
           updated_at: new Date(),

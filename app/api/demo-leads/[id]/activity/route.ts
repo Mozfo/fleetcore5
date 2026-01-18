@@ -18,8 +18,8 @@ export async function POST(
 
     // TODO: Phase 2 - Activity logging will be implemented when sys_demo_lead_activity table is created
     const result = await db.$transaction(async (tx) => {
-      // Si outcome décisif, update le lead
-      if (["qualified", "converted", "lost"].includes(body.outcome)) {
+      // V6.3: Si outcome décisif, update le lead (qualified → proposal_sent)
+      if (["proposal_sent", "converted", "lost"].includes(body.outcome)) {
         await tx.crm_leads.update({
           where: { id: leadId },
           data: {

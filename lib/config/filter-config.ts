@@ -23,7 +23,13 @@ export type FilterOperator =
   | "in"
   | "not_in";
 
-export type FieldType = "text" | "number" | "date" | "select" | "multi_select";
+export type FieldType =
+  | "text"
+  | "number"
+  | "date"
+  | "select"
+  | "multi_select"
+  | "boolean";
 
 export type LogicOperator = "AND" | "OR";
 
@@ -87,6 +93,7 @@ export const OPERATORS_BY_TYPE: Record<FieldType, FilterOperator[]> = {
   ],
   select: ["equals", "not_equals", "is_empty", "is_not_empty"],
   multi_select: ["in", "not_in", "is_empty", "is_not_empty"],
+  boolean: ["equals"], // V6.2.1: Boolean fields only support equals (true/false)
 };
 
 // Labels i18n pour les opérateurs
@@ -177,15 +184,35 @@ export const LEADS_FILTERABLE_FIELDS: FilterableField[] = [
     labelKey: "leads.filters.fields.created_at",
     type: "date",
   },
+  // V6.2.1: New booking/wizard filters
+  {
+    key: "has_booking",
+    labelKey: "leads.filters.fields.has_booking",
+    type: "boolean",
+  },
+  {
+    key: "wizard_completed",
+    labelKey: "leads.filters.fields.wizard_completed",
+    type: "boolean",
+  },
+  {
+    key: "booking_slot_at",
+    labelKey: "leads.filters.fields.booking_date",
+    type: "date",
+  },
 ];
 
-// Options statiques pour les selects
+// Options statiques pour les selects (V6.3: 8 statuts)
 export const STATIC_OPTIONS = {
   statuses: [
-    { value: "new", labelKey: "leads.columns.new" },
-    { value: "working", labelKey: "leads.columns.working" },
-    { value: "qualified", labelKey: "leads.columns.qualified" },
-    { value: "lost", labelKey: "leads.columns.lost" },
+    { value: "new", labelKey: "leads.statuses.new" },
+    { value: "demo", labelKey: "leads.statuses.demo" },
+    { value: "proposal_sent", labelKey: "leads.statuses.proposal_sent" },
+    { value: "payment_pending", labelKey: "leads.statuses.payment_pending" },
+    { value: "converted", labelKey: "leads.statuses.converted" },
+    { value: "lost", labelKey: "leads.statuses.lost" },
+    { value: "nurturing", labelKey: "leads.statuses.nurturing" },
+    { value: "disqualified", labelKey: "leads.statuses.disqualified" },
   ],
   stages: [
     { value: "top_of_funnel", labelKey: "leads.card.stage.top_of_funnel" },

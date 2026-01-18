@@ -10,7 +10,14 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import {
+  Search,
+  X,
+  SlidersHorizontal,
+  CalendarCheck,
+  CheckSquare,
+  CreditCard,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +44,10 @@ export interface LeadsFilters {
   country_code?: string | "all";
   min_score?: number;
   search?: string;
+  // V6.2.1: New booking/wizard filters
+  has_booking?: boolean;
+  wizard_completed?: boolean;
+  payment_pending?: boolean;
 }
 
 interface LeadsFilterBarProps {
@@ -130,6 +141,8 @@ export function LeadsFilterBar({
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
     if (key === "search") return false;
     if (value === "all" || value === undefined) return false;
+    // V6.2.1: Count boolean filters only when true
+    if (typeof value === "boolean" && value === false) return false;
     return true;
   }).length;
 
@@ -142,6 +155,10 @@ export function LeadsFilterBar({
       country_code: "all",
       min_score: undefined,
       search: undefined,
+      // V6.2.1: Reset new filters
+      has_booking: undefined,
+      wizard_completed: undefined,
+      payment_pending: undefined,
     });
   };
 
@@ -349,6 +366,61 @@ export function LeadsFilterBar({
             filters.min_score ? "border-blue-500 dark:border-blue-400" : ""
           }
         />
+      </div>
+
+      {/* V6.2.1: Quick Toggle Filters */}
+      <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-2 dark:border-gray-800">
+        <span className="mr-2 text-xs text-gray-500 dark:text-gray-400">
+          {t("leads.filters.quick_filters")}
+        </span>
+
+        {/* Has Demo Booked */}
+        <Button
+          variant={filters.has_booking ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            onFiltersChange({
+              ...filters,
+              has_booking: filters.has_booking ? undefined : true,
+            })
+          }
+          className="h-7 gap-1.5 text-xs"
+        >
+          <CalendarCheck className="h-3.5 w-3.5" />
+          {t("leads.filters.has_booking")}
+        </Button>
+
+        {/* Wizard Completed */}
+        <Button
+          variant={filters.wizard_completed ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            onFiltersChange({
+              ...filters,
+              wizard_completed: filters.wizard_completed ? undefined : true,
+            })
+          }
+          className="h-7 gap-1.5 text-xs"
+        >
+          <CheckSquare className="h-3.5 w-3.5" />
+          {t("leads.filters.wizard_completed")}
+        </Button>
+
+        {/* Payment Pending */}
+        <Button
+          variant={filters.payment_pending ? "default" : "outline"}
+          size="sm"
+          onClick={() =>
+            onFiltersChange({
+              ...filters,
+              payment_pending: filters.payment_pending ? undefined : true,
+            })
+          }
+          className="h-7 gap-1.5 text-xs"
+        >
+          <CreditCard className="h-3.5 w-3.5" />
+          {t("leads.filters.payment_pending")}
+        </Button>
       </div>
     </motion.div>
   );

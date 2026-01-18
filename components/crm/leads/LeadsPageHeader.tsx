@@ -12,8 +12,8 @@ import { useTranslation } from "react-i18next";
 interface LeadsPageHeaderProps {
   stats: {
     newCount: number;
-    workingCount: number;
-    qualifiedCount: number;
+    demoCount: number; // V6.3: replaces workingCount
+    proposalCount: number; // V6.3: replaces qualifiedCount
     pipelineValue: string;
   };
   onNewLead?: () => void;
@@ -134,13 +134,13 @@ export function LeadsPageHeader({
           accentColor="blue"
         />
         <StatCard
-          value={stats.workingCount}
-          label={t("leads.stats.working")}
+          value={stats.demoCount}
+          label={t("leads.stats.demo")}
           accentColor="yellow"
         />
         <StatCard
-          value={stats.qualifiedCount}
-          label={t("leads.stats.qualified")}
+          value={stats.proposalCount}
+          label={t("leads.stats.proposal")}
           accentColor="green"
         />
         <StatCard

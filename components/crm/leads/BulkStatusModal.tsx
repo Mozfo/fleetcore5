@@ -27,11 +27,16 @@ interface BulkStatusModalProps {
   isLoading?: boolean;
 }
 
+// V6.3: 8 statuts
 const STATUS_OPTIONS: { value: LeadStatus; color: string }[] = [
-  { value: "new", color: "bg-blue-500" },
-  { value: "working", color: "bg-yellow-500" },
-  { value: "qualified", color: "bg-green-500" },
-  { value: "lost", color: "bg-gray-500" },
+  { value: "new", color: "bg-gray-500" },
+  { value: "demo", color: "bg-blue-500" },
+  { value: "proposal_sent", color: "bg-orange-500" },
+  { value: "payment_pending", color: "bg-amber-500" },
+  { value: "converted", color: "bg-green-500" },
+  { value: "lost", color: "bg-red-500" },
+  { value: "nurturing", color: "bg-purple-500" },
+  { value: "disqualified", color: "bg-gray-400" },
 ];
 
 export function BulkStatusModal({

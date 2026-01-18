@@ -182,6 +182,12 @@
       "alreadyConfirmed": "You've already confirmed your attendance. See you soon!",
       "loading": "Confirming your attendance..."
     },
+    "waitlist": {
+      "notAvailableMessage": "FleetCore isn't available yet",
+      "emailRegistered": "Check your inbox",
+      "emailSentInfo": "We've sent you an email with more information.",
+      "goBack": "Go back"
+    },
     "backToHome": "Back to Homepage"
   },
   "homepage": {
@@ -372,6 +378,41 @@
     }
   },
   "watchDemoVideo": "Watch Demo Video",
+  "paymentSuccess": {
+    "title": "Payment Successful!",
+    "welcomeWithName": "Welcome to FleetCore, {{name}}!",
+    "welcome": "Welcome to FleetCore!",
+    "emailSent": "Confirmation email sent",
+    "checkInbox": "Check your inbox for payment receipt and next steps.",
+    "whatNext": "What happens next?",
+    "step1Title": "Account Verification",
+    "step1Desc": "Our team will verify your account within 24 hours.",
+    "step2Title": "Receive Your Credentials",
+    "step2Desc": "You'll receive your login details via email.",
+    "step3Title": "Start Using FleetCore",
+    "step3Desc": "Log in and start managing your fleet efficiently.",
+    "verificationTitle": "24-Hour Verification",
+    "verificationDesc": "Your account is being set up. You'll be notified once everything is ready.",
+    "needHelp": "Need help?",
+    "backToHome": "Back to Homepage",
+    "securePayment": "Secure payment powered by Stripe"
+  },
+  "paymentCancelled": {
+    "title": "Payment Cancelled",
+    "subtitle": "No worries! Your payment was not processed.",
+    "noCharge": "You have not been charged. Your card information was not saved.",
+    "needHelp": "Need help?",
+    "questionTitle": "Have questions?",
+    "questionDesc": "Our team is here to answer any questions about pricing or features.",
+    "notReadyTitle": "Not ready yet?",
+    "notReadyDesc": "Your demo booking is still valid. Take your time to decide.",
+    "talkTitle": "Want to talk to someone?",
+    "talkDesc": "Schedule another demo or chat with our support team.",
+    "tryAgain": "Book Another Demo",
+    "backToHome": "Back to Homepage",
+    "contactSupport": "Contact us:",
+    "trustMessage": "Join 500+ fleet managers already using FleetCore"
+  },
   "terms": {
     "title": "Terms and Conditions",
     "lastUpdated": "Last updated",
@@ -418,5 +459,27 @@
       "title": "Questions?",
       "description": "If you have any questions about these Terms and Conditions, please contact us at:"
     }
+  },
+  "waitlistSurvey": {
+    "title": "The first tool built for rideshare fleets",
+    "subtitle": "Connect your platforms, analyze profitability per driver, reduce dead mileage. Optimized fleets increase revenue by up to 30%.",
+    "earlyAdopterIncentive": "Sign up now and get exclusive early adopter benefits at launch.",
+    "fleetSizeQuestion": "What's your fleet size?",
+    "vehiclesLabel": "vehicles",
+    "wantOffersText": "I want to receive FleetCore news",
+    "selectFleetSize": "Select your fleet size",
+    "successTitle": "Registration confirmed",
+    "successMessage": "We'll contact you as soon as FleetCore is available in your region.",
+    "invalidLink": "Invalid Link",
+    "invalidLinkMessage": "This link is invalid or has expired. Please use the link from your email.",
+    "skip": "Back to home",
+    "submit": "Notify me at launch",
+    "privacyReassurance": "Your data stays private. No spam, no sharing with third parties.",
+    "gdprConsentText": "I agree to receive FleetCore communications about launch and offers. Unsubscribe anytime.",
+    "seeOur": "See our",
+    "gdprConsentRequired": "Please accept to continue",
+    "privacyPolicy": "Privacy Policy",
+    "error": "Something went wrong. Please try again.",
+    "networkError": "Network error. Please try again."
   }
 }

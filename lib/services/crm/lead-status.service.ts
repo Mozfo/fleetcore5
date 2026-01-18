@@ -96,7 +96,7 @@ export interface UpdateStatusOptions {
  * import { leadStatusService } from "@/lib/services/crm/lead-status.service";
  *
  * // Valider une transition
- * const isValid = await leadStatusService.validateTransition("new", "demo_scheduled");
+ * const isValid = await leadStatusService.validateTransition("new", "demo");
  *
  * // Changer le statut
  * const result = await leadStatusService.updateStatus(leadId, "lost", {

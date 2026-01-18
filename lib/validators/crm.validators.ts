@@ -253,11 +253,20 @@ export const LeadQuerySchema = z.object({
     .describe("L'ordre doit être 'asc' ou 'desc'")
     .default("desc"),
 
-  // Filters
+  // V6.3: 8 statuts
   status: z
-    .enum(["new", "working", "qualified", "converted", "lost"])
+    .enum([
+      "new",
+      "demo",
+      "proposal_sent",
+      "payment_pending",
+      "converted",
+      "lost",
+      "nurturing",
+      "disqualified",
+    ])
     .describe(
-      "Le statut doit être: new, working, qualified, converted, ou lost"
+      "Le statut doit être: new, demo, proposal_sent, payment_pending, converted, lost, nurturing, ou disqualified"
     )
     .optional(),
 

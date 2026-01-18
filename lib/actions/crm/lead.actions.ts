@@ -29,9 +29,23 @@ import type { LeadStatus } from "@/types/crm";
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // Schema de validation pour status update (Kanban)
+// V6.3: 8 statuts (removed demo_scheduled, qualified, demo_completed)
 const UpdateStatusSchema = z.object({
   leadId: z.string().uuid("Invalid lead ID"),
-  status: z.enum(["new", "working", "qualified", "lost"]),
+  status: z.enum([
+    "new",
+    "demo",
+    "proposal_sent",
+    "payment_pending",
+    "converted",
+    "lost",
+    "nurturing",
+    "disqualified",
+  ]),
+  // V6.3: Reason codes for lost/nurturing/disqualified
+  lossReasonCode: z.string().min(1).max(50).optional(),
+  nurturingReasonCode: z.string().min(1).max(50).optional(),
+  reasonDetail: z.string().max(500).optional(),
 });
 
 // Schema de validation pour lead update (Drawer edit mode - F1-B)
@@ -60,14 +74,21 @@ export type UpdateStatusResult =
  * Server Action: Update lead status
  *
  * Used by Kanban drag & drop to persist status changes.
+ * V6.3: Supports reason codes for lost/nurturing/disqualified statuses
  *
  * @param leadId - UUID of the lead to update
  * @param status - New status value
+ * @param options - Optional reason codes for certain status transitions
  * @returns Result object with success/error
  */
 export async function updateLeadStatusAction(
   leadId: string,
-  status: LeadStatus
+  status: LeadStatus,
+  options?: {
+    lossReasonCode?: string;
+    nurturingReasonCode?: string;
+    reasonDetail?: string;
+  }
 ): Promise<UpdateStatusResult> {
   try {
     // 1. Authentication
@@ -78,7 +99,13 @@ export async function updateLeadStatusAction(
     }
 
     // 2. Validation Zod
-    const validation = UpdateStatusSchema.safeParse({ leadId, status });
+    const validation = UpdateStatusSchema.safeParse({
+      leadId,
+      status,
+      lossReasonCode: options?.lossReasonCode,
+      nurturingReasonCode: options?.nurturingReasonCode,
+      reasonDetail: options?.reasonDetail,
+    });
     if (!validation.success) {
       return { success: false, error: "Invalid input" };
     }
@@ -112,19 +139,39 @@ export async function updateLeadStatusAction(
       updated_at: now,
     };
 
-    // RÈGLE MÉTIER: Quand status = "lost", enregistrer lost_at dans metadata
+    // RÈGLE MÉTIER V6.3: Enregistrer les raisons dans metadata pour lost/nurturing/disqualified
+    const existingMetadata =
+      (currentLead.metadata as Record<string, unknown>) || {};
+
     if (status === "lost") {
-      const existingMetadata =
-        (currentLead.metadata as Record<string, unknown>) || {};
       updateData.metadata = {
         ...existingMetadata,
         lost_at: now.toISOString(),
         lost_from_status: oldStatus,
+        loss_reason_code: options?.lossReasonCode || null,
+        reason_detail: options?.reasonDetail || null,
+      };
+    } else if (status === "nurturing") {
+      updateData.metadata = {
+        ...existingMetadata,
+        nurturing_at: now.toISOString(),
+        nurturing_from_status: oldStatus,
+        nurturing_reason_code: options?.nurturingReasonCode || null,
+        reason_detail: options?.reasonDetail || null,
+      };
+    } else if (status === "disqualified") {
+      updateData.metadata = {
+        ...existingMetadata,
+        disqualified_at: now.toISOString(),
+        disqualified_from_status: oldStatus,
+        loss_reason_code: options?.lossReasonCode || null,
+        reason_detail: options?.reasonDetail || null,
       };
     }
 
-    // RÈGLE MÉTIER: Quand status = "qualified", enregistrer qualified_date
-    if (status === "qualified" && !currentLead.qualified_date) {
+    // RÈGLE MÉTIER V6.3: Quand status = "proposal_sent", enregistrer qualified_date
+    // (Un lead est considéré qualifié quand on lui envoie une proposition)
+    if (status === "proposal_sent" && !currentLead.qualified_date) {
       updateData.qualified_date = now;
     }
 

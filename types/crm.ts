@@ -8,15 +8,16 @@
 export type LeadStatus = string;
 export type LeadStatusExtended = string;
 
-// Pre-defined status values for convenience (can be extended via settings)
+// Pre-defined status values for convenience (V6.3: 8 statuts)
 export const LEAD_STATUS_VALUES = [
   "new",
-  "contacted",
-  "working",
-  "qualified",
-  "disqualified",
+  "demo", // V6.3: Renommé depuis demo_scheduled
+  "proposal_sent",
+  "payment_pending",
   "converted",
   "lost",
+  "nurturing",
+  "disqualified",
 ] as const;
 
 // Re-export LeadStatusConfig from hook for convenience
@@ -134,6 +135,12 @@ export interface Lead {
   // Metadata
   metadata: Record<string, unknown> | null;
 
+  // Payment (V6.2.1 Stripe integration)
+  stripe_checkout_session_id?: string | null;
+  stripe_payment_link_url?: string | null;
+  payment_link_created_at?: Date | string | null;
+  payment_link_expires_at?: Date | string | null;
+
   // Audit (soft delete)
   deleted_at?: Date | string | null;
   deleted_by?: string | null;
@@ -159,6 +166,34 @@ export interface KanbanColumn {
   color: string;
   leads: Lead[];
   count: number;
+}
+
+// V6.2-11: Phase-based Kanban column (groups multiple statuses)
+export interface KanbanPhaseColumn {
+  id: string;
+  phase: {
+    id: string;
+    label_en: string;
+    label_fr: string;
+    label_ar?: string;
+    order: number;
+    color: string;
+    statuses: string[];
+  };
+  leads: Lead[];
+  statusGroups: Array<{
+    status: string;
+    statusConfig: {
+      value: string;
+      label_en: string;
+      label_fr: string;
+      label_ar?: string;
+      color: string;
+      icon: string;
+    };
+    leads: Lead[];
+  }>;
+  totalCount: number;
 }
 
 export interface FilterState {

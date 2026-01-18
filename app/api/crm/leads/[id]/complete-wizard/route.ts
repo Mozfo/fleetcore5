@@ -5,7 +5,7 @@
  *
  * Called from step-3 after successful Cal.com booking.
  * Saves company_name, phone, fleet_size, gdpr_consent.
- * Sets wizard_completed=true and updates status to "demo_scheduled".
+ * Sets wizard_completed=true and updates status to "demo".
  *
  * Prerequisites:
  * - Lead must exist and have email_verified = true
@@ -137,7 +137,7 @@ export async function PATCH(
 
     // Determine new status based on booking
     const hasBooking = !!(lead.booking_slot_at && lead.booking_calcom_uid);
-    const newStatus = hasBooking ? "demo_scheduled" : lead.status;
+    const newStatus = hasBooking ? "demo" : lead.status;
 
     // Update lead - save business info and mark wizard as completed
     const { company_name, phone, fleet_size, gdpr_consent } =

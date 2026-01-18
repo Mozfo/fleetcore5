@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     switch (payload.triggerEvent) {
       case "BOOKING_CREATED":
-        newStatus = "demo_scheduled";
+        newStatus = "demo";
         updateData = {
           status: newStatus,
           booking_slot_at: new Date(payload.startTime),

@@ -182,6 +182,12 @@
       "alreadyConfirmed": "Vous avez déjà confirmé votre présence. À bientôt !",
       "loading": "Confirmation de votre présence..."
     },
+    "waitlist": {
+      "notAvailableMessage": "FleetCore n'est pas encore disponible",
+      "emailRegistered": "Consultez votre boîte mail",
+      "emailSentInfo": "Nous vous avons envoyé un email avec plus d'informations.",
+      "goBack": "Retour"
+    },
     "backToHome": "Retour à l'accueil"
   },
   "homepage": {
@@ -372,6 +378,41 @@
     }
   },
   "watchDemoVideo": "Voir la Vidéo de Démo",
+  "paymentSuccess": {
+    "title": "Paiement réussi !",
+    "welcomeWithName": "Bienvenue sur FleetCore, {{name}} !",
+    "welcome": "Bienvenue sur FleetCore !",
+    "emailSent": "Email de confirmation envoyé",
+    "checkInbox": "Vérifiez votre boîte mail pour le reçu et les prochaines étapes.",
+    "whatNext": "Et maintenant ?",
+    "step1Title": "Vérification du compte",
+    "step1Desc": "Notre équipe vérifiera votre compte dans les 24 heures.",
+    "step2Title": "Recevez vos identifiants",
+    "step2Desc": "Vous recevrez vos identifiants de connexion par email.",
+    "step3Title": "Commencez à utiliser FleetCore",
+    "step3Desc": "Connectez-vous et commencez à gérer votre flotte efficacement.",
+    "verificationTitle": "Vérification sous 24h",
+    "verificationDesc": "Votre compte est en cours de configuration. Vous serez notifié dès que tout sera prêt.",
+    "needHelp": "Besoin d'aide ?",
+    "backToHome": "Retour à l'accueil",
+    "securePayment": "Paiement sécurisé par Stripe"
+  },
+  "paymentCancelled": {
+    "title": "Paiement annulé",
+    "subtitle": "Pas de souci ! Votre paiement n'a pas été traité.",
+    "noCharge": "Vous n'avez pas été débité. Vos informations de carte n'ont pas été enregistrées.",
+    "needHelp": "Besoin d'aide ?",
+    "questionTitle": "Des questions ?",
+    "questionDesc": "Notre équipe est là pour répondre à vos questions sur les tarifs ou fonctionnalités.",
+    "notReadyTitle": "Pas encore prêt ?",
+    "notReadyDesc": "Votre réservation de démo est toujours valide. Prenez le temps de réfléchir.",
+    "talkTitle": "Envie de parler à quelqu'un ?",
+    "talkDesc": "Planifiez une autre démo ou contactez notre équipe support.",
+    "tryAgain": "Réserver une autre démo",
+    "backToHome": "Retour à l'accueil",
+    "contactSupport": "Contactez-nous :",
+    "trustMessage": "Rejoignez plus de 500 gestionnaires de flotte utilisant FleetCore"
+  },
   "terms": {
     "title": "Conditions Générales d'Utilisation",
     "lastUpdated": "Dernière mise à jour",
@@ -418,5 +459,27 @@
       "title": "Des questions ?",
       "description": "Si vous avez des questions concernant ces Conditions Générales, veuillez nous contacter à :"
     }
+  },
+  "waitlistSurvey": {
+    "title": "Le premier outil conçu pour les flottes VTC",
+    "subtitle": "Connectez vos plateformes, analysez votre rentabilité par chauffeur, réduisez vos kilomètres à vide. Les flottes optimisées augmentent leur CA jusqu'à 30%.",
+    "earlyAdopterIncentive": "Inscrivez-vous maintenant et bénéficiez d'avantages exclusifs réservés aux early adopters.",
+    "fleetSizeQuestion": "Quelle est la taille de votre flotte ?",
+    "vehiclesLabel": "véhicules",
+    "wantOffersText": "Je souhaite recevoir les actualités FleetCore",
+    "selectFleetSize": "Sélectionnez la taille de votre flotte",
+    "successTitle": "Inscription confirmée",
+    "successMessage": "Nous vous contacterons dès que FleetCore sera disponible dans votre région.",
+    "invalidLink": "Lien invalide",
+    "invalidLinkMessage": "Ce lien est invalide ou a expiré. Veuillez utiliser le lien de votre email.",
+    "skip": "Retour à l'accueil",
+    "submit": "Me prévenir au lancement",
+    "privacyReassurance": "Vos données restent confidentielles. Pas de spam, pas de partage à des tiers.",
+    "gdprConsentText": "J'accepte de recevoir des communications de FleetCore concernant le lancement et les offres. Désinscription possible à tout moment.",
+    "seeOur": "Voir notre",
+    "gdprConsentRequired": "Veuillez accepter pour continuer",
+    "privacyPolicy": "Politique de Confidentialité",
+    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "networkError": "Erreur réseau. Veuillez réessayer."
   }
 }
