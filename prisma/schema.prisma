@@ -2285,13 +2285,14 @@ model crm_settings {
 }
 
 /// V6.2.3: Waitlist pour leads de pays non-opérationnels
+/// V6.3: fleet_size now optional - collected via email survey
 model crm_waitlist {
   id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   // Contact
   email                  String    @db.VarChar(255)
   country_code           String    @db.VarChar(2)
-  fleet_size             String    @db.VarChar(20)
+  fleet_size             String?   @db.VarChar(20)
 
   // Détection GeoIP
   detected_country_code  String?   @db.VarChar(2)

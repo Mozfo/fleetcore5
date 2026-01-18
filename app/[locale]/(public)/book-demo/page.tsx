@@ -2,17 +2,19 @@
  * Book Demo Wizard - Step 1: Email + Country
  *
  * V6.2.4 - First step with country gate and waitlist for non-operational countries.
+ * V6.3 - Waitlist opt-in happens via EMAIL (not on website) - GDPR compliant
  *
  * Flow A (Operational Country):
  * 1. User enters email + selects country
  * 2. Submit → POST /api/demo-leads { mode: "wizard_step1", email, country_code, locale }
  * 3. Success → Redirect to /book-demo/verify?leadId=xxx&email=xxx
  *
- * Flow B (Non-Operational Country):
+ * Flow B (Non-Operational Country - V6.3):
  * 1. User enters email + selects country
- * 2. Submit → Show waitlist section (same page)
- * 3. User clicks "Join Early Access" → Show fleet size cards
- * 4. User selects fleet size → POST /api/waitlist → Show thank you
+ * 2. Submit → POST /api/waitlist (pending entry) → Send email with opt-in link
+ * 3. Show "Country not available" message (NO button on website)
+ * 4. User receives email with survey link → Clicks link → /waitlist-survey page
+ * 5. User submits survey → marketing_consent = true (opted in)
  *
  * @module app/[locale]/(public)/book-demo/page
  */
@@ -32,12 +34,11 @@ import {
   Loader2,
   Users,
   AlertCircle,
-  Globe,
-  Sparkles,
   CheckCircle,
   ChevronDown,
   Calendar,
   Send,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import { WizardProgressBar } from "@/components/booking/WizardProgressBar";
@@ -58,6 +59,8 @@ interface Country {
   country_code: string;
   country_name_en: string;
   country_name_fr: string;
+  country_preposition_en: string | null;
+  country_preposition_fr: string | null;
   flag_emoji: string | null;
   is_operational: boolean;
 }
@@ -76,12 +79,7 @@ interface ApiResponse {
   };
 }
 
-// Fleet size options for waitlist (no "1" - solo drivers use mobile app)
-const FLEET_SIZE_OPTIONS = [
-  { value: "2-10", label: "2-10 vehicles" },
-  { value: "11-50", label: "11-50 vehicles" },
-  { value: "50+", label: "50+ vehicles" },
-];
+// Fleet size options removed - V6.3: collected via email survey
 
 // ============================================================================
 // COMPONENT
@@ -127,14 +125,8 @@ export default function BookDemoPage() {
     message: string;
   } | null>(null);
 
-  // Waitlist state
-  const [showWaitlist, setShowWaitlist] = useState(false);
-  const [waitlistStep, setWaitlistStep] = useState<1 | 2 | 3>(1);
-  const [selectedFleetSize, setSelectedFleetSize] = useState<string | null>(
-    null
-  );
-  const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
-  const [waitlistSuccess, setWaitlistSuccess] = useState(false);
+  // Waitlist state (V6.3 - opt-in happens via email, not on website)
+  const [showCountryNotAvailable, setShowCountryNotAvailable] = useState(false);
 
   // Existing booking state (V6.2.4 - email check)
   const [existingBooking, setExistingBooking] = useState<{
@@ -144,21 +136,17 @@ export default function BookDemoPage() {
   const [isSendingReschedule, setIsSendingReschedule] = useState(false);
   const [rescheduleEmailSent, setRescheduleEmailSent] = useState(false);
 
-  // Handle browser back button for waitlist state
+  // Handle browser back button for country not available state
   useEffect(() => {
     const handlePopState = () => {
-      // When browser back is pressed, return to form state
-      if (showWaitlist) {
-        setShowWaitlist(false);
-        setWaitlistStep(1);
-        setSelectedFleetSize(null);
-        setWaitlistSuccess(false);
+      if (showCountryNotAvailable) {
+        setShowCountryNotAvailable(false);
       }
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [showWaitlist]);
+  }, [showCountryNotAvailable]);
 
   // Debounced email validation feedback
   const [debouncedEmail, setDebouncedEmail] = useState("");
@@ -216,6 +204,13 @@ export default function BookDemoPage() {
     return locale === "fr" ? country.country_name_fr : country.country_name_en;
   };
 
+  // Get country preposition based on locale (e.g., "au", "en", "aux")
+  const getCountryPreposition = (country: Country) => {
+    return locale === "fr"
+      ? country.country_preposition_fr || "en"
+      : country.country_preposition_en || "in";
+  };
+
   // Form submission
   const onSubmit = useCallback(
     async (data: FormData) => {
@@ -233,12 +228,44 @@ export default function BookDemoPage() {
         return;
       }
 
-      // If country is NOT operational, show waitlist
+      // If country is NOT operational, send email and show message (V6.3)
+      // The email contains the opt-in button, not the website
       if (!country.is_operational) {
-        // Push history state so browser back returns to form
-        window.history.pushState({ waitlist: true }, "");
-        setShowWaitlist(true);
-        setWaitlistStep(1);
+        setIsSubmitting(true);
+        setApiError(null);
+
+        try {
+          // Send email with opt-in link (pending waitlist entry)
+          const response = await fetch("/api/waitlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: data.email.toLowerCase().trim(),
+              country_code: data.country_code,
+              locale,
+              marketing_consent: false, // Pending - will be true when they click in email
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.success || result.error?.code === "ALREADY_ON_WAITLIST") {
+            // Show country not available message (email was sent)
+            setShowCountryNotAvailable(true);
+          } else {
+            setApiError({
+              code: result.error?.code || "EMAIL_ERROR",
+              message: result.error?.message || "Failed to send email",
+            });
+          }
+        } catch {
+          setApiError({
+            code: "NETWORK_ERROR",
+            message: t("bookDemo.step1.errors.generic"),
+          });
+        } finally {
+          setIsSubmitting(false);
+        }
         return;
       }
 
@@ -363,63 +390,20 @@ export default function BookDemoPage() {
     }
   };
 
-  // Submit waitlist
-  const handleWaitlistSubmit = async () => {
-    if (!selectedFleetSize || !emailValue || !countryValue) return;
-
-    setIsSubmittingWaitlist(true);
-
-    try {
-      const response = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: emailValue.toLowerCase().trim(),
-          country_code: countryValue,
-          fleet_size: selectedFleetSize,
-          locale,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setWaitlistSuccess(true);
-      } else {
-        setApiError({
-          code: result.error?.code || "WAITLIST_ERROR",
-          message: result.error?.message || "Failed to join waitlist",
-        });
-      }
-    } catch {
-      setApiError({
-        code: "NETWORK_ERROR",
-        message: t("bookDemo.step1.errors.generic"),
-      });
-    } finally {
-      setIsSubmittingWaitlist(false);
-    }
-  };
-
-  // Handle fleet size selection
-  const handleFleetSizeSelect = (value: string) => {
-    setSelectedFleetSize(value);
-    void handleWaitlistSubmit();
-  };
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="w-full">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
       >
-        {/* Progress Bar */}
-        <WizardProgressBar currentStep={1} totalSteps={3} className="mb-8" />
+        {/* Progress Bar - Only show for wizard flow (not for country not available) */}
+        {!showCountryNotAvailable && (
+          <WizardProgressBar currentStep={1} totalSteps={3} className="mb-6" />
+        )}
 
         {/* Card */}
-        <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
+        <div className="rounded-2xl bg-white p-8 shadow-lg dark:bg-slate-800/50 dark:shadow-none">
           <AnimatePresence mode="wait">
             {existingBooking ? (
               // ============================================================
@@ -528,7 +512,68 @@ export default function BookDemoPage() {
                   </>
                 )}
               </motion.div>
-            ) : !showWaitlist ? (
+            ) : showCountryNotAvailable ? (
+              // ============================================================
+              // COUNTRY NOT AVAILABLE (V6.3 - message only, opt-in via email)
+              // ============================================================
+              <motion.div
+                key="country-not-available"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center"
+              >
+                {/* Confirmation icon */}
+                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
+                  <CheckCircle className="h-7 w-7 text-green-600 dark:text-green-400" />
+                </div>
+
+                {/* Country info */}
+                <p className="mb-2 text-sm text-gray-500 dark:text-slate-500">
+                  {t("bookDemo.waitlist.notAvailableMessage")}{" "}
+                  {selectedCountry && getCountryPreposition(selectedCountry)}{" "}
+                  <strong className="text-gray-700 dark:text-slate-300">
+                    {selectedCountry
+                      ? getCountryName(selectedCountry)
+                      : countryValue}
+                  </strong>
+                </p>
+
+                {/* Main message */}
+                <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+                  {t("bookDemo.waitlist.emailRegistered")}
+                </h2>
+
+                {/* Sub message */}
+                <p className="mb-4 text-sm text-gray-500 dark:text-slate-400">
+                  {t("bookDemo.waitlist.emailSentInfo")}
+                </p>
+
+                {/* Email reminder */}
+                <div className="mb-6 rounded-lg bg-gray-50 px-4 py-3 dark:bg-slate-700/50">
+                  <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                    {emailValue}
+                  </p>
+                </div>
+
+                {/* API Error */}
+                {apiError && (
+                  <div className="mb-4 rounded-lg bg-red-50 p-3 dark:bg-red-500/10">
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {apiError.message}
+                    </p>
+                  </div>
+                )}
+
+                {/* Back to home */}
+                <Link
+                  href={`/${locale}`}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  {t("bookDemo.backToHome")}
+                </Link>
+              </motion.div>
+            ) : (
               // ============================================================
               // MAIN FORM (Email + Country)
               // ============================================================
@@ -675,208 +720,9 @@ export default function BookDemoPage() {
                   <span>{t("bookDemo.step1.socialProof")}</span>
                 </div>
               </motion.div>
-            ) : waitlistSuccess ? (
-              // ============================================================
-              // WAITLIST SUCCESS
-              // ============================================================
-              <motion.div
-                key="waitlist-success"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="py-8 text-center"
-              >
-                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
-                  <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-500" />
-                </div>
-                <h2 className="mb-3 text-2xl font-bold text-gray-900 dark:text-white">
-                  {t("bookDemo.waitlist.successTitle", {
-                    defaultValue: "You're on the list!",
-                  })}
-                </h2>
-                <p className="mb-6 text-gray-600 dark:text-slate-400">
-                  {t("bookDemo.waitlist.successMessage", {
-                    defaultValue:
-                      "We'll reach out as soon as we launch in your area.",
-                    email: emailValue,
-                  })}
-                </p>
-                <Link
-                  href={`/${locale}`}
-                  className="inline-flex items-center gap-2 text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {t("bookDemo.backToHome")}
-                </Link>
-              </motion.div>
-            ) : (
-              // ============================================================
-              // WAITLIST FLOW
-              // ============================================================
-              <motion.div
-                key="waitlist-flow"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                {waitlistStep === 1 && (
-                  // Step 1: Empathetic message
-                  <div className="text-center">
-                    <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-500/20">
-                      <Globe className="h-8 w-8 text-amber-600 dark:text-amber-500" />
-                    </div>
-                    <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">
-                      {t("bookDemo.waitlist.notAvailableTitle", {
-                        defaultValue: "We're not in your country yet",
-                        country: selectedCountry
-                          ? getCountryName(selectedCountry)
-                          : "",
-                      })}
-                    </h2>
-                    <p className="mb-6 text-gray-600 dark:text-slate-400">
-                      {t("bookDemo.waitlist.notAvailableMessage", {
-                        defaultValue:
-                          "Unfortunately, FleetCore isn't available in your country yet. But we're expanding fast — and we'd love to have you on board early.",
-                      })}
-                    </p>
-                    <button
-                      onClick={() => setWaitlistStep(2)}
-                      className="w-full rounded-lg bg-blue-600 px-6 py-4 font-semibold text-white transition-all hover:bg-blue-700"
-                    >
-                      {t("bookDemo.waitlist.tellMeMore", {
-                        defaultValue: "Tell me more",
-                      })}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowWaitlist(false);
-                        setWaitlistStep(1);
-                      }}
-                      className="mt-4 text-sm text-gray-500 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
-                    >
-                      {t("bookDemo.waitlist.goBack", {
-                        defaultValue: "Go back",
-                      })}
-                    </button>
-                  </div>
-                )}
-
-                {waitlistStep === 2 && (
-                  // Step 2: Incentive
-                  <div className="text-center">
-                    <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-500/20">
-                      <Sparkles className="h-8 w-8 text-purple-600 dark:text-purple-500" />
-                    </div>
-                    <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">
-                      {t("bookDemo.waitlist.earlyAccessTitle", {
-                        defaultValue: "Join Early Access",
-                      })}
-                    </h2>
-                    <p className="mb-6 text-gray-600 dark:text-slate-400">
-                      {t("bookDemo.waitlist.earlyAccessMessage", {
-                        defaultValue:
-                          "Join our early access list and be the first to know when we launch — with exclusive benefits reserved for founding members.",
-                      })}
-                    </p>
-                    <button
-                      onClick={() => setWaitlistStep(3)}
-                      className="w-full rounded-lg bg-blue-600 px-6 py-4 font-semibold text-white transition-all hover:bg-blue-700"
-                    >
-                      {t("bookDemo.waitlist.countMeIn", {
-                        defaultValue: "Count me in",
-                      })}
-                    </button>
-                    <button
-                      onClick={() => setWaitlistStep(1)}
-                      className="mt-4 text-sm text-gray-500 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
-                    >
-                      {t("bookDemo.waitlist.goBack", {
-                        defaultValue: "Go back",
-                      })}
-                    </button>
-                  </div>
-                )}
-
-                {waitlistStep === 3 && (
-                  // Step 3: Fleet size selection
-                  <div className="text-center">
-                    <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">
-                      {t("bookDemo.waitlist.fleetSizeTitle", {
-                        defaultValue: "One quick question",
-                      })}
-                    </h2>
-                    <p className="mb-6 text-gray-600 dark:text-slate-400">
-                      {t("bookDemo.waitlist.fleetSizeMessage", {
-                        defaultValue:
-                          "To help us prepare your experience, how many vehicles do you manage?",
-                      })}
-                    </p>
-
-                    {/* Fleet Size Cards */}
-                    <div className="mb-6 flex gap-3">
-                      {FLEET_SIZE_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => handleFleetSizeSelect(option.value)}
-                          disabled={isSubmittingWaitlist}
-                          className={`flex-1 rounded-lg border p-4 transition-all disabled:opacity-50 ${
-                            selectedFleetSize === option.value
-                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
-                              : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:border-slate-500"
-                          }`}
-                        >
-                          <span className="block font-semibold">
-                            {option.value}
-                          </span>
-                          <span className="block text-xs text-gray-500 dark:text-slate-500">
-                            vehicles
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-
-                    {isSubmittingWaitlist && (
-                      <div className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span>
-                          {t("bookDemo.waitlist.joining", {
-                            defaultValue: "Joining...",
-                          })}
-                        </span>
-                      </div>
-                    )}
-
-                    {apiError && (
-                      <div className="mt-4 rounded-lg bg-red-50 p-4 dark:bg-red-500/10">
-                        <p className="text-sm text-red-600 dark:text-red-400">
-                          {apiError.message}
-                        </p>
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => setWaitlistStep(2)}
-                      className="mt-4 text-sm text-gray-500 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
-                    >
-                      {t("bookDemo.waitlist.goBack", {
-                        defaultValue: "Go back",
-                      })}
-                    </button>
-                  </div>
-                )}
-              </motion.div>
             )}
           </AnimatePresence>
         </div>
-
-        {/* Back to home link */}
-        {!showWaitlist && (
-          <div className="mt-6 text-center">
-            <Link
-              href={`/${locale}`}
-              className="text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
-            >
-              {t("bookDemo.backToHome")}
-            </Link>
-          </div>
-        )}
       </motion.div>
     </div>
   );

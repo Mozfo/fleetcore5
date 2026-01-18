@@ -1,3 +1,16 @@
+/**
+ * Expansion Opportunity Email Template
+ *
+ * V6.3 - Marketing-focused email for non-operational countries
+ *
+ * Structure:
+ * 1. Section 1: Why FleetCore (marketing pitch with benefits)
+ * 2. Section 2: Stay informed (single CTA to survey page)
+ *    - Survey page collects: fleet size + GDPR consent
+ *
+ * @module emails/templates/ExpansionOpportunity
+ */
+
 import {
   Body,
   Button,
@@ -23,24 +36,16 @@ import {
 
 interface ExpansionOpportunityProps {
   locale?: EmailLocale;
-  first_name: string;
-  company_name: string;
-  fleet_size: string;
   country_preposition: string;
   country_name: string;
-  phone_row?: string;
-  message_row?: string;
+  survey_url?: string; // URL to collect fleet details + opt-in
 }
 
 export const ExpansionOpportunity = ({
   locale = "en",
-  first_name,
-  company_name,
-  fleet_size,
-  country_preposition,
-  country_name,
-  phone_row,
-  message_row,
+  country_preposition: _country_preposition,
+  country_name: _country_name,
+  survey_url,
 }: ExpansionOpportunityProps) => {
   const t = expansionOpportunityTranslations[locale];
   const common = commonTranslations[locale];
@@ -56,6 +61,7 @@ export const ExpansionOpportunity = ({
           .container { width: 100% !important; }
           .content-wrapper { padding: 0 20px !important; }
           img { max-width: 100% !important; height: auto !important; }
+          .benefit-icon { font-size: 24px !important; }
         }
       `}</style>
       </Head>
@@ -63,6 +69,7 @@ export const ExpansionOpportunity = ({
       <Body style={main(isRtl)}>
         <Container style={container} className="container">
           <Section style={box} className="content-wrapper">
+            {/* Logo */}
             <Link
               href="https://fleetcore.io"
               style={{
@@ -84,45 +91,91 @@ export const ExpansionOpportunity = ({
               />
             </Link>
             <Hr style={hr} />
-            <Text style={paragraph(textAlign)}>
-              {common.greeting} {first_name},
-            </Text>
-            <Text style={paragraph(textAlign)}>{t.thankYou}</Text>
-            <Text style={paragraph(textAlign)}>
-              {t.notYetAvailable} {country_preposition}{" "}
-              <strong>{country_name}</strong>
-              {t.expanding}
-            </Text>
-            <Text style={paragraph(textAlign)}>
-              <strong>{t.requestDetails}</strong>
-            </Text>
-            <Text style={paragraph(textAlign)}>
-              • {t.company}: <strong>{company_name}</strong>
-              <br />• {t.fleetSize}: <strong>{fleet_size}</strong>
-              <br />• {t.country}: <strong>{country_name}</strong>
-              {phone_row && (
-                <>
-                  <br />• {t.phone}: <strong>{phone_row}</strong>
-                </>
+
+            {/* ========================================== */}
+            {/* SECTION 1: Why FleetCore (Marketing Pitch) */}
+            {/* ========================================== */}
+            <Section style={sectionBox}>
+              <Text style={sectionTitle(textAlign)}>{t.whyFleetcoreTitle}</Text>
+              <Text style={paragraph(textAlign)}>{t.whyFleetcoreIntro}</Text>
+
+              {/* Benefits list - using simple structure for email compatibility */}
+              <Section style={benefitsContainer}>
+                {/* Benefit 1: Save time */}
+                <Text style={benefitItem(textAlign)}>
+                  <span style={benefitEmoji}>⏱️</span>{" "}
+                  <strong>{t.benefit1Title}</strong>
+                  <br />
+                  <span style={benefitDescription}>{t.benefit1Text}</span>
+                </Text>
+
+                {/* Benefit 2: Increase profitability */}
+                <Text style={benefitItem(textAlign)}>
+                  <span style={benefitEmoji}>📈</span>{" "}
+                  <strong>{t.benefit2Title}</strong>
+                  <br />
+                  <span style={benefitDescription}>{t.benefit2Text}</span>
+                </Text>
+
+                {/* Benefit 3: One platform */}
+                <Text style={benefitItem(textAlign)}>
+                  <span style={benefitEmoji}>🎯</span>{" "}
+                  <strong>{t.benefit3Title}</strong>
+                  <br />
+                  <span style={benefitDescription}>{t.benefit3Text}</span>
+                </Text>
+
+                {/* Benefit 4: Grow with confidence */}
+                <Text style={benefitItem(textAlign)}>
+                  <span style={benefitEmoji}>🚀</span>{" "}
+                  <strong>{t.benefit4Title}</strong>
+                  <br />
+                  <span style={benefitDescription}>{t.benefit4Text}</span>
+                </Text>
+              </Section>
+            </Section>
+
+            <Hr style={hr} />
+
+            {/* ========================================== */}
+            {/* SECTION 2: Stay informed (Single CTA) */}
+            {/* ========================================== */}
+            <Section style={sectionBox}>
+              <Text style={sectionTitle(textAlign)}>{t.stayInformedTitle}</Text>
+              <Text style={paragraph(textAlign)}>{t.stayInformedMessage}</Text>
+
+              {survey_url && (
+                <Section
+                  style={{
+                    textAlign: "center",
+                    marginTop: "24px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <Button style={buttonPrimary} href={survey_url}>
+                    {t.optInButton}
+                  </Button>
+                </Section>
               )}
-              {message_row && (
-                <>
-                  <br />• {t.message}: <strong>{message_row}</strong>
-                </>
-              )}
-            </Text>
+            </Section>
+
+            <Hr style={hr} />
+
+            {/* ========================================== */}
+            {/* FOOTER */}
+            {/* ========================================== */}
             <Section
               style={{
                 textAlign: "center",
-                marginTop: "32px",
-                marginBottom: "32px",
+                marginTop: "24px",
+                marginBottom: "16px",
               }}
             >
-              <Button style={button} href="https://fleetcore.io">
-                {t.notifyButton}
+              <Button style={buttonTertiary} href="https://fleetcore.io">
+                {t.visitWebsite}
               </Button>
             </Section>
-            <Text style={paragraph(textAlign)}>{t.meanwhile}</Text>
+
             <Text style={paragraph(textAlign)}>
               {common.regards}
               <br />
@@ -138,6 +191,10 @@ export const ExpansionOpportunity = ({
 };
 
 export default ExpansionOpportunity;
+
+// ============================================================================
+// STYLES
+// ============================================================================
 
 const main = (isRtl: boolean) => ({
   backgroundColor: "#f6f9fc",
@@ -164,16 +221,55 @@ const hr = {
   margin: "20px 0",
 };
 
+const sectionBox = {
+  marginBottom: "8px",
+};
+
+const sectionTitle = (textAlign: "left" | "right") => ({
+  color: "#2563eb",
+  fontSize: "20px",
+  fontWeight: "600",
+  lineHeight: "28px",
+  textAlign,
+  marginBottom: "12px",
+});
+
 const paragraph = (textAlign: "left" | "right") => ({
   color: "#525f7f",
   fontSize: "16px",
   lineHeight: "24px",
   textAlign,
+  margin: "0 0 12px 0",
 });
 
-const button = {
+const benefitsContainer = {
+  marginTop: "20px",
+};
+
+const benefitItem = (textAlign: "left" | "right") => ({
+  color: "#1f2937",
+  fontSize: "16px",
+  lineHeight: "24px",
+  textAlign,
+  marginBottom: "16px",
+  padding: "12px 16px",
+  backgroundColor: "#f9fafb",
+  borderRadius: "8px",
+  borderLeft: "4px solid #2563eb",
+});
+
+const benefitEmoji = {
+  fontSize: "20px",
+};
+
+const benefitDescription = {
+  color: "#6b7280",
+  fontSize: "14px",
+};
+
+const buttonPrimary = {
   backgroundColor: "#2563eb",
-  borderRadius: "5px",
+  borderRadius: "8px",
   color: "#fff",
   fontSize: "16px",
   fontWeight: "bold",
@@ -181,7 +277,20 @@ const button = {
   textAlign: "center" as const,
   display: "inline-block",
   width: "auto",
-  padding: "12px 32px",
+  padding: "14px 36px",
+};
+
+const buttonTertiary = {
+  backgroundColor: "#f3f4f6",
+  borderRadius: "8px",
+  color: "#374151",
+  fontSize: "14px",
+  fontWeight: "500",
+  textDecoration: "none",
+  textAlign: "center" as const,
+  display: "inline-block",
+  width: "auto",
+  padding: "10px 24px",
 };
 
 const footer = (textAlign: "left" | "right") => ({

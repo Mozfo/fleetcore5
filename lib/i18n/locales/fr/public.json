@@ -182,6 +182,12 @@
       "alreadyConfirmed": "Vous avez déjà confirmé votre présence. À bientôt !",
       "loading": "Confirmation de votre présence..."
     },
+    "waitlist": {
+      "notAvailableMessage": "FleetCore n'est pas encore disponible",
+      "emailRegistered": "Consultez votre boîte mail",
+      "emailSentInfo": "Nous vous avons envoyé un email avec plus d'informations.",
+      "goBack": "Retour"
+    },
     "backToHome": "Retour à l'accueil"
   },
   "homepage": {
@@ -453,5 +459,27 @@
       "title": "Des questions ?",
       "description": "Si vous avez des questions concernant ces Conditions Générales, veuillez nous contacter à :"
     }
+  },
+  "waitlistSurvey": {
+    "title": "Le premier outil conçu pour les flottes VTC",
+    "subtitle": "Connectez vos plateformes, analysez votre rentabilité par chauffeur, réduisez vos kilomètres à vide. Les flottes optimisées augmentent leur CA jusqu'à 30%.",
+    "earlyAdopterIncentive": "Inscrivez-vous maintenant et bénéficiez d'avantages exclusifs réservés aux early adopters.",
+    "fleetSizeQuestion": "Quelle est la taille de votre flotte ?",
+    "vehiclesLabel": "véhicules",
+    "wantOffersText": "Je souhaite recevoir les actualités FleetCore",
+    "selectFleetSize": "Sélectionnez la taille de votre flotte",
+    "successTitle": "Inscription confirmée",
+    "successMessage": "Nous vous contacterons dès que FleetCore sera disponible dans votre région.",
+    "invalidLink": "Lien invalide",
+    "invalidLinkMessage": "Ce lien est invalide ou a expiré. Veuillez utiliser le lien de votre email.",
+    "skip": "Retour à l'accueil",
+    "submit": "Me prévenir au lancement",
+    "privacyReassurance": "Vos données restent confidentielles. Pas de spam, pas de partage à des tiers.",
+    "gdprConsentText": "J'accepte de recevoir des communications de FleetCore concernant le lancement et les offres. Désinscription possible à tout moment.",
+    "seeOur": "Voir notre",
+    "gdprConsentRequired": "Veuillez accepter pour continuer",
+    "privacyPolicy": "Politique de Confidentialité",
+    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "networkError": "Erreur réseau. Veuillez réessayer."
   }
 }

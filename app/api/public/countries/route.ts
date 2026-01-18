@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
         country_name_en: true,
         country_name_fr: true,
         country_name_ar: true,
+        country_preposition_en: true,
+        country_preposition_fr: true,
         flag_emoji: true,
         is_operational: true,
         country_gdpr: true,

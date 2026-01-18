@@ -2,6 +2,15 @@
  * Waitlist API
  *
  * V6.2.3 - Endpoint pour collecter les leads des pays non-opérationnels
+ * V6.3 - Marketing email flow:
+ *   - Creates pending waitlist entry (marketing_consent = false)
+ *   - Sends marketing-focused email with:
+ *     1. "Thank you for your interest" title
+ *     2. Why FleetCore (benefits pitch)
+ *     3. Help us prepare (link to survey)
+ *     4. Stay informed (link to survey for opt-in)
+ *   - GDPR consent collected via survey page (checkbox for EU countries)
+ *   - Opt-in happens via survey page (marketing_consent = true)
  *
  * POST /api/waitlist
  * Body: {
@@ -18,9 +27,16 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Resend } from "resend";
+import { render } from "@react-email/render";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { geoIPService } from "@/lib/services/geo/geoip.service";
+import ExpansionOpportunity from "@/emails/templates/ExpansionOpportunity";
+import type { EmailLocale } from "@/lib/i18n/email-translations";
+
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ============================================================================
 // VALIDATION
@@ -29,11 +45,12 @@ import { geoIPService } from "@/lib/services/geo/geoip.service";
 const WaitlistSchema = z.object({
   email: z.string().email(),
   country_code: z.string().min(2).max(2),
-  fleet_size: z.string().min(1),
+  fleet_size: z.string().optional().nullable(), // Optional - collected via email survey
   gdpr_consent: z.boolean().optional().default(false),
   detected_country_code: z.string().min(2).max(2).optional().nullable(),
   locale: z.string().optional().default("en"),
   honeypot: z.string().max(0).optional(),
+  marketing_consent: z.boolean().optional().default(false), // V6.3: false = pending, true = opted-in via email
 });
 
 // ============================================================================
@@ -99,7 +116,14 @@ export async function POST(request: NextRequest) {
     // Verify country exists and is not operational
     const country = await db.crm_countries.findUnique({
       where: { country_code: data.country_code },
-      select: { is_operational: true, country_gdpr: true },
+      select: {
+        is_operational: true,
+        country_gdpr: true,
+        country_name_en: true,
+        country_name_fr: true,
+        country_preposition_en: true,
+        country_preposition_fr: true,
+      },
     });
 
     if (!country) {
@@ -130,15 +154,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create waitlist entry
+    // Create waitlist entry using Prisma relation syntax
+    // V6.3: marketing_consent = false (pending) until user clicks opt-in in email
     const waitlistEntry = await db.crm_waitlist.create({
       data: {
         email: data.email.toLowerCase().trim(),
-        country_code: data.country_code,
-        fleet_size: data.fleet_size,
+        crm_countries: {
+          connect: { country_code: data.country_code },
+        },
+        fleet_size: data.fleet_size || null,
         detected_country_code: data.detected_country_code || null,
         ip_address: clientIP,
-        marketing_consent: true,
+        marketing_consent: data.marketing_consent, // false = pending, true = opted-in
         gdpr_consent: country.country_gdpr ? data.gdpr_consent : null,
         gdpr_consent_at:
           country.country_gdpr && data.gdpr_consent ? new Date() : null,
@@ -159,6 +186,55 @@ export async function POST(request: NextRequest) {
       "[Waitlist] New entry created"
     );
 
+    // ========================================================================
+    // V6.3 - SEND EXPANSION OPPORTUNITY EMAIL
+    // ========================================================================
+    try {
+      const emailLocale = (data.locale === "fr" ? "fr" : "en") as EmailLocale;
+      const countryName =
+        emailLocale === "fr"
+          ? country.country_name_fr
+          : country.country_name_en;
+      const countryPreposition =
+        emailLocale === "fr"
+          ? country.country_preposition_fr
+          : country.country_preposition_en;
+
+      // Build survey URL with waitlist ID for fleet details collection
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://fleetcore.io";
+      const surveyUrl = `${baseUrl}/${emailLocale}/waitlist-survey?id=${waitlistEntry.id}`;
+
+      const emailHtml = await render(
+        ExpansionOpportunity({
+          locale: emailLocale,
+          country_preposition: countryPreposition || "",
+          country_name: countryName || data.country_code,
+          survey_url: surveyUrl,
+        })
+      );
+
+      await resend.emails.send({
+        from: "FleetCore <noreply@fleetcore.io>",
+        to: data.email,
+        subject:
+          emailLocale === "fr"
+            ? "FleetCore : +30% de CA pour les flottes VTC"
+            : "FleetCore: +30% revenue for rideshare fleets",
+        html: emailHtml,
+      });
+
+      logger.info(
+        { email: data.email, country: data.country_code },
+        "[Waitlist] ExpansionOpportunity email sent"
+      );
+    } catch (emailError) {
+      // Log error but don't fail the request - waitlist entry was created
+      logger.error(
+        { error: emailError, email: data.email },
+        "[Waitlist] Failed to send ExpansionOpportunity email"
+      );
+    }
+
     return NextResponse.json({
       success: true,
       message: "Added to waitlist",
@@ -168,7 +244,13 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    logger.error({ error }, "[Waitlist] Failed to add to waitlist");
+    logger.error(
+      {
+        error,
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      "[Waitlist] Failed to add to waitlist"
+    );
 
     // Handle unique constraint violation gracefully
     if (error instanceof Error && error.message.includes("Unique constraint")) {
