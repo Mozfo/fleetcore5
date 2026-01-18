@@ -525,7 +525,7 @@ describe("LeadStatusService", () => {
     it("should set converted_at when status='converted'", async () => {
       vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
         ...mockLead,
-        status: "proposal_sent",
+        status: "payment_pending", // payment_pending → converted is valid
       } as never);
 
       await service.updateStatus(mockLead.id, "converted", {
