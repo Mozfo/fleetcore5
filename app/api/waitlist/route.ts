@@ -123,6 +123,17 @@ export async function POST(request: NextRequest) {
     const finalDetectedCountry =
       serverDetectedCountry || data.detected_country_code || null;
 
+    // V6.4.1: Debug logging to track GeoIP detection
+    logger.info(
+      {
+        clientIP,
+        serverDetectedCountry,
+        frontendDetectedCountry: data.detected_country_code,
+        finalDetectedCountry,
+      },
+      "[Waitlist] GeoIP debug"
+    );
+
     // Check if email+country already exists
     const existing = await db.crm_waitlist.findFirst({
       where: {
