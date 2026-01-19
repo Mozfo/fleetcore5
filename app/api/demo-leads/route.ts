@@ -116,11 +116,12 @@ async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
   // Case 3: Lead exists but not verified - resend code
   // Case 4: New lead - will be created by EmailVerificationService
 
-  // Send verification code (creates lead if needed)
+  // Send verification code (creates lead if needed, includes country_code)
   const emailVerificationService = new EmailVerificationService(db);
   const result = await emailVerificationService.sendVerificationCode({
     email: normalizedEmail,
     locale,
+    country_code: countryCode,
   });
 
   if (!result.success) {
@@ -158,17 +159,6 @@ async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
       },
       { status: 500 }
     );
-  }
-
-  // V6.2.4: Update lead with country_code only (fleet_size collected in step 3)
-  if (result.leadId) {
-    await db.crm_leads.update({
-      where: { id: result.leadId },
-      data: {
-        country_code: countryCode,
-        updated_at: new Date(),
-      },
-    });
   }
 
   logger.info(

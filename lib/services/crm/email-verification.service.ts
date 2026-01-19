@@ -221,8 +221,9 @@ export class EmailVerificationService {
   async sendVerificationCode(params: {
     email: string;
     locale?: string;
+    country_code?: string;
   }): Promise<SendVerificationResult> {
-    const { email, locale = "en" } = params;
+    const { email, locale = "en", country_code } = params;
 
     try {
       // 1. Check resend cooldown
@@ -253,13 +254,14 @@ export class EmailVerificationService {
       });
 
       if (lead) {
-        // Update existing lead
+        // Update existing lead with verification code and country_code if provided
         await this.prisma.crm_leads.update({
           where: { id: lead.id },
           data: {
             email_verification_code: hashedCode,
             email_verification_expires_at: expiresAt,
             email_verification_attempts: 0, // Reset attempts on new code
+            ...(country_code && { country_code: country_code.toUpperCase() }),
             updated_at: new Date(),
           },
         });
@@ -273,6 +275,7 @@ export class EmailVerificationService {
             email_verification_code: hashedCode,
             email_verification_expires_at: expiresAt,
             email_verification_attempts: 0,
+            ...(country_code && { country_code: country_code.toUpperCase() }),
             created_at: new Date(),
           },
           select: { id: true },
