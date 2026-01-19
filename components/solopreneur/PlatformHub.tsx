@@ -37,26 +37,28 @@ export function PlatformHub() {
         {/* Hub and Spoke Design */}
         <div className="flex justify-center">
           <div className="relative h-[400px] w-[400px] sm:h-[500px] sm:w-[500px]">
-            {/* Connection Lines */}
+            {/* Connection Lines + Animated Dots - SVG for perfect alignment */}
             <svg
               className="absolute inset-0 h-full w-full"
-              viewBox="0 0 500 500"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="xMidYMid meet"
             >
               {platforms.map((_, index) => {
                 const angle = (index * 60 - 90) * (Math.PI / 180);
-                const x2 = 250 + 180 * Math.cos(angle);
-                const y2 = 250 + 180 * Math.sin(angle);
+                // Use percentages: center at 50, radius 36 to match platform positions
+                const x2 = 50 + 36 * Math.cos(angle);
+                const y2 = 50 + 36 * Math.sin(angle);
 
                 return (
                   <motion.line
-                    key={index}
-                    x1="250"
-                    y1="250"
+                    key={`line-${index}`}
+                    x1="50"
+                    y1="50"
                     x2={x2}
                     y2={y2}
-                    stroke="url(#lineGradient)"
-                    strokeWidth="2"
-                    strokeDasharray="8 4"
+                    stroke="#6366F1"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 1"
                     initial={{ pathLength: 0, opacity: 0 }}
                     whileInView={{ pathLength: 1, opacity: 1 }}
                     viewport={{ once: true }}
@@ -65,46 +67,33 @@ export function PlatformHub() {
                 );
               })}
 
-              {/* Gradient Definition */}
-              <defs>
-                <linearGradient
-                  id="lineGradient"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="100%"
-                >
-                  <stop offset="0%" stopColor="#3B82F6" />
-                  <stop offset="100%" stopColor="#8B5CF6" />
-                </linearGradient>
-              </defs>
+              {/* Animated Data Flow Dots - inside SVG for perfect alignment */}
+              {platforms.map((_, index) => {
+                const angle = (index * 60 - 90) * (Math.PI / 180);
+                const startX = 50 + 36 * Math.cos(angle);
+                const startY = 50 + 36 * Math.sin(angle);
+
+                return (
+                  <motion.circle
+                    key={`dot-${index}`}
+                    r="1"
+                    fill="#3B82F6"
+                    initial={{ cx: startX, cy: startY, opacity: 0 }}
+                    animate={{
+                      cx: [startX, 50],
+                      cy: [startY, 50],
+                      opacity: [0, 1, 1, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      delay: index * 0.3,
+                      ease: "easeInOut",
+                    }}
+                  />
+                );
+              })}
             </svg>
-
-            {/* Animated Data Flow Dots */}
-            {platforms.map((_, index) => {
-              const angle = (index * 60 - 90) * (Math.PI / 180);
-              const startX = 250 + 180 * Math.cos(angle);
-              const startY = 250 + 180 * Math.sin(angle);
-
-              return (
-                <motion.div
-                  key={`dot-${index}`}
-                  className="absolute h-2 w-2 rounded-full bg-blue-500"
-                  initial={{ x: startX - 4, y: startY - 4, opacity: 0 }}
-                  animate={{
-                    x: [startX - 4, 246],
-                    y: [startY - 4, 246],
-                    opacity: [0, 1, 1, 0],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    delay: index * 0.3,
-                    ease: "easeInOut",
-                  }}
-                />
-              );
-            })}
 
             {/* Center Hub - FleetCore */}
             <motion.div
