@@ -368,6 +368,8 @@ describe("LeadCreationService", () => {
           attendance_confirmed_at: null,
           // V6.2.9: J-1 Reminder column
           j1_reminder_sent_at: null,
+          // V6.3.3: Reschedule token for iOS Mail
+          reschedule_token: null,
         };
         return lead;
       }

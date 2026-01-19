@@ -2,6 +2,7 @@
  * POST /api/crm/leads/send-reschedule-link
  *
  * V6.2.4 - Send reschedule/cancel link to lead's email
+ * V6.3.3 - iOS Mail compatible short URLs
  *
  * Security:
  * - No direct modification on the site
@@ -19,7 +20,20 @@ import { z } from "zod";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.fleetcore.io";
+// ============================================================================
+// SHORT TOKEN GENERATION (V6.3.3)
+// ============================================================================
+// Generates a 6-character alphanumeric token for short URLs (iOS Mail compatible)
+const ALPHABET =
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+function generateShortToken(length = 6): string {
+  let token = "";
+  for (let i = 0; i < length; i++) {
+    token += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+  }
+  return token;
+}
 
 const requestSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -91,6 +105,7 @@ export async function POST(request: NextRequest) {
         first_name: true,
         booking_calcom_uid: true,
         booking_slot_at: true,
+        reschedule_token: true,
       },
     });
 
@@ -107,8 +122,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate FleetCore reschedule URL (stays on our domain)
-    const rescheduleUrl = `${APP_URL}/${locale}/book-demo/reschedule?uid=${lead.booking_calcom_uid}`;
+    // V6.3.3: Generate or reuse short token for iOS Mail compatibility
+    let rescheduleToken = lead.reschedule_token;
+    if (!rescheduleToken) {
+      rescheduleToken = generateShortToken();
+      await prisma.crm_leads.update({
+        where: { id: lead.id },
+        data: { reschedule_token: rescheduleToken },
+      });
+    }
+
+    // Generate short URL for iOS Mail compatibility (~28 chars vs 88)
+    // /r/[token] redirects to /[locale]/book-demo/reschedule?uid=[calcom_uid]
+    const rescheduleUrl = `https://fleetcore.io/${locale}/r/${rescheduleToken}`;
 
     // Send email via Resend
     const { data, error } = await resend.emails.send({
