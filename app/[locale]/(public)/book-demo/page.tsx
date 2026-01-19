@@ -136,6 +136,11 @@ export default function BookDemoPage() {
   const [isSendingReschedule, setIsSendingReschedule] = useState(false);
   const [rescheduleEmailSent, setRescheduleEmailSent] = useState(false);
 
+  // GeoIP detected country (for analytics - track origin vs selected country)
+  const [detectedCountryCode, setDetectedCountryCode] = useState<string | null>(
+    null
+  );
+
   // Handle browser back button for country not available state
   useEffect(() => {
     const handlePopState = () => {
@@ -183,8 +188,13 @@ export default function BookDemoPage() {
       try {
         const response = await fetch("/api/geo/detect");
         const result = await response.json();
-        if (result.countryCode && !countryValue) {
-          setValue("country_code", result.countryCode);
+        if (result.countryCode) {
+          // Store detected country for analytics (spam detection, origin tracking)
+          setDetectedCountryCode(result.countryCode);
+          // Pre-fill form if no country selected yet
+          if (!countryValue) {
+            setValue("country_code", result.countryCode);
+          }
         }
       } catch {
         // Silent fail - user will select manually
@@ -242,6 +252,7 @@ export default function BookDemoPage() {
             body: JSON.stringify({
               email: data.email.toLowerCase().trim(),
               country_code: data.country_code,
+              detected_country_code: detectedCountryCode, // GeoIP origin for analytics/spam detection
               locale,
               marketing_consent: false, // Pending - will be true when they click in email
             }),
@@ -344,7 +355,7 @@ export default function BookDemoPage() {
         setIsSubmitting(false);
       }
     },
-    [countries, locale, router, setError, t]
+    [countries, detectedCountryCode, locale, router, setError, t]
   );
 
   // Send reschedule link
