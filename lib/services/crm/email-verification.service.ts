@@ -1,9 +1,14 @@
 /**
- * Email Verification Service - V6.2.2
- * Book Demo Wizard - Step 1 Email Verification
+ * Email Verification Service - V6.4
+ * Book Demo Wizard - Email Verification
  *
  * Handles 6-digit verification code generation, hashing, validation,
  * and email sending for the Book Demo wizard flow.
+ *
+ * V6.4 REFACTORING (SRP):
+ * - This service NO LONGER creates leads
+ * - Lead creation is handled by WizardLeadService
+ * - This service focuses ONLY on verification code logic
  *
  * Features:
  * - 6-digit NUMERIC code (crypto.randomInt for security)
@@ -21,6 +26,10 @@ import { PrismaClient } from "@prisma/client";
 import { prisma as defaultPrisma } from "@/lib/prisma";
 import { NotificationQueueService } from "@/lib/services/notification/queue.service";
 import { logger } from "@/lib/logger";
+import {
+  WizardLeadService,
+  wizardLeadService as defaultWizardLeadService,
+} from "./wizard-lead.service";
 
 // ===== CONSTANTS =====
 
@@ -77,6 +86,19 @@ export interface ResendCheckResult {
   lastSentAt?: Date;
 }
 
+/**
+ * V6.4: Generated code with hash and expiration
+ * Used by new flow where lead creation is separate
+ */
+export interface GeneratedVerificationCode {
+  /** Plain text 6-digit code to send via email */
+  plainCode: string;
+  /** bcrypt hash to store in database */
+  hashedCode: string;
+  /** Expiration timestamp (NOW + 15 minutes) */
+  expiresAt: Date;
+}
+
 // ===== SERVICE CLASS =====
 
 /**
@@ -105,10 +127,15 @@ export interface ResendCheckResult {
 export class EmailVerificationService {
   private prisma: PrismaClient;
   private notificationQueue: NotificationQueueService;
+  private wizardLeadService: WizardLeadService;
 
-  constructor(prismaClient?: PrismaClient) {
+  constructor(
+    prismaClient?: PrismaClient,
+    wizardLeadSvc?: WizardLeadService
+  ) {
     this.prisma = prismaClient || defaultPrisma;
     this.notificationQueue = new NotificationQueueService(this.prisma);
+    this.wizardLeadService = wizardLeadSvc || defaultWizardLeadService;
   }
 
   // ============================================
@@ -149,6 +176,35 @@ export class EmailVerificationService {
    */
   async compareCode(code: string, hash: string): Promise<boolean> {
     return bcrypt.compare(code, hash);
+  }
+
+  /**
+   * V6.4: Generate a verification code with hash and expiration
+   *
+   * This method does NOT touch the database - it only generates the code.
+   * Use WizardLeadService.setVerificationCode() to store it.
+   *
+   * @returns Object containing plainCode, hashedCode, and expiresAt
+   *
+   * @example
+   * ```typescript
+   * const { plainCode, hashedCode, expiresAt } = await service.generateAndHashCode();
+   * await wizardLeadService.setVerificationCode(leadId, { hashedCode, expiresAt });
+   * // Send plainCode via email
+   * ```
+   */
+  async generateAndHashCode(): Promise<GeneratedVerificationCode> {
+    const plainCode = this.generateCode();
+    const hashedCode = await this.hashCode(plainCode);
+
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + CODE_EXPIRATION_MINUTES);
+
+    return {
+      plainCode,
+      hashedCode,
+      expiresAt,
+    };
   }
 
   // ============================================
@@ -205,12 +261,146 @@ export class EmailVerificationService {
     return { canResend: true, lastSentAt: sentAt };
   }
 
+  /**
+   * V6.4: Check if a new verification code can be sent (by leadId)
+   *
+   * Preferred method - avoids email lookup.
+   *
+   * @param leadId - Lead UUID
+   * @returns Resend check result with wait time if rate limited
+   */
+  async canResendCodeByLeadId(leadId: string): Promise<ResendCheckResult> {
+    const status = await this.wizardLeadService.getVerificationStatus(leadId);
+
+    // No lead or no code sent yet - can send
+    if (!status || !status.email_verification_expires_at) {
+      return { canResend: true };
+    }
+
+    // Calculate when the code was sent (expires_at - 15 min)
+    const expiresAt = new Date(status.email_verification_expires_at);
+    const sentAt = new Date(
+      expiresAt.getTime() - CODE_EXPIRATION_MINUTES * 60 * 1000
+    );
+
+    // Check if cooldown has passed
+    const now = new Date();
+    const cooldownEnds = new Date(
+      sentAt.getTime() + RESEND_COOLDOWN_SECONDS * 1000
+    );
+
+    if (now < cooldownEnds) {
+      const waitSeconds = Math.ceil(
+        (cooldownEnds.getTime() - now.getTime()) / 1000
+      );
+      return {
+        canResend: false,
+        waitSeconds,
+        lastSentAt: sentAt,
+      };
+    }
+
+    return { canResend: true, lastSentAt: sentAt };
+  }
+
   // ============================================
   // SEND VERIFICATION CODE
   // ============================================
 
   /**
+   * V6.4: Send verification code to an existing lead
+   *
+   * PREFERRED METHOD - Lead must already exist (created by WizardLeadService).
+   * Does NOT create leads - single responsibility.
+   *
+   * @param params - leadId, email (for sending), and locale
+   * @returns Send result with expiration time
+   *
+   * @example
+   * ```typescript
+   * // 1. Create lead first
+   * const { leadId } = await wizardLeadService.createWizardLead({...});
+   *
+   * // 2. Send verification code
+   * const result = await emailVerificationService.sendVerificationCodeToLead({
+   *   leadId,
+   *   email: "user@example.com",
+   *   locale: "fr",
+   * });
+   * ```
+   */
+  async sendVerificationCodeToLead(params: {
+    leadId: string;
+    email: string;
+    locale?: string;
+  }): Promise<SendVerificationResult> {
+    const { leadId, email, locale = "en" } = params;
+
+    try {
+      // 1. Check resend cooldown
+      const resendCheck = await this.canResendCodeByLeadId(leadId);
+      if (!resendCheck.canResend) {
+        return {
+          success: false,
+          error: "rate_limited",
+          retryAfter: resendCheck.waitSeconds,
+        };
+      }
+
+      // 2. Generate code and hash
+      const { plainCode, hashedCode, expiresAt } =
+        await this.generateAndHashCode();
+
+      // 3. Store verification code on lead
+      await this.wizardLeadService.setVerificationCode(leadId, {
+        hashedCode,
+        expiresAt,
+      });
+
+      // 4. Queue verification email
+      await this.notificationQueue.queueNotification({
+        templateCode: "email_verification_code",
+        recipientEmail: email,
+        locale,
+        variables: {
+          verification_code: plainCode,
+          expires_in_minutes: CODE_EXPIRATION_MINUTES,
+        },
+        leadId,
+        idempotencyKey: `email_verification_${leadId}_${Date.now()}`,
+        processImmediately: true,
+      });
+
+      logger.info(
+        { leadId, email, expiresAt },
+        "[EmailVerification] Verification code sent to existing lead"
+      );
+
+      return {
+        success: true,
+        leadId,
+        expiresAt,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        { leadId, email, error: errorMessage },
+        "[EmailVerification] Failed to send verification code to lead"
+      );
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
    * Generate, hash, store, and send a verification code
+   *
+   * @deprecated Use WizardLeadService.createWizardLead() + sendVerificationCodeToLead() instead.
+   * This method will be removed in V7.0.
    *
    * Creates a new lead if one doesn't exist for the email.
    * Resets attempt counter on new code generation.
@@ -477,6 +667,136 @@ export class EmailVerificationService {
       logger.error(
         { email, error: errorMessage },
         "[EmailVerification] Verification failed"
+      );
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
+   * V6.4: Verify a code by leadId (preferred method)
+   *
+   * Uses WizardLeadService for state updates.
+   * Avoids email lookup - more efficient.
+   *
+   * @param params - Lead ID and code to verify
+   * @returns Verification result
+   *
+   * @example
+   * ```typescript
+   * const result = await emailVerificationService.verifyCodeByLeadId({
+   *   leadId: "uuid-123",
+   *   code: "123456",
+   * });
+   * ```
+   */
+  async verifyCodeByLeadId(params: {
+    leadId: string;
+    code: string;
+  }): Promise<VerifyCodeResult> {
+    const { leadId, code } = params;
+
+    try {
+      // 1. Get verification status from WizardLeadService
+      const status = await this.wizardLeadService.getVerificationStatus(leadId);
+
+      if (!status) {
+        return {
+          success: false,
+          error: "lead_not_found",
+        };
+      }
+
+      // 2. Check if already verified
+      if (status.email_verified) {
+        return {
+          success: true,
+          leadId,
+        };
+      }
+
+      // 3. Check if code exists
+      if (!status.email_verification_code) {
+        return {
+          success: false,
+          leadId,
+          error: "no_code_pending",
+        };
+      }
+
+      // 4. Check max attempts
+      const attempts = status.email_verification_attempts || 0;
+      if (attempts >= MAX_VERIFICATION_ATTEMPTS) {
+        return {
+          success: false,
+          leadId,
+          error: "max_attempts_exceeded",
+          attemptsRemaining: 0,
+          locked: true,
+        };
+      }
+
+      // 5. Check expiration
+      if (
+        !status.email_verification_expires_at ||
+        new Date() > status.email_verification_expires_at
+      ) {
+        return {
+          success: false,
+          leadId,
+          error: "code_expired",
+          attemptsRemaining: MAX_VERIFICATION_ATTEMPTS - attempts,
+        };
+      }
+
+      // 6. Compare code
+      const isValid = await this.compareCode(
+        code,
+        status.email_verification_code
+      );
+
+      if (!isValid) {
+        // Increment attempts via WizardLeadService
+        const newAttempts =
+          await this.wizardLeadService.incrementVerificationAttempts(leadId);
+
+        const locked = newAttempts >= MAX_VERIFICATION_ATTEMPTS;
+
+        logger.warn(
+          { leadId, attempts: newAttempts, locked },
+          "[EmailVerification] Invalid code entered"
+        );
+
+        return {
+          success: false,
+          leadId,
+          error: "invalid_code",
+          attemptsRemaining: MAX_VERIFICATION_ATTEMPTS - newAttempts,
+          locked,
+        };
+      }
+
+      // 7. Success - mark as verified via WizardLeadService
+      await this.wizardLeadService.markEmailVerified(leadId);
+
+      logger.info(
+        { leadId },
+        "[EmailVerification] Email verified successfully (by leadId)"
+      );
+
+      return {
+        success: true,
+        leadId,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        { leadId, error: errorMessage },
+        "[EmailVerification] Verification failed (by leadId)"
       );
 
       return {

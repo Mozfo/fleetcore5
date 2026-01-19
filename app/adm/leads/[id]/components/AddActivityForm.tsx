@@ -27,7 +27,7 @@ export default function AddActivityForm({ leadId }: AddActivityFormProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/demo-leads/${leadId}/activity`, {
+      const response = await fetch(`/api/crm/demo-leads/${leadId}/activity`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

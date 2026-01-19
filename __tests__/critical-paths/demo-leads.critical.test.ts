@@ -209,12 +209,15 @@ describe("CRITICAL: Demo Lead Email Flow (Queue-Based)", () => {
    *
    * This is a meta-test that checks the actual source code to ensure
    * the notification queue code was not accidentally removed.
+   *
+   * V6.4: Route moved from /api/demo-leads to /api/crm/demo-leads
    */
   it("MUST have NotificationQueueService import in demo-leads route", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
 
-    const routePath = path.join(process.cwd(), "app/api/demo-leads/route.ts");
+    // V6.4: Check the new canonical location
+    const routePath = path.join(process.cwd(), "app/api/crm/demo-leads/route.ts");
 
     const routeContent = fs.readFileSync(routePath, "utf-8");
 
@@ -365,12 +368,15 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
 
   /**
    * STATIC CODE CHECK: Verify wizard_step1 mode exists in route file
+   *
+   * V6.4: Route moved from /api/demo-leads to /api/crm/demo-leads
    */
   it("MUST have wizard_step1 handler in demo-leads route", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
 
-    const routePath = path.join(process.cwd(), "app/api/demo-leads/route.ts");
+    // V6.4: Check the new canonical location
+    const routePath = path.join(process.cwd(), "app/api/crm/demo-leads/route.ts");
     const routeContent = fs.readFileSync(routePath, "utf-8");
 
     // Check for wizard_step1 mode handling

@@ -1432,83 +1432,112 @@
 
 ### crm_leads
 
-**Row Count:** ~23
+**Row Count:** ~50+
+**Total Columns:** 71
 
-| Column              | Type           | Nullable | Default                          |
-| ------------------- | -------------- | -------- | -------------------------------- |
-| id                  | `uuid`         | NO       | `uuid_generate_v4()`             |
-| email               | `text`         | NO       | -                                |
-| phone               | `text`         | YES      | -                                |
-| source              | `text`         | YES      | -                                |
-| status              | `text`         | NO       | `'new'::text`                    |
-| message             | `text`         | YES      | -                                |
-| created_at          | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              |
-| updated_at          | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              |
-| country_code        | `character`    | YES      | -                                |
-| fleet_size          | `varchar`      | YES      | -                                |
-| current_software    | `varchar`      | YES      | -                                |
-| assigned_to         | `uuid`         | YES      | -                                |
-| qualification_score | `integer`      | YES      | -                                |
-| qualification_notes | `text`         | YES      | -                                |
-| qualified_date      | `timestamptz`  | YES      | -                                |
-| converted_date      | `timestamptz`  | YES      | -                                |
-| utm_source          | `varchar`      | YES      | -                                |
-| utm_medium          | `varchar`      | YES      | -                                |
-| utm_campaign        | `varchar`      | YES      | -                                |
-| metadata            | `jsonb`        | YES      | `'{}'::jsonb`                    |
-| created_by          | `uuid`         | YES      | -                                |
-| updated_by          | `uuid`         | YES      | -                                |
-| deleted_at          | `timestamptz`  | YES      | -                                |
-| deleted_by          | `uuid`         | YES      | -                                |
-| deletion_reason     | `text`         | YES      | -                                |
-| lead_code           | `varchar`      | YES      | -                                |
-| first_name          | `text`         | NO       | -                                |
-| last_name           | `text`         | NO       | -                                |
-| company_name        | `text`         | YES      | -                                |
-| industry            | `text`         | YES      | -                                |
-| company_size        | `integer`      | YES      | -                                |
-| website_url         | `text`         | YES      | -                                |
-| linkedin_url        | `text`         | YES      | -                                |
-| city                | `text`         | YES      | -                                |
-| lead_stage          | `USER-DEFINED` | YES      | -                                |
-| fit_score           | `numeric`      | YES      | -                                |
-| engagement_score    | `numeric`      | YES      | -                                |
-| scoring             | `jsonb`        | YES      | -                                |
-| gdpr_consent        | `boolean`      | YES      | -                                |
-| consent_at          | `timestamptz`  | YES      | -                                |
-| source_id           | `uuid`         | YES      | -                                |
-| opportunity_id      | `uuid`         | YES      | -                                |
-| next_action_date    | `timestamptz`  | YES      | -                                |
-| priority            | `varchar`      | YES      | `'medium'::character varying...` |
-| consent_ip          | `varchar`      | YES      | -                                |
-| last_activity_at    | `timestamptz`  | YES      | -                                |
-| provider_id         | `uuid`         | YES      | -                                |
+| Column                          | Type           | Nullable | Default                          | Version |
+| ------------------------------- | -------------- | -------- | -------------------------------- | ------- |
+| id                              | `uuid`         | NO       | `uuid_generate_v4()`             | V1      |
+| email                           | `text`         | NO       | -                                | V1      |
+| phone                           | `text`         | YES      | -                                | V1      |
+| source                          | `text`         | YES      | -                                | V1      |
+| status                          | `text`         | NO       | `'new'::text`                    | V1      |
+| message                         | `text`         | YES      | -                                | V1      |
+| created_at                      | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              | V1      |
+| updated_at                      | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              | V1      |
+| country_code                    | `character(2)` | YES      | -                                | V1      |
+| fleet_size                      | `varchar(50)`  | YES      | -                                | V1      |
+| current_software                | `varchar(255)` | YES      | -                                | V1      |
+| assigned_to                     | `uuid`         | YES      | -                                | V1      |
+| qualification_score             | `integer`      | YES      | -                                | V1      |
+| qualification_notes             | `text`         | YES      | -                                | V1      |
+| qualified_date                  | `timestamptz`  | YES      | -                                | V1      |
+| converted_date                  | `timestamptz`  | YES      | -                                | V1      |
+| utm_source                      | `varchar(255)` | YES      | -                                | V1      |
+| utm_medium                      | `varchar(255)` | YES      | -                                | V1      |
+| utm_campaign                    | `varchar(255)` | YES      | -                                | V1      |
+| metadata                        | `jsonb`        | YES      | `'{}'::jsonb`                    | V1      |
+| created_by                      | `uuid`         | YES      | -                                | V1      |
+| updated_by                      | `uuid`         | YES      | -                                | V1      |
+| deleted_at                      | `timestamptz`  | YES      | -                                | V1      |
+| deleted_by                      | `uuid`         | YES      | -                                | V1      |
+| deletion_reason                 | `text`         | YES      | -                                | V1      |
+| lead_code                       | `varchar(50)`  | YES      | -                                | V2      |
+| first_name                      | `text`         | YES      | -                                | V2      |
+| last_name                       | `text`         | YES      | -                                | V2      |
+| company_name                    | `text`         | YES      | -                                | V2      |
+| industry                        | `text`         | YES      | -                                | V2      |
+| company_size                    | `integer`      | YES      | -                                | V2      |
+| website_url                     | `text`         | YES      | -                                | V2      |
+| linkedin_url                    | `text`         | YES      | -                                | V2      |
+| city                            | `text`         | YES      | -                                | V2      |
+| lead_stage                      | `lead_stage`   | YES      | -                                | V2      |
+| fit_score                       | `numeric(5,2)` | YES      | -                                | V2      |
+| engagement_score                | `numeric(5,2)` | YES      | -                                | V2      |
+| scoring                         | `jsonb`        | YES      | -                                | V2      |
+| gdpr_consent                    | `boolean`      | YES      | -                                | V3      |
+| consent_at                      | `timestamptz`  | YES      | -                                | V3      |
+| source_id                       | `uuid`         | YES      | -                                | V3      |
+| opportunity_id                  | `uuid`         | YES      | -                                | V3      |
+| next_action_date                | `timestamptz`  | YES      | -                                | V3      |
+| priority                        | `varchar(20)`  | YES      | `'medium'`                       | V3      |
+| consent_ip                      | `varchar(45)`  | YES      | -                                | V3      |
+| last_activity_at                | `timestamptz`  | YES      | -                                | V4      |
+| provider_id                     | `uuid`         | YES      | -                                | V4      |
+| stage_entered_at                | `timestamptz`  | YES      | `now()`                          | V5      |
+| loss_reason_code                | `varchar(50)`  | YES      | -                                | V5      |
+| loss_reason_detail              | `text`         | YES      | -                                | V5      |
+| competitor_name                 | `varchar(100)` | YES      | -                                | V5      |
+| booking_slot_at                 | `timestamptz`  | YES      | -                                | V6.2    |
+| booking_confirmed_at            | `timestamptz`  | YES      | -                                | V6.2    |
+| booking_calcom_uid              | `varchar(100)` | YES      | -                                | V6.2    |
+| platforms_used                  | `text[]`       | YES      | -                                | V6.2    |
+| wizard_completed                | `boolean`      | YES      | `false`                          | V6.2    |
+| tenant_id                       | `uuid`         | YES      | -                                | V6.2    |
+| converted_at                    | `timestamptz`  | YES      | -                                | V6.2    |
+| stripe_checkout_session_id      | `varchar(255)` | YES      | -                                | V6.2.1  |
+| stripe_payment_link_url         | `text`         | YES      | -                                | V6.2.1  |
+| payment_link_created_at         | `timestamptz`  | YES      | -                                | V6.2.1  |
+| payment_link_expires_at         | `timestamptz`  | YES      | -                                | V6.2.1  |
+| email_verified                  | `boolean`      | NO       | `false`                          | V6.2.2  |
+| email_verification_code         | `varchar(255)` | YES      | -                                | V6.2.2  |
+| email_verification_expires_at   | `timestamptz`  | YES      | -                                | V6.2.2  |
+| email_verification_attempts     | `integer`      | NO       | `0`                              | V6.2.2  |
+| confirmation_token              | `varchar(255)` | YES      | -                                | V6.2.6  |
+| attendance_confirmed            | `boolean`      | NO       | `false`                          | V6.2.6  |
+| attendance_confirmed_at         | `timestamptz`  | YES      | -                                | V6.2.6  |
+| j1_reminder_sent_at             | `timestamptz`  | YES      | -                                | V6.2.6  |
+| reschedule_token                | `varchar(8)`   | YES      | -                                | V6.3.3  |
 
 **CHECK Constraints:**
 
 - `crm_leads_source_check`: ((source IS NULL) OR (source = ANY (ARRAY['web'::text, 'referral'::text, 'event'::text])))
-- `crm_leads_status_check`: (status = ANY (ARRAY['new'::text, 'contacted'::text, 'working'::text, 'qualified'::text, 'disqualifi...
+- `crm_leads_status_check`: (status = ANY (ARRAY['new'::text, 'demo_scheduled'::text, 'qualified'::text, 'demo_completed'::text, 'proposal_sent'::text, 'payment_pending'::text, 'converted'::text, 'lost'::text, 'nurturing'::text, 'disqualified'::text]))
 
 **Indexes:**
 
-- `crm_leads_assigned_to_idx`: (assigned_to)
-- `crm_leads_country_code_idx`: (country_code)
+- `crm_leads_pkey`: PRIMARY KEY (id)
+- `crm_leads_lead_code_key`: UNIQUE (lead_code)
+- `crm_leads_reschedule_token_key`: UNIQUE (reschedule_token)
 - `crm_leads_created_at_idx`: (created_at DESC)
 - `crm_leads_deleted_at_idx`: (deleted_at)
-- `crm_leads_email_unique_active`: (email)
-- `crm_leads_lead_code_key`: (lead_code)
-- `crm_leads_notes_gin`: (to_tsvector('english'::regconfig, COALESCE(message, ''::text)
 - `crm_leads_status_idx`: (status)
 - `idx_crm_leads_assigned_to`: (assigned_to)
 - `idx_crm_leads_country_code`: (country_code)
 - `idx_crm_leads_last_activity_at`: (last_activity_at)
 - `idx_crm_leads_lead_stage`: (lead_stage)
-- `idx_crm_leads_metadata`: (metadata)
-- `idx_crm_leads_priority`: (priority)
-- `idx_crm_leads_provider_id`: (provider_id)
+- `idx_crm_leads_metadata`: GIN (metadata)
 - `idx_crm_leads_qualification_score`: (qualification_score)
 - `idx_crm_leads_status_stage_deleted`: (deleted_at, status, lead_stage)
 - `idx_crm_leads_updated_at`: (updated_at)
+- `idx_crm_leads_stage_entered`: (stage_entered_at DESC)
+- `idx_crm_leads_loss_reason`: (loss_reason_code)
+- `idx_crm_leads_booking_slot`: (booking_slot_at)
+- `idx_crm_leads_booking_calcom_uid`: (booking_calcom_uid)
+- `idx_crm_leads_wizard_completed`: (wizard_completed)
+- `idx_crm_leads_tenant`: (tenant_id)
+- `idx_crm_leads_email_verification`: (email, email_verified)
+- `idx_crm_leads_reschedule_token`: (reschedule_token)
 
 ### crm_opportunities
 
@@ -1881,6 +1910,52 @@
 - `idx_crm_settings_provider_id`: (provider_id)
 - `idx_crm_settings_updated_by`: (updated_by)
 - `idx_crm_settings_value`: (setting_value)
+
+### crm_waitlist
+
+**Row Count:** ~100+
+**Version:** V6.3
+
+Table pour la gestion des inscriptions en liste d'attente pour les pays non-opérationnels.
+
+| Column                | Type           | Nullable | Default             |
+| --------------------- | -------------- | -------- | ------------------- |
+| id                    | `uuid`         | NO       | `gen_random_uuid()` |
+| short_token           | `varchar(8)`   | YES      | -                   |
+| email                 | `varchar(255)` | NO       | -                   |
+| country_code          | `varchar(2)`   | NO       | -                   |
+| fleet_size            | `varchar(20)`  | YES      | -                   |
+| detected_country_code | `varchar(2)`   | YES      | -                   |
+| ip_address            | `varchar(45)`  | YES      | -                   |
+| marketing_consent     | `boolean`      | NO       | `true`              |
+| gdpr_consent          | `boolean`      | YES      | -                   |
+| gdpr_consent_at       | `timestamptz`  | YES      | -                   |
+| gdpr_consent_ip       | `varchar(45)`  | YES      | -                   |
+| honeypot_triggered    | `boolean`      | NO       | `false`             |
+| source                | `varchar(50)`  | NO       | `'wizard'`          |
+| locale                | `varchar(5)`   | NO       | `'en'`              |
+| utm_source            | `varchar(100)` | YES      | -                   |
+| utm_medium            | `varchar(100)` | YES      | -                   |
+| utm_campaign          | `varchar(100)` | YES      | -                   |
+| created_at            | `timestamptz`  | NO       | `now()`             |
+| notified_at           | `timestamptz`  | YES      | -                   |
+
+**UNIQUE Constraints:**
+
+- `crm_waitlist_short_token_key`: UNIQUE (short_token)
+- `crm_waitlist_email_country_unique`: UNIQUE (email, country_code)
+
+**Foreign Keys:**
+
+- `fk_crm_waitlist_country`: country_code → crm_countries(country_code)
+
+**Indexes:**
+
+- `idx_crm_waitlist_country`: (country_code)
+- `idx_crm_waitlist_fleet`: (fleet_size)
+- `idx_crm_waitlist_created`: (created_at)
+- `idx_crm_waitlist_email`: (email)
+- `idx_crm_waitlist_short_token`: (short_token)
 
 ## Directory Module (dir\_)
 

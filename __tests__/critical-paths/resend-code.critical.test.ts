@@ -39,13 +39,14 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 // Mock EmailVerificationService
-const mockCanResendCode = vi.fn();
-const mockSendVerificationCode = vi.fn();
+// V6.4: Updated to use leadId-based methods
+const mockCanResendCodeByLeadId = vi.fn();
+const mockSendVerificationCodeToLead = vi.fn();
 
 vi.mock("@/lib/services/crm/email-verification.service", () => ({
   EmailVerificationService: vi.fn().mockImplementation(() => ({
-    canResendCode: mockCanResendCode,
-    sendVerificationCode: mockSendVerificationCode,
+    canResendCodeByLeadId: mockCanResendCodeByLeadId,
+    sendVerificationCodeToLead: mockSendVerificationCodeToLead,
   })),
 }));
 
@@ -80,8 +81,8 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFindFirst.mockResolvedValue(MOCK_LEAD);
-    mockCanResendCode.mockResolvedValue({ canResend: true });
-    mockSendVerificationCode.mockResolvedValue({
+    mockCanResendCodeByLeadId.mockResolvedValue({ canResend: true });
+    mockSendVerificationCodeToLead.mockResolvedValue({
       success: true,
       leadId: VALID_LEAD_ID,
       expiresAt: FUTURE_EXPIRY,
@@ -108,15 +109,16 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
       expect(data.data.expiresAt).toBeDefined();
       expect(data.message).toBe("Verification code sent");
 
-      // Verify service calls
-      expect(mockCanResendCode).toHaveBeenCalledWith("test@example.com");
-      expect(mockSendVerificationCode).toHaveBeenCalledWith({
+      // Verify service calls (V6.4: uses leadId-based methods)
+      expect(mockCanResendCodeByLeadId).toHaveBeenCalledWith(VALID_LEAD_ID);
+      expect(mockSendVerificationCodeToLead).toHaveBeenCalledWith({
+        leadId: VALID_LEAD_ID,
         email: "test@example.com",
         locale: "en",
       });
     });
 
-    it("should pass locale to sendVerificationCode", async () => {
+    it("should pass locale to sendVerificationCodeToLead", async () => {
       const { POST } = await import("@/app/api/crm/leads/resend-code/route");
 
       const request = createMockRequest({
@@ -130,7 +132,9 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
 
-      expect(mockSendVerificationCode).toHaveBeenCalledWith({
+      // V6.4: uses leadId-based method with leadId, email, and locale
+      expect(mockSendVerificationCodeToLead).toHaveBeenCalledWith({
+        leadId: VALID_LEAD_ID,
         email: "test@example.com",
         locale: "fr",
       });
@@ -178,7 +182,7 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
 
   describe("Cooldown / Rate Limiting", () => {
     it("should return 429 with cooldownSeconds when cooldown active", async () => {
-      mockCanResendCode.mockResolvedValue({
+      mockCanResendCodeByLeadId.mockResolvedValue({
         canResend: false,
         waitSeconds: 45,
         lastSentAt: new Date(),
@@ -198,12 +202,12 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
       expect(data.error.code).toBe("RATE_LIMITED");
       expect(data.error.cooldownSeconds).toBe(45);
 
-      // Should NOT call sendVerificationCode
-      expect(mockSendVerificationCode).not.toHaveBeenCalled();
+      // Should NOT call sendVerificationCodeToLead
+      expect(mockSendVerificationCodeToLead).not.toHaveBeenCalled();
     });
 
     it("should return 429 if service returns rate_limited", async () => {
-      mockSendVerificationCode.mockResolvedValue({
+      mockSendVerificationCodeToLead.mockResolvedValue({
         success: false,
         error: "rate_limited",
         retryAfter: 30,
@@ -249,9 +253,9 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
       expect(data.success).toBe(false);
       expect(data.error.code).toBe("ALREADY_VERIFIED");
 
-      // Should NOT call canResendCode or sendVerificationCode
-      expect(mockCanResendCode).not.toHaveBeenCalled();
-      expect(mockSendVerificationCode).not.toHaveBeenCalled();
+      // Should NOT call canResendCodeByLeadId or sendVerificationCodeToLead
+      expect(mockCanResendCodeByLeadId).not.toHaveBeenCalled();
+      expect(mockSendVerificationCodeToLead).not.toHaveBeenCalled();
     });
   });
 
@@ -293,7 +297,7 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
 
   describe("Error Handling", () => {
     it("should return 500 for unexpected service error", async () => {
-      mockSendVerificationCode.mockResolvedValue({
+      mockSendVerificationCodeToLead.mockResolvedValue({
         success: false,
         error: "Database connection failed",
       });
@@ -333,8 +337,9 @@ describe("CRITICAL: Resend Verification Code Endpoint (V6.2.2)", () => {
       expect(routeContent).toContain("SECURITY");
       expect(routeContent).toContain("enumeration");
       expect(routeContent).toContain("EmailVerificationService");
-      expect(routeContent).toContain("canResendCode");
-      expect(routeContent).toContain("sendVerificationCode");
+      // V6.4: Updated to check for leadId-based method names
+      expect(routeContent).toContain("canResendCodeByLeadId");
+      expect(routeContent).toContain("sendVerificationCodeToLead");
       expect(routeContent).toContain("RESEND_FAILED");
       expect(routeContent).toContain("RATE_LIMITED");
       expect(routeContent).toContain("ALREADY_VERIFIED");

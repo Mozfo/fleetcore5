@@ -2,7 +2,8 @@
  * Waitlist API
  *
  * V6.2.3 - Endpoint pour collecter les leads des pays non-opérationnels
- * V6.3 - Marketing email flow:
+ * V6.3   - Marketing email flow:
+ * V6.4   - Server-side GeoIP detection (fixes race condition from frontend)
  *   - Creates pending waitlist entry (marketing_consent = false)
  *   - Sends marketing-focused email with:
  *     1. "Thank you for your interest" title
@@ -107,6 +108,21 @@ export async function POST(request: NextRequest) {
     // Get client IP for GDPR tracking
     const clientIP = geoIPService.getClientIP(request);
 
+    // V6.4: Server-side GeoIP detection (more reliable than frontend race condition)
+    let serverDetectedCountry: string | null = null;
+    try {
+      serverDetectedCountry = await geoIPService.getCountryFromIP(clientIP);
+    } catch (error) {
+      logger.warn(
+        { ip: clientIP, error },
+        "[Waitlist] GeoIP detection failed - continuing without"
+      );
+    }
+
+    // Use server detection, fallback to frontend if server returns null
+    const finalDetectedCountry =
+      serverDetectedCountry || data.detected_country_code || null;
+
     // Check if email+country already exists
     const existing = await db.crm_waitlist.findFirst({
       where: {
@@ -181,7 +197,7 @@ export async function POST(request: NextRequest) {
           connect: { country_code: data.country_code },
         },
         fleet_size: data.fleet_size || null,
-        detected_country_code: data.detected_country_code || null,
+        detected_country_code: finalDetectedCountry,
         ip_address: clientIP,
         marketing_consent: data.marketing_consent, // false = pending, true = opted-in
         gdpr_consent: country.country_gdpr ? data.gdpr_consent : null,

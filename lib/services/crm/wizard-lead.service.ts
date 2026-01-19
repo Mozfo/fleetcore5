@@ -1,0 +1,447 @@
+/**
+ * Wizard Lead Service - V6.4 Book Demo Wizard
+ *
+ * Centralizes lead management for the Book Demo wizard flow.
+ * Single Responsibility: Create and update leads during wizard steps.
+ *
+ * Features:
+ * - Create wizard lead (Step 1: email + country)
+ * - Store verification code (from EmailVerificationService)
+ * - Mark email verified (Step 1b validation)
+ * - Complete profile (Step 3: business info)
+ *
+ * Architecture:
+ * - This service manages LEAD DATA only
+ * - EmailVerificationService handles CODE generation/validation
+ * - NotificationQueueService handles EMAIL sending
+ *
+ * @module lib/services/crm/wizard-lead.service
+ */
+
+import type { PrismaClient, crm_leads } from "@prisma/client";
+import { prisma as defaultPrisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
+
+// ===== CONSTANTS =====
+
+/** Default provider ID for FleetCore leads */
+const DEFAULT_PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+
+// ===== TYPES & INTERFACES =====
+
+/**
+ * Parameters for creating a wizard lead (Step 1)
+ */
+export interface CreateWizardLeadParams {
+  email: string;
+  country_code: string;
+  locale: string;
+}
+
+/**
+ * Result of creating a wizard lead
+ */
+export interface CreateWizardLeadResult {
+  leadId: string;
+  isNew: boolean;
+  lead: crm_leads;
+}
+
+/**
+ * Parameters for setting verification code on a lead
+ */
+export interface SetVerificationCodeParams {
+  hashedCode: string;
+  expiresAt: Date;
+}
+
+/**
+ * Parameters for completing lead profile (Step 3)
+ */
+export interface CompleteProfileParams {
+  company_name: string;
+  phone?: string;
+  fleet_size: string;
+  gdpr_consent?: boolean;
+  consent_ip?: string;
+}
+
+// ===== SERVICE CLASS =====
+
+/**
+ * WizardLeadService
+ *
+ * Manages lead data for the Book Demo wizard.
+ * Does NOT handle verification codes or email sending.
+ *
+ * @example
+ * ```typescript
+ * import { wizardLeadService } from "@/lib/services/crm/wizard-lead.service";
+ *
+ * // Step 1: Create lead
+ * const result = await wizardLeadService.createWizardLead({
+ *   email: "user@example.com",
+ *   country_code: "FR",
+ *   locale: "fr",
+ * });
+ *
+ * // Step 3: Complete profile
+ * await wizardLeadService.completeProfile(result.leadId, {
+ *   company_name: "Acme Corp",
+ *   fleet_size: "11-20",
+ *   gdpr_consent: true,
+ *   consent_ip: "192.168.1.1",
+ * });
+ * ```
+ */
+export class WizardLeadService {
+  private prisma: PrismaClient;
+
+  constructor(prismaClient?: PrismaClient) {
+    this.prisma = prismaClient || defaultPrisma;
+  }
+
+  // ============================================
+  // LEAD CODE GENERATION
+  // ============================================
+
+  /**
+   * Generate a unique lead code for the current year
+   *
+   * Format: LEAD-YYYY-NNNNN (e.g., LEAD-2026-00001)
+   * Sequence resets at the beginning of each calendar year.
+   *
+   * @returns Next available unique lead code
+   */
+  private async generateLeadCode(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `LEAD-${year}-`;
+
+    // Find the last lead code for this year
+    const lastLead = await this.prisma.crm_leads.findFirst({
+      where: {
+        lead_code: { startsWith: prefix },
+        deleted_at: null,
+      },
+      orderBy: { lead_code: "desc" },
+      select: { lead_code: true },
+    });
+
+    // Calculate next sequence number
+    let nextSequence = 1;
+
+    if (lastLead?.lead_code) {
+      const parts = lastLead.lead_code.split("-");
+      if (parts.length === 3) {
+        const lastNumber = parseInt(parts[2], 10);
+        if (!isNaN(lastNumber)) {
+          nextSequence = lastNumber + 1;
+        }
+      }
+    }
+
+    return `${prefix}${nextSequence.toString().padStart(5, "0")}`;
+  }
+
+  // ============================================
+  // STEP 1: CREATE WIZARD LEAD
+  // ============================================
+
+  /**
+   * Create or retrieve a lead for wizard Step 1
+   *
+   * Behavior:
+   * - If email exists (non-deleted) → returns existing lead (isNew = false)
+   * - Otherwise → creates new lead with lead_code, status='new', email_verified=false
+   *
+   * @param params - Email, country_code, and locale
+   * @returns Lead ID, whether it's new, and the full lead object
+   */
+  async createWizardLead(
+    params: CreateWizardLeadParams
+  ): Promise<CreateWizardLeadResult> {
+    const { email, country_code, locale } = params;
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedCountryCode = country_code.toUpperCase().trim();
+
+    // Check for existing lead
+    const existingLead = await this.prisma.crm_leads.findFirst({
+      where: {
+        email: { equals: normalizedEmail, mode: "insensitive" },
+        deleted_at: null,
+      },
+    });
+
+    if (existingLead) {
+      logger.info(
+        { leadId: existingLead.id, email: normalizedEmail },
+        "[WizardLead] Existing lead found"
+      );
+
+      // Update country_code if different
+      if (
+        existingLead.country_code !== normalizedCountryCode ||
+        !existingLead.country_code
+      ) {
+        await this.prisma.crm_leads.update({
+          where: { id: existingLead.id },
+          data: {
+            country_code: normalizedCountryCode,
+            updated_at: new Date(),
+          },
+        });
+      }
+
+      return {
+        leadId: existingLead.id,
+        isNew: false,
+        lead: existingLead,
+      };
+    }
+
+    // Generate unique lead code
+    const leadCode = await this.generateLeadCode();
+
+    // Create new lead
+    const newLead = await this.prisma.crm_leads.create({
+      data: {
+        email: normalizedEmail,
+        country_code: normalizedCountryCode,
+        lead_code: leadCode,
+        status: "new",
+        email_verified: false,
+        email_verification_attempts: 0,
+        provider_id: DEFAULT_PROVIDER_ID,
+        wizard_completed: false,
+        metadata: {
+          source: "book_demo_wizard",
+          form_locale: locale,
+          wizard_started_at: new Date().toISOString(),
+        },
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    logger.info(
+      { leadId: newLead.id, leadCode, email: normalizedEmail },
+      "[WizardLead] New lead created"
+    );
+
+    return {
+      leadId: newLead.id,
+      isNew: true,
+      lead: newLead,
+    };
+  }
+
+  // ============================================
+  // VERIFICATION CODE MANAGEMENT
+  // ============================================
+
+  /**
+   * Store a hashed verification code on the lead
+   *
+   * Called by EmailVerificationService after generating a code.
+   * Resets attempts counter to 0.
+   *
+   * @param leadId - Lead UUID
+   * @param params - Hashed code and expiration date
+   */
+  async setVerificationCode(
+    leadId: string,
+    params: SetVerificationCodeParams
+  ): Promise<void> {
+    const { hashedCode, expiresAt } = params;
+
+    await this.prisma.crm_leads.update({
+      where: { id: leadId },
+      data: {
+        email_verification_code: hashedCode,
+        email_verification_expires_at: expiresAt,
+        email_verification_attempts: 0,
+        updated_at: new Date(),
+      },
+    });
+
+    logger.debug(
+      { leadId, expiresAt },
+      "[WizardLead] Verification code stored"
+    );
+  }
+
+  /**
+   * Mark the lead's email as verified
+   *
+   * Clears verification code, expiration, and attempts.
+   *
+   * @param leadId - Lead UUID
+   */
+  async markEmailVerified(leadId: string): Promise<void> {
+    await this.prisma.crm_leads.update({
+      where: { id: leadId },
+      data: {
+        email_verified: true,
+        email_verification_code: null,
+        email_verification_expires_at: null,
+        email_verification_attempts: 0,
+        updated_at: new Date(),
+      },
+    });
+
+    logger.info({ leadId }, "[WizardLead] Email verified");
+  }
+
+  /**
+   * Increment verification attempts counter
+   *
+   * @param leadId - Lead UUID
+   * @returns New attempt count
+   */
+  async incrementVerificationAttempts(leadId: string): Promise<number> {
+    const updated = await this.prisma.crm_leads.update({
+      where: { id: leadId },
+      data: {
+        email_verification_attempts: { increment: 1 },
+        updated_at: new Date(),
+      },
+      select: { email_verification_attempts: true },
+    });
+
+    const newCount = updated.email_verification_attempts;
+
+    logger.debug(
+      { leadId, attempts: newCount },
+      "[WizardLead] Verification attempts incremented"
+    );
+
+    return newCount;
+  }
+
+  // ============================================
+  // STEP 3: COMPLETE PROFILE
+  // ============================================
+
+  /**
+   * Complete the lead profile (Step 3)
+   *
+   * Updates:
+   * - company_name, phone, fleet_size
+   * - wizard_completed = true
+   * - GDPR fields if consent given
+   *
+   * Note: Does NOT change status (remains 'new' until Cal.com webhook)
+   *
+   * @param leadId - Lead UUID
+   * @param params - Profile data and GDPR consent
+   */
+  async completeProfile(
+    leadId: string,
+    params: CompleteProfileParams
+  ): Promise<void> {
+    const { company_name, phone, fleet_size, gdpr_consent, consent_ip } =
+      params;
+
+    const updateData: Record<string, unknown> = {
+      company_name: company_name.trim(),
+      fleet_size,
+      wizard_completed: true,
+      updated_at: new Date(),
+    };
+
+    // Optional phone
+    if (phone) {
+      updateData.phone = phone.trim();
+    }
+
+    // GDPR consent (for EU/EEA countries)
+    if (gdpr_consent) {
+      updateData.gdpr_consent = true;
+      updateData.consent_at = new Date();
+      if (consent_ip) {
+        updateData.consent_ip = consent_ip;
+      }
+    }
+
+    await this.prisma.crm_leads.update({
+      where: { id: leadId },
+      data: updateData,
+    });
+
+    logger.info(
+      { leadId, company_name, fleet_size, gdpr_consent: !!gdpr_consent },
+      "[WizardLead] Profile completed"
+    );
+  }
+
+  // ============================================
+  // QUERY METHODS
+  // ============================================
+
+  /**
+   * Get a lead by ID
+   *
+   * @param leadId - Lead UUID
+   * @returns Lead or null if not found
+   */
+  async getLeadById(leadId: string): Promise<crm_leads | null> {
+    return this.prisma.crm_leads.findUnique({
+      where: { id: leadId },
+    });
+  }
+
+  /**
+   * Find a lead by email (case insensitive)
+   *
+   * Only returns non-deleted leads.
+   *
+   * @param email - Email address
+   * @returns Lead or null if not found
+   */
+  async findByEmail(email: string): Promise<crm_leads | null> {
+    return this.prisma.crm_leads.findFirst({
+      where: {
+        email: { equals: email.toLowerCase().trim(), mode: "insensitive" },
+        deleted_at: null,
+      },
+    });
+  }
+
+  /**
+   * Get verification status for a lead
+   *
+   * @param leadId - Lead UUID
+   * @returns Verification fields or null
+   */
+  async getVerificationStatus(leadId: string): Promise<{
+    email_verified: boolean;
+    email_verification_code: string | null;
+    email_verification_expires_at: Date | null;
+    email_verification_attempts: number;
+  } | null> {
+    const lead = await this.prisma.crm_leads.findUnique({
+      where: { id: leadId },
+      select: {
+        email_verified: true,
+        email_verification_code: true,
+        email_verification_expires_at: true,
+        email_verification_attempts: true,
+      },
+    });
+
+    return lead;
+  }
+}
+
+// ===== SINGLETON INSTANCE =====
+
+/**
+ * Default WizardLeadService instance
+ */
+export const wizardLeadService = new WizardLeadService();
+
+// ===== EXPORT CONSTANTS FOR TESTING =====
+
+export const WIZARD_LEAD_CONSTANTS = {
+  DEFAULT_PROVIDER_ID,
+} as const;

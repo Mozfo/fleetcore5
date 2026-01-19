@@ -39,10 +39,11 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 // Mock EmailVerificationService
-const mockVerifyCode = vi.fn();
+// V6.4: Updated to use verifyCodeByLeadId method
+const mockVerifyCodeByLeadId = vi.fn();
 vi.mock("@/lib/services/crm/email-verification.service", () => ({
   EmailVerificationService: vi.fn().mockImplementation(() => ({
-    verifyCode: mockVerifyCode,
+    verifyCodeByLeadId: mockVerifyCodeByLeadId,
   })),
 }));
 
@@ -83,7 +84,7 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
 
   describe("Success Cases", () => {
     it("should verify code successfully and return redirect URL", async () => {
-      mockVerifyCode.mockResolvedValue({
+      mockVerifyCodeByLeadId.mockResolvedValue({
         success: true,
         leadId: VALID_LEAD_ID,
       });
@@ -125,8 +126,8 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
       expect(data.success).toBe(true);
       expect(data.data.verified).toBe(true);
       expect(data.data.alreadyVerified).toBe(true);
-      // verifyCode should NOT be called since already verified
-      expect(mockVerifyCode).not.toHaveBeenCalled();
+      // verifyCodeByLeadId should NOT be called since already verified
+      expect(mockVerifyCodeByLeadId).not.toHaveBeenCalled();
     });
   });
 
@@ -222,7 +223,7 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
 
   describe("Verification Errors", () => {
     it("should return INVALID_CODE with attemptsRemaining", async () => {
-      mockVerifyCode.mockResolvedValue({
+      mockVerifyCodeByLeadId.mockResolvedValue({
         success: false,
         leadId: VALID_LEAD_ID,
         error: "invalid_code",
@@ -247,7 +248,7 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
     });
 
     it("should return EXPIRED for expired code", async () => {
-      mockVerifyCode.mockResolvedValue({
+      mockVerifyCodeByLeadId.mockResolvedValue({
         success: false,
         leadId: VALID_LEAD_ID,
         error: "code_expired",
@@ -271,7 +272,7 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
     });
 
     it("should return MAX_ATTEMPTS (429) when locked", async () => {
-      mockVerifyCode.mockResolvedValue({
+      mockVerifyCodeByLeadId.mockResolvedValue({
         success: false,
         leadId: VALID_LEAD_ID,
         error: "invalid_code",
@@ -295,7 +296,7 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
     });
 
     it("should return MAX_ATTEMPTS (429) for max_attempts_exceeded", async () => {
-      mockVerifyCode.mockResolvedValue({
+      mockVerifyCodeByLeadId.mockResolvedValue({
         success: false,
         leadId: VALID_LEAD_ID,
         error: "max_attempts_exceeded",
@@ -319,7 +320,7 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
     });
 
     it("should return NO_CODE_PENDING when no code exists", async () => {
-      mockVerifyCode.mockResolvedValue({
+      mockVerifyCodeByLeadId.mockResolvedValue({
         success: false,
         leadId: VALID_LEAD_ID,
         error: "no_code_pending",
@@ -374,7 +375,7 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
     });
 
     it("should return generic error for lead_not_found from service", async () => {
-      mockVerifyCode.mockResolvedValue({
+      mockVerifyCodeByLeadId.mockResolvedValue({
         success: false,
         error: "lead_not_found",
       });
@@ -415,7 +416,8 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
       expect(routeContent).toContain("SECURITY");
       expect(routeContent).toContain("enumeration");
       expect(routeContent).toContain("EmailVerificationService");
-      expect(routeContent).toContain("verifyCode");
+      // V6.4: Updated to check for leadId-based method name
+      expect(routeContent).toContain("verifyCodeByLeadId");
       expect(routeContent).toContain("VERIFICATION_FAILED");
     });
   });

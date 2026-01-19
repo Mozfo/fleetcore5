@@ -1,11 +1,13 @@
 /**
- * Resend Verification Code Endpoint - V6.2.2
+ * Resend Verification Code Endpoint - V6.4
  * Book Demo Wizard - Resend 6-digit code
  *
  * POST /api/crm/leads/resend-code
  *
  * Generates and sends a new 6-digit verification code.
  * Enforces 60-second cooldown between resends.
+ *
+ * V6.4: Uses leadId-based methods for better SRP alignment.
  *
  * @module app/api/crm/leads/resend-code/route
  */
@@ -111,9 +113,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Check cooldown before sending
+    // 4. Check cooldown before sending (V6.4: uses leadId directly)
     const emailVerificationService = new EmailVerificationService(db);
-    const canResend = await emailVerificationService.canResendCode(lead.email);
+    const canResend = await emailVerificationService.canResendCodeByLeadId(leadId);
 
     if (!canResend.canResend) {
       logger.info(
@@ -138,8 +140,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Send new verification code
-    const result = await emailVerificationService.sendVerificationCode({
+    // 5. Send new verification code (V6.4: uses leadId-based method)
+    const result = await emailVerificationService.sendVerificationCodeToLead({
+      leadId,
       email: lead.email,
       locale,
     });

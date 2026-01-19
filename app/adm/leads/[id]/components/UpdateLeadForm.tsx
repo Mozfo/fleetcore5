@@ -24,7 +24,7 @@ export default function UpdateLeadForm({ lead }: UpdateLeadFormProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/demo-leads/${lead.id}`, {
+      const response = await fetch(`/api/crm/demo-leads/${lead.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),

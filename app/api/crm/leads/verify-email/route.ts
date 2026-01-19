@@ -1,10 +1,12 @@
 /**
- * Verify Email Code Endpoint - V6.2.2
+ * Verify Email Code Endpoint - V6.4
  * Book Demo Wizard - Step 1 Code Verification
  *
  * POST /api/crm/leads/verify-email
  *
  * Validates the 6-digit verification code entered by the user.
+ *
+ * V6.4: Uses verifyCodeByLeadId() for better SRP alignment.
  *
  * @module app/api/crm/leads/verify-email/route
  */
@@ -112,10 +114,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. Verify the code
+    // 4. Verify the code (V6.4: uses leadId directly)
     const emailVerificationService = new EmailVerificationService(db);
-    const result = await emailVerificationService.verifyCode({
-      email: lead.email,
+    const result = await emailVerificationService.verifyCodeByLeadId({
+      leadId,
       code,
     });
 

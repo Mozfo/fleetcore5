@@ -1,47 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/prisma";
+/**
+ * Demo Lead Activity Redirect - Backward Compatibility
+ *
+ * @deprecated This route is deprecated. Use /api/crm/demo-leads/[id]/activity instead.
+ * Will be removed in V7.0.
+ *
+ * @module app/api/demo-leads/[id]/activity/route
+ */
+
+import { NextRequest } from "next/server";
 import { logger } from "@/lib/logger";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+// Import handler from new location
+import { POST as newPOST } from "@/app/api/crm/demo-leads/[id]/activity/route";
 
-    const { id: leadId } = await params;
-    const body = await request.json();
+type RouteParams = { params: Promise<{ id: string }> };
 
-    // TODO: Phase 2 - Activity logging will be implemented when sys_demo_lead_activity table is created
-    const result = await db.$transaction(async (tx) => {
-      // V6.3: Si outcome décisif, update le lead (qualified → proposal_sent)
-      if (["proposal_sent", "converted", "lost"].includes(body.outcome)) {
-        await tx.crm_leads.update({
-          where: { id: leadId },
-          data: {
-            status: body.outcome,
-            assigned_to: userId,
-            converted_date:
-              body.outcome === "converted" ? new Date() : undefined,
-          },
-        });
-      }
+/**
+ * @deprecated Use POST /api/crm/demo-leads/[id]/activity instead
+ */
+export async function POST(request: NextRequest, context: RouteParams) {
+  const { id } = await context.params;
+  logger.warn(
+    { leadId: id },
+    "[DEPRECATED] POST /api/demo-leads/[id]/activity called - use /api/crm/demo-leads/[id]/activity instead"
+  );
 
-      return {
-        message: "Activity recorded (Phase 1 - activity table pending)",
-      };
-    });
+  const response = await newPOST(request, context);
 
-    return NextResponse.json(result);
-  } catch (error) {
-    logger.error({ error }, "Error creating activity");
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+  // Add deprecation headers
+  response.headers.set("Deprecation", "true");
+  response.headers.set("Sunset", "2026-06-01");
+  response.headers.set(
+    "Link",
+    '</api/crm/demo-leads/[id]/activity>; rel="successor-version"'
+  );
+
+  return response;
 }

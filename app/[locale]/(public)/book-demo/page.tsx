@@ -6,7 +6,7 @@
  *
  * Flow A (Operational Country):
  * 1. User enters email + selects country
- * 2. Submit → POST /api/demo-leads { mode: "wizard_step1", email, country_code, locale }
+ * 2. Submit → POST /api/crm/demo-leads { mode: "wizard_step1", email, country_code, locale }
  * 3. Success → Redirect to /book-demo/verify?leadId=xxx&email=xxx
  *
  * Flow B (Non-Operational Country - V6.3):
@@ -305,7 +305,7 @@ export default function BookDemoPage() {
         }
 
         // Proceed with normal flow
-        const response = await fetch("/api/demo-leads", {
+        const response = await fetch("/api/crm/demo-leads", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

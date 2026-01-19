@@ -1,474 +1,919 @@
-# FLEETCORE - ÉVOLUTION MODÈLE V1 → V2 : ANALYSE COMPLÈTE DES 55 TABLES (VERSION CORRIGÉE)
+# FLEETCORE - TABLES CRM V6.4 : ANALYSE COMPLÈTE
 
-**Date:** 19 Octobre 2025  
-**Version:** 2.1 - Document corrigé avec module Administration complet  
-**Source:** Document 0_All_tables_v1.md (6386 lignes)  
-**Correction:** Module Administration passe de 5 à 8 tables documentées
-
----
-
-Le document est une analyse EXHAUSTIVE du modèle de données complet, pas seulement d'un sous-ensemble.
-
----
-### Domaine CRM (3 tables)
-51. `crm_leads` - Prospects
-52. `crm_opportunities` - Opportunités
-53. `crm_contracts` - Contrats signés
-
-
----
-## ÉVOLUTIONS MAJEURES V1 → V2 - MODULE CRM
-
-### 📊 Évolutions sur les 3 tables CRM (Internes FleetCore)
-
-**Note importante:** Les tables CRM sont **internes à FleetCore** (pas de tenant_id). Elles sont utilisées par l'équipe commerciale pour gérer les prospects avant qu'ils ne deviennent des clients (tenants).
+**Date:** 20 Janvier 2026
+**Version:** 6.4.0 - Document mis à jour avec schéma actuel
+**Statut:** VALIDÉ - Reflète l'implémentation production
 
 ---
 
-#### Table 1: `crm_leads` - Gestion des Prospects
+## SOMMAIRE
 
-**Existant V1:**
-- Nom complet non scindé
-- Email, téléphone, société
-- Source (web, referral, event)
-- Statut (new, qualified, converted, lost)
-- Message libre du prospect
-- Pas de tracking RGPD
-- Pas de scoring avancé
+1. [Vue d'ensemble](#vue-densemble)
+2. [Table crm_leads](#table-crm_leads)
+3. [Table crm_waitlist](#table-crm_waitlist)
+4. [Table crm_countries](#table-crm_countries)
+5. [Table crm_lead_activities](#table-crm_lead_activities)
+6. [Table crm_lead_sources](#table-crm_lead_sources)
+7. [Table crm_settings](#table-crm_settings)
+8. [Tables annexes](#tables-annexes)
+9. [Évolutions V6.3 → V6.4](#évolutions-v63--v64)
 
-**Évolutions V2:**
+---
+
+## Vue d'ensemble
+
+### Tables principales CRM
+
+| Table | Description | Lignes estimées | Criticité |
+|-------|-------------|-----------------|-----------|
+| `crm_leads` | Prospects et leads | 10K+ | CRITIQUE |
+| `crm_waitlist` | Inscriptions waitlist pays non opérationnels | 1K+ | HAUTE |
+| `crm_countries` | Référentiel pays avec config | 200+ | HAUTE |
+| `crm_lead_activities` | Historique activités sur leads | 50K+ | HAUTE |
+| `crm_lead_sources` | Sources d'acquisition | 20 | MOYENNE |
+| `crm_settings` | Configuration CRM dynamique | 50 | CRITIQUE |
+
+### Relations principales
+
+```
+crm_leads
+    ├── country_code → crm_countries
+    ├── source_id → crm_lead_sources
+    ├── assigned_to → adm_provider_employees
+    └── tenant_id → adm_tenants (après conversion)
+
+crm_waitlist
+    ├── country_code → crm_countries
+    └── lead_id → crm_leads (après lancement pays)
+
+crm_lead_activities
+    ├── lead_id → crm_leads
+    └── performed_by → adm_members
+```
+
+---
+
+## Table crm_leads
+
+### Description
+
+Table principale des prospects. Stocke toutes les informations collectées via le wizard Book Demo, le suivi commercial, et le processus de conversion.
+
+### Schéma complet
+
 ```sql
-MODIFIER:
-- full_name → SCINDER en first_name, last_name
-- demo_company_name → company_name (normaliser)
+CREATE TABLE crm_leads (
+    -- ============================================
+    -- IDENTIFIANTS
+    -- ============================================
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lead_code VARCHAR(50) UNIQUE,
+    -- Format: LEAD-{YEAR}-{SEQUENCE} ex: LEAD-2026-00001
 
-AJOUTER:
-- lead_code (varchar) - Identifiant stable unique
-- country_code (char(2)) - Pays du prospect
-- industry (text) - Secteur d'activité
-- company_size (integer) - Nombre d'employés
-- website_url (text)
-- linkedin_url (text)
-- city (text)
+    -- ============================================
+    -- CONTACT
+    -- ============================================
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    -- Format E.164: +33612345678
 
-SCORING AVANCÉ:
-- lead_stage (enum) - top_of_funnel, marketing_qualified, sales_qualified, opportunity
-- fit_score (numeric) - Correspond au profil cible ?
-- engagement_score (numeric) - Interagit avec nos contenus ?
-- scoring (jsonb) - Critères de scoring détaillés
-- qualification_notes (text)
+    -- ============================================
+    -- ENTREPRISE
+    -- ============================================
+    company_name VARCHAR(255),
+    industry TEXT,
+    company_size VARCHAR(50),
+    -- Ex: "1-10", "11-50", "51-200", "201-500", "500+"
+    website_url TEXT,
+    linkedin_url TEXT,
+    city TEXT,
 
-RGPD & CONSENTEMENT:
-- gdpr_consent (boolean) - Consentement marketing
-- consent_at (timestamp) - Date du consentement
+    -- ============================================
+    -- BUSINESS
+    -- ============================================
+    fleet_size VARCHAR(50),
+    -- Ex: "1", "2-5", "6-10", "11-20", "21-50", "51-100", "100+"
+    current_software TEXT,
+    -- Logiciel actuel utilisé
+    platforms_used TEXT[],
+    -- Array: ['uber', 'bolt', 'heetch', 'careem', 'freenow', 'other']
 
-SUIVI COMMERCIAL:
-- source_id (uuid) - FK vers crm_lead_sources (normalisation)
-- assigned_to (uuid) - Commercial assigné
-- opportunity_id (uuid) - FK vers opportunité créée
-- next_action_date (timestamp) - Planification relances
-- utm_source, utm_medium, utm_campaign (text) - Tracking marketing
+    -- ============================================
+    -- GÉOGRAPHIE
+    -- ============================================
+    country_code CHAR(2),
+    -- FK → crm_countries (ISO 3166-1 alpha-2)
 
-NOUVELLE TABLE RÉFÉRENCE:
+    -- ============================================
+    -- STATUT & PIPELINE
+    -- ============================================
+    status VARCHAR(50) DEFAULT 'new',
+    -- Valeurs: new, demo, proposal_sent, payment_pending,
+    --          converted, lost, nurturing, disqualified
+    lead_stage VARCHAR(50) DEFAULT 'top_of_funnel',
+    -- Valeurs: top_of_funnel, marketing_qualified, sales_qualified
+    priority VARCHAR(20) DEFAULT 'medium',
+    -- Valeurs: low, medium, high, urgent (database-driven)
+
+    -- ============================================
+    -- SCORING
+    -- ============================================
+    qualification_score INTEGER,
+    -- Score global 0-100
+    qualification_notes TEXT,
+    qualified_date TIMESTAMP,
+    fit_score NUMERIC(5,2),
+    -- Score d'adéquation au profil cible (0-100)
+    engagement_score NUMERIC(5,2),
+    -- Score d'engagement (0-100)
+    scoring JSONB,
+    -- Détail du scoring: {"fit": {...}, "engagement": {...}}
+
+    -- ============================================
+    -- FRAMEWORK CPT (Challenges, Priority, Timing)
+    -- ============================================
+    cpt_challenges_response TEXT,
+    -- Réponse verbatim du prospect
+    cpt_challenges_score VARCHAR(10),
+    -- high / medium / low
+    cpt_priority_response TEXT,
+    cpt_priority_score VARCHAR(10),
+    -- high / medium / low
+    cpt_timing_response TEXT,
+    cpt_timing_score VARCHAR(10),
+    -- hot / warm / cool / cold
+    cpt_total_score INTEGER,
+    -- Score CPT calculé 0-100
+    cpt_qualified_at TIMESTAMP,
+    cpt_qualified_by UUID,
+    -- FK → adm_provider_employees
+
+    -- ============================================
+    -- EMAIL VERIFICATION (V6.4)
+    -- ============================================
+    email_verified BOOLEAN DEFAULT FALSE,
+    email_verification_code VARCHAR(255),
+    -- bcrypt hash du code 6 chiffres
+    email_verification_expires_at TIMESTAMP,
+    -- NOW() + 15 minutes
+    email_verification_attempts INTEGER DEFAULT 0,
+    -- Max 5 tentatives
+
+    -- ============================================
+    -- CAL.COM BOOKING (V6.4)
+    -- ============================================
+    booking_slot_at TIMESTAMP,
+    -- Date/heure du RDV planifié
+    booking_confirmed_at TIMESTAMP,
+    -- Quand le lead a confirmé sa présence
+    booking_calcom_uid VARCHAR(255),
+    -- UID Cal.com pour reschedule/cancel
+
+    -- ============================================
+    -- WIZARD (V6.4)
+    -- ============================================
+    wizard_completed BOOLEAN DEFAULT FALSE,
+    -- TRUE après Step 3 complété
+
+    -- ============================================
+    -- J-1 REMINDER (V6.4)
+    -- ============================================
+    reschedule_token VARCHAR(32),
+    -- Short token pour liens iOS Mail (~16 chars)
+    reschedule_token_expires_at TIMESTAMP,
+    -- NOW() + 7 jours
+    reminder_j1_sent_at TIMESTAMP,
+    -- Quand email J-1 envoyé
+    attendance_confirmed_at TIMESTAMP,
+    -- Quand lead a cliqué "I'll be there"
+
+    -- ============================================
+    -- CONVERSION
+    -- ============================================
+    converted_date TIMESTAMP,
+    -- Date de conversion (legacy)
+    converted_at TIMESTAMP,
+    -- Timestamp exact de conversion
+    tenant_id UUID,
+    -- FK → adm_tenants (créé après paiement Stripe)
+
+    -- ============================================
+    -- CLOSING (Perte)
+    -- ============================================
+    stage_entered_at TIMESTAMP,
+    -- Quand entré dans le stage actuel
+    loss_reason_code VARCHAR(50),
+    -- Ex: not_interested, chose_competitor, price_perception...
+    loss_reason_detail TEXT,
+    -- Détail supplémentaire
+    competitor_name VARCHAR(255),
+    -- Nom du concurrent si perdu contre
+
+    -- ============================================
+    -- GDPR COMPLIANCE
+    -- ============================================
+    gdpr_consent BOOLEAN,
+    -- TRUE si consent donné (pays EU/EEA)
+    consent_at TIMESTAMP,
+    -- Quand consent donné
+    consent_ip VARCHAR(45),
+    -- IP du consent (IPv4 ou IPv6)
+
+    -- ============================================
+    -- SOURCE & ATTRIBUTION
+    -- ============================================
+    source VARCHAR(100),
+    -- Ex: website, referral, linkedin, google_ads
+    source_id UUID,
+    -- FK → crm_lead_sources
+    utm_source TEXT,
+    utm_medium TEXT,
+    utm_campaign TEXT,
+
+    -- ============================================
+    -- ASSIGNMENT
+    -- ============================================
+    assigned_to UUID,
+    -- FK → adm_provider_employees (commercial assigné)
+    opportunity_id UUID,
+    -- FK → crm_opportunities (si opportunité créée)
+    next_action_date TIMESTAMP,
+    -- Prochaine action planifiée
+
+    -- ============================================
+    -- MÉTADONNÉES
+    -- ============================================
+    message TEXT,
+    -- Message libre du prospect
+    metadata JSONB DEFAULT '{}',
+    -- Données additionnelles flexibles
+    -- Ex: {"expansion_opportunity": true, "expansion_country": "QA"}
+
+    -- ============================================
+    -- PROVIDER
+    -- ============================================
+    provider_id UUID DEFAULT '7ad8173c-68c5-41d3-9918-686e4e941cc0',
+    -- FK → adm_providers (FleetCore par défaut)
+
+    -- ============================================
+    -- AUDIT
+    -- ============================================
+    created_at TIMESTAMP DEFAULT NOW(),
+    created_by UUID,
+    updated_at TIMESTAMP DEFAULT NOW(),
+    updated_by UUID,
+    deleted_at TIMESTAMP,
+    -- Soft delete
+    deleted_by UUID,
+    deletion_reason TEXT,
+    last_activity_at TIMESTAMP,
+    -- Dernière interaction
+
+    -- ============================================
+    -- CONSTRAINTS
+    -- ============================================
+    CONSTRAINT crm_leads_status_check CHECK (status IN (
+        'new', 'demo', 'proposal_sent', 'payment_pending',
+        'converted', 'lost', 'nurturing', 'disqualified'
+    )),
+
+    CONSTRAINT crm_leads_lead_stage_check CHECK (lead_stage IN (
+        'top_of_funnel', 'marketing_qualified', 'sales_qualified'
+    ))
+);
+```
+
+### Index
+
+```sql
+-- Recherche par email (unique pour actifs)
+CREATE UNIQUE INDEX idx_crm_leads_email_active
+    ON crm_leads(email) WHERE deleted_at IS NULL;
+
+-- Recherche standard
+CREATE INDEX idx_crm_leads_email ON crm_leads(email);
+CREATE INDEX idx_crm_leads_status ON crm_leads(status);
+CREATE INDEX idx_crm_leads_country ON crm_leads(country_code);
+CREATE INDEX idx_crm_leads_assigned ON crm_leads(assigned_to);
+CREATE INDEX idx_crm_leads_priority ON crm_leads(priority);
+
+-- Booking et reminders
+CREATE INDEX idx_crm_leads_booking ON crm_leads(booking_slot_at);
+CREATE INDEX idx_crm_leads_reschedule_token ON crm_leads(reschedule_token);
+
+-- Lead code
+CREATE INDEX idx_crm_leads_lead_code ON crm_leads(lead_code);
+
+-- Soft delete
+CREATE INDEX idx_crm_leads_deleted ON crm_leads(deleted_at);
+```
+
+### Colonnes ajoutées V6.4
+
+| Colonne | Type | Description | Ajoutée en |
+|---------|------|-------------|------------|
+| `email_verified` | BOOLEAN | Email vérifié via code 6 chiffres | V6.2.2 |
+| `email_verification_code` | VARCHAR(255) | Hash bcrypt du code | V6.2.2 |
+| `email_verification_expires_at` | TIMESTAMP | Expiration code (15 min) | V6.2.2 |
+| `email_verification_attempts` | INTEGER | Compteur tentatives (max 5) | V6.2.2 |
+| `booking_slot_at` | TIMESTAMP | Date/heure RDV Cal.com | V6.2.4 |
+| `booking_confirmed_at` | TIMESTAMP | Confirmation présence | V6.2.4 |
+| `booking_calcom_uid` | VARCHAR(255) | UID Cal.com | V6.2.4 |
+| `wizard_completed` | BOOLEAN | Wizard finalisé | V6.2.4 |
+| `reschedule_token` | VARCHAR(32) | Token court iOS Mail | V6.2.9 |
+| `reschedule_token_expires_at` | TIMESTAMP | Expiration token (7j) | V6.2.9 |
+| `reminder_j1_sent_at` | TIMESTAMP | Email J-1 envoyé | V6.2.9 |
+| `attendance_confirmed_at` | TIMESTAMP | Présence confirmée | V6.2.9 |
+| `platforms_used` | TEXT[] | Plateformes utilisées | V6.2.6 |
+| `consent_ip` | VARCHAR(45) | IP du consentement GDPR | V6.2.8 |
+
+---
+
+## Table crm_waitlist
+
+### Description
+
+Table des inscriptions à la liste d'attente pour les pays non opérationnels. Créée quand un prospect d'un pays où FleetCore n'est pas disponible valide son email.
+
+### Schéma complet
+
+```sql
+CREATE TABLE crm_waitlist (
+    -- ============================================
+    -- IDENTIFIANTS
+    -- ============================================
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- ============================================
+    -- CONTACT
+    -- ============================================
+    email VARCHAR(255) NOT NULL,
+
+    -- ============================================
+    -- BUSINESS (collecté via survey)
+    -- ============================================
+    company_name VARCHAR(255),
+    -- Optional, collecté dans survey
+    fleet_size VARCHAR(50),
+    -- Optional, collecté dans survey
+
+    -- ============================================
+    -- GEOGRAPHY
+    -- ============================================
+    country_code CHAR(2) NOT NULL,
+    -- Pays demandé par le prospect (FK → crm_countries)
+    detected_country_code CHAR(2),
+    -- Pays détecté via IP (peut différer)
+
+    -- ============================================
+    -- SURVEY
+    -- ============================================
+    short_token VARCHAR(32) UNIQUE,
+    -- Token court pour lien survey (~16 chars)
+    survey_completed_at TIMESTAMP,
+    -- Quand survey complété
+
+    -- ============================================
+    -- MARKETING
+    -- ============================================
+    marketing_consent BOOLEAN DEFAULT FALSE,
+    -- Consent pour newsletters
+    marketing_consent_at TIMESTAMP,
+
+    -- ============================================
+    -- LEAD LINK
+    -- ============================================
+    lead_id UUID,
+    -- FK → crm_leads (créé quand pays devient opérationnel)
+
+    -- ============================================
+    -- NOTIFICATIONS
+    -- ============================================
+    notified_at TIMESTAMP,
+    -- Quand notifié du lancement dans son pays
+
+    -- ============================================
+    -- AUDIT
+    -- ============================================
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    -- ============================================
+    -- CONSTRAINTS
+    -- ============================================
+    CONSTRAINT crm_waitlist_email_country_unique
+        UNIQUE(email, country_code)
+);
+```
+
+### Index
+
+```sql
+CREATE INDEX idx_crm_waitlist_country ON crm_waitlist(country_code);
+CREATE INDEX idx_crm_waitlist_short_token ON crm_waitlist(short_token);
+CREATE INDEX idx_crm_waitlist_email ON crm_waitlist(email);
+CREATE INDEX idx_crm_waitlist_marketing ON crm_waitlist(marketing_consent)
+    WHERE marketing_consent = TRUE;
+```
+
+### Workflow waitlist
+
+```
+1. Prospect entre email + pays non opérationnel (ex: Qatar)
+2. Email verification (code 6 chiffres)
+3. Redirect vers /book-demo/coming-soon
+4. Clic "Join Waitlist" → POST /api/waitlist
+5. Création entrée crm_waitlist avec short_token
+6. Email avec lien survey: /waitlist-survey?t={short_token}
+7. Survey complété → fleet_size, company_name, marketing_consent
+8. [Future] Quand pays devient opérationnel:
+   - Notification envoyée (notified_at)
+   - Lead créé (lead_id référencé)
+```
+
+---
+
+## Table crm_countries
+
+### Description
+
+Référentiel des pays avec configuration pour le wizard, GDPR, prépositions françaises, et routing des notifications.
+
+### Schéma complet
+
+```sql
+CREATE TABLE crm_countries (
+    -- ============================================
+    -- IDENTIFIANT
+    -- ============================================
+    country_code CHAR(2) PRIMARY KEY,
+    -- ISO 3166-1 alpha-2 (ex: FR, AE, US)
+
+    -- ============================================
+    -- NOMS MULTILINGUES
+    -- ============================================
+    country_name_en VARCHAR(100) NOT NULL,
+    country_name_fr VARCHAR(100) NOT NULL,
+    country_name_ar VARCHAR(100),
+
+    -- ============================================
+    -- PRÉPOSITIONS (grammaire française)
+    -- ============================================
+    country_preposition_fr VARCHAR(5) DEFAULT 'en',
+    -- au (masculin), en (féminin), aux (pluriel)
+    country_preposition_en VARCHAR(10) DEFAULT 'in',
+
+    -- ============================================
+    -- DISPLAY
+    -- ============================================
+    flag_emoji VARCHAR(10),
+    -- Ex: 🇫🇷, 🇦🇪, 🇶🇦
+    display_order INTEGER DEFAULT 999,
+    -- Ordre d'affichage dans dropdown (1 = premier)
+
+    -- ============================================
+    -- OPÉRATIONNEL
+    -- ============================================
+    is_operational BOOLEAN DEFAULT FALSE,
+    -- TRUE = FleetCore disponible dans ce pays
+    is_visible BOOLEAN DEFAULT TRUE,
+    -- TRUE = affiché dans dropdown public
+
+    -- ============================================
+    -- GDPR
+    -- ============================================
+    country_gdpr BOOLEAN DEFAULT FALSE,
+    -- TRUE = pays EU/EEA nécessitant consent GDPR
+
+    -- ============================================
+    -- NOTIFICATIONS
+    -- ============================================
+    notification_locale VARCHAR(5),
+    -- Langue par défaut: en, fr, ar
+
+    -- ============================================
+    -- TÉLÉPHONE
+    -- ============================================
+    dial_code VARCHAR(10),
+    -- Ex: +33, +971, +974
+    phone_pattern VARCHAR(50),
+    -- Format attendu pour validation
+
+    -- ============================================
+    -- AUDIT
+    -- ============================================
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Index
+
+```sql
+CREATE INDEX idx_crm_countries_operational ON crm_countries(is_operational);
+CREATE INDEX idx_crm_countries_gdpr ON crm_countries(country_gdpr);
+CREATE INDEX idx_crm_countries_visible ON crm_countries(is_visible);
+CREATE INDEX idx_crm_countries_display ON crm_countries(display_order);
+```
+
+### Données de référence
+
+**Pays opérationnels (2)**:
+```sql
+INSERT INTO crm_countries (country_code, country_name_en, country_name_fr,
+    is_operational, country_gdpr, country_preposition_fr, display_order)
+VALUES
+    ('AE', 'United Arab Emirates', 'Émirats Arabes Unis', TRUE, FALSE, 'aux', 1),
+    ('FR', 'France', 'France', TRUE, TRUE, 'en', 2);
+```
+
+**Pays GDPR (30)**:
+```sql
+-- EU (27 pays)
+UPDATE crm_countries SET country_gdpr = TRUE
+WHERE country_code IN (
+    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'
+);
+
+-- EEA (3 pays)
+UPDATE crm_countries SET country_gdpr = TRUE
+WHERE country_code IN ('IS', 'LI', 'NO');
+```
+
+**Prépositions françaises**:
+```sql
+-- Masculin (au)
+UPDATE crm_countries SET country_preposition_fr = 'au'
+WHERE country_code IN ('CA', 'MA', 'QA', 'GB', 'PT', 'KW', 'BH', 'OM', 'DK');
+
+-- Pluriel (aux)
+UPDATE crm_countries SET country_preposition_fr = 'aux'
+WHERE country_code IN ('AE', 'US', 'NL');
+
+-- Féminin (en) - défaut pour le reste
+```
+
+---
+
+## Table crm_lead_activities
+
+### Description
+
+Historique des activités sur les leads : appels, emails, notes, meetings, tâches.
+
+### Schéma complet
+
+```sql
+CREATE TABLE crm_lead_activities (
+    -- ============================================
+    -- IDENTIFIANTS
+    -- ============================================
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lead_id UUID NOT NULL,
+    -- FK → crm_leads
+
+    -- ============================================
+    -- TYPE D'ACTIVITÉ
+    -- ============================================
+    activity_type VARCHAR(50) NOT NULL,
+    -- call, email, note, meeting, task
+
+    -- ============================================
+    -- CONTENU
+    -- ============================================
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+
+    -- ============================================
+    -- MÉTADONNÉES TYPE-SPECIFIC
+    -- ============================================
+    metadata JSONB DEFAULT '{}',
+    -- Pour call: {"duration": 15, "outcome": "positive"}
+    -- Pour meeting: {"location": "...", "attendees": [...]}
+    -- Pour email: {"subject": "...", "to": "..."}
+
+    -- ============================================
+    -- PLANIFICATION
+    -- ============================================
+    scheduled_at TIMESTAMP,
+    -- Date prévue (pour task, meeting)
+    completed_at TIMESTAMP,
+    -- Date de réalisation
+    is_completed BOOLEAN DEFAULT FALSE,
+
+    -- ============================================
+    -- AUTEUR
+    -- ============================================
+    performed_by UUID,
+    -- FK → adm_members
+    performed_by_name VARCHAR(255),
+    -- Nom dénormalisé pour affichage
+
+    -- ============================================
+    -- AUDIT
+    -- ============================================
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Index
+
+```sql
+CREATE INDEX idx_crm_lead_activities_lead ON crm_lead_activities(lead_id);
+CREATE INDEX idx_crm_lead_activities_type ON crm_lead_activities(activity_type);
+CREATE INDEX idx_crm_lead_activities_created ON crm_lead_activities(created_at DESC);
+CREATE INDEX idx_crm_lead_activities_scheduled ON crm_lead_activities(scheduled_at)
+    WHERE scheduled_at IS NOT NULL;
+```
+
+### Types d'activités
+
+| Type | Description | Metadata typique |
+|------|-------------|------------------|
+| `call` | Appel téléphonique | `{duration: 15, outcome: "positive/negative/neutral"}` |
+| `email` | Email envoyé/reçu | `{subject: "...", direction: "inbound/outbound"}` |
+| `note` | Note interne | `{category: "qualification/follow-up/general"}` |
+| `meeting` | Réunion/démo | `{location: "...", attendees: [...], platform: "cal.com"}` |
+| `task` | Tâche à faire | `{priority: "high/medium/low", due_date: "..."}` |
+
+---
+
+## Table crm_lead_sources
+
+### Description
+
+Référentiel des sources d'acquisition pour attribution marketing.
+
+### Schéma
+
+```sql
 CREATE TABLE crm_lead_sources (
-  id uuid PRIMARY KEY,
-  name varchar(50) UNIQUE NOT NULL,
-  description text
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    -- Ex: website, linkedin, google_ads, referral
+    name_translations JSONB,
+    -- {en: "Website", fr: "Site web", ar: "موقع إلكتروني"}
+    description TEXT,
+    category VARCHAR(50),
+    -- organic, paid, referral, event
+    is_active BOOLEAN DEFAULT TRUE,
+    display_order INTEGER DEFAULT 999,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-**Justification métier:**
-- **Nom scindé:** Personnalisation communications (+40% taux ouverture)
-- **Lead stage:** Mesurer efficacité marketing vs commercial
-- **Scoring:** Prioriser leads chauds automatiquement (-60% temps perdu)
-- **RGPD:** Conformité légale EU obligatoire (0€ amende vs 20M€)
-- **Source normalisée:** Analyse ROI par canal marketing précise
-- **Next action:** +30% taux conversion grâce au suivi systématique
+### Données initiales
 
----
-
-#### Table 2: `crm_opportunities` - Pipeline de Vente
-
-**Existant V1:**
-- Lien vers lead
-- Stage (prospect, proposal, negotiation, closed)
-- Valeur espérée
-- Date de clôture visée
-- Assigné à (commercial)
-- Probabilité de réussite
-- Pas de distinction gagné/perdu
-
-**Évolutions V2:**
 ```sql
-AJOUTER STATUS (distinct de STAGE):
-- status (enum) - open, won, lost, on_hold, cancelled
-  * Stage = progression (prospect → proposal → negotiation)
-  * Status = résultat (open, won, lost)
-
-VALEURS FINANCIÈRES COMPLÈTES:
-- currency (char(3)) - ISO-4217 (EUR, AED, etc.)
-- discount_amount (numeric) - Remise appliquée
-- probability_percent (numeric) - Plus précis qu'integer
-- forecast_value (numeric GENERATED) - expected_value × probability / 100
-- won_value (numeric) - Montant RÉEL si gagné
-
-RAISONS DE PERTE:
-- loss_reason_id (uuid) - FK vers crm_opportunity_loss_reasons
-- won_date (date) - Quand gagné ?
-- lost_date (date) - Quand perdu ?
-
-LIENS CRITIQUES:
-- plan_id (uuid) - FK vers bil_billing_plans (quel plan souscrit ?)
-- contract_id (uuid) - FK vers crm_contracts (quel contrat généré ?)
-- owner_id (uuid) - Responsable final (vs assigned_to = qui travaille)
-- pipeline_id (uuid) - FK vers crm_pipelines (multi-marchés)
-
-NOUVELLE TABLE:
-CREATE TABLE crm_opportunity_loss_reasons (
-  id uuid PRIMARY KEY,
-  name varchar(100) NOT NULL UNIQUE,
-  description text
-);
-
-CREATE TABLE crm_pipelines (
-  id uuid PRIMARY KEY,
-  name varchar(100) NOT NULL,
-  stages jsonb, -- Configuration des étapes
-  is_default boolean
-);
+INSERT INTO crm_lead_sources (name, name_translations, category) VALUES
+('website', '{"en": "Website", "fr": "Site web"}', 'organic'),
+('linkedin', '{"en": "LinkedIn", "fr": "LinkedIn"}', 'paid'),
+('google_ads', '{"en": "Google Ads", "fr": "Google Ads"}', 'paid'),
+('referral', '{"en": "Referral", "fr": "Recommandation"}', 'referral'),
+('event', '{"en": "Event", "fr": "Événement"}', 'event'),
+('partner', '{"en": "Partner", "fr": "Partenaire"}', 'referral');
 ```
-
-**Justification métier:**
-- **Status vs Stage:** Dashboard précis ("5 won, 3 lost" vs juste "closed")
-- **Loss reasons:** Amélioration produit et stratégie (-20% pertes évitables)
-- **Forecast value:** Budget 2025 fiable à ±5% (vs ±30% sans)
-- **Liens plan/contrat:** Client actif <5min après signature
-- **Owner vs Assigned:** Clarté dans grandes opportunités multi-personnes
-- **Won_value:** Mesurer précision des prévisions (expected vs réel)
 
 ---
 
-#### Table 3: `crm_contracts` - Contrats Signés
+## Table crm_settings
 
-**Existant V1:**
-- Lien vers lead
-- Référence contrat (pas unique !)
-- Dates (signature, effet, expiration)
-- Valeur totale et devise
-- Statut simple (active, expired, terminated)
-- Pas de lien opportunité
-- Pas de gestion renouvellement
+### Description
 
-**Évolutions V2:**
+Configuration dynamique du module CRM (scoring, phases, statuts, etc.).
+
+### Schéma
+
 ```sql
-CYCLE DE VIE COMPLET:
-- status (enum étendu):
-  * draft, negotiation, signed
-  * active, future (signé mais pas encore effectif)
-  * expired, terminated, renewal_in_progress, cancelled
-
-CONTRAINTES & IDENTIFIANTS:
-- contract_code (text UNIQUE) - Identifiant technique stable
-- contract_reference (text) - Index unique partiel WHERE deleted_at IS NULL
-  
-GESTION RENOUVELLEMENT:
-- renewal_type (enum) - automatic, optional, perpetual, non_renewing
-- auto_renew (boolean)
-- renewal_date (date) - Quand renouveler ?
-- notice_period_days (integer) - Préavis résiliation
-- renewed_from_contract_id (uuid) - FK self-reference (historique)
-
-LIENS SYSTÈME:
-- opportunity_id (uuid) - FK vers crm_opportunities (d'où vient ce contrat ?)
-- tenant_id (uuid) - FK vers adm_tenants (quel client créé ?)
-- plan_id (uuid) - FK vers bil_billing_plans
-- subscription_id (uuid) - FK vers bil_tenant_subscriptions
-
-INFORMATIONS CONTACT:
-- company_name (text)
-- contact_name (text)
-- contact_email (citext)
-- contact_phone (varchar)
-- billing_address_id (uuid) - FK vers crm_addresses
-
-VERSIONNEMENT:
-- version_number (integer) - Gestion des avenants
-- document_url (text) - Lien vers PDF signé
-- vat_rate (numeric) - TVA applicable
-- notes (text) - Observations internes
-- approved_by (uuid) - Validation finale
+CREATE TABLE crm_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value JSONB NOT NULL,
+    description TEXT,
+    category VARCHAR(50),
+    -- lead, scoring, workflow, notification
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 ```
 
-**Justification métier:**
-- **Statuts étendus:** Visibilité totale pipeline contractuel
-- **Renouvellement auto:** 0 oubli, -80% churn technique
-- **Lien opportunité:** Traçabilité lead → opp → contrat → tenant
-- **Lien tenant/plan/subscription:** Facturation auto dès signature
-- **Contacts:** -60% tickets "contact perdu"
-- **Versionnement:** Historique complet avec avenants
-- **Reference unique:** 0 doublon de contrat
+### Settings clés V6.4
+
+**lead_status_workflow**:
+```json
+{
+  "version": "6.4.0",
+  "statuses": [
+    {"value": "new", "phase": "incomplete", "probability": 5},
+    {"value": "demo", "phase": "demo", "probability": 50},
+    {"value": "proposal_sent", "phase": "proposal", "probability": 85},
+    {"value": "payment_pending", "phase": "proposal", "probability": 90},
+    {"value": "converted", "phase": "completed", "probability": 100},
+    {"value": "lost", "phase": "completed", "probability": 0},
+    {"value": "nurturing", "phase": "completed", "probability": 15},
+    {"value": "disqualified", "phase": "completed", "probability": 0}
+  ]
+}
+```
+
+**lead_phases**:
+```json
+{
+  "phases": [
+    {"key": "incomplete", "order": 1, "label_en": "Incomplete", "label_fr": "Incomplet"},
+    {"key": "demo", "order": 2, "label_en": "Demo", "label_fr": "Démo"},
+    {"key": "proposal", "order": 3, "label_en": "Proposal", "label_fr": "Proposition"},
+    {"key": "completed", "order": 4, "label_en": "Completed", "label_fr": "Terminé"}
+  ]
+}
+```
+
+**email_verification_config**:
+```json
+{
+  "code_length": 6,
+  "bcrypt_cost": 10,
+  "expiration_minutes": 15,
+  "resend_cooldown_seconds": 60,
+  "max_attempts": 5
+}
+```
+
+**fleet_size_options**:
+```json
+{
+  "options": [
+    {"value": "1", "label_en": "1 vehicle", "label_fr": "1 véhicule"},
+    {"value": "2-5", "label_en": "2-5 vehicles", "label_fr": "2-5 véhicules"},
+    {"value": "6-10", "label_en": "6-10 vehicles", "label_fr": "6-10 véhicules"},
+    {"value": "11-20", "label_en": "11-20 vehicles", "label_fr": "11-20 véhicules"},
+    {"value": "21-50", "label_en": "21-50 vehicles", "label_fr": "21-50 véhicules"},
+    {"value": "51-100", "label_en": "51-100 vehicles", "label_fr": "51-100 véhicules"},
+    {"value": "100+", "label_en": "100+ vehicles", "label_fr": "100+ véhicules"}
+  ]
+}
+```
 
 ---
 
-## NOUVELLES TABLES À CRÉER - DOMAINE CRM
+## Tables annexes
 
-### Tables complémentaires pour V2 complète
+### crm_quotes
 
-#### `crm_lead_sources` - Normalisation sources
+Table des devis pour Segment 4 (21+ véhicules).
+
 ```sql
-CREATE TABLE crm_lead_sources (
-  id uuid PRIMARY KEY,
-  name varchar(50) UNIQUE NOT NULL,
-  description text,
-  is_active boolean DEFAULT true,
-  created_at timestamp DEFAULT now()
-);
-
--- Données initiales
-INSERT INTO crm_lead_sources (name, description) VALUES
-  ('web', 'Formulaire site web'),
-  ('referral', 'Recommandation client'),
-  ('event', 'Salon/Conférence'),
-  ('linkedin', 'LinkedIn Ads'),
-  ('google_ads', 'Google Ads'),
-  ('partner', 'Partenaire commercial');
-```
-
-#### `crm_opportunity_loss_reasons` - Analyse pertes
-```sql
-CREATE TABLE crm_opportunity_loss_reasons (
-  id uuid PRIMARY KEY,
-  name varchar(100) NOT NULL UNIQUE,
-  category varchar(50), -- price, features, timing, competition
-  description text,
-  is_active boolean DEFAULT true
-);
-
--- Données initiales
-INSERT INTO crm_opportunity_loss_reasons (name, category) VALUES
-  ('Prix trop élevé', 'price'),
-  ('Fonctionnalités manquantes', 'features'),
-  ('Timing inadapté', 'timing'),
-  ('Concurrent choisi', 'competition'),
-  ('Budget insuffisant', 'price'),
-  ('Projet abandonné', 'timing');
-```
-
-#### `crm_pipelines` - Multi-pipelines
-```sql
-CREATE TABLE crm_pipelines (
-  id uuid PRIMARY KEY,
-  name varchar(100) NOT NULL,
-  description text,
-  stages jsonb NOT NULL, -- ['prospect','proposal','negotiation']
-  default_probability jsonb, -- Probabilité par étape
-  is_default boolean DEFAULT false,
-  is_active boolean DEFAULT true,
-  created_at timestamp DEFAULT now()
+CREATE TABLE crm_quotes (
+    id UUID PRIMARY KEY,
+    quote_code VARCHAR(50) UNIQUE,
+    lead_id UUID REFERENCES crm_leads(id),
+    status VARCHAR(50), -- draft, sent, accepted, rejected, expired
+    total_amount NUMERIC(12,2),
+    currency CHAR(3) DEFAULT 'EUR',
+    valid_until DATE,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-#### `crm_addresses` - Adresses facturation
+### crm_referrals
+
+Table des parrainages.
+
 ```sql
-CREATE TABLE crm_addresses (
-  id uuid PRIMARY KEY,
-  street_line1 text NOT NULL,
-  street_line2 text,
-  city varchar(100) NOT NULL,
-  state varchar(100),
-  postal_code varchar(20),
-  country_code char(2) NOT NULL,
-  address_type varchar(50), -- billing, shipping
-  is_default boolean DEFAULT false,
-  created_at timestamp DEFAULT now()
+CREATE TABLE crm_referrals (
+    id UUID PRIMARY KEY,
+    referrer_lead_id UUID REFERENCES crm_leads(id),
+    referred_lead_id UUID REFERENCES crm_leads(id),
+    referral_code VARCHAR(50) UNIQUE,
+    status VARCHAR(50), -- pending, validated, rewarded
+    reward_type VARCHAR(50),
+    reward_amount NUMERIC(10,2),
+    created_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
 ---
 
-## DÉPENDANCES CRITIQUES - MODULE CRM
+## Évolutions V6.3 → V6.4
 
-### Ordre d'implémentation obligatoire
+### Nouvelles colonnes crm_leads
 
-#### Phase 0 - Tables de base (IMMÉDIAT)
-1. **crm_leads enrichissements** : Ajouter tous nouveaux champs
-2. **crm_lead_sources** : Créer table référence
-3. **crm_opportunities status** : Séparer stage et status
-4. **crm_contracts liens** : Ajouter opportunity_id, tenant_id
+| Colonne | Description | Migration |
+|---------|-------------|-----------|
+| `email_verified` | Flag email vérifié | `ALTER TABLE ADD COLUMN` |
+| `email_verification_code` | Hash bcrypt code | `ALTER TABLE ADD COLUMN` |
+| `email_verification_expires_at` | Expiration | `ALTER TABLE ADD COLUMN` |
+| `email_verification_attempts` | Compteur | `ALTER TABLE ADD COLUMN DEFAULT 0` |
+| `booking_slot_at` | Date RDV Cal.com | `ALTER TABLE ADD COLUMN` |
+| `booking_confirmed_at` | Confirmation | `ALTER TABLE ADD COLUMN` |
+| `booking_calcom_uid` | UID Cal.com | `ALTER TABLE ADD COLUMN` |
+| `wizard_completed` | Wizard fini | `ALTER TABLE ADD COLUMN DEFAULT FALSE` |
+| `reschedule_token` | Token court | `ALTER TABLE ADD COLUMN` |
+| `reschedule_token_expires_at` | Expiration token | `ALTER TABLE ADD COLUMN` |
+| `reminder_j1_sent_at` | J-1 envoyé | `ALTER TABLE ADD COLUMN` |
+| `attendance_confirmed_at` | Présence confirmée | `ALTER TABLE ADD COLUMN` |
+| `platforms_used` | Plateformes | `ALTER TABLE ADD COLUMN TEXT[]` |
+| `consent_ip` | IP consentement | `ALTER TABLE ADD COLUMN VARCHAR(45)` |
 
-#### Phase 1 - Scoring et suivi (Semaine 1)
-5. **crm_leads scoring** : lead_stage, fit_score, engagement_score
-6. **crm_opportunities forecast** : forecast_value calculé
-7. **crm_opportunity_loss_reasons** : Créer table
-8. **crm_contracts renouvellement** : renewal_type, auto_renew
+### Nouvelle table crm_waitlist
 
-#### Phase 2 - Intégrations (Semaine 2)
-9. **Lien CRM → Tenants** : Création tenant après contrat signé
-10. **Lien CRM → Billing** : plan_id, subscription_id
-11. **crm_pipelines** : Multi-pipelines pour multi-marchés
-12. **crm_addresses** : Adresses de facturation
+Table entièrement nouvelle pour gérer les inscriptions en liste d'attente des pays non opérationnels.
 
----
+### Nouvelles colonnes crm_countries
 
-## MÉTRIQUES DE VALIDATION - CRM
+| Colonne | Description | Migration |
+|---------|-------------|-----------|
+| `country_gdpr` | Flag GDPR EU/EEA | `ALTER TABLE ADD COLUMN DEFAULT FALSE` |
+| `country_preposition_fr` | Préposition FR | `ALTER TABLE ADD COLUMN DEFAULT 'en'` |
+| `country_preposition_en` | Préposition EN | `ALTER TABLE ADD COLUMN DEFAULT 'in'` |
+| `dial_code` | Indicatif tél | `ALTER TABLE ADD COLUMN` |
+| `phone_pattern` | Format attendu | `ALTER TABLE ADD COLUMN` |
 
-### Techniques
-- [ ] 3 tables CRM enrichies opérationnelles
-- [ ] 4 tables référence créées (sources, loss_reasons, pipelines, addresses)
-- [ ] Contraintes d'unicité en place (contract_reference, lead email)
-- [ ] Index optimisés pour recherches
-- [ ] Soft-delete fonctionnel partout
+### Scripts de migration
 
-### Fonctionnelles
-- [ ] Scoring leads automatique
-- [ ] Pipeline ventes tracé end-to-end
-- [ ] Taux conversion lead→client mesurable
-- [ ] Raisons de perte analysables
-- [ ] Renouvellements automatiques alertés
-- [ ] Conformité RGPD (consentement)
+```sql
+-- V6.4-01: Email verification columns
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS email_verification_code VARCHAR(255);
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS email_verification_expires_at TIMESTAMP;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS email_verification_attempts INTEGER DEFAULT 0;
 
-### Business
-- [ ] Dashboard prévisions revenus ±5%
-- [ ] Analyse ROI par canal marketing
-- [ ] Temps cycle vente moyen calculable
-- [ ] 0 oubli de renouvellement
-- [ ] Client actif <5min après signature
+-- V6.4-02: Cal.com booking columns
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS booking_slot_at TIMESTAMP;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS booking_confirmed_at TIMESTAMP;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS booking_calcom_uid VARCHAR(255);
 
----
+-- V6.4-03: Wizard columns
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS wizard_completed BOOLEAN DEFAULT FALSE;
 
-## IMPACT SUR LES AUTRES MODULES - CRM
+-- V6.4-04: J-1 reminder columns
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS reschedule_token VARCHAR(32);
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS reschedule_token_expires_at TIMESTAMP;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS reminder_j1_sent_at TIMESTAMP;
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS attendance_confirmed_at TIMESTAMP;
 
-### Liens avec Administration
-- **crm_leads.assigned_to** → adm_provider_employees (commerciaux)
-- **crm_contracts.tenant_id** → adm_tenants (création après signature)
-- Tous audit via adm_audit_logs
+-- V6.4-05: Additional columns
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS platforms_used TEXT[];
+ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS consent_ip VARCHAR(45);
 
-### Liens avec Billing
-- **crm_opportunities.plan_id** → bil_billing_plans (plan choisi)
-- **crm_contracts.subscription_id** → bil_tenant_subscriptions
-- **crm_contracts.renewal_date** → Déclencheur facturation
+-- V6.4-06: crm_countries GDPR
+ALTER TABLE crm_countries ADD COLUMN IF NOT EXISTS country_gdpr BOOLEAN DEFAULT FALSE;
+ALTER TABLE crm_countries ADD COLUMN IF NOT EXISTS country_preposition_fr VARCHAR(5) DEFAULT 'en';
 
-### Liens avec Documents
-- **crm_contracts.document_url** → Stockage PDF signé
-- **crm_leads** → Upload documents KYC si besoin
+-- V6.4-07: Create crm_waitlist table
+CREATE TABLE IF NOT EXISTS crm_waitlist (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL,
+    company_name VARCHAR(255),
+    fleet_size VARCHAR(50),
+    country_code CHAR(2) NOT NULL,
+    detected_country_code CHAR(2),
+    short_token VARCHAR(32) UNIQUE,
+    survey_completed_at TIMESTAMP,
+    marketing_consent BOOLEAN DEFAULT FALSE,
+    marketing_consent_at TIMESTAMP,
+    lead_id UUID,
+    notified_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT crm_waitlist_email_country_unique UNIQUE(email, country_code)
+);
 
-### Process end-to-end
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_crm_leads_reschedule_token ON crm_leads(reschedule_token);
+CREATE INDEX IF NOT EXISTS idx_crm_leads_booking ON crm_leads(booking_slot_at);
+CREATE INDEX IF NOT EXISTS idx_crm_countries_gdpr ON crm_countries(country_gdpr);
+CREATE INDEX IF NOT EXISTS idx_crm_waitlist_country ON crm_waitlist(country_code);
+CREATE INDEX IF NOT EXISTS idx_crm_waitlist_short_token ON crm_waitlist(short_token);
 ```
-Lead créé (crm_leads)
-    ↓ (qualification)
-Opportunité (crm_opportunities)
-    ↓ (négociation)
-Contrat signé (crm_contracts)
-    ↓ (activation)
-Tenant créé (adm_tenants)
-    ↓ (onboarding)
-Subscription active (bil_tenant_subscriptions)
-```
 
 ---
 
-## DÉPENDANCES CRITIQUES - MODULE ADMINISTRATION
+## Métriques de validation
 
-### Ordre d'implémentation obligatoire
+### Colonnes
+- [ ] crm_leads: 60+ colonnes (vs 30 en V6.3)
+- [ ] crm_waitlist: 14 colonnes (nouvelle table)
+- [ ] crm_countries: 14 colonnes (vs 8 en V6.3)
 
-#### Phase 0 - Corrections critiques (IMMÉDIAT)
-1. **adm_tenants** : Ajouter status + contact fields
-2. **adm_provider_employees** : Créer table complète
-3. **adm_tenant_lifecycle_events** : Créer avec tous event types
-4. **adm_invitations** : Créer pour onboarding
+### Index
+- [ ] crm_leads: 10+ index
+- [ ] crm_waitlist: 4 index
+- [ ] crm_countries: 4 index
 
-#### Phase 1 - Sécurité et RBAC (Semaine 1)
-5. **adm_members** : Ajouter 2FA et vérifications
-6. **adm_roles** : Ajouter slug et hiérarchie
-7. **adm_role_permissions** : Créer table
-8. **adm_member_roles** : Ajouter contexte temporel
-
-#### Phase 2 - Audit et conformité (Semaine 2)
-9. **adm_audit_logs** : Enrichir avec catégories
-10. **adm_role_versions** : Créer historique
-11. **adm_member_sessions** : Tracking sessions
-12. **adm_tenant_settings** : Configuration flexible
+### Contraintes
+- [ ] crm_leads: status CHECK (8 valeurs)
+- [ ] crm_leads: email unique (pour actifs)
+- [ ] crm_waitlist: email+country unique
 
 ---
 
-## MÉTRIQUES DE VALIDATION - ADMINISTRATION
+**FIN DU DOCUMENT TABLES CRM V6.4**
 
-### Techniques
-- [ ] 8 tables Administration opérationnelles
-- [ ] RLS unifié sur toutes tables tenant
-- [ ] 2FA actif pour rôles sensibles
-- [ ] Audit trail complet et immuable
-- [ ] Invitations avec expiration 72h
-
-### Fonctionnelles
-- [ ] Onboarding < 5 minutes
-- [ ] Support cross-tenant fonctionnel
-- [ ] Historique complet des changements
-- [ ] RBAC granulaire par ressource
-- [ ] Conformité RGPD (retention, audit)
-
-### Sécurité
-- [ ] 0 accès cross-tenant non autorisé
-- [ ] 100% actions tracées dans audit
-- [ ] Tokens sécurisés pour invitations
-- [ ] Sessions avec expiration
-- [ ] Permissions vérifiées à chaque requête
-
----
-
-## IMPACT SUR LES AUTRES MODULES
-
-### Dépendances entrantes
-- **Tous modules** : Dépendent de tenant_id pour isolation
-- **Tous modules** : Utilisent member_id pour audit
-- **Finance/Revenue** : Lisent tenant status pour calculs
-- **Support** : Utilise provider_employees pour assignation
-
-### Dépendances sortantes
-- **CRM** : Crée tenant après signature contrat
-- **Billing** : Lit lifecycle_events pour facturation
-- **Documents** : Vérifie permissions via roles
-- **Tous** : Appliquent RLS via GUCs
-
----
-
-## RÉCAPITULATIF GLOBAL
-
-### Modules Documentés
-- **Administration:** 8 tables + 4 tables support
-- **CRM:** 3 tables principales + 4 tables référence
-
-### Totaux Évolutions V1 → V2
-- **Tables existantes enrichies:** 11 tables
-- **Nouvelles tables à créer:** 8 tables
-- **Champs ajoutés:** ~150 nouveaux champs
-- **Index optimisés:** ~40 index
-- **Contraintes métier:** ~25 contraintes
-
-### Priorités d'Implémentation
-
-**P0 - CRITIQUE (Semaine 1):**
-1. adm_provider_employees (support cross-tenant)
-2. adm_tenant_lifecycle_events (facturation)
-3. adm_invitations (onboarding)
-4. crm_leads enrichissements (scoring, RGPD)
-5. crm_contracts liens (opportunity_id, tenant_id)
-
-**P1 - URGENT (Semaine 2):**
-6. adm_members sécurité (2FA)
-7. crm_opportunities status (gagné/perdu)
-8. crm_lead_sources (normalisation)
-9. crm_opportunity_loss_reasons (analyse)
-10. crm_contracts renouvellement (auto-renew)
-
-**P2 - IMPORTANT (Semaine 3):**
-11. Tables permissions RBAC
-12. Audit logs enrichi
-13. CRM pipelines multi-marchés
-14. CRM addresses facturation
-
----
-
-**Document complet avec Administration (8 tables) + CRM (3 tables) documentés**  
-**Date mise à jour:** 21 Octobre 2025  
-**Prochaine étape:** Implémenter priorités P0 puis P1 en parallèle
+_Version 6.4.0 - Schéma complet reflétant l'implémentation production_

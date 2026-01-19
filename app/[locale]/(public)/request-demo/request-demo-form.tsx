@@ -114,7 +114,7 @@ export default function RequestDemoForm({
     setDuplicateError(null); // Reset error
 
     try {
-      const response = await fetch("/api/demo-leads", {
+      const response = await fetch("/api/crm/demo-leads", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
