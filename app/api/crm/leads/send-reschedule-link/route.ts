@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://res.cloudinary.com/dillqmyh7/image/upload/v1763024908/fleetcore-logo_ljrtyn.jpg" alt="FleetCore" style="height: 40px;">
+            <img src="https://res.cloudinary.com/dillqmyh7/image/upload/v1763024908/fleetcore-logo_ljrtyn.jpg" alt="FleetCore" width="200" height="auto" style="max-width: 100%; height: auto;">
           </div>
 
           <h2 style="color: #1e3a5f; margin-bottom: 20px;">${t.greeting}${lead.first_name ? ` ${lead.first_name}` : ""},</h2>
