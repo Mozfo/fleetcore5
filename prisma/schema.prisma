@@ -2288,6 +2288,7 @@ model crm_settings {
 /// V6.3: fleet_size now optional - collected via email survey
 model crm_waitlist {
   id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  short_token            String?   @unique @db.VarChar(8)
 
   // Contact
   email                  String    @db.VarChar(255)
@@ -2326,6 +2327,7 @@ model crm_waitlist {
   @@index([fleet_size], map: "idx_crm_waitlist_fleet")
   @@index([created_at], map: "idx_crm_waitlist_created")
   @@index([email], map: "idx_crm_waitlist_email")
+  @@index([short_token], map: "idx_crm_waitlist_short_token")
 }
 
 /// V6.2.1: Billing settings - same structure as crm_settings

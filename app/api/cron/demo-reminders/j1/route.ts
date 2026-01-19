@@ -288,11 +288,11 @@ export async function GET(request: Request) {
         // Determine locale
         const locale = getLocaleForCountry(lead.country_code);
 
-        // Build URLs
+        // Build URLs (with locale for i18n pages)
         const confirmUrl = `${baseUrl}/api/crm/leads/confirm-attendance?token=${confirmationToken}`;
         const rescheduleUrl = lead.booking_calcom_uid
-          ? `${baseUrl}/book-demo/reschedule?uid=${lead.booking_calcom_uid}`
-          : `${baseUrl}/book-demo`;
+          ? `${baseUrl}/${locale}/book-demo/reschedule?uid=${lead.booking_calcom_uid}`
+          : `${baseUrl}/${locale}/book-demo`;
 
         // Format date/time
         const bookingDate = formatBookingDate(lead.booking_slot_at, locale);

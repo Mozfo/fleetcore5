@@ -39,6 +39,22 @@ import type { EmailLocale } from "@/lib/i18n/email-translations";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ============================================================================
+// SHORT TOKEN GENERATION
+// ============================================================================
+// Generates a 6-character alphanumeric token for short URLs (iOS Mail compatible)
+// Uses base62 (a-z, A-Z, 0-9) = 62^6 = 56+ billion combinations
+const ALPHABET =
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+function generateShortToken(length = 6): string {
+  let token = "";
+  for (let i = 0; i < length; i++) {
+    token += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+  }
+  return token;
+}
+
+// ============================================================================
 // VALIDATION
 // ============================================================================
 
@@ -156,9 +172,11 @@ export async function POST(request: NextRequest) {
 
     // Create waitlist entry using Prisma relation syntax
     // V6.3: marketing_consent = false (pending) until user clicks opt-in in email
+    // V6.3.2: Generate short_token for iOS Mail compatible short URLs
     const waitlistEntry = await db.crm_waitlist.create({
       data: {
         email: data.email.toLowerCase().trim(),
+        short_token: generateShortToken(),
         crm_countries: {
           connect: { country_code: data.country_code },
         },
@@ -200,9 +218,9 @@ export async function POST(request: NextRequest) {
           ? country.country_preposition_fr
           : country.country_preposition_en;
 
-      // Build survey URL with waitlist ID for fleet details collection
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://fleetcore.io";
-      const surveyUrl = `${baseUrl}/${emailLocale}/waitlist-survey?id=${waitlistEntry.id}`;
+      // Build survey URL with short token for iOS Mail compatibility
+      // Use fleetcore.io (not app.fleetcore.io) + locale + short token = ~31 chars vs 82
+      const surveyUrl = `https://fleetcore.io/${emailLocale}/w/${waitlistEntry.short_token}`;
 
       const emailHtml = await render(
         ExpansionOpportunity({
