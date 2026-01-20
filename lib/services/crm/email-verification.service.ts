@@ -469,6 +469,7 @@ export class EmailVerificationService {
           data: {
             email: email.toLowerCase(),
             status: "new",
+            lead_stage: "top_of_funnel", // V6.4: Set initial stage
             source: "book_demo_wizard", // V6.4: Populate source column
             email_verified: false,
             email_verification_code: hashedCode,
