@@ -308,7 +308,7 @@ async function handleFullForm(
       // Statut initial
       status: "new",
       lead_stage: "top_of_funnel",
-      source: "request_demo_form", // V6.4: Populate source column directly
+      source: "web", // Web form (detail in metadata.source)
 
       // UTM tracking
       utm_source: body.utm_source || null,
