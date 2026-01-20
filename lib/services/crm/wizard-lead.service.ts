@@ -209,12 +209,13 @@ export class WizardLeadService {
         country_code: normalizedCountryCode,
         lead_code: leadCode,
         status: "new",
+        source: "book_demo_wizard", // V6.4: Populate source column directly
         email_verified: false,
         email_verification_attempts: 0,
         provider_id: DEFAULT_PROVIDER_ID,
         wizard_completed: false,
         metadata: {
-          source: "book_demo_wizard",
+          source: "book_demo_wizard", // Keep in metadata for backward compatibility
           form_locale: locale,
           wizard_started_at: new Date().toISOString(),
         },

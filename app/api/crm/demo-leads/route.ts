@@ -296,6 +296,7 @@ async function handleFullForm(
       // Statut initial
       status: "new",
       lead_stage: "top_of_funnel",
+      source: "request_demo_form", // V6.4: Populate source column directly
 
       // GDPR compliance
       gdpr_consent: body.gdpr_consent || null,
@@ -304,7 +305,7 @@ async function handleFullForm(
 
       // Métadonnées
       metadata: {
-        source: "request_demo_form",
+        source: "request_demo_form", // Keep in metadata for backward compatibility
         form_locale: body.form_locale || "en",
         submitted_at: new Date().toISOString(),
       },
