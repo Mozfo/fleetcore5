@@ -139,6 +139,12 @@ export async function PATCH(
     const hasBooking = !!(lead.booking_slot_at && lead.booking_calcom_uid);
     const newStatus = hasBooking ? "demo" : lead.status;
 
+    // Get client IP for GDPR audit (same pattern as business-info route)
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+
     // Update lead - save business info and mark wizard as completed
     const { company_name, phone, fleet_size, gdpr_consent } =
       validationResult.data;
@@ -151,6 +157,7 @@ export async function PATCH(
         fleet_size,
         gdpr_consent,
         consent_at: gdpr_consent ? new Date() : null,
+        consent_ip: gdpr_consent ? clientIp : null,
         wizard_completed: true,
         status: newStatus,
         updated_at: new Date(),
@@ -163,6 +170,8 @@ export async function PATCH(
         email: lead.email,
         hasBooking,
         newStatus,
+        gdpr_consent,
+        consent_ip: gdpr_consent ? clientIp : null,
       },
       "[CompleteWizard] Wizard completed successfully"
     );
