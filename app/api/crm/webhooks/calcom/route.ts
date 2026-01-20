@@ -200,10 +200,12 @@ export async function POST(request: NextRequest) {
 
       case "BOOKING_CANCELLED":
       case "BOOKING_REJECTED":
-        newStatus = "lost";
+        newStatus = "new"; // Return to new status, not lost (they may rebook)
         updateData = {
           status: newStatus,
-          loss_reason: "cancelled_by_lead",
+          // Clear booking fields
+          booking_slot_at: null,
+          booking_calcom_uid: null,
           updated_at: new Date(),
         };
         break;
