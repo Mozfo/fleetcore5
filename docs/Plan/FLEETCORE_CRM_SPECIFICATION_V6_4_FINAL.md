@@ -22,15 +22,15 @@ Ce document **REMPLACE INTÉGRALEMENT** :
 
 ### Changements majeurs V6.3 → V6.4
 
-| Élément | V6.3 (OBSOLÈTE) | V6.4 (ACTUEL) |
-|---------|-----------------|---------------|
-| **Wizard Steps** | 3 étapes | **5 étapes** (incl. email verification) |
-| **Email Verification** | Non documenté | **Step 1b: Code 6 chiffres** |
-| **Waitlist** | Non documenté | **Table crm_waitlist + Survey** |
-| **Short URLs** | Non documenté | **iOS Mail compatible (~31 chars)** |
-| **J-1 Reminder** | Basique | **Confirm/Reschedule buttons + short tokens** |
-| **Reschedule** | Non documenté | **Page dédiée avec Cal.com iframe** |
-| **Fleet Size** | Step 1 | **Step 3** (après booking) |
+| Élément                | V6.3 (OBSOLÈTE) | V6.4 (ACTUEL)                                 |
+| ---------------------- | --------------- | --------------------------------------------- |
+| **Wizard Steps**       | 3 étapes        | **5 étapes** (incl. email verification)       |
+| **Email Verification** | Non documenté   | **Step 1b: Code 6 chiffres**                  |
+| **Waitlist**           | Non documenté   | **Table crm_waitlist + Survey**               |
+| **Short URLs**         | Non documenté   | **iOS Mail compatible (~31 chars)**           |
+| **J-1 Reminder**       | Basique         | **Confirm/Reschedule buttons + short tokens** |
+| **Reschedule**         | Non documenté   | **Page dédiée avec Cal.com iframe**           |
+| **Fleet Size**         | Step 1          | **Step 3** (après booking)                    |
 
 ### Principe CARDINAL
 
@@ -129,14 +129,14 @@ Le wizard Book Demo est composé de **5 étapes** avec **email verification obli
 
 ### 1.3 Données factuelles justifiant le Wizard
 
-| Source | Donnée | Impact V6.4 |
-|--------|--------|-------------|
-| **HubSpot** | Multi-step forms = +86% conversion | Wizard 5 étapes |
-| **Venture Harbour** | Form multi-step = 0.96% → 8.1% (+743%) | Wizard progressif |
-| **Chili Piper** | Calendrier intégré = 30% → 66.7% | Cal.com embed étape 2 |
-| **Chili Piper** | Réponse < 1 min = +391% conversion | Appel à l'heure exacte |
-| **Formstack** | Téléphone early = -48% conversion | Téléphone étape 3 |
-| **Email Verification** | Réduit spam de 95% | Code 6 chiffres obligatoire |
+| Source                 | Donnée                                 | Impact V6.4                 |
+| ---------------------- | -------------------------------------- | --------------------------- |
+| **HubSpot**            | Multi-step forms = +86% conversion     | Wizard 5 étapes             |
+| **Venture Harbour**    | Form multi-step = 0.96% → 8.1% (+743%) | Wizard progressif           |
+| **Chili Piper**        | Calendrier intégré = 30% → 66.7%       | Cal.com embed étape 2       |
+| **Chili Piper**        | Réponse < 1 min = +391% conversion     | Appel à l'heure exacte      |
+| **Formstack**          | Téléphone early = -48% conversion      | Téléphone étape 3           |
+| **Email Verification** | Réduit spam de 95%                     | Code 6 chiffres obligatoire |
 
 ---
 
@@ -185,11 +185,11 @@ Le wizard Book Demo est composé de **5 étapes** avec **email verification obli
 
 ### 2.2 Séparation des responsabilités
 
-| Module | Responsabilité | Tables principales |
-|--------|---------------|-------------------|
+| Module  | Responsabilité                  | Tables principales                                  |
+| ------- | ------------------------------- | --------------------------------------------------- |
 | **CRM** | Acquisition prospects → clients | crm_leads, crm_waitlist, crm_quotes, crm_activities |
-| **CLT** | Gestion compte client | clt_masterdata, clt_members, clt_invoices |
-| **ADM** | Infrastructure technique tenant | adm_tenants, adm_providers, adm_roles |
+| **CLT** | Gestion compte client           | clt_masterdata, clt_members, clt_invoices           |
+| **ADM** | Infrastructure technique tenant | adm_tenants, adm_providers, adm_roles               |
 
 ---
 
@@ -239,16 +239,16 @@ Le wizard Book Demo est composé de **5 étapes** avec **email verification obli
 
 ### 3.2 Détail des 8 statuts
 
-| Statut | Phase | Description | Déclencheur | Probabilité |
-|--------|-------|-------------|-------------|-------------|
-| `new` | Incomplet | Email vérifié, wizard pas terminé | Wizard étape 1b (verification) | 5% |
-| `demo` | Démo | Wizard terminé, RDV booké | Webhook Cal.com + Step 3 complété | 50% |
-| `proposal_sent` | Proposition | Lien paiement Stripe généré | Commercial post-appel | 85% |
-| `payment_pending` | Proposition | Lien envoyé, attente paiement | Commercial | 90% |
-| `converted` | Terminé | Paiement reçu, tenant créé | Stripe webhook | 100% |
-| `lost` | Terminé | Perdu définitivement | Commercial | 0% |
-| `nurturing` | Terminé | Timing pas bon, relance programmée | Commercial | 15% |
-| `disqualified` | Terminé | Hors cible / Red flag | Commercial | 0% |
+| Statut            | Phase       | Description                        | Déclencheur                       | Probabilité |
+| ----------------- | ----------- | ---------------------------------- | --------------------------------- | ----------- |
+| `new`             | Incomplet   | Email vérifié, wizard pas terminé  | Wizard étape 1b (verification)    | 5%          |
+| `demo`            | Démo        | Wizard terminé, RDV booké          | Webhook Cal.com + Step 3 complété | 50%         |
+| `proposal_sent`   | Proposition | Lien paiement Stripe généré        | Commercial post-appel             | 85%         |
+| `payment_pending` | Proposition | Lien envoyé, attente paiement      | Commercial                        | 90%         |
+| `converted`       | Terminé     | Paiement reçu, tenant créé         | Stripe webhook                    | 100%        |
+| `lost`            | Terminé     | Perdu définitivement               | Commercial                        | 0%          |
+| `nurturing`       | Terminé     | Timing pas bon, relance programmée | Commercial                        | 15%         |
+| `disqualified`    | Terminé     | Hors cible / Red flag              | Commercial                        | 0%          |
 
 ### 3.3 Transitions autorisées
 
@@ -319,16 +319,16 @@ disqualified → (terminal)
 
 ### 4.2 Couleurs des badges statut
 
-| Statut | Couleur | Hex | Signification |
-|--------|---------|-----|---------------|
-| `new` | Gris | `#6B7280` | En attente action |
-| `demo` | Bleu | `#3B82F6` | Actif, RDV planifié |
-| `proposal_sent` | Orange | `#F97316` | Proposition envoyée |
-| `payment_pending` | Jaune | `#EAB308` | Attente paiement |
-| `converted` | Vert | `#22C55E` | Succès ✓ |
-| `lost` | Rouge | `#EF4444` | Perdu |
-| `nurturing` | Violet | `#8B5CF6` | À recontacter |
-| `disqualified` | Noir | `#1F2937` | Hors cible |
+| Statut            | Couleur | Hex       | Signification       |
+| ----------------- | ------- | --------- | ------------------- |
+| `new`             | Gris    | `#6B7280` | En attente action   |
+| `demo`            | Bleu    | `#3B82F6` | Actif, RDV planifié |
+| `proposal_sent`   | Orange  | `#F97316` | Proposition envoyée |
+| `payment_pending` | Jaune   | `#EAB308` | Attente paiement    |
+| `converted`       | Vert    | `#22C55E` | Succès ✓            |
+| `lost`            | Rouge   | `#EF4444` | Perdu               |
+| `nurturing`       | Violet  | `#8B5CF6` | À recontacter       |
+| `disqualified`    | Noir    | `#1F2937` | Hors cible          |
 
 ---
 
@@ -339,11 +339,13 @@ disqualified → (terminal)
 **Route**: `/[locale]/(public)/book-demo/page.tsx`
 
 **Champs**:
+
 - `email` (required) - Input email standard
 - `country_code` (required) - Select avec 30 pays (database-driven depuis `crm_countries`)
 - `gdpr_consent` (conditional) - Checkbox affiché uniquement si `country_gdpr = true`
 
 **Comportement**:
+
 1. User entre email + sélectionne pays
 2. Si pays GDPR (EU/EEA), checkbox consent apparaît
 3. Submit → POST `/api/demo-leads` mode `wizard_step1`
@@ -358,6 +360,7 @@ disqualified → (terminal)
 **Route**: `/[locale]/(public)/book-demo/verify/page.tsx`
 
 **UI**:
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
@@ -380,6 +383,7 @@ disqualified → (terminal)
 ```
 
 **Logique**:
+
 - 6 inputs individuels avec auto-focus
 - Timer 60s avant possibilité resend
 - Max 5 tentatives (après = locked)
@@ -387,6 +391,7 @@ disqualified → (terminal)
 - Submit → POST `/api/crm/leads/verify-email`
 
 **Post-verification**:
+
 - Si `country.is_operational = true` → Redirect `/book-demo/step-2`
 - Si `country.is_operational = false` → Redirect `/book-demo/coming-soon` (waitlist)
 
@@ -397,6 +402,7 @@ disqualified → (terminal)
 **Composant**: Cal.com embed iframe
 
 **Configuration Cal.com**:
+
 - Event Type: "FleetCore Demo Call"
 - Duration: 30 minutes
 - Buffer before: 5 minutes
@@ -404,11 +410,13 @@ disqualified → (terminal)
 - Minimum notice: 4 hours
 
 **Métadonnées passées**:
+
 - `leadId` (caché)
 - `email` (pré-rempli)
 - `name` (si déjà connu)
 
 **Webhook Cal.com**:
+
 - `BOOKING_CREATED` → Update lead avec `booking_calcom_uid`, `booking_slot_at`
 - Redirect automatique vers Step 3
 
@@ -428,24 +436,27 @@ disqualified → (terminal)
 | `message` | textarea | ❌ | Max 1000 chars |
 
 **Phone Input**:
+
 - Formatage automatique selon pays
 - Validation E.164 internationale
 - Pattern affiché selon country_code
 
 **Fleet Size Options** (database-driven):
+
 ```json
 [
-  {"value": "1", "label": "1 vehicle"},
-  {"value": "2-5", "label": "2-5 vehicles"},
-  {"value": "6-10", "label": "6-10 vehicles"},
-  {"value": "11-20", "label": "11-20 vehicles"},
-  {"value": "21-50", "label": "21-50 vehicles"},
-  {"value": "51-100", "label": "51-100 vehicles"},
-  {"value": "100+", "label": "100+ vehicles"}
+  { "value": "1", "label": "1 vehicle" },
+  { "value": "2-5", "label": "2-5 vehicles" },
+  { "value": "6-10", "label": "6-10 vehicles" },
+  { "value": "11-20", "label": "11-20 vehicles" },
+  { "value": "21-50", "label": "21-50 vehicles" },
+  { "value": "51-100", "label": "51-100 vehicles" },
+  { "value": "100+", "label": "100+ vehicles" }
 ]
 ```
 
 **Submit**:
+
 - PATCH `/api/crm/leads/[id]/complete-wizard`
 - Met à jour lead avec toutes les infos
 - Set `wizard_completed = true`
@@ -456,6 +467,7 @@ disqualified → (terminal)
 **Route**: `/[locale]/(public)/book-demo/confirmation/page.tsx`
 
 **Contenu**:
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
@@ -487,10 +499,12 @@ disqualified → (terminal)
 **Route**: `/[locale]/(public)/book-demo/reschedule/page.tsx`
 
 **Modes d'accès**:
+
 1. Via token court (depuis email J-1): `/book-demo/reschedule?t={short_token}`
 2. Via lien direct Cal.com: `/book-demo/reschedule?uid={calcom_uid}`
 
 **Contenu**:
+
 - Cal.com reschedule iframe
 - Pré-rempli avec booking actuel
 - Webhook `BOOKING_RESCHEDULED` met à jour `booking_slot_at`
@@ -504,9 +518,10 @@ disqualified → (terminal)
 **Service**: `lib/services/crm/email-verification.service.ts`
 
 **Constantes**:
+
 ```typescript
-const CODE_LENGTH = 6;              // 6 digits
-const BCRYPT_COST = 10;             // bcrypt rounds
+const CODE_LENGTH = 6; // 6 digits
+const BCRYPT_COST = 10; // bcrypt rounds
 const CODE_EXPIRATION_MINUTES = 15; // 15 min expiry
 const RESEND_COOLDOWN_SECONDS = 60; // 60s between resends
 const MAX_VERIFICATION_ATTEMPTS = 5; // Max attempts before lockout
@@ -538,8 +553,8 @@ await prisma.crm_leads.update({
   data: {
     email_verification_code: hashedCode,
     email_verification_expires_at: expiresAt, // NOW + 15 min
-    email_verification_attempts: 0
-  }
+    email_verification_attempts: 0,
+  },
 });
 ```
 
@@ -606,23 +621,23 @@ async canResendCode(email: string): Promise<ResendCheckResult> {
 
 ### 7.1 Configuration
 
-| Paramètre | Valeur |
-|-----------|--------|
-| **Plan** | Free ($0/mois) |
-| **Commerciaux** | 1 au démarrage |
-| **Event Type** | "FleetCore Demo Call" |
-| **Duration** | 30 minutes |
-| **Buffer before** | 5 minutes |
-| **Buffer after** | 10 minutes |
-| **Minimum notice** | 4 hours |
+| Paramètre          | Valeur                |
+| ------------------ | --------------------- |
+| **Plan**           | Free ($0/mois)        |
+| **Commerciaux**    | 1 au démarrage        |
+| **Event Type**     | "FleetCore Demo Call" |
+| **Duration**       | 30 minutes            |
+| **Buffer before**  | 5 minutes             |
+| **Buffer after**   | 10 minutes            |
+| **Minimum notice** | 4 hours               |
 
 ### 7.2 Webhooks Cal.com
 
-| Event | Endpoint | Action |
-|-------|----------|--------|
-| `BOOKING_CREATED` | `POST /api/crm/webhooks/calcom` | Lead → status=demo, store booking_calcom_uid, booking_slot_at |
-| `BOOKING_RESCHEDULED` | `POST /api/crm/webhooks/calcom` | Update booking_slot_at, log activity |
-| `BOOKING_CANCELLED` | `POST /api/crm/webhooks/calcom` | Lead → status=lost (reason: cancelled) |
+| Event                 | Endpoint                        | Action                                                        |
+| --------------------- | ------------------------------- | ------------------------------------------------------------- |
+| `BOOKING_CREATED`     | `POST /api/crm/webhooks/calcom` | Lead → status=demo, store booking_calcom_uid, booking_slot_at |
+| `BOOKING_RESCHEDULED` | `POST /api/crm/webhooks/calcom` | Update booking_slot_at, log activity                          |
+| `BOOKING_CANCELLED`   | `POST /api/crm/webhooks/calcom` | Lead → status=lost (reason: cancelled)                        |
 
 ### 7.3 Payload Webhook
 
@@ -686,10 +701,10 @@ WHERE status = 'demo'
 
 ### 8.3 Boutons CTA
 
-| Bouton | URL | Action |
-|--------|-----|--------|
-| **I'll be there** | `/api/crm/leads/confirm-attendance?t={short_token}` | Confirm attendance, log activity |
-| **Need to reschedule** | `/book-demo/reschedule?t={short_token}` | Open reschedule page with Cal.com iframe |
+| Bouton                 | URL                                                 | Action                                   |
+| ---------------------- | --------------------------------------------------- | ---------------------------------------- |
+| **I'll be there**      | `/api/crm/leads/confirm-attendance?t={short_token}` | Confirm attendance, log activity         |
+| **Need to reschedule** | `/book-demo/reschedule?t={short_token}`             | Open reschedule page with Cal.com iframe |
 
 ### 8.4 Short Token System
 
@@ -697,15 +712,15 @@ Pour compatibilité iOS Mail (URLs tronquées), on utilise des tokens courts:
 
 ```typescript
 // Génération
-const shortToken = randomBytes(12).toString('base64url'); // ~16 chars
+const shortToken = randomBytes(12).toString("base64url"); // ~16 chars
 
 // Stockage
 await prisma.crm_leads.update({
   where: { id: leadId },
   data: {
     reschedule_token: shortToken,
-    reschedule_token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-  }
+    reschedule_token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+  },
 });
 
 // URL finale: /api/crm/leads/confirm-attendance?t=Ab3Cd4Ef5Gh6 (~45 chars total)
@@ -757,6 +772,7 @@ await prisma.crm_leads.update({
 **Route**: `/[locale]/(public)/book-demo/coming-soon/page.tsx`
 
 **Contenu**:
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
@@ -782,6 +798,7 @@ await prisma.crm_leads.update({
 **Route**: `/[locale]/(public)/waitlist-survey/page.tsx`
 
 **Champs**:
+
 - `fleet_size` (optional) - Select avec options standard
 - `company_name` (optional) - Text input
 - `marketing_consent` (required checkbox) - Pour future newsletters
@@ -795,6 +812,7 @@ await prisma.crm_leads.update({
 iOS Mail tronque les URLs longues (>~80 chars), rendant les liens avec UUIDs inutilisables.
 
 **Exemple problématique**:
+
 ```
 https://fleetcore.io/api/crm/leads/confirm-attendance?leadId=550e8400-e29b-41d4-a716-446655440000
                                                                             ↑
@@ -804,15 +822,17 @@ https://fleetcore.io/api/crm/leads/confirm-attendance?leadId=550e8400-e29b-41d4-
 ### 10.2 Solution: Short Tokens
 
 **Génération**:
+
 ```typescript
-import { randomBytes } from 'crypto';
+import { randomBytes } from "crypto";
 
 // 12 bytes → 16 chars base64url
-const shortToken = randomBytes(12).toString('base64url');
+const shortToken = randomBytes(12).toString("base64url");
 // Exemple: "Ab3Cd4Ef5Gh6Ij7K"
 ```
 
 **URLs finales**:
+
 ```
 Confirm: /api/crm/leads/confirm-attendance?t=Ab3Cd4Ef5Gh6Ij7K (~55 chars) ✅
 Reschedule: /book-demo/reschedule?t=Ab3Cd4Ef5Gh6Ij7K (~45 chars) ✅
@@ -822,12 +842,14 @@ Waitlist Survey: /waitlist-survey?t=Ab3Cd4Ef5Gh6Ij7K (~40 chars) ✅
 ### 10.3 Stockage
 
 **crm_leads**:
+
 ```sql
 reschedule_token VARCHAR(32)        -- Short token for J-1 email links
 reschedule_token_expires_at TIMESTAMP -- Expiry (7 days after creation)
 ```
 
 **crm_waitlist**:
+
 ```sql
 short_token VARCHAR(32) UNIQUE      -- Short token for survey link
 ```
@@ -837,22 +859,25 @@ short_token VARCHAR(32) UNIQUE      -- Short token for survey link
 ```typescript
 // API route: /api/crm/leads/confirm-attendance
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get('t');
+  const token = request.nextUrl.searchParams.get("t");
 
   if (!token) {
-    return NextResponse.json({ error: 'Token required' }, { status: 400 });
+    return NextResponse.json({ error: "Token required" }, { status: 400 });
   }
 
   // Find lead by short token
   const lead = await db.crm_leads.findFirst({
     where: {
       reschedule_token: token,
-      reschedule_token_expires_at: { gt: new Date() }
-    }
+      reschedule_token_expires_at: { gt: new Date() },
+    },
   });
 
   if (!lead) {
-    return NextResponse.json({ error: 'Invalid or expired token' }, { status: 404 });
+    return NextResponse.json(
+      { error: "Invalid or expired token" },
+      { status: 404 }
+    );
   }
 
   // Process confirmation...
@@ -869,7 +894,7 @@ export async function GET(request: NextRequest) {
 CREATE TABLE crm_leads (
     -- Identifiants
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    lead_code VARCHAR(50) UNIQUE,           -- Ex: LEAD-2026-00001
+    lead_code VARCHAR(50) UNIQUE,           -- Ex: L-R7M8J6 (PostgreSQL trigger trg_set_lead_code)
 
     -- Contact
     first_name VARCHAR(100),
@@ -1100,14 +1125,17 @@ CREATE INDEX idx_crm_countries_visible ON crm_countries(is_visible);
 ### 13.2 Données de référence
 
 **Pays opérationnels (2)**:
+
 - 🇦🇪 UAE (AE) - `is_operational = true`
 - 🇫🇷 France (FR) - `is_operational = true`
 
 **Pays GDPR (30 EU + EEA)**:
+
 - Tous les pays EU (27): AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE
 - Pays EEA (3): IS, LI, NO
 
 **Prépositions françaises**:
+
 - `au` : Qatar, Canada, Maroc, Royaume-Uni, Portugal...
 - `aux` : États-Unis, Émirats, Pays-Bas
 - `en` : France, Espagne, Belgique, Allemagne...
@@ -1118,11 +1146,12 @@ CREATE INDEX idx_crm_countries_visible ON crm_countries(is_visible);
 
 ### 14.1 Demo Leads
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/demo-leads` | Créer lead (mode wizard_step1 ou full_form) |
+| Method | Route             | Description                                 |
+| ------ | ----------------- | ------------------------------------------- |
+| POST   | `/api/demo-leads` | Créer lead (mode wizard_step1 ou full_form) |
 
 **Body wizard_step1**:
+
 ```json
 {
   "mode": "wizard_step1",
@@ -1133,6 +1162,7 @@ CREATE INDEX idx_crm_countries_visible ON crm_countries(is_visible);
 ```
 
 **Body full_form** (legacy):
+
 ```json
 {
   "first_name": "Jean",
@@ -1149,13 +1179,14 @@ CREATE INDEX idx_crm_countries_visible ON crm_countries(is_visible);
 
 ### 14.2 Email Verification
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/crm/leads/verify-email` | Vérifier code 6 chiffres |
-| POST | `/api/crm/leads/resend-code` | Renvoyer code |
-| GET | `/api/crm/leads/check-email` | Vérifier si email existe |
+| Method | Route                         | Description              |
+| ------ | ----------------------------- | ------------------------ |
+| POST   | `/api/crm/leads/verify-email` | Vérifier code 6 chiffres |
+| POST   | `/api/crm/leads/resend-code`  | Renvoyer code            |
+| GET    | `/api/crm/leads/check-email`  | Vérifier si email existe |
 
 **Verify Body**:
+
 ```json
 {
   "email": "user@example.com",
@@ -1165,38 +1196,38 @@ CREATE INDEX idx_crm_countries_visible ON crm_countries(is_visible);
 
 ### 14.3 Booking & Wizard
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/crm/leads/[id]/booking-status` | Status booking Cal.com |
-| PATCH | `/api/crm/leads/[id]/complete-wizard` | Finaliser wizard step 3 |
+| Method | Route                                 | Description             |
+| ------ | ------------------------------------- | ----------------------- |
+| GET    | `/api/crm/leads/[id]/booking-status`  | Status booking Cal.com  |
+| PATCH  | `/api/crm/leads/[id]/complete-wizard` | Finaliser wizard step 3 |
 
 ### 14.4 J-1 Reminder
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/crm/leads/confirm-attendance?t={token}` | Confirmer présence |
-| POST | `/api/crm/leads/send-reschedule-link` | Générer lien reschedule |
+| Method | Route                                         | Description             |
+| ------ | --------------------------------------------- | ----------------------- |
+| GET    | `/api/crm/leads/confirm-attendance?t={token}` | Confirmer présence      |
+| POST   | `/api/crm/leads/send-reschedule-link`         | Générer lien reschedule |
 
 ### 14.5 Waitlist
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/waitlist` | Inscription waitlist |
-| GET | `/api/waitlist/survey?t={token}` | Récupérer données pour survey |
-| PATCH | `/api/waitlist/survey` | Soumettre survey |
+| Method | Route                            | Description                   |
+| ------ | -------------------------------- | ----------------------------- |
+| POST   | `/api/waitlist`                  | Inscription waitlist          |
+| GET    | `/api/waitlist/survey?t={token}` | Récupérer données pour survey |
+| PATCH  | `/api/waitlist/survey`           | Soumettre survey              |
 
 ### 14.6 Reference Data
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/public/countries` | Liste pays (visible) |
-| GET | `/api/public/fleet-size-options` | Options fleet size |
+| Method | Route                            | Description          |
+| ------ | -------------------------------- | -------------------- |
+| GET    | `/api/public/countries`          | Liste pays (visible) |
+| GET    | `/api/public/fleet-size-options` | Options fleet size   |
 
 ### 14.7 Cal.com Webhook
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/crm/webhooks/calcom` | Webhook Cal.com events |
+| Method | Route                      | Description            |
+| ------ | -------------------------- | ---------------------- |
+| POST   | `/api/crm/webhooks/calcom` | Webhook Cal.com events |
 
 ---
 
@@ -1204,19 +1235,19 @@ CREATE INDEX idx_crm_countries_visible ON crm_countries(is_visible);
 
 ### 15.1 Templates CRM
 
-| Code | Description | Langues | Variables |
-|------|-------------|---------|-----------|
-| `email_verification_code` | Code 6 chiffres | EN/FR/AR | `verification_code`, `expires_in_minutes` |
-| `lead_confirmation` | Confirmation demande (pays opérationnel) | EN/FR/AR | `first_name`, `company_name`, `fleet_size`, `country_name` |
-| `expansion_opportunity` | Notification (pays non opérationnel) | EN/FR/AR | `first_name`, `country_preposition`, `country_name` |
-| `demo_reminder_j1` | Rappel J-1 avec boutons | EN/FR/AR | `first_name`, `booking_date`, `booking_time`, `phone`, `confirm_url`, `reschedule_url` |
-| `booking_confirmation` | Confirmation booking Cal.com | EN/FR/AR | `first_name`, `booking_date`, `booking_time`, `phone` |
-| `sales_rep_assignment` | Notification commercial | EN/FR | `lead_name`, `company_name`, `fleet_size`, `priority`, `country_code` |
-| `wizard_reminder_j1` | Relance wizard incomplet J+1 | EN/FR | `first_name`, `resume_url` |
-| `wizard_reminder_j3` | Relance wizard incomplet J+3 | EN/FR | `first_name`, `resume_url` |
-| `wizard_final_reminder` | Dernière relance J+7 | EN/FR | `first_name`, `resume_url` |
-| `waitlist_confirmation` | Confirmation waitlist | EN/FR/AR | `country_name`, `survey_url` |
-| `country_launch_notification` | Lancement dans un pays | EN/FR/AR | `country_name`, `book_demo_url` |
+| Code                          | Description                              | Langues  | Variables                                                                              |
+| ----------------------------- | ---------------------------------------- | -------- | -------------------------------------------------------------------------------------- |
+| `email_verification_code`     | Code 6 chiffres                          | EN/FR/AR | `verification_code`, `expires_in_minutes`                                              |
+| `lead_confirmation`           | Confirmation demande (pays opérationnel) | EN/FR/AR | `first_name`, `company_name`, `fleet_size`, `country_name`                             |
+| `expansion_opportunity`       | Notification (pays non opérationnel)     | EN/FR/AR | `first_name`, `country_preposition`, `country_name`                                    |
+| `demo_reminder_j1`            | Rappel J-1 avec boutons                  | EN/FR/AR | `first_name`, `booking_date`, `booking_time`, `phone`, `confirm_url`, `reschedule_url` |
+| `booking_confirmation`        | Confirmation booking Cal.com             | EN/FR/AR | `first_name`, `booking_date`, `booking_time`, `phone`                                  |
+| `sales_rep_assignment`        | Notification commercial                  | EN/FR    | `lead_name`, `company_name`, `fleet_size`, `priority`, `country_code`                  |
+| `wizard_reminder_j1`          | Relance wizard incomplet J+1             | EN/FR    | `first_name`, `resume_url`                                                             |
+| `wizard_reminder_j3`          | Relance wizard incomplet J+3             | EN/FR    | `first_name`, `resume_url`                                                             |
+| `wizard_final_reminder`       | Dernière relance J+7                     | EN/FR    | `first_name`, `resume_url`                                                             |
+| `waitlist_confirmation`       | Confirmation waitlist                    | EN/FR/AR | `country_name`, `survey_url`                                                           |
+| `country_launch_notification` | Lancement dans un pays                   | EN/FR/AR | `country_name`, `book_demo_url`                                                        |
 
 ### 15.2 Architecture Templates
 
@@ -1268,20 +1299,20 @@ async sendEmail(params: {
 
 ### 16.1 Services CRM
 
-| Service | Fichier | Responsabilité |
-|---------|---------|----------------|
-| `EmailVerificationService` | `lib/services/crm/email-verification.service.ts` | Génération, hash, vérification codes 6 chiffres |
-| `LeadCreationService` | `lib/services/crm/lead-creation.service.ts` | Orchestration création lead (scoring, assignment) |
-| `LeadScoringService` | `lib/services/crm/lead-scoring.service.ts` | Calcul fit_score, engagement_score |
-| `LeadAssignmentService` | `lib/services/crm/lead-assignment.service.ts` | Attribution commercial selon règles |
-| `CountryService` | `lib/services/crm/country.service.ts` | isGdprCountry(), isOperational() avec cache |
+| Service                    | Fichier                                          | Responsabilité                                    |
+| -------------------------- | ------------------------------------------------ | ------------------------------------------------- |
+| `EmailVerificationService` | `lib/services/crm/email-verification.service.ts` | Génération, hash, vérification codes 6 chiffres   |
+| `LeadCreationService`      | `lib/services/crm/lead-creation.service.ts`      | Orchestration création lead (scoring, assignment) |
+| `LeadScoringService`       | `lib/services/crm/lead-scoring.service.ts`       | Calcul fit_score, engagement_score                |
+| `LeadAssignmentService`    | `lib/services/crm/lead-assignment.service.ts`    | Attribution commercial selon règles               |
+| `CountryService`           | `lib/services/crm/country.service.ts`            | isGdprCountry(), isOperational() avec cache       |
 
 ### 16.2 Services Notification
 
-| Service | Fichier | Responsabilité |
-|---------|---------|----------------|
+| Service                    | Fichier                                      | Responsabilité                |
+| -------------------------- | -------------------------------------------- | ----------------------------- |
 | `NotificationQueueService` | `lib/services/notification/queue.service.ts` | Queue emails avec idempotency |
-| `EmailService` | `lib/services/notification/email.service.ts` | Envoi via Resend API |
+| `EmailService`             | `lib/services/notification/email.service.ts` | Envoi via Resend API          |
 
 ### 16.3 EmailVerificationService - API
 
@@ -1357,13 +1388,13 @@ class EmailVerificationService {
 
 ### 17.3 Actions post-appel
 
-| Issue appel | Action Commercial | Nouveau statut | Dropdown requis |
-|-------------|------------------|----------------|-----------------|
-| **OK, on y va** | Clic "Générer lien paiement" | `proposal_sent` | Non |
-| **Pas maintenant** | Clic "Nurturing" | `nurturing` | Oui (raison) |
-| **Non intéressé** | Clic "Lost" | `lost` | Oui (raison) |
-| **Hors cible** | Clic "Disqualifier" | `disqualified` | Oui (raison) |
-| **No-show** | Clic "Lost" | `lost` | Auto: `no_show` |
+| Issue appel        | Action Commercial            | Nouveau statut  | Dropdown requis |
+| ------------------ | ---------------------------- | --------------- | --------------- |
+| **OK, on y va**    | Clic "Générer lien paiement" | `proposal_sent` | Non             |
+| **Pas maintenant** | Clic "Nurturing"             | `nurturing`     | Oui (raison)    |
+| **Non intéressé**  | Clic "Lost"                  | `lost`          | Oui (raison)    |
+| **Hors cible**     | Clic "Disqualifier"          | `disqualified`  | Oui (raison)    |
+| **No-show**        | Clic "Lost"                  | `lost`          | Auto: `no_show` |
 
 ---
 
@@ -1371,24 +1402,24 @@ class EmailVerificationService {
 
 ### 18.1 Les 3 questions
 
-| Dimension | Question | Scores possibles |
-|-----------|----------|-----------------|
-| **C** - Challenges | "Quels sont vos plus gros défis avec la gestion de votre flotte ?" | high / medium / low |
-| **P** - Priority | "À quel point c'est prioritaire de résoudre ces problèmes ?" | high / medium / low |
-| **T** - Timing | "Quand souhaiteriez-vous avoir une solution en place ?" | hot / warm / cool / cold |
+| Dimension          | Question                                                           | Scores possibles         |
+| ------------------ | ------------------------------------------------------------------ | ------------------------ |
+| **C** - Challenges | "Quels sont vos plus gros défis avec la gestion de votre flotte ?" | high / medium / low      |
+| **P** - Priority   | "À quel point c'est prioritaire de résoudre ces problèmes ?"       | high / medium / low      |
+| **T** - Timing     | "Quand souhaiteriez-vous avoir une solution en place ?"            | hot / warm / cool / cold |
 
 ### 18.2 Grille de scoring
 
-| C | P | T | Score | Décision |
-|---|---|---|-------|----------|
-| high | high | hot | 100 | GO - Close immédiat |
-| high | high | warm | 90 | GO - Close avec suivi |
-| high | medium | hot | 80 | GO - Demo approfondie |
-| medium | high | hot | 75 | GO - Demo approfondie |
-| high | medium | warm | 70 | GO - Avec réserve |
-| medium | medium | warm | 50 | MAYBE - Nurturing court |
-| low | * | * | < 40 | NO-GO - Nurturing long |
-| * | * | cold | < 30 | NO-GO - Nurturing |
+| C      | P      | T    | Score | Décision                |
+| ------ | ------ | ---- | ----- | ----------------------- |
+| high   | high   | hot  | 100   | GO - Close immédiat     |
+| high   | high   | warm | 90    | GO - Close avec suivi   |
+| high   | medium | hot  | 80    | GO - Demo approfondie   |
+| medium | high   | hot  | 75    | GO - Demo approfondie   |
+| high   | medium | warm | 70    | GO - Avec réserve       |
+| medium | medium | warm | 50    | MAYBE - Nurturing court |
+| low    | \*     | \*   | < 40  | NO-GO - Nurturing long  |
+| \*     | \*     | cold | < 30  | NO-GO - Nurturing       |
 
 ---
 
@@ -1449,14 +1480,17 @@ class EmailVerificationService {
 ### 20.2 Implémentation
 
 **Frontend**: `GdprConsentField` component
+
 - Affiché uniquement si `country.country_gdpr = true`
 - Checkbox obligatoire avant submit
 
 **Backend**: `LeadCreationService` + `captureConsentIp()`
+
 - Validation STEP 0: Reject si pays GDPR sans consent
 - Capture IP pour audit trail
 
 **Database**:
+
 ```sql
 gdpr_consent BOOLEAN,
 consent_at TIMESTAMP,
@@ -1465,11 +1499,11 @@ consent_ip VARCHAR(45)  -- IPv4 ou IPv6
 
 ### 20.3 Données stockées
 
-| Champ | Description |
-|-------|-------------|
+| Champ          | Description                  |
+| -------------- | ---------------------------- |
 | `gdpr_consent` | TRUE si user a coché la case |
-| `consent_at` | Timestamp du consentement |
-| `consent_ip` | Adresse IP pour audit trail |
+| `consent_at`   | Timestamp du consentement    |
+| `consent_ip`   | Adresse IP pour audit trail  |
 
 ---
 
@@ -1477,39 +1511,39 @@ consent_ip VARCHAR(45)  -- IPv4 ou IPv6
 
 ### 21.1 Pages publiques Book Demo
 
-| Route | Description |
-|-------|-------------|
-| `/book-demo` | Wizard étape 1 (email + country) |
-| `/book-demo/verify` | Vérification email (code 6 chiffres) |
-| `/book-demo/step-2` | Cal.com embed |
-| `/book-demo/step-3` | Infos business + téléphone |
-| `/book-demo/confirmation` | Confirmation post-booking |
-| `/book-demo/confirmed` | Après clic "I'll be there" |
-| `/book-demo/reschedule` | Reprogrammer RDV (Cal.com iframe) |
-| `/book-demo/coming-soon` | Pays non couvert → waitlist |
+| Route                     | Description                          |
+| ------------------------- | ------------------------------------ |
+| `/book-demo`              | Wizard étape 1 (email + country)     |
+| `/book-demo/verify`       | Vérification email (code 6 chiffres) |
+| `/book-demo/step-2`       | Cal.com embed                        |
+| `/book-demo/step-3`       | Infos business + téléphone           |
+| `/book-demo/confirmation` | Confirmation post-booking            |
+| `/book-demo/confirmed`    | Après clic "I'll be there"           |
+| `/book-demo/reschedule`   | Reprogrammer RDV (Cal.com iframe)    |
+| `/book-demo/coming-soon`  | Pays non couvert → waitlist          |
 
 ### 21.2 Pages publiques Waitlist
 
-| Route | Description |
-|-------|-------------|
+| Route              | Description                      |
+| ------------------ | -------------------------------- |
 | `/waitlist-survey` | Survey post-inscription waitlist |
 
 ### 21.3 Pages publiques autres
 
-| Route | Description |
-|-------|-------------|
-| `/payment-success` | Succès paiement Stripe |
-| `/payment-cancelled` | Annulation paiement |
-| `/verify` | Formulaire vérification 24h post-conversion |
+| Route                | Description                                 |
+| -------------------- | ------------------------------------------- |
+| `/payment-success`   | Succès paiement Stripe                      |
+| `/payment-cancelled` | Annulation paiement                         |
+| `/verify`            | Formulaire vérification 24h post-conversion |
 
 ### 21.4 Pages admin CRM
 
-| Route | Description |
-|-------|-------------|
-| `/admin/crm/leads` | Pipeline Kanban 4 phases |
-| `/admin/crm/leads/[id]` | Fiche lead détaillée |
-| `/admin/crm/leads/browser` | Vue table avec filtres |
-| `/admin/crm/leads/reports` | Dashboard analytics |
+| Route                      | Description              |
+| -------------------------- | ------------------------ |
+| `/admin/crm/leads`         | Pipeline Kanban 4 phases |
+| `/admin/crm/leads/[id]`    | Fiche lead détaillée     |
+| `/admin/crm/leads/browser` | Vue table avec filtres   |
+| `/admin/crm/leads/reports` | Dashboard analytics      |
 
 ---
 
@@ -1562,14 +1596,14 @@ Email "verification_24h" envoyé
 
 ## 23. MÉTRIQUES ET KPIS
 
-| Métrique | Formule |
-|----------|---------|
-| Taux conversion Wizard | demo / new |
-| Taux qualification | proposal_sent / demo |
-| Taux closing | converted / proposal_sent |
-| Taux no-show | (demo avec no_show) / demo |
-| Cycle moyen | Moyenne(converted_at - created_at) |
-| Taux email verification | email_verified / total leads created |
+| Métrique                 | Formule                              |
+| ------------------------ | ------------------------------------ |
+| Taux conversion Wizard   | demo / new                           |
+| Taux qualification       | proposal_sent / demo                 |
+| Taux closing             | converted / proposal_sent            |
+| Taux no-show             | (demo avec no_show) / demo           |
+| Cycle moyen              | Moyenne(converted_at - created_at)   |
+| Taux email verification  | email_verified / total leads created |
 | Taux waitlist conversion | leads from waitlist / total waitlist |
 
 ---
@@ -1604,6 +1638,7 @@ Email "verification_24h" envoyé
 ## CHECKLIST VALIDATION V6.4
 
 ### Wizard Flow
+
 ```
 ☐ Step 1: Email + Country + GDPR consent (conditional)
 ☐ Step 1b: Email verification 6 digits
@@ -1615,6 +1650,7 @@ Email "verification_24h" envoyé
 ```
 
 ### Email Verification
+
 ```
 ☐ Code 6 chiffres crypto-secure
 ☐ bcrypt hashing (cost 10)
@@ -1625,6 +1661,7 @@ Email "verification_24h" envoyé
 ```
 
 ### J-1 Reminder
+
 ```
 ☐ CRON job toutes les heures
 ☐ Short token generation
@@ -1634,6 +1671,7 @@ Email "verification_24h" envoyé
 ```
 
 ### Waitlist
+
 ```
 ☐ crm_waitlist table created
 ☐ Short token for survey link
@@ -1642,6 +1680,7 @@ Email "verification_24h" envoyé
 ```
 
 ### GDPR
+
 ```
 ☐ 30 EU/EEA countries flagged
 ☐ GdprConsentField component

@@ -193,7 +193,7 @@ export type CreateLeadInput = z.infer<typeof CreateLeadSchema>;
  *   success: true,
  *   data: {
  *     id: "uuid",
- *     lead_code: "LEAD-2025-001",
+ *     lead_code: "L-R7M8J6", // PostgreSQL trigger format (L-XXXXXX)
  *     email: "ceo@bigfleet.ae",
  *     status: "new",
  *     priority: "high",

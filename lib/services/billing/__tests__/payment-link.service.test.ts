@@ -179,7 +179,7 @@ describe("PaymentLinkService", () => {
       deleted_at: null,
       deleted_by: null,
       deletion_reason: null,
-      lead_code: "LEAD-2026-001",
+      lead_code: "L-XYZ789", // PostgreSQL trigger format (L-XXXXXX)
       industry: null,
       company_size: null,
       website_url: null,

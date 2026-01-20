@@ -24,14 +24,14 @@
 
 ### Tables principales CRM
 
-| Table | Description | Lignes estimées | Criticité |
-|-------|-------------|-----------------|-----------|
-| `crm_leads` | Prospects et leads | 10K+ | CRITIQUE |
-| `crm_waitlist` | Inscriptions waitlist pays non opérationnels | 1K+ | HAUTE |
-| `crm_countries` | Référentiel pays avec config | 200+ | HAUTE |
-| `crm_lead_activities` | Historique activités sur leads | 50K+ | HAUTE |
-| `crm_lead_sources` | Sources d'acquisition | 20 | MOYENNE |
-| `crm_settings` | Configuration CRM dynamique | 50 | CRITIQUE |
+| Table                 | Description                                  | Lignes estimées | Criticité |
+| --------------------- | -------------------------------------------- | --------------- | --------- |
+| `crm_leads`           | Prospects et leads                           | 10K+            | CRITIQUE  |
+| `crm_waitlist`        | Inscriptions waitlist pays non opérationnels | 1K+             | HAUTE     |
+| `crm_countries`       | Référentiel pays avec config                 | 200+            | HAUTE     |
+| `crm_lead_activities` | Historique activités sur leads               | 50K+            | HAUTE     |
+| `crm_lead_sources`    | Sources d'acquisition                        | 20              | MOYENNE   |
+| `crm_settings`        | Configuration CRM dynamique                  | 50              | CRITIQUE  |
 
 ### Relations principales
 
@@ -68,7 +68,8 @@ CREATE TABLE crm_leads (
     -- ============================================
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_code VARCHAR(50) UNIQUE,
-    -- Format: LEAD-{YEAR}-{SEQUENCE} ex: LEAD-2026-00001
+    -- Format: L-XXXXXX (PostgreSQL trigger trg_set_lead_code)
+    -- Ex: L-R7M8J6, L-CQDM56 (random alphanumeric, no sequential numbers)
 
     -- ============================================
     -- CONTACT
@@ -312,22 +313,22 @@ CREATE INDEX idx_crm_leads_deleted ON crm_leads(deleted_at);
 
 ### Colonnes ajoutées V6.4
 
-| Colonne | Type | Description | Ajoutée en |
-|---------|------|-------------|------------|
-| `email_verified` | BOOLEAN | Email vérifié via code 6 chiffres | V6.2.2 |
-| `email_verification_code` | VARCHAR(255) | Hash bcrypt du code | V6.2.2 |
-| `email_verification_expires_at` | TIMESTAMP | Expiration code (15 min) | V6.2.2 |
-| `email_verification_attempts` | INTEGER | Compteur tentatives (max 5) | V6.2.2 |
-| `booking_slot_at` | TIMESTAMP | Date/heure RDV Cal.com | V6.2.4 |
-| `booking_confirmed_at` | TIMESTAMP | Confirmation présence | V6.2.4 |
-| `booking_calcom_uid` | VARCHAR(255) | UID Cal.com | V6.2.4 |
-| `wizard_completed` | BOOLEAN | Wizard finalisé | V6.2.4 |
-| `reschedule_token` | VARCHAR(32) | Token court iOS Mail | V6.2.9 |
-| `reschedule_token_expires_at` | TIMESTAMP | Expiration token (7j) | V6.2.9 |
-| `reminder_j1_sent_at` | TIMESTAMP | Email J-1 envoyé | V6.2.9 |
-| `attendance_confirmed_at` | TIMESTAMP | Présence confirmée | V6.2.9 |
-| `platforms_used` | TEXT[] | Plateformes utilisées | V6.2.6 |
-| `consent_ip` | VARCHAR(45) | IP du consentement GDPR | V6.2.8 |
+| Colonne                         | Type         | Description                       | Ajoutée en |
+| ------------------------------- | ------------ | --------------------------------- | ---------- |
+| `email_verified`                | BOOLEAN      | Email vérifié via code 6 chiffres | V6.2.2     |
+| `email_verification_code`       | VARCHAR(255) | Hash bcrypt du code               | V6.2.2     |
+| `email_verification_expires_at` | TIMESTAMP    | Expiration code (15 min)          | V6.2.2     |
+| `email_verification_attempts`   | INTEGER      | Compteur tentatives (max 5)       | V6.2.2     |
+| `booking_slot_at`               | TIMESTAMP    | Date/heure RDV Cal.com            | V6.2.4     |
+| `booking_confirmed_at`          | TIMESTAMP    | Confirmation présence             | V6.2.4     |
+| `booking_calcom_uid`            | VARCHAR(255) | UID Cal.com                       | V6.2.4     |
+| `wizard_completed`              | BOOLEAN      | Wizard finalisé                   | V6.2.4     |
+| `reschedule_token`              | VARCHAR(32)  | Token court iOS Mail              | V6.2.9     |
+| `reschedule_token_expires_at`   | TIMESTAMP    | Expiration token (7j)             | V6.2.9     |
+| `reminder_j1_sent_at`           | TIMESTAMP    | Email J-1 envoyé                  | V6.2.9     |
+| `attendance_confirmed_at`       | TIMESTAMP    | Présence confirmée                | V6.2.9     |
+| `platforms_used`                | TEXT[]       | Plateformes utilisées             | V6.2.6     |
+| `consent_ip`                    | VARCHAR(45)  | IP du consentement GDPR           | V6.2.8     |
 
 ---
 
@@ -521,6 +522,7 @@ CREATE INDEX idx_crm_countries_display ON crm_countries(display_order);
 ### Données de référence
 
 **Pays opérationnels (2)**:
+
 ```sql
 INSERT INTO crm_countries (country_code, country_name_en, country_name_fr,
     is_operational, country_gdpr, country_preposition_fr, display_order)
@@ -530,6 +532,7 @@ VALUES
 ```
 
 **Pays GDPR (30)**:
+
 ```sql
 -- EU (27 pays)
 UPDATE crm_countries SET country_gdpr = TRUE
@@ -545,6 +548,7 @@ WHERE country_code IN ('IS', 'LI', 'NO');
 ```
 
 **Prépositions françaises**:
+
 ```sql
 -- Masculin (au)
 UPDATE crm_countries SET country_preposition_fr = 'au'
@@ -633,13 +637,13 @@ CREATE INDEX idx_crm_lead_activities_scheduled ON crm_lead_activities(scheduled_
 
 ### Types d'activités
 
-| Type | Description | Metadata typique |
-|------|-------------|------------------|
-| `call` | Appel téléphonique | `{duration: 15, outcome: "positive/negative/neutral"}` |
-| `email` | Email envoyé/reçu | `{subject: "...", direction: "inbound/outbound"}` |
-| `note` | Note interne | `{category: "qualification/follow-up/general"}` |
-| `meeting` | Réunion/démo | `{location: "...", attendees: [...], platform: "cal.com"}` |
-| `task` | Tâche à faire | `{priority: "high/medium/low", due_date: "..."}` |
+| Type      | Description        | Metadata typique                                           |
+| --------- | ------------------ | ---------------------------------------------------------- |
+| `call`    | Appel téléphonique | `{duration: 15, outcome: "positive/negative/neutral"}`     |
+| `email`   | Email envoyé/reçu  | `{subject: "...", direction: "inbound/outbound"}`          |
+| `note`    | Note interne       | `{category: "qualification/follow-up/general"}`            |
+| `meeting` | Réunion/démo       | `{location: "...", attendees: [...], platform: "cal.com"}` |
+| `task`    | Tâche à faire      | `{priority: "high/medium/low", due_date: "..."}`           |
 
 ---
 
@@ -706,35 +710,53 @@ CREATE TABLE crm_settings (
 ### Settings clés V6.4
 
 **lead_status_workflow**:
+
 ```json
 {
   "version": "6.4.0",
   "statuses": [
-    {"value": "new", "phase": "incomplete", "probability": 5},
-    {"value": "demo", "phase": "demo", "probability": 50},
-    {"value": "proposal_sent", "phase": "proposal", "probability": 85},
-    {"value": "payment_pending", "phase": "proposal", "probability": 90},
-    {"value": "converted", "phase": "completed", "probability": 100},
-    {"value": "lost", "phase": "completed", "probability": 0},
-    {"value": "nurturing", "phase": "completed", "probability": 15},
-    {"value": "disqualified", "phase": "completed", "probability": 0}
+    { "value": "new", "phase": "incomplete", "probability": 5 },
+    { "value": "demo", "phase": "demo", "probability": 50 },
+    { "value": "proposal_sent", "phase": "proposal", "probability": 85 },
+    { "value": "payment_pending", "phase": "proposal", "probability": 90 },
+    { "value": "converted", "phase": "completed", "probability": 100 },
+    { "value": "lost", "phase": "completed", "probability": 0 },
+    { "value": "nurturing", "phase": "completed", "probability": 15 },
+    { "value": "disqualified", "phase": "completed", "probability": 0 }
   ]
 }
 ```
 
 **lead_phases**:
+
 ```json
 {
   "phases": [
-    {"key": "incomplete", "order": 1, "label_en": "Incomplete", "label_fr": "Incomplet"},
-    {"key": "demo", "order": 2, "label_en": "Demo", "label_fr": "Démo"},
-    {"key": "proposal", "order": 3, "label_en": "Proposal", "label_fr": "Proposition"},
-    {"key": "completed", "order": 4, "label_en": "Completed", "label_fr": "Terminé"}
+    {
+      "key": "incomplete",
+      "order": 1,
+      "label_en": "Incomplete",
+      "label_fr": "Incomplet"
+    },
+    { "key": "demo", "order": 2, "label_en": "Demo", "label_fr": "Démo" },
+    {
+      "key": "proposal",
+      "order": 3,
+      "label_en": "Proposal",
+      "label_fr": "Proposition"
+    },
+    {
+      "key": "completed",
+      "order": 4,
+      "label_en": "Completed",
+      "label_fr": "Terminé"
+    }
   ]
 }
 ```
 
 **email_verification_config**:
+
 ```json
 {
   "code_length": 6,
@@ -746,16 +768,37 @@ CREATE TABLE crm_settings (
 ```
 
 **fleet_size_options**:
+
 ```json
 {
   "options": [
-    {"value": "1", "label_en": "1 vehicle", "label_fr": "1 véhicule"},
-    {"value": "2-5", "label_en": "2-5 vehicles", "label_fr": "2-5 véhicules"},
-    {"value": "6-10", "label_en": "6-10 vehicles", "label_fr": "6-10 véhicules"},
-    {"value": "11-20", "label_en": "11-20 vehicles", "label_fr": "11-20 véhicules"},
-    {"value": "21-50", "label_en": "21-50 vehicles", "label_fr": "21-50 véhicules"},
-    {"value": "51-100", "label_en": "51-100 vehicles", "label_fr": "51-100 véhicules"},
-    {"value": "100+", "label_en": "100+ vehicles", "label_fr": "100+ véhicules"}
+    { "value": "1", "label_en": "1 vehicle", "label_fr": "1 véhicule" },
+    { "value": "2-5", "label_en": "2-5 vehicles", "label_fr": "2-5 véhicules" },
+    {
+      "value": "6-10",
+      "label_en": "6-10 vehicles",
+      "label_fr": "6-10 véhicules"
+    },
+    {
+      "value": "11-20",
+      "label_en": "11-20 vehicles",
+      "label_fr": "11-20 véhicules"
+    },
+    {
+      "value": "21-50",
+      "label_en": "21-50 vehicles",
+      "label_fr": "21-50 véhicules"
+    },
+    {
+      "value": "51-100",
+      "label_en": "51-100 vehicles",
+      "label_fr": "51-100 véhicules"
+    },
+    {
+      "value": "100+",
+      "label_en": "100+ vehicles",
+      "label_fr": "100+ véhicules"
+    }
   ]
 }
 ```
@@ -804,22 +847,22 @@ CREATE TABLE crm_referrals (
 
 ### Nouvelles colonnes crm_leads
 
-| Colonne | Description | Migration |
-|---------|-------------|-----------|
-| `email_verified` | Flag email vérifié | `ALTER TABLE ADD COLUMN` |
-| `email_verification_code` | Hash bcrypt code | `ALTER TABLE ADD COLUMN` |
-| `email_verification_expires_at` | Expiration | `ALTER TABLE ADD COLUMN` |
-| `email_verification_attempts` | Compteur | `ALTER TABLE ADD COLUMN DEFAULT 0` |
-| `booking_slot_at` | Date RDV Cal.com | `ALTER TABLE ADD COLUMN` |
-| `booking_confirmed_at` | Confirmation | `ALTER TABLE ADD COLUMN` |
-| `booking_calcom_uid` | UID Cal.com | `ALTER TABLE ADD COLUMN` |
-| `wizard_completed` | Wizard fini | `ALTER TABLE ADD COLUMN DEFAULT FALSE` |
-| `reschedule_token` | Token court | `ALTER TABLE ADD COLUMN` |
-| `reschedule_token_expires_at` | Expiration token | `ALTER TABLE ADD COLUMN` |
-| `reminder_j1_sent_at` | J-1 envoyé | `ALTER TABLE ADD COLUMN` |
-| `attendance_confirmed_at` | Présence confirmée | `ALTER TABLE ADD COLUMN` |
-| `platforms_used` | Plateformes | `ALTER TABLE ADD COLUMN TEXT[]` |
-| `consent_ip` | IP consentement | `ALTER TABLE ADD COLUMN VARCHAR(45)` |
+| Colonne                         | Description        | Migration                              |
+| ------------------------------- | ------------------ | -------------------------------------- |
+| `email_verified`                | Flag email vérifié | `ALTER TABLE ADD COLUMN`               |
+| `email_verification_code`       | Hash bcrypt code   | `ALTER TABLE ADD COLUMN`               |
+| `email_verification_expires_at` | Expiration         | `ALTER TABLE ADD COLUMN`               |
+| `email_verification_attempts`   | Compteur           | `ALTER TABLE ADD COLUMN DEFAULT 0`     |
+| `booking_slot_at`               | Date RDV Cal.com   | `ALTER TABLE ADD COLUMN`               |
+| `booking_confirmed_at`          | Confirmation       | `ALTER TABLE ADD COLUMN`               |
+| `booking_calcom_uid`            | UID Cal.com        | `ALTER TABLE ADD COLUMN`               |
+| `wizard_completed`              | Wizard fini        | `ALTER TABLE ADD COLUMN DEFAULT FALSE` |
+| `reschedule_token`              | Token court        | `ALTER TABLE ADD COLUMN`               |
+| `reschedule_token_expires_at`   | Expiration token   | `ALTER TABLE ADD COLUMN`               |
+| `reminder_j1_sent_at`           | J-1 envoyé         | `ALTER TABLE ADD COLUMN`               |
+| `attendance_confirmed_at`       | Présence confirmée | `ALTER TABLE ADD COLUMN`               |
+| `platforms_used`                | Plateformes        | `ALTER TABLE ADD COLUMN TEXT[]`        |
+| `consent_ip`                    | IP consentement    | `ALTER TABLE ADD COLUMN VARCHAR(45)`   |
 
 ### Nouvelle table crm_waitlist
 
@@ -827,13 +870,13 @@ Table entièrement nouvelle pour gérer les inscriptions en liste d'attente des 
 
 ### Nouvelles colonnes crm_countries
 
-| Colonne | Description | Migration |
-|---------|-------------|-----------|
-| `country_gdpr` | Flag GDPR EU/EEA | `ALTER TABLE ADD COLUMN DEFAULT FALSE` |
-| `country_preposition_fr` | Préposition FR | `ALTER TABLE ADD COLUMN DEFAULT 'en'` |
-| `country_preposition_en` | Préposition EN | `ALTER TABLE ADD COLUMN DEFAULT 'in'` |
-| `dial_code` | Indicatif tél | `ALTER TABLE ADD COLUMN` |
-| `phone_pattern` | Format attendu | `ALTER TABLE ADD COLUMN` |
+| Colonne                  | Description      | Migration                              |
+| ------------------------ | ---------------- | -------------------------------------- |
+| `country_gdpr`           | Flag GDPR EU/EEA | `ALTER TABLE ADD COLUMN DEFAULT FALSE` |
+| `country_preposition_fr` | Préposition FR   | `ALTER TABLE ADD COLUMN DEFAULT 'en'`  |
+| `country_preposition_en` | Préposition EN   | `ALTER TABLE ADD COLUMN DEFAULT 'in'`  |
+| `dial_code`              | Indicatif tél    | `ALTER TABLE ADD COLUMN`               |
+| `phone_pattern`          | Format attendu   | `ALTER TABLE ADD COLUMN`               |
 
 ### Scripts de migration
 
@@ -898,16 +941,19 @@ CREATE INDEX IF NOT EXISTS idx_crm_waitlist_short_token ON crm_waitlist(short_to
 ## Métriques de validation
 
 ### Colonnes
+
 - [ ] crm_leads: 60+ colonnes (vs 30 en V6.3)
 - [ ] crm_waitlist: 14 colonnes (nouvelle table)
 - [ ] crm_countries: 14 colonnes (vs 8 en V6.3)
 
 ### Index
+
 - [ ] crm_leads: 10+ index
 - [ ] crm_waitlist: 4 index
 - [ ] crm_countries: 4 index
 
 ### Contraintes
+
 - [ ] crm_leads: status CHECK (8 valeurs)
 - [ ] crm_leads: email unique (pour actifs)
 - [ ] crm_waitlist: email+country unique

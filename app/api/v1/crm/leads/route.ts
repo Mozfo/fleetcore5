@@ -55,7 +55,7 @@ import { logger } from "@/lib/logger";
  *   "success": true,
  *   "data": {
  *     "id": "uuid",
- *     "lead_code": "LEAD-2025-001",
+ *     "lead_code": "L-R7M8J6",
  *     "qualification_score": 76,
  *     "lead_stage": "sales_qualified",
  *     "assigned_to": "emp-uuid",
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
  *   "data": [
  *     {
  *       "id": "uuid",
- *       "lead_code": "LEAD-2025-001",
+ *       "lead_code": "L-CQDM56",
  *       "email": "ceo@bigfleet.ae",
  *       "company_name": "Big Fleet LLC",
  *       "status": "new",

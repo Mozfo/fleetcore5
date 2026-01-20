@@ -63,7 +63,7 @@ const mockLead = {
   company_name: "Test Company",
   phone: "+1234567890",
   country_code: "AE",
-  lead_code: "LEAD-2026-001",
+  lead_code: "L-ABC123", // PostgreSQL trigger format (L-XXXXXX)
   fleet_size: "10",
   tenant_id: null,
   stripe_checkout_session_id: "cs_test_123",
@@ -374,7 +374,7 @@ describe("CustomerConversionService", () => {
         expect.objectContaining({
           data: expect.objectContaining({
             origin_lead_id: "lead-uuid-123",
-            origin_lead_code: "LEAD-2026-001",
+            origin_lead_code: "L-ABC123", // PostgreSQL trigger format
           }),
         })
       );

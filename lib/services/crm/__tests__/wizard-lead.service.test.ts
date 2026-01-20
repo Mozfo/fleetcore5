@@ -53,7 +53,7 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     deleted_at: null,
     deleted_by: null,
     deletion_reason: null,
-    lead_code: "LEAD-2026-00001",
+    lead_code: "L-R7M8J6", // Format PostgreSQL trigger (L-XXXXXX)
     first_name: null,
     last_name: null,
     company_name: null,
@@ -171,7 +171,7 @@ describe("WizardLeadService", () => {
     it("should return existing lead when email already exists", async () => {
       // Arrange
       const mockExistingLead = createMockLead({
-        lead_code: "LEAD-2026-00042",
+        lead_code: "L-CQDM56", // Format PostgreSQL trigger (L-XXXXXX)
         email_verified: true,
       });
       vi.mocked(prisma.crm_leads.findFirst).mockResolvedValue(mockExistingLead);
@@ -190,61 +190,8 @@ describe("WizardLeadService", () => {
       expect(prisma.crm_leads.create).not.toHaveBeenCalled();
     });
 
-    it("should generate correct lead code format LEAD-YYYY-NNNNN", async () => {
-      // Arrange
-      const mockNewLead = createMockLead();
-      vi.mocked(prisma.crm_leads.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.crm_leads.create).mockResolvedValue(mockNewLead);
-
-      // Act
-      await service.createWizardLead({
-        email: mockEmail,
-        country_code: mockCountryCode,
-        locale: "en",
-      });
-
-      // Assert: lead_code matches LEAD-YYYY-00001 pattern
-      expect(prisma.crm_leads.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          lead_code: expect.stringMatching(/^LEAD-\d{4}-00001$/),
-        }),
-      });
-    });
-
-    it("should increment lead code sequence based on last lead", async () => {
-      // Arrange
-      const year = new Date().getFullYear();
-      const lastLeadWithCode = createMockLead({
-        lead_code: `LEAD-${year}-00042`,
-      });
-      const newLeadWithCode = createMockLead({
-        id: "new-lead-uuid",
-        email: "new@example.com",
-        lead_code: `LEAD-${year}-00043`,
-      });
-
-      // First call: find existing lead (none)
-      // Second call: find last lead code
-      vi.mocked(prisma.crm_leads.findFirst)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(lastLeadWithCode);
-
-      vi.mocked(prisma.crm_leads.create).mockResolvedValue(newLeadWithCode);
-
-      // Act
-      await service.createWizardLead({
-        email: "new@example.com",
-        country_code: "DE",
-        locale: "en",
-      });
-
-      // Assert: lead_code should be 00043
-      expect(prisma.crm_leads.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          lead_code: `LEAD-${year}-00043`,
-        }),
-      });
-    });
+    // Note: lead_code tests removed - PostgreSQL trigger (trg_set_lead_code) handles generation
+    // Format: L-XXXXXX (random alphanumeric, no sequential numbers for security)
 
     it("should normalize email to lowercase and country_code to uppercase", async () => {
       // Arrange
