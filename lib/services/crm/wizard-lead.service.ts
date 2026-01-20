@@ -36,6 +36,10 @@ export interface CreateWizardLeadParams {
   email: string;
   country_code: string;
   locale: string;
+  // UTM tracking (optional)
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
 }
 
 /**
@@ -160,7 +164,14 @@ export class WizardLeadService {
   async createWizardLead(
     params: CreateWizardLeadParams
   ): Promise<CreateWizardLeadResult> {
-    const { email, country_code, locale } = params;
+    const {
+      email,
+      country_code,
+      locale,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+    } = params;
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedCountryCode = country_code.toUpperCase().trim();
 
@@ -214,6 +225,10 @@ export class WizardLeadService {
         email_verification_attempts: 0,
         provider_id: DEFAULT_PROVIDER_ID,
         wizard_completed: false,
+        // UTM tracking
+        utm_source: utm_source || null,
+        utm_medium: utm_medium || null,
+        utm_campaign: utm_campaign || null,
         metadata: {
           source: "book_demo_wizard", // Keep in metadata for backward compatibility
           form_locale: locale,

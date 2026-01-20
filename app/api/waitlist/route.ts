@@ -68,6 +68,10 @@ const WaitlistSchema = z.object({
   locale: z.string().optional().default("en"),
   honeypot: z.string().max(0).optional(),
   marketing_consent: z.boolean().optional().default(false), // V6.3: false = pending, true = opted-in via email
+  // UTM tracking (optional)
+  utm_source: z.string().max(100).optional(),
+  utm_medium: z.string().max(100).optional(),
+  utm_campaign: z.string().max(100).optional(),
 });
 
 // ============================================================================
@@ -207,6 +211,10 @@ export async function POST(request: NextRequest) {
           country.country_gdpr && data.gdpr_consent ? clientIP : null,
         source: "wizard",
         locale: data.locale,
+        // UTM tracking
+        utm_source: data.utm_source || null,
+        utm_medium: data.utm_medium || null,
+        utm_campaign: data.utm_campaign || null,
       },
     });
 

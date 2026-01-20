@@ -34,6 +34,10 @@ const WizardStep1Schema = z.object({
   email: z.string().email("Invalid email format"),
   country_code: z.string().min(2).max(2, "Country code required"),
   locale: z.string().optional().default("en"),
+  // UTM tracking (optional)
+  utm_source: z.string().max(255).optional(),
+  utm_medium: z.string().max(255).optional(),
+  utm_campaign: z.string().max(255).optional(),
 });
 
 /**
@@ -52,6 +56,10 @@ const FullFormSchema = z.object({
   message: z.string().optional(),
   gdpr_consent: z.boolean().optional(),
   form_locale: z.string().optional(),
+  // UTM tracking (optional)
+  utm_source: z.string().max(255).optional(),
+  utm_medium: z.string().max(255).optional(),
+  utm_campaign: z.string().max(255).optional(),
 });
 
 /**
@@ -137,6 +145,10 @@ async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
     email: normalizedEmail,
     locale,
     country_code: countryCode,
+    // UTM tracking
+    utm_source: body.utm_source,
+    utm_medium: body.utm_medium,
+    utm_campaign: body.utm_campaign,
   });
 
   if (!result.success) {
@@ -297,6 +309,11 @@ async function handleFullForm(
       status: "new",
       lead_stage: "top_of_funnel",
       source: "request_demo_form", // V6.4: Populate source column directly
+
+      // UTM tracking
+      utm_source: body.utm_source || null,
+      utm_medium: body.utm_medium || null,
+      utm_campaign: body.utm_campaign || null,
 
       // GDPR compliance
       gdpr_consent: body.gdpr_consent || null,

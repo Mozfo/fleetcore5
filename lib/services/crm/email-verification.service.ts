@@ -129,10 +129,7 @@ export class EmailVerificationService {
   private notificationQueue: NotificationQueueService;
   private wizardLeadService: WizardLeadService;
 
-  constructor(
-    prismaClient?: PrismaClient,
-    wizardLeadSvc?: WizardLeadService
-  ) {
+  constructor(prismaClient?: PrismaClient, wizardLeadSvc?: WizardLeadService) {
     this.prisma = prismaClient || defaultPrisma;
     this.notificationQueue = new NotificationQueueService(this.prisma);
     this.wizardLeadService = wizardLeadSvc || defaultWizardLeadService;
@@ -412,8 +409,19 @@ export class EmailVerificationService {
     email: string;
     locale?: string;
     country_code?: string;
+    // UTM tracking (optional)
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
   }): Promise<SendVerificationResult> {
-    const { email, locale = "en", country_code } = params;
+    const {
+      email,
+      locale = "en",
+      country_code,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+    } = params;
 
     try {
       // 1. Check resend cooldown
@@ -461,11 +469,16 @@ export class EmailVerificationService {
           data: {
             email: email.toLowerCase(),
             status: "new",
+            source: "book_demo_wizard", // V6.4: Populate source column
             email_verified: false,
             email_verification_code: hashedCode,
             email_verification_expires_at: expiresAt,
             email_verification_attempts: 0,
             ...(country_code && { country_code: country_code.toUpperCase() }),
+            // UTM tracking
+            ...(utm_source && { utm_source }),
+            ...(utm_medium && { utm_medium }),
+            ...(utm_campaign && { utm_campaign }),
             created_at: new Date(),
           },
           select: { id: true },

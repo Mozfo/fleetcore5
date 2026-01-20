@@ -21,8 +21,8 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -88,8 +88,19 @@ interface ApiResponse {
 export default function BookDemoPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
   const { t, i18n } = useTranslation("public");
+
+  // UTM tracking params (from URL query string) - memoized to prevent re-renders
+  const utmParams = useMemo(
+    () => ({
+      utm_source: searchParams.get("utm_source") || undefined,
+      utm_medium: searchParams.get("utm_medium") || undefined,
+      utm_campaign: searchParams.get("utm_campaign") || undefined,
+    }),
+    [searchParams]
+  );
 
   // Initialize i18n with correct locale
   useEffect(() => {
@@ -255,6 +266,7 @@ export default function BookDemoPage() {
               detected_country_code: detectedCountryCode, // GeoIP origin for analytics/spam detection
               locale,
               marketing_consent: false, // Pending - will be true when they click in email
+              ...utmParams, // UTM tracking
             }),
           });
 
@@ -313,6 +325,7 @@ export default function BookDemoPage() {
             email: data.email.toLowerCase().trim(),
             country_code: data.country_code,
             locale,
+            ...utmParams, // UTM tracking
           }),
         });
 
@@ -355,7 +368,7 @@ export default function BookDemoPage() {
         setIsSubmitting(false);
       }
     },
-    [countries, detectedCountryCode, locale, router, setError, t]
+    [countries, detectedCountryCode, locale, router, setError, t, utmParams]
   );
 
   // Send reschedule link
