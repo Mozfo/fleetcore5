@@ -22,6 +22,7 @@ import { captureConsentIp } from "@/lib/middleware/gdpr.middleware";
 import { NotificationQueueService } from "@/lib/services/notification/queue.service";
 import { getTemplateLocale } from "@/lib/utils/locale-mapping";
 import { EmailVerificationService } from "@/lib/services/crm/email-verification.service";
+import { GeoIPService } from "@/lib/services/geo/geoip.service";
 
 // ===== ZOD SCHEMAS =====
 
@@ -84,8 +85,13 @@ type FullFormBody = z.infer<typeof FullFormSchema>;
  * Handle wizard_step1 mode - Email + Country verification
  * V6.2.4: Creates lead with email, country_code and sends 6-digit verification code
  * Note: fleet_size is now collected in step 3
+ * V6.4: Added ip_address and detected_country_code for spam detection
  */
-async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
+async function handleWizardStep1(
+  body: WizardStep1Body,
+  ipAddress: string | null,
+  detectedCountryCode: string | null
+): Promise<NextResponse> {
   const normalizedEmail = body.email.toLowerCase().trim();
   const countryCode = body.country_code.toUpperCase().trim();
   const locale = body.locale || "en";
@@ -145,6 +151,9 @@ async function handleWizardStep1(body: WizardStep1Body): Promise<NextResponse> {
     email: normalizedEmail,
     locale,
     country_code: countryCode,
+    // V6.4: GeoIP tracking for spam detection
+    ip_address: ipAddress,
+    detected_country_code: detectedCountryCode,
     // UTM tracking
     utm_source: body.utm_source,
     utm_medium: body.utm_medium,
@@ -430,7 +439,20 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      return handleWizardStep1(parseResult.data);
+      // V6.4: Extract IP and detect country for spam detection
+      const geoIPService = new GeoIPService();
+      const clientIP = geoIPService.getClientIP(request);
+      let detectedCountry: string | null = null;
+      try {
+        detectedCountry = await geoIPService.getCountryFromIP(clientIP);
+      } catch (error) {
+        logger.warn(
+          { ip: clientIP, error },
+          "[Demo Lead] GeoIP detection failed - continuing without"
+        );
+      }
+
+      return handleWizardStep1(parseResult.data, clientIP, detectedCountry);
     }
 
     // Default: full_form mode (legacy behavior)

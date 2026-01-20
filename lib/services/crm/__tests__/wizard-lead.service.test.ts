@@ -107,6 +107,9 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     j1_reminder_sent_at: null,
     // V6.3.3: Reschedule token
     reschedule_token: null,
+    // V6.4: GeoIP tracking
+    ip_address: null,
+    detected_country_code: null,
     // Apply overrides
     ...overrides,
   };

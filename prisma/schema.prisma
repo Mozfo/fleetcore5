@@ -2100,6 +2100,9 @@ model crm_leads {
   j1_reminder_sent_at                                                  DateTime?               @db.Timestamptz(6)
   // V6.3.3: Short token for iOS Mail compatible reschedule links
   reschedule_token                                                     String?                 @unique @db.VarChar(8)
+  // V6.4: GeoIP detection (same pattern as crm_waitlist for spam detection)
+  detected_country_code                                                String?                 @db.VarChar(2)
+  ip_address                                                           String?                 @db.VarChar(45)
   // Relations
   crm_activities                                                       crm_activities[]
   crm_contracts                                                        crm_contracts[]

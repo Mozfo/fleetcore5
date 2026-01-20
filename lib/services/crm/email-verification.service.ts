@@ -409,6 +409,9 @@ export class EmailVerificationService {
     email: string;
     locale?: string;
     country_code?: string;
+    // V6.4: GeoIP tracking for spam detection
+    ip_address?: string | null;
+    detected_country_code?: string | null;
     // UTM tracking (optional)
     utm_source?: string;
     utm_medium?: string;
@@ -418,6 +421,8 @@ export class EmailVerificationService {
       email,
       locale = "en",
       country_code,
+      ip_address,
+      detected_country_code,
       utm_source,
       utm_medium,
       utm_campaign,
@@ -460,6 +465,9 @@ export class EmailVerificationService {
             email_verification_expires_at: expiresAt,
             email_verification_attempts: 0, // Reset attempts on new code
             ...(country_code && { country_code: country_code.toUpperCase() }),
+            // V6.4: GeoIP tracking (update only if not already set)
+            ...(ip_address && { ip_address }),
+            ...(detected_country_code && { detected_country_code }),
             updated_at: new Date(),
           },
         });
@@ -476,6 +484,9 @@ export class EmailVerificationService {
             email_verification_expires_at: expiresAt,
             email_verification_attempts: 0,
             ...(country_code && { country_code: country_code.toUpperCase() }),
+            // V6.4: GeoIP tracking for spam detection
+            ...(ip_address && { ip_address }),
+            ...(detected_country_code && { detected_country_code }),
             // UTM tracking
             ...(utm_source && { utm_source }),
             ...(utm_medium && { utm_medium }),

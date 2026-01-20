@@ -349,6 +349,9 @@ describe("LeadCreationService", () => {
           j1_reminder_sent_at: null,
           // V6.3.3: Reschedule token for iOS Mail
           reschedule_token: null,
+          // V6.4: GeoIP tracking
+          ip_address: null,
+          detected_country_code: null,
         };
         return lead;
       }
