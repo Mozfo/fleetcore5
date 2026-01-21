@@ -1968,6 +1968,8 @@ model crm_countries {
   country_gdpr           Boolean        @default(false)
   phone_prefix           String?        @db.VarChar(10)
   phone_example          String?        @db.VarChar(20)
+  phone_min_digits       Int?           @default(8)
+  phone_max_digits       Int?           @default(12)
   is_system              Boolean        @default(false)
   provider_id            String?        @db.Uuid
   crm_leads              crm_leads[]

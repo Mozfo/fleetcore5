@@ -26,6 +26,8 @@ interface Country {
   flag_emoji?: string | null;
   phone_prefix: string | null;
   phone_example: string | null;
+  phone_min_digits?: number | null;
+  phone_max_digits?: number | null;
 }
 
 interface PhoneInputProps {
@@ -39,6 +41,8 @@ interface PhoneInputProps {
   onChange: (value: string) => void;
   /** Called when prefix country changes (optional) */
   onPrefixChange?: (countryCode: string) => void;
+  /** Called when validation state changes (optional) */
+  onValidationChange?: (isValid: boolean) => void;
   /** Placeholder text */
   placeholder?: string;
   /** Has validation error */
@@ -59,6 +63,7 @@ export function PhoneInput({
   value,
   onChange,
   onPrefixChange,
+  onValidationChange,
   placeholder = "Phone number",
   hasError = false,
   className = "",
@@ -68,6 +73,9 @@ export function PhoneInput({
   const [prefixCountryCode, setPrefixCountryCode] =
     useState(selectedCountryCode);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [validationWarning, setValidationWarning] = useState<string | null>(
+    null
+  );
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Initialize prefix country from prop
@@ -116,6 +124,41 @@ export function PhoneInput({
 
   // Dynamic placeholder
   const dynamicPlaceholder = phoneExample || placeholder;
+
+  // Phone validation based on country rules
+  const minDigits = selectedPrefixCountry?.phone_min_digits ?? 8;
+  const maxDigits = selectedPrefixCountry?.phone_max_digits ?? 12;
+
+  // Validate phone number length
+  useEffect(() => {
+    const digits = localValue.replace(/\D/g, "");
+    const digitCount = digits.length;
+
+    if (digitCount === 0) {
+      setValidationWarning(null);
+      onValidationChange?.(true); // Empty is valid (required check is separate)
+      return;
+    }
+
+    if (digitCount < minDigits) {
+      const msg =
+        locale === "fr"
+          ? `Numéro trop court (${digitCount}/${minDigits} chiffres min)`
+          : `Number too short (${digitCount}/${minDigits} digits min)`;
+      setValidationWarning(msg);
+      onValidationChange?.(false);
+    } else if (digitCount > maxDigits) {
+      const msg =
+        locale === "fr"
+          ? `Numéro trop long (${digitCount}/${maxDigits} chiffres max)`
+          : `Number too long (${digitCount}/${maxDigits} digits max)`;
+      setValidationWarning(msg);
+      onValidationChange?.(false);
+    } else {
+      setValidationWarning(null);
+      onValidationChange?.(true);
+    }
+  }, [localValue, minDigits, maxDigits, locale, onValidationChange]);
 
   // Sync external value with local state
   useEffect(() => {
@@ -271,6 +314,13 @@ export function PhoneInput({
       {selectedPrefixCountry?.phone_prefix && localValue && (
         <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">
           {selectedPrefixCountry.phone_prefix} {displayValue}
+        </p>
+      )}
+
+      {/* Validation warning */}
+      {validationWarning && (
+        <p className="mt-1 text-xs font-medium text-orange-600 dark:text-orange-400">
+          ⚠️ {validationWarning}
         </p>
       )}
     </div>

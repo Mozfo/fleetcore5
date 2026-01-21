@@ -151,6 +151,8 @@ describe("CountryService", () => {
         country_gdpr: true,
         phone_prefix: "+33",
         phone_example: "6 12 34 56 78",
+        phone_min_digits: 9,
+        phone_max_digits: 9,
         notification_locale: "fr",
         country_preposition_en: "in",
         country_preposition_fr: "en",

@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
         country_gdpr: true,
         phone_prefix: true,
         phone_example: true,
+        phone_min_digits: true,
+        phone_max_digits: true,
         display_order: true,
       },
       orderBy: {
