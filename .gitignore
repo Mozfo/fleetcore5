@@ -70,3 +70,4 @@ generated-emails/
 .env
 test-results/
 playwright-report/
+scripts/output/

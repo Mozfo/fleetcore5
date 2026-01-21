@@ -265,7 +265,14 @@ export async function POST(request: NextRequest) {
           updated_at: new Date(),
         };
 
-        // Send BookingConfirmation email
+        // CRITICAL: Update lead BEFORE sending email
+        // This ensures the reschedule_token exists in DB when user clicks the link
+        await prisma.crm_leads.update({
+          where: { id: lead.id },
+          data: updateData,
+        });
+
+        // Send BookingConfirmation email (after DB update)
         if (RESEND_API_KEY) {
           try {
             const resend = new Resend(RESEND_API_KEY);
@@ -340,6 +347,9 @@ export async function POST(request: NextRequest) {
             );
           }
         }
+
+        // Skip the general update below since we already updated
+        updateData = {};
         break;
       }
 
@@ -363,11 +373,13 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    // 7. Update lead
-    await prisma.crm_leads.update({
-      where: { id: lead.id },
-      data: updateData,
-    });
+    // 7. Update lead (skip if already updated in BOOKING_CREATED)
+    if (Object.keys(updateData).length > 0) {
+      await prisma.crm_leads.update({
+        where: { id: lead.id },
+        data: updateData,
+      });
+    }
 
     // 8. Create activity log
     const activityType =
