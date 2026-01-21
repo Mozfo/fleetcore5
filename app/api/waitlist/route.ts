@@ -28,6 +28,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { EMAIL_FROM } from "@/lib/config/email.config";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { db } from "@/lib/prisma";
@@ -256,7 +257,7 @@ export async function POST(request: NextRequest) {
       );
 
       await resend.emails.send({
-        from: "FleetCore <noreply@fleetcore.io>",
+        from: EMAIL_FROM,
         to: data.email,
         subject:
           emailLocale === "fr"

@@ -32,6 +32,7 @@ import {
 } from "@/lib/validators/calcom.validators";
 import { generateShortToken } from "@/lib/utils/token";
 import { BookingConfirmation } from "@/emails/templates/BookingConfirmation";
+import { EMAIL_FROM } from "@/lib/config/email.config";
 import type { EmailLocale } from "@/lib/i18n/email-translations";
 
 const CALCOM_WEBHOOK_SECRET = process.env.CALCOM_WEBHOOK_SECRET;
@@ -309,7 +310,7 @@ export async function POST(request: NextRequest) {
 
             // Send email
             const { error: sendError } = await resend.emails.send({
-              from: "FleetCore <demos@fleetcore.io>",
+              from: EMAIL_FROM,
               to: lead.email,
               subject,
               html,

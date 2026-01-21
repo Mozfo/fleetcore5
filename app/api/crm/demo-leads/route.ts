@@ -23,6 +23,7 @@ import { NotificationQueueService } from "@/lib/services/notification/queue.serv
 import { getTemplateLocale } from "@/lib/utils/locale-mapping";
 import { EmailVerificationService } from "@/lib/services/crm/email-verification.service";
 import { GeoIPService } from "@/lib/services/geo/geoip.service";
+import { SUPPORT_EMAIL } from "@/lib/config/email.config";
 
 // ===== ZOD SCHEMAS =====
 
@@ -240,7 +241,7 @@ async function handleFullForm(
           code: "DUPLICATE_EMAIL",
           message: "Email already registered",
           params: {
-            supportEmail: "support@fleetcore.io",
+            supportEmail: SUPPORT_EMAIL,
           },
         },
       },

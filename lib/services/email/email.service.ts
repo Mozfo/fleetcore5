@@ -2,6 +2,11 @@
 import { Resend } from "resend";
 import { BaseService } from "@/lib/core/base.service";
 import { auditLog } from "@/lib/audit";
+import {
+  EMAIL_FROM_ADDRESS,
+  EMAIL_FROM_NAME,
+  EMAIL_REPLY_TO,
+} from "@/lib/config/email.config";
 import type { rid_drivers } from "@prisma/client";
 import type {
   EmailLocale,
@@ -175,9 +180,9 @@ export class EmailService extends BaseService {
     }
 
     this.resend = new Resend(apiKey);
-    this.fromEmail = process.env.EMAIL_FROM || "notifications@fleetcore.io";
-    this.fromName = process.env.EMAIL_FROM_NAME || "FleetCore";
-    this.replyTo = process.env.EMAIL_REPLY_TO || "support@fleetcore.io";
+    this.fromEmail = EMAIL_FROM_ADDRESS;
+    this.fromName = EMAIL_FROM_NAME;
+    this.replyTo = EMAIL_REPLY_TO;
     // Allow forcing real email sending in development with FORCE_SEND_EMAILS=true
     this.isDevelopment =
       process.env.NODE_ENV === "development" &&

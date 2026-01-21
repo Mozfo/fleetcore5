@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { generateShortToken } from "@/lib/utils/token";
+import { EMAIL_FROM } from "@/lib/config/email.config";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: `FleetCore <${process.env.RESEND_FROM_EMAIL || "noreply@fleetcore.io"}>`,
+      from: EMAIL_FROM,
       to: [lead.email],
       subject: t.subject,
       html: `

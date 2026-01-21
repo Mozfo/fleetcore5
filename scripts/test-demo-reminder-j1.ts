@@ -4,6 +4,7 @@ config({ path: ".env.local" });
 import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { DemoReminderJ1 } from "@/emails/templates/DemoReminderJ1";
+import { EMAIL_FROM } from "@/lib/config/email.config";
 
 async function sendTestEmail() {
   const resendApiKey = process.env.RESEND_API_KEY;
@@ -41,7 +42,7 @@ async function sendTestEmail() {
   console.log("Sending email to mohamed@bluewise.io...");
 
   const { data, error } = await resend.emails.send({
-    from: "FleetCore <demos@fleetcore.io>",
+    from: EMAIL_FROM,
     to: "mohamed@bluewise.io",
     subject,
     html,

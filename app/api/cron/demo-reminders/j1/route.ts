@@ -24,6 +24,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { DemoReminderJ1 } from "@/emails/templates/DemoReminderJ1";
+import { EMAIL_FROM } from "@/lib/config/email.config";
 import type { EmailLocale } from "@/lib/i18n/email-translations";
 
 // ============================================================================
@@ -324,7 +325,7 @@ export async function GET(request: Request) {
               : `Tomorrow at ${bookingTime} - Please confirm your FleetCore demo`;
 
         const { error: sendError } = await resend.emails.send({
-          from: "FleetCore <demos@fleetcore.io>",
+          from: EMAIL_FROM,
           to: lead.email,
           subject,
           html,

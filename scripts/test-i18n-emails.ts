@@ -8,6 +8,7 @@ import { Resend } from "resend";
 import { LeadConfirmation } from "@/emails/templates/LeadConfirmation";
 import { MemberWelcome } from "@/emails/templates/MemberWelcome";
 import { logger } from "@/lib/logger";
+import { EMAIL_FROM } from "@/lib/config/email.config";
 import type { EmailLocale } from "@/lib/i18n/email-translations";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -61,7 +62,7 @@ async function sendTestEmails(): Promise<void> {
 
     try {
       const { data, error } = await resend.emails.send({
-        from: "FleetCore <noreply@fleetcore.io>",
+        from: EMAIL_FROM,
         to: TEST_EMAIL,
         subject: `[TEST] Lead Confirmation - ${locale.toUpperCase()}`,
         html,
@@ -113,7 +114,7 @@ async function sendTestEmails(): Promise<void> {
 
     try {
       const { data, error } = await resend.emails.send({
-        from: "FleetCore <noreply@fleetcore.io>",
+        from: EMAIL_FROM,
         to: TEST_EMAIL,
         subject: `[TEST] Member Welcome - ${locale.toUpperCase()}`,
         html,
