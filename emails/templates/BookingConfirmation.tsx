@@ -21,8 +21,6 @@ import {
   Section,
   Text,
   Button,
-  Row,
-  Column,
 } from "@react-email/components";
 import * as React from "react";
 import {
@@ -77,9 +75,6 @@ export const BookingConfirmation = ({
             .container { width: 100% !important; }
             .content-wrapper { padding: 0 20px !important; }
             img { max-width: 100% !important; height: auto !important; }
-            .info-box { padding: 16px !important; }
-            .button-row { display: block !important; }
-            .button-col { display: block !important; width: 100% !important; margin-bottom: 12px !important; }
           }
         `}</style>
       </Head>
@@ -128,32 +123,24 @@ export const BookingConfirmation = ({
             {/* Booking Info Box */}
             <Section style={infoBox} className="info-box">
               <Text style={infoTitle(textAlign)}>{t.bookingDetails}</Text>
-              <Row>
-                <Column style={infoRow}>
-                  <Text style={infoLabel(textAlign)}>📆 {t.date}</Text>
-                  <Text style={infoValue(textAlign)}>{bookingDate}</Text>
-                </Column>
-              </Row>
-              <Row>
-                <Column style={infoRow}>
-                  <Text style={infoLabel(textAlign)}>🕐 {t.time}</Text>
-                  <Text style={infoValue(textAlign)}>
-                    {bookingTime} ({timezone})
-                  </Text>
-                </Column>
-              </Row>
-              <Row>
-                <Column style={infoRow}>
-                  <Text style={infoLabel(textAlign)}>⏱️ {t.duration}</Text>
-                  <Text style={infoValue(textAlign)}>{t.durationValue}</Text>
-                </Column>
-              </Row>
-              <Row>
-                <Column style={infoRow}>
-                  <Text style={infoLabel(textAlign)}>📍 {t.location}</Text>
-                  <Text style={infoValue(textAlign)}>Google Meet</Text>
-                </Column>
-              </Row>
+              <Section style={infoRow}>
+                <Text style={infoLabel(textAlign)}>📆 {t.date}</Text>
+                <Text style={infoValue(textAlign)}>{bookingDate}</Text>
+              </Section>
+              <Section style={infoRow}>
+                <Text style={infoLabel(textAlign)}>🕐 {t.time}</Text>
+                <Text style={infoValue(textAlign)}>
+                  {bookingTime} ({timezone})
+                </Text>
+              </Section>
+              <Section style={infoRow}>
+                <Text style={infoLabel(textAlign)}>⏱️ {t.duration}</Text>
+                <Text style={infoValue(textAlign)}>{t.durationValue}</Text>
+              </Section>
+              <Section style={infoRow}>
+                <Text style={infoLabel(textAlign)}>📍 {t.location}</Text>
+                <Text style={infoValue(textAlign)}>Google Meet</Text>
+              </Section>
             </Section>
 
             {/* Join Meeting Button */}
@@ -173,19 +160,15 @@ export const BookingConfirmation = ({
 
             {/* Need to change? */}
             <Text style={smallTitle(textAlign)}>{t.needToChange}</Text>
-            <Section style={buttonContainer}>
-              <Row className="button-row">
-                <Column style={buttonColumn} className="button-col">
-                  <Button style={secondaryButton} href={rescheduleUrl}>
-                    {t.reschedule}
-                  </Button>
-                </Column>
-                <Column style={buttonColumn} className="button-col">
-                  <Button style={cancelButton} href={cancelUrl}>
-                    {t.cancel}
-                  </Button>
-                </Column>
-              </Row>
+            <Section style={buttonContainerStacked}>
+              <Button style={secondaryButton} href={rescheduleUrl}>
+                {t.reschedule}
+              </Button>
+            </Section>
+            <Section style={buttonContainerStacked}>
+              <Button style={cancelButton} href={cancelUrl}>
+                {t.cancel}
+              </Button>
             </Section>
 
             {/* Signature */}
@@ -352,11 +335,8 @@ const buttonContainer = {
   margin: "16px 0",
 };
 
-const buttonColumn = {
-  width: "48%",
-  paddingRight: "8px",
-  paddingLeft: "8px",
-  verticalAlign: "top" as const,
+const buttonContainerStacked = {
+  margin: "8px 0",
 };
 
 const primaryButton = {
