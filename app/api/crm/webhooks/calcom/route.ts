@@ -2,6 +2,7 @@
  * POST /api/crm/webhooks/calcom
  * Cal.com webhook handler for booking events
  * V6.2-5: Handles BOOKING_CREATED, BOOKING_RESCHEDULED, BOOKING_CANCELLED
+ * V6.5: Sends BookingConfirmation email on BOOKING_CREATED
  *
  * CUSTOM PAYLOAD from Cal.com (using their variable syntax):
  * {
@@ -10,7 +11,8 @@
  *   "startTime": "{{startTime}}",
  *   "endTime": "{{endTime}}",
  *   "attendees.0.email": "{{attendees.0.email}}",
- *   "attendees.0.name": "{{attendees.0.name}}"
+ *   "attendees.0.name": "{{attendees.0.name}}",
+ *   "metadata.videoCallUrl": "{{metadata.videoCallUrl}}"
  * }
  *
  * @see https://cal.com/docs/developing/guides/automation/webhooks
@@ -19,6 +21,8 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { Resend } from "resend";
+import { render } from "@react-email/render";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import {
@@ -26,8 +30,71 @@ import {
   CALCOM_ACTIVITY_TYPES,
   CALCOM_ACTIVITY_TITLES,
 } from "@/lib/validators/calcom.validators";
+import { generateShortToken } from "@/lib/utils/token";
+import { BookingConfirmation } from "@/emails/templates/BookingConfirmation";
+import type { EmailLocale } from "@/lib/i18n/email-translations";
 
 const CALCOM_WEBHOOK_SECRET = process.env.CALCOM_WEBHOOK_SECRET;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+// ============================================================================
+// LOCALE HELPERS
+// ============================================================================
+
+const COUNTRY_LOCALE_MAP: Record<string, EmailLocale> = {
+  FR: "fr",
+  AE: "en",
+  SA: "ar",
+  MA: "fr",
+  TN: "fr",
+  DZ: "fr",
+  EG: "ar",
+  JO: "ar",
+  LB: "ar",
+  KW: "ar",
+  QA: "ar",
+  BH: "ar",
+  OM: "ar",
+};
+
+function getLocaleForCountry(countryCode: string | null): EmailLocale {
+  if (!countryCode) return "en";
+  return COUNTRY_LOCALE_MAP[countryCode.toUpperCase()] || "en";
+}
+
+function formatBookingDate(date: Date, locale: EmailLocale): string {
+  const localeMap: Record<EmailLocale, string> = {
+    en: "en-US",
+    fr: "fr-FR",
+    ar: "ar-SA",
+  };
+  return new Intl.DateTimeFormat(localeMap[locale], {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+}
+
+function formatBookingTime(date: Date, locale: EmailLocale): string {
+  const localeMap: Record<EmailLocale, string> = {
+    en: "en-US",
+    fr: "fr-FR",
+    ar: "ar-SA",
+  };
+  return new Intl.DateTimeFormat(localeMap[locale], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: locale === "en",
+  }).format(date);
+}
+
+function getTimezoneAbbr(date: Date): string {
+  const offset = -date.getTimezoneOffset();
+  const hours = Math.floor(Math.abs(offset) / 60);
+  const sign = offset >= 0 ? "+" : "-";
+  return `GMT${sign}${hours}`;
+}
 
 /**
  * Verify Cal.com webhook signature using HMAC-SHA256
@@ -156,6 +223,8 @@ export async function POST(request: NextRequest) {
         status: true,
         first_name: true,
         last_name: true,
+        country_code: true,
+        reschedule_token: true,
       },
     });
 
@@ -178,18 +247,100 @@ export async function POST(request: NextRequest) {
     let newStatus: string | null = null;
 
     switch (payload.triggerEvent) {
-      case "BOOKING_CREATED":
+      case "BOOKING_CREATED": {
         newStatus = "demo";
+
+        // Generate reschedule_token if not already present
+        const rescheduleToken = lead.reschedule_token || generateShortToken();
+
         updateData = {
           status: newStatus,
           booking_slot_at: new Date(payload.startTime),
           booking_calcom_uid: payload.uid,
+          reschedule_token: rescheduleToken,
           // Only update name if lead doesn't have one yet
           ...(firstName && !lead.first_name && { first_name: firstName }),
           ...(lastName && !lead.last_name && { last_name: lastName }),
           updated_at: new Date(),
         };
+
+        // Send BookingConfirmation email
+        if (RESEND_API_KEY) {
+          try {
+            const resend = new Resend(RESEND_API_KEY);
+            const baseUrl =
+              process.env.NEXT_PUBLIC_APP_URL || "https://fleetcore.io";
+            const locale = getLocaleForCountry(lead.country_code);
+            const bookingDate = new Date(payload.startTime);
+
+            // Build URLs
+            const rescheduleUrl = `${baseUrl}/${locale}/r/${rescheduleToken}`;
+            const cancelUrl = rescheduleUrl; // Same page handles both
+            const meetingUrl =
+              payload["metadata.videoCallUrl"] ||
+              `${baseUrl}/${locale}/book-demo`;
+
+            // Format date/time
+            const formattedDate = formatBookingDate(bookingDate, locale);
+            const formattedTime = formatBookingTime(bookingDate, locale);
+            const timezone = getTimezoneAbbr(bookingDate);
+
+            // Render email
+            const html = await render(
+              BookingConfirmation({
+                locale,
+                firstName: firstName || lead.first_name || "there",
+                bookingDate: formattedDate,
+                bookingTime: formattedTime,
+                timezone,
+                meetingUrl,
+                rescheduleUrl,
+                cancelUrl,
+              })
+            );
+
+            // Subject based on locale
+            const subject =
+              locale === "fr"
+                ? "✅ Votre démo FleetCore est confirmée"
+                : locale === "ar"
+                  ? "✅ تم تأكيد عرض FleetCore التوضيحي"
+                  : "✅ Your FleetCore demo is confirmed";
+
+            // Send email
+            const { error: sendError } = await resend.emails.send({
+              from: "FleetCore <demos@fleetcore.io>",
+              to: lead.email,
+              subject,
+              html,
+            });
+
+            if (sendError) {
+              logger.error(
+                { leadId: lead.id, error: sendError.message },
+                "[Cal.com Webhook] Failed to send BookingConfirmation email"
+              );
+            } else {
+              logger.info(
+                { leadId: lead.id, email: lead.email, locale },
+                "[Cal.com Webhook] BookingConfirmation email sent"
+              );
+            }
+          } catch (emailError) {
+            logger.error(
+              {
+                leadId: lead.id,
+                error:
+                  emailError instanceof Error
+                    ? emailError.message
+                    : String(emailError),
+              },
+              "[Cal.com Webhook] Error sending BookingConfirmation email"
+            );
+          }
+        }
         break;
+      }
 
       case "BOOKING_RESCHEDULED":
         updateData = {

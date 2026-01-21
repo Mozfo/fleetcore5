@@ -23,7 +23,8 @@ import { z } from "zod";
  *   "startTime": "{{startTime}}",
  *   "endTime": "{{endTime}}",
  *   "attendees.0.email": "{{attendees.0.email}}",
- *   "attendees.0.name": "{{attendees.0.name}}"
+ *   "attendees.0.name": "{{attendees.0.name}}",
+ *   "metadata.videoCallUrl": "{{metadata.videoCallUrl}}"
  * }
  *
  * Note: Cal.com combines first + last name into a single "name" field.
@@ -44,6 +45,8 @@ export const calcomCustomPayloadSchema = z.object({
   // Cal.com uses dot notation in the custom payload
   "attendees.0.email": z.string().email("Valid email required"),
   "attendees.0.name": z.string().optional(),
+  // V6.5: Google Meet URL for BookingConfirmation email
+  "metadata.videoCallUrl": z.string().url().optional().nullable(),
 });
 
 export type CalcomCustomPayload = z.infer<typeof calcomCustomPayloadSchema>;

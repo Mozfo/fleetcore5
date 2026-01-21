@@ -17,23 +17,9 @@ import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import { generateShortToken } from "@/lib/utils/token";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-// ============================================================================
-// SHORT TOKEN GENERATION (V6.3.3)
-// ============================================================================
-// Generates a 6-character alphanumeric token for short URLs (iOS Mail compatible)
-const ALPHABET =
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-function generateShortToken(length = 6): string {
-  let token = "";
-  for (let i = 0; i < length; i++) {
-    token += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-  }
-  return token;
-}
 
 const requestSchema = z.object({
   email: z.string().email("Invalid email format"),

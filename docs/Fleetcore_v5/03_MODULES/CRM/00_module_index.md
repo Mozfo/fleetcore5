@@ -1,7 +1,7 @@
 # CRM Module Documentation Index
 
 > **Module Version:** 1.0
-> **Last Updated:** December 2025
+> **Last Updated:** January 2026
 > **Status:** Production (Lead & Opportunity Management)
 
 ---
@@ -51,13 +51,14 @@ Before reading CRM module documentation, ensure familiarity with:
 
 ### 02_LEAD_MANAGEMENT
 
-| Document                   | Lines | Description                                |
-| -------------------------- | ----- | ------------------------------------------ |
-| `01_lead_lifecycle.md`     | ~150  | States, stages, transitions                |
-| `02_lead_scoring.md`       | ~200  | Fit score, engagement score, qualification |
-| `03_lead_assignment.md`    | ~150  | Assignment algorithm, rules                |
-| `04_lead_qualification.md` | ~120  | Manual qualification, stage promotion      |
-| `05_lead_conversion.md`    | ~100  | Lead to opportunity conversion             |
+| Document                   | Lines | Description                                              |
+| -------------------------- | ----- | -------------------------------------------------------- |
+| `01_lead_lifecycle.md`     | ~150  | States, stages, transitions                              |
+| `02_lead_scoring.md`       | ~200  | Fit score, engagement score, qualification               |
+| `03_lead_assignment.md`    | ~150  | Assignment algorithm, rules                              |
+| `04_lead_qualification.md` | ~120  | Manual qualification, stage promotion                    |
+| `05_lead_conversion.md`    | ~100  | Lead to opportunity conversion                           |
+| `06_lead_notifications.md` | ~280  | Email notifications, Cal.com webhooks, reschedule tokens |
 
 ### 03_OPPORTUNITY_MANAGEMENT
 
