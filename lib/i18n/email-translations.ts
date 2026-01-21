@@ -789,6 +789,79 @@ export const demoReminderJ1Translations = {
 } as const;
 
 // ============================================================================
+// BOOKING CONFIRMATION (V6.5 - Replaces Cal.com default email)
+// ============================================================================
+
+export const bookingConfirmationTranslations = {
+  en: {
+    preview: "Your FleetCore demo is confirmed!",
+    confirmed: "Demo Confirmed",
+    headline: "Your demo is scheduled!",
+    message:
+      "We're excited to show you how FleetCore can transform your fleet operations. Here are your booking details:",
+    bookingDetails: "Booking Details",
+    date: "Date",
+    time: "Time",
+    duration: "Duration",
+    durationValue: "20 minutes",
+    location: "Location",
+    joinMeeting: "Join Meeting",
+    whatToExpect: "What to expect during your demo:",
+    expect1: "Quick overview of FleetCore's key features",
+    expect2: "Live demo tailored to your fleet size",
+    expect3: "Q&A session with our fleet expert",
+    needToChange: "Need to make a change?",
+    reschedule: "Reschedule",
+    cancel: "Cancel booking",
+    seeYouSoon: "We look forward to speaking with you!",
+  },
+  fr: {
+    preview: "Votre démo FleetCore est confirmée !",
+    confirmed: "Démo confirmée",
+    headline: "Votre démo est planifiée !",
+    message:
+      "Nous sommes impatients de vous montrer comment FleetCore peut transformer vos opérations de flotte. Voici les détails de votre réservation :",
+    bookingDetails: "Détails de la réservation",
+    date: "Date",
+    time: "Heure",
+    duration: "Durée",
+    durationValue: "20 minutes",
+    location: "Lieu",
+    joinMeeting: "Rejoindre la réunion",
+    whatToExpect: "Ce qui vous attend pendant la démo :",
+    expect1: "Aperçu rapide des fonctionnalités clés de FleetCore",
+    expect2: "Démo en direct adaptée à la taille de votre flotte",
+    expect3: "Session Q&R avec notre expert flotte",
+    needToChange: "Besoin de modifier ?",
+    reschedule: "Reprogrammer",
+    cancel: "Annuler la réservation",
+    seeYouSoon: "Nous avons hâte de vous parler !",
+  },
+  ar: {
+    preview: "تم تأكيد عرض FleetCore التوضيحي!",
+    confirmed: "تم تأكيد العرض",
+    headline: "تم جدولة العرض التوضيحي!",
+    message:
+      "نحن متحمسون لنعرض لك كيف يمكن لـ FleetCore تحويل عمليات أسطولك. إليك تفاصيل حجزك:",
+    bookingDetails: "تفاصيل الحجز",
+    date: "التاريخ",
+    time: "الوقت",
+    duration: "المدة",
+    durationValue: "20 دقيقة",
+    location: "الموقع",
+    joinMeeting: "الانضمام للاجتماع",
+    whatToExpect: "ما الذي تتوقعه خلال العرض:",
+    expect1: "نظرة سريعة على ميزات FleetCore الرئيسية",
+    expect2: "عرض مباشر مصمم لحجم أسطولك",
+    expect3: "جلسة أسئلة وأجوبة مع خبير الأسطول",
+    needToChange: "تحتاج إلى تغيير؟",
+    reschedule: "إعادة الجدولة",
+    cancel: "إلغاء الحجز",
+    seeYouSoon: "نتطلع للتحدث معك!",
+  },
+} as const;
+
+// ============================================================================
 // HELPER FUNCTION
 // ============================================================================
 
