@@ -69,6 +69,7 @@ interface APIResponse {
 // ============================================================================
 
 const DEMO_DURATION_MINUTES = 20;
+const CALCOM_LINK = process.env.NEXT_PUBLIC_CALCOM_LINK || "fleetcore/30min";
 
 // ============================================================================
 // COMPONENT
@@ -508,7 +509,7 @@ export default function BookDemoConfirmationPage() {
             {/* Cal.com Reschedule Iframe */}
             <div className="h-[500px] w-full overflow-hidden">
               <iframe
-                src={`${calcomOrigin}/reschedule/${data.booking.calcomUid}?embed=true&theme=light`}
+                src={`${calcomOrigin}/${CALCOM_LINK}?rescheduleUid=${data.booking.calcomUid}&embed=true&theme=light`}
                 style={{
                   width: "100%",
                   height: "100%",
