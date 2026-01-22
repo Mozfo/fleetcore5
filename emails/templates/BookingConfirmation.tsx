@@ -330,13 +330,15 @@ const expectItem = (textAlign: "left" | "right") => ({
   textAlign,
 });
 
-// Button styles
+// Button styles - Using MemberWelcome pattern (inline-block + centered container)
 const buttonContainer = {
-  margin: "16px 0",
+  textAlign: "center" as const,
+  margin: "24px 0",
 };
 
 const buttonContainerStacked = {
-  margin: "8px 0",
+  textAlign: "center" as const,
+  margin: "12px 0",
 };
 
 const primaryButton = {
@@ -347,9 +349,8 @@ const primaryButton = {
   fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
-  display: "block",
-  padding: "14px 24px",
-  width: "100%",
+  display: "inline-block",
+  padding: "14px 32px",
 };
 
 const secondaryButton = {
@@ -360,9 +361,8 @@ const secondaryButton = {
   fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
-  display: "block",
-  padding: "12px 16px",
-  width: "100%",
+  display: "inline-block",
+  padding: "12px 24px",
   border: "1px solid #e2e8f0",
 };
 
@@ -374,8 +374,7 @@ const cancelButton = {
   fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
-  display: "block",
-  padding: "12px 16px",
-  width: "100%",
+  display: "inline-block",
+  padding: "12px 24px",
   border: "1px solid #fecaca",
 };
