@@ -158,15 +158,15 @@ export default function ReschedulePage() {
     process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="min-h-screen bg-gray-50 px-4 py-6 md:flex md:items-center md:justify-center md:py-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-2xl"
+        className="mx-auto w-full max-w-2xl"
       >
         {/* Card */}
-        <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
+        <div className="rounded-2xl bg-white p-4 shadow-xl md:p-8 dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           {isLoading ? (
             // Loading state
             <div className="py-12 text-center">
@@ -263,14 +263,11 @@ export default function ReschedulePage() {
 
               {/* Cal.com Reschedule Embed via iframe */}
               {/* URL format: /reschedule/{uid} - found in Cal.com GitHub issues */}
-              <div className="min-h-[600px] overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700">
+              {/* Mobile: 450px height, Desktop: 600px height */}
+              <div className="min-h-[450px] overflow-hidden rounded-lg border border-gray-200 md:min-h-[600px] dark:border-slate-700">
                 <iframe
                   src={`${calcomOrigin}/reschedule/${bookingUid}?embed=true&theme=light`}
-                  style={{
-                    width: "100%",
-                    height: "600px",
-                    border: "none",
-                  }}
+                  className="h-[450px] w-full border-none md:h-[600px]"
                   title="Reschedule Booking"
                   allow="camera; microphone"
                 />
