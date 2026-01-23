@@ -1,7 +1,7 @@
 /**
  * Book Demo - Reschedule Page
  *
- * V6.2.4 - Professional reschedule page that stays on FleetCore domain
+ * V6.2.5 - Uses @calcom/embed-react for responsive mobile support
  *
  * Flow:
  * 1. User clicks reschedule link in email
@@ -26,6 +26,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
+import Cal, { getCalApi } from "@calcom/embed-react";
 
 // ============================================================================
 // COMPONENT
@@ -107,55 +108,19 @@ export default function ReschedulePage() {
     void validateBooking();
   }, [bookingUid, t]);
 
-  // Listen for Cal.com postMessage events (reschedule success)
+  // Initialize Cal.com embed API and listen for events
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Cal.com embed sends postMessage for various events
-      // We're looking for reschedule/booking confirmation events
-      try {
-        const data = event.data;
-
-        // Cal.com sends different message formats
-        // Type 1: Direct event object
-        if (data?.type === "CAL:bookingSuccessful") {
+    void (async function () {
+      const cal = await getCalApi();
+      // Listen for booking success events
+      cal("on", {
+        action: "bookingSuccessful",
+        callback: () => {
           setRescheduleComplete(true);
-          return;
-        }
-
-        // Type 2: Route change to booking confirmation
-        if (
-          data?.type === "__routeChanged" &&
-          typeof data?.data === "string" &&
-          data.data.includes("/booking/")
-        ) {
-          // When Cal.com navigates to /booking/[uid] it means success
-          setRescheduleComplete(true);
-          return;
-        }
-
-        // Type 3: Cal namespace event
-        if (data?.["Cal.namespace"]) {
-          const eventType = data.type || data.action;
-          if (
-            eventType === "bookingSuccessful" ||
-            eventType === "rescheduleBookingSuccessful"
-          ) {
-            setRescheduleComplete(true);
-            return;
-          }
-        }
-      } catch {
-        // Ignore parsing errors from other postMessages
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+        },
+      });
+    })();
   }, []);
-
-  // Cal.com reschedule URL
-  const calcomOrigin =
-    process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 md:flex md:items-center md:justify-center md:py-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -261,15 +226,14 @@ export default function ReschedulePage() {
                 </p>
               </div>
 
-              {/* Cal.com Reschedule Embed via iframe */}
-              {/* URL format: /reschedule/{uid} - found in Cal.com GitHub issues */}
-              {/* Mobile: 450px height, Desktop: 600px height */}
-              <div className="min-h-[450px] overflow-hidden rounded-lg border border-gray-200 md:min-h-[600px] dark:border-slate-700">
-                <iframe
-                  src={`${calcomOrigin}/reschedule/${bookingUid}?embed=true&theme=light`}
-                  className="h-[450px] w-full border-none md:h-[600px]"
-                  title="Reschedule Booking"
-                  allow="camera; microphone"
+              {/* Cal.com Reschedule Embed - responsive height via @calcom/embed-react */}
+              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700">
+                <Cal
+                  calLink={`reschedule/${bookingUid}`}
+                  style={{ width: "100%", height: "100%", minHeight: "500px" }}
+                  config={{
+                    theme: "light",
+                  }}
                 />
               </div>
 

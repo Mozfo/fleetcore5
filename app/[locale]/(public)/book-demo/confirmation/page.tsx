@@ -1,7 +1,7 @@
 /**
  * Book Demo Wizard - Confirmation Page
  *
- * V6.2.2 - Display booking confirmation with animated success state
+ * V6.2.5 - Uses @calcom/embed-react for responsive reschedule modal
  *
  * URL: /[locale]/book-demo/confirmation?leadId=xxx
  *
@@ -10,7 +10,7 @@
  * - Booking date/time display
  * - Email confirmation notice
  * - Add to Calendar buttons (Google, Apple, Outlook)
- * - Cal.com reschedule link
+ * - Cal.com reschedule embed (responsive)
  * - i18n (en/fr)
  *
  * @module app/[locale]/(public)/book-demo/confirmation/page
@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AddToCalendarButtons } from "@/components/booking/AddToCalendarButtons";
+import Cal, { getCalApi } from "@calcom/embed-react";
 
 // ============================================================================
 // TYPES
@@ -69,7 +70,6 @@ interface APIResponse {
 // ============================================================================
 
 const DEMO_DURATION_MINUTES = 20;
-const CALCOM_LINK = process.env.NEXT_PUBLIC_CALCOM_LINK || "fleetcore/30min";
 
 // ============================================================================
 // COMPONENT
@@ -132,56 +132,21 @@ export default function BookDemoConfirmationPage() {
     void fetchData();
   }, [leadId]);
 
-  // Listen for Cal.com postMessage events (reschedule success)
+  // Initialize Cal.com embed API and listen for booking success
   useEffect(() => {
     if (!showRescheduleModal) return;
 
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const eventData = event.data;
-
-        // Cal.com booking successful events
-        if (eventData?.type === "CAL:bookingSuccessful") {
+    void (async function () {
+      const cal = await getCalApi();
+      cal("on", {
+        action: "bookingSuccessful",
+        callback: () => {
           setRescheduleSuccess(true);
           setShowRescheduleModal(false);
-          return;
-        }
-
-        // Route change to booking confirmation
-        if (
-          eventData?.type === "__routeChanged" &&
-          typeof eventData?.data === "string" &&
-          eventData.data.includes("/booking/")
-        ) {
-          setRescheduleSuccess(true);
-          setShowRescheduleModal(false);
-          return;
-        }
-
-        // Cal namespace events
-        if (eventData?.["Cal.namespace"]) {
-          const type = eventData.type || eventData.action;
-          if (
-            type === "bookingSuccessful" ||
-            type === "rescheduleBookingSuccessful"
-          ) {
-            setRescheduleSuccess(true);
-            setShowRescheduleModal(false);
-            return;
-          }
-        }
-      } catch {
-        // Ignore parsing errors
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+        },
+      });
+    })();
   }, [showRescheduleModal]);
-
-  // Cal.com origin for reschedule iframe
-  const calcomOrigin =
-    process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
 
   // Don't render if missing leadId
   if (!leadId) {
@@ -506,17 +471,14 @@ export default function BookDemoConfirmationPage() {
               </button>
             </div>
 
-            {/* Cal.com Reschedule Iframe */}
-            <div className="h-[500px] w-full overflow-hidden">
-              <iframe
-                src={`${calcomOrigin}/${CALCOM_LINK}?rescheduleUid=${data.booking.calcomUid}&embed=true&theme=light`}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
+            {/* Cal.com Reschedule Embed - responsive via @calcom/embed-react */}
+            <div className="w-full overflow-hidden">
+              <Cal
+                calLink={`reschedule/${data.booking.calcomUid}`}
+                style={{ width: "100%", height: "100%", minHeight: "500px" }}
+                config={{
+                  theme: "light",
                 }}
-                title="Reschedule Booking"
-                allow="camera; microphone"
               />
             </div>
 
