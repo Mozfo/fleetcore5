@@ -323,9 +323,9 @@ const infoValue = (textAlign: "left" | "right") => ({
   textAlign,
 });
 
-// Button styles
+// Button styles - Standard pattern
 const buttonContainer = {
-  margin: "24px 0",
+  margin: "30px 0",
 };
 
 const buttonColumn = {
@@ -333,31 +333,30 @@ const buttonColumn = {
   paddingRight: "8px",
   paddingLeft: "8px",
   verticalAlign: "top" as const,
+  textAlign: "center" as const,
 };
 
 const primaryButton = {
   backgroundColor: "#22c55e",
-  borderRadius: "6px",
-  color: "#ffffff",
-  fontSize: "15px",
+  borderRadius: "4px",
+  color: "#fff",
+  fontSize: "16px",
   fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
-  display: "block",
-  padding: "14px 20px",
-  width: "100%",
+  display: "inline-block",
+  padding: "12px 24px",
 };
 
 const secondaryButton = {
   backgroundColor: "#f1f5f9",
-  borderRadius: "6px",
+  borderRadius: "4px",
   color: "#475569",
-  fontSize: "15px",
+  fontSize: "16px",
   fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
-  display: "block",
-  padding: "14px 20px",
-  width: "100%",
+  display: "inline-block",
+  padding: "12px 24px",
   border: "1px solid #e2e8f0",
 };

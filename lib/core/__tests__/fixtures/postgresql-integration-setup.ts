@@ -8,6 +8,9 @@
  * - Automatic container lifecycle management
  *
  * Pattern: Singleton container manager + dependency injection
+ *
+ * Note: These tests require Docker to be running and properly configured.
+ * Tests will be skipped if Docker is not available.
  */
 
 import {
@@ -16,6 +19,32 @@ import {
 } from "@testcontainers/postgresql";
 import { PrismaClient } from "@prisma/client";
 import { execSync } from "child_process";
+
+/**
+ * Check if Docker is available and properly configured for testcontainers.
+ * Returns true if Docker is available, false otherwise.
+ */
+export function isDockerAvailable(): boolean {
+  try {
+    // Check if docker command exists and daemon is running
+    execSync("docker info", { stdio: "pipe", timeout: 5000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Error thrown when Docker is not available
+ */
+export class DockerNotAvailableError extends Error {
+  constructor() {
+    super(
+      "Docker is not available. PostgreSQL integration tests require Docker to be running."
+    );
+    this.name = "DockerNotAvailableError";
+  }
+}
 import {
   beforeAll as _beforeAll,
   afterAll as _afterAll,
@@ -55,10 +84,16 @@ export class PostgresContainerManager {
    * Initialize PostgreSQL container and apply migrations
    *
    * Called once per test file in beforeAll()
+   * @throws {DockerNotAvailableError} If Docker is not available
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
       return; // Already initialized
+    }
+
+    // Check if Docker is available before attempting to start container
+    if (!isDockerAvailable()) {
+      throw new DockerNotAvailableError();
     }
 
     // Start PostgreSQL container (auto-pulls image if needed)

@@ -24,7 +24,7 @@ import type {
 type Driver = rid_drivers;
 
 export class EmailService extends BaseService {
-  private resend: Resend;
+  private resend: Resend | null = null;
   private fromEmail: string;
   private fromName: string;
   private replyTo: string;
@@ -173,13 +173,8 @@ export class EmailService extends BaseService {
   constructor() {
     super();
 
-    // Initialize Resend with API key from environment
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error("RESEND_API_KEY environment variable is not set");
-    }
-
-    this.resend = new Resend(apiKey);
+    // Lazy initialization: Resend client is created on first use
+    // This allows the service to be instantiated in test environments without RESEND_API_KEY
     this.fromEmail = EMAIL_FROM_ADDRESS;
     this.fromName = EMAIL_FROM_NAME;
     this.replyTo = EMAIL_REPLY_TO;
@@ -187,6 +182,21 @@ export class EmailService extends BaseService {
     this.isDevelopment =
       process.env.NODE_ENV === "development" &&
       process.env.FORCE_SEND_EMAILS !== "true";
+  }
+
+  /**
+   * Get Resend client with lazy initialization
+   * Throws error only when actually trying to send an email without API key
+   */
+  private getResendClient(): Resend {
+    if (!this.resend) {
+      const apiKey = process.env.RESEND_API_KEY;
+      if (!apiKey) {
+        throw new Error("RESEND_API_KEY environment variable is not set");
+      }
+      this.resend = new Resend(apiKey);
+    }
+    return this.resend;
   }
 
   /**
@@ -460,7 +470,7 @@ export class EmailService extends BaseService {
       }
 
       // Send email via Resend
-      const result = await this.resend.emails.send({
+      const result = await this.getResendClient().emails.send({
         from: `${this.fromName} <${this.fromEmail}>`,
         to: Array.isArray(params.to) ? params.to : [params.to],
         subject: params.subject,
@@ -1134,7 +1144,7 @@ ${t.footer}`;
       }
 
       // Send email via Resend (logo via URL Cloudinary, no attachments)
-      const result = await this.resend.emails.send({
+      const result = await this.getResendClient().emails.send({
         from: `${this.fromName} <${this.fromEmail}>`,
         to: Array.isArray(params.to) ? params.to : [params.to],
         subject: params.subject,

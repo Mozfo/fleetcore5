@@ -28,13 +28,6 @@ import {
 import Link from "next/link";
 
 // ============================================================================
-// CONSTANTS
-// ============================================================================
-
-// Cal.com event link - same as step-2
-const CALCOM_LINK = process.env.NEXT_PUBLIC_CALCOM_LINK || "fleetcore/30min";
-
-// ============================================================================
 // COMPONENT
 // ============================================================================
 
@@ -269,10 +262,10 @@ export default function ReschedulePage() {
               </div>
 
               {/* Cal.com Reschedule Embed via iframe */}
-              {/* URL format: /{username}/{event}?rescheduleUid={uid} per Cal.com docs */}
+              {/* URL format: /reschedule/{uid} - found in Cal.com GitHub issues */}
               <div className="min-h-[600px] overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700">
                 <iframe
-                  src={`${calcomOrigin}/${CALCOM_LINK}?rescheduleUid=${bookingUid}&embed=true&theme=light`}
+                  src={`${calcomOrigin}/reschedule/${bookingUid}?embed=true&theme=light`}
                   style={{
                     width: "100%",
                     height: "600px",

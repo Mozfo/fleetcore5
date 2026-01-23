@@ -55,7 +55,7 @@ export async function setupIntegrationDatabase(): Promise<void> {
   // Step 3: Push schema to SQLite (creates tables)
   try {
     execSync(
-      "pnpm exec prisma db push --skip-generate --schema=prisma/schema.integration.prisma",
+      "pnpm exec prisma db push --skip-generate --accept-data-loss --schema=prisma/schema.integration.prisma",
       {
         stdio: "pipe",
         env: { ...process.env, DATABASE_URL: "file:./test-integration.db" },

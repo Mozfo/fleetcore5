@@ -244,15 +244,15 @@ const buttonContainer = {
 };
 
 const button = {
-  backgroundColor: "#2563eb",
-  borderRadius: "6px",
+  backgroundColor: "#656ee8",
+  borderRadius: "4px",
   color: "#fff",
   fontSize: "16px",
   fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  padding: "14px 32px",
+  padding: "12px 24px",
 };
 
 const warningContainer = {

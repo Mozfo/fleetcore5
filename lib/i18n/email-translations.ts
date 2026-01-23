@@ -811,8 +811,7 @@ export const bookingConfirmationTranslations = {
     expect2: "Live demo tailored to your fleet size",
     expect3: "Q&A session with our fleet expert",
     needToChange: "Need to make a change?",
-    reschedule: "Reschedule",
-    cancel: "Cancel booking",
+    modifyBooking: "Modify My Booking",
     seeYouSoon: "We look forward to speaking with you!",
   },
   fr: {
@@ -833,8 +832,7 @@ export const bookingConfirmationTranslations = {
     expect2: "Démo en direct adaptée à la taille de votre flotte",
     expect3: "Session Q&R avec notre expert flotte",
     needToChange: "Besoin de modifier ?",
-    reschedule: "Reprogrammer",
-    cancel: "Annuler la réservation",
+    modifyBooking: "Modifier ma réservation",
     seeYouSoon: "Nous avons hâte de vous parler !",
   },
   ar: {
@@ -855,8 +853,7 @@ export const bookingConfirmationTranslations = {
     expect2: "عرض مباشر مصمم لحجم أسطولك",
     expect3: "جلسة أسئلة وأجوبة مع خبير الأسطول",
     needToChange: "تحتاج إلى تغيير؟",
-    reschedule: "إعادة الجدولة",
-    cancel: "إلغاء الحجز",
+    modifyBooking: "تعديل حجزي",
     seeYouSoon: "نتطلع للتحدث معك!",
   },
 } as const;

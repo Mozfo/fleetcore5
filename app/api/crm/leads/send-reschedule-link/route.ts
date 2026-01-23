@@ -3,6 +3,7 @@
  *
  * V6.2.4 - Send reschedule/cancel link to lead's email
  * V6.3.3 - iOS Mail compatible short URLs
+ * V6.6 - Migrated to use ModifyBookingRequest template
  *
  * Security:
  * - No direct modification on the site
@@ -14,11 +15,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { render } from "@react-email/render";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { generateShortToken } from "@/lib/utils/token";
 import { EMAIL_FROM } from "@/lib/config/email.config";
+import { ModifyBookingRequest } from "@/emails/templates/ModifyBookingRequest";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -27,33 +30,10 @@ const requestSchema = z.object({
   locale: z.enum(["en", "fr"]).optional().default("en"),
 });
 
-// Simple translations for the email
-const translations = {
-  en: {
-    subject: "Modify or Cancel Your FleetCore Demo",
-    greeting: "Hello",
-    message:
-      "You requested to modify or cancel your scheduled demo with FleetCore.",
-    clickBelow: "Click the button below to reschedule or cancel your booking:",
-    buttonText: "Modify My Booking",
-    notYou:
-      "If you didn't request this, you can safely ignore this email. Your booking will remain unchanged.",
-    regards: "Best regards,",
-    team: "The FleetCore Team",
-  },
-  fr: {
-    subject: "Modifier ou annuler votre démo FleetCore",
-    greeting: "Bonjour",
-    message:
-      "Vous avez demandé à modifier ou annuler votre démo planifiée avec FleetCore.",
-    clickBelow:
-      "Cliquez sur le bouton ci-dessous pour reprogrammer ou annuler votre réservation :",
-    buttonText: "Modifier ma réservation",
-    notYou:
-      "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email. Votre réservation restera inchangée.",
-    regards: "Cordialement,",
-    team: "L'équipe FleetCore",
-  },
+// Subject translations
+const subjects = {
+  en: "Modify or Cancel Your FleetCore Demo",
+  fr: "Modifier ou annuler votre démo FleetCore",
 };
 
 export async function POST(request: NextRequest) {
@@ -76,7 +56,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, locale } = validationResult.data;
-    const t = translations[locale];
 
     // Find lead by email with booking
     const lead = await prisma.crm_leads.findFirst({
@@ -123,46 +102,21 @@ export async function POST(request: NextRequest) {
     // /r/[token] redirects to /[locale]/book-demo/reschedule?uid=[calcom_uid]
     const rescheduleUrl = `https://fleetcore.io/${locale}/r/${rescheduleToken}`;
 
+    // Render email using template
+    const html = await render(
+      ModifyBookingRequest({
+        locale,
+        firstName: lead.first_name || undefined,
+        rescheduleUrl,
+      })
+    );
+
     // Send email via Resend
     const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: [lead.email],
-      subject: t.subject,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <img src="https://res.cloudinary.com/dillqmyh7/image/upload/v1763024908/fleetcore-logo_ljrtyn.jpg" alt="FleetCore" width="200" height="auto" style="max-width: 100%; height: auto;">
-          </div>
-
-          <h2 style="color: #1e3a5f; margin-bottom: 20px;">${t.greeting}${lead.first_name ? ` ${lead.first_name}` : ""},</h2>
-
-          <p style="margin-bottom: 20px;">${t.message}</p>
-
-          <p style="margin-bottom: 25px;">${t.clickBelow}</p>
-
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${rescheduleUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-              ${t.buttonText}
-            </a>
-          </div>
-
-          <p style="color: #666; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            ${t.notYou}
-          </p>
-
-          <p style="margin-top: 30px;">
-            ${t.regards}<br>
-            <strong>${t.team}</strong>
-          </p>
-        </body>
-        </html>
-      `,
+      subject: subjects[locale],
+      html,
     });
 
     if (error) {

@@ -148,8 +148,7 @@ export const ExpansionOpportunity = ({
                 <Section
                   style={{
                     textAlign: "center",
-                    marginTop: "24px",
-                    marginBottom: "24px",
+                    margin: "30px 0",
                   }}
                 >
                   <Button style={buttonPrimary} href={survey_url}>
@@ -167,8 +166,7 @@ export const ExpansionOpportunity = ({
             <Section
               style={{
                 textAlign: "center",
-                marginTop: "24px",
-                marginBottom: "16px",
+                margin: "30px 0",
               }}
             >
               <Button style={buttonTertiary} href="https://fleetcore.io">
@@ -268,29 +266,27 @@ const benefitDescription = {
 };
 
 const buttonPrimary = {
-  backgroundColor: "#2563eb",
-  borderRadius: "8px",
+  backgroundColor: "#656ee8",
+  borderRadius: "4px",
   color: "#fff",
   fontSize: "16px",
-  fontWeight: "bold",
+  fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  width: "auto",
-  padding: "14px 36px",
+  padding: "12px 24px",
 };
 
 const buttonTertiary = {
   backgroundColor: "#f3f4f6",
-  borderRadius: "8px",
+  borderRadius: "4px",
   color: "#374151",
-  fontSize: "14px",
-  fontWeight: "500",
+  fontSize: "16px",
+  fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  width: "auto",
-  padding: "10px 24px",
+  padding: "12px 24px",
 };
 
 const footer = (textAlign: "left" | "right") => ({

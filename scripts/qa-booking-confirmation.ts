@@ -107,7 +107,6 @@ async function runTests(): Promise<void> {
           timezone: "GMT+1",
           meetingUrl: "https://meet.google.com/test",
           rescheduleUrl: "https://fleetcore.io/fr/r/ABC123",
-          cancelUrl: "https://fleetcore.io/fr/r/ABC123",
         })
       );
       if (!html || html.length < 1000)
@@ -125,7 +124,6 @@ async function runTests(): Promise<void> {
           timezone: "GMT+1",
           meetingUrl: "https://meet.google.com/test",
           rescheduleUrl: "https://fleetcore.io/fr/r/ABC123",
-          cancelUrl: "https://fleetcore.io/fr/r/ABC123",
         })
       );
       if (!html.includes("https://fleetcore.io/fr/r/ABC123"))
@@ -143,7 +141,6 @@ async function runTests(): Promise<void> {
           timezone: "GMT+1",
           meetingUrl: "https://meet.google.com/test",
           rescheduleUrl: "https://fleetcore.io/fr/r/ABC123",
-          cancelUrl: "https://fleetcore.io/fr/r/ABC123",
         })
       );
       if (!html.includes("2026")) return "Copyright 2026 not found";
@@ -161,7 +158,6 @@ async function runTests(): Promise<void> {
           timezone: "GMT+1",
           meetingUrl: "https://meet.google.com/test-meeting",
           rescheduleUrl: "https://fleetcore.io/fr/r/ABC123",
-          cancelUrl: "https://fleetcore.io/fr/r/ABC123",
         })
       );
       if (!html.includes("https://meet.google.com/test-meeting"))

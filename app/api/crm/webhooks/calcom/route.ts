@@ -283,7 +283,6 @@ export async function POST(request: NextRequest) {
 
             // Build URLs
             const rescheduleUrl = `${baseUrl}/${locale}/r/${rescheduleToken}`;
-            const cancelUrl = rescheduleUrl; // Same page handles both
             const meetingUrl =
               payload["metadata.videoCallUrl"] ||
               `${baseUrl}/${locale}/book-demo`;
@@ -303,7 +302,6 @@ export async function POST(request: NextRequest) {
                 timezone,
                 meetingUrl,
                 rescheduleUrl,
-                cancelUrl,
               })
             );
 

@@ -43,8 +43,7 @@ interface BookingConfirmationProps {
   bookingTime: string; // e.g., "9:00 AM"
   timezone: string; // e.g., "GMT+4 (Dubai)"
   meetingUrl: string; // Google Meet link
-  rescheduleUrl: string; // FleetCore reschedule URL
-  cancelUrl: string; // FleetCore cancel URL
+  rescheduleUrl: string; // FleetCore reschedule/cancel URL (same page handles both)
 }
 
 // ============================================================================
@@ -59,7 +58,6 @@ export const BookingConfirmation = ({
   timezone = "GMT+4 (Dubai)",
   meetingUrl = "https://meet.google.com/xxx-xxxx-xxx",
   rescheduleUrl = "https://fleetcore.io/en/r/Xk9mP2",
-  cancelUrl = "https://fleetcore.io/en/r/Xk9mP2",
 }: BookingConfirmationProps) => {
   const t = bookingConfirmationTranslations[locale];
   const common = commonTranslations[locale];
@@ -158,16 +156,11 @@ export const BookingConfirmation = ({
               <Text style={expectItem(textAlign)}>✓ {t.expect3}</Text>
             </Section>
 
-            {/* Need to change? */}
+            {/* Need to change? - Single button for reschedule/cancel */}
             <Text style={smallTitle(textAlign)}>{t.needToChange}</Text>
-            <Section style={buttonContainerStacked}>
+            <Section style={buttonContainer}>
               <Button style={secondaryButton} href={rescheduleUrl}>
-                {t.reschedule}
-              </Button>
-            </Section>
-            <Section style={buttonContainerStacked}>
-              <Button style={cancelButton} href={cancelUrl}>
-                {t.cancel}
+                {t.modifyBooking}
               </Button>
             </Section>
 
@@ -330,20 +323,15 @@ const expectItem = (textAlign: "left" | "right") => ({
   textAlign,
 });
 
-// Button styles - Using MemberWelcome pattern (inline-block + centered container)
+// Button styles - Matching send-reschedule-link email (WORKS ON MOBILE)
 const buttonContainer = {
   textAlign: "center" as const,
-  margin: "24px 0",
-};
-
-const buttonContainerStacked = {
-  textAlign: "center" as const,
-  margin: "12px 0",
+  margin: "30px 0",
 };
 
 const primaryButton = {
   backgroundColor: "#2563eb",
-  borderRadius: "6px",
+  borderRadius: "8px",
   color: "#ffffff",
   fontSize: "16px",
   fontWeight: "600" as const,
@@ -354,27 +342,13 @@ const primaryButton = {
 };
 
 const secondaryButton = {
-  backgroundColor: "#f1f5f9",
-  borderRadius: "6px",
-  color: "#475569",
-  fontSize: "14px",
+  backgroundColor: "#2563eb",
+  borderRadius: "8px",
+  color: "#ffffff",
+  fontSize: "16px",
   fontWeight: "600" as const,
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  padding: "12px 24px",
-  border: "1px solid #e2e8f0",
-};
-
-const cancelButton = {
-  backgroundColor: "#ffffff",
-  borderRadius: "6px",
-  color: "#dc2626",
-  fontSize: "14px",
-  fontWeight: "600" as const,
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "inline-block",
-  padding: "12px 24px",
-  border: "1px solid #fecaca",
+  padding: "14px 32px",
 };
