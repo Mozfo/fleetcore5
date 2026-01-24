@@ -465,6 +465,8 @@ export class EmailVerificationService {
             email_verification_expires_at: expiresAt,
             email_verification_attempts: 0, // Reset attempts on new code
             ...(country_code && { country_code: country_code.toUpperCase() }),
+            // V6.4-3: Always update language from homepage locale
+            language: locale,
             // V6.4: GeoIP tracking (update only if not already set)
             ...(ip_address && { ip_address }),
             ...(detected_country_code && { detected_country_code }),
@@ -479,6 +481,8 @@ export class EmailVerificationService {
             status: "new",
             lead_stage: "top_of_funnel", // V6.4: Set initial stage
             source: "web", // Web form (detail in metadata)
+            // V6.4-3: Store homepage language for email notifications
+            language: locale,
             email_verified: false,
             email_verification_code: hashedCode,
             email_verification_expires_at: expiresAt,
