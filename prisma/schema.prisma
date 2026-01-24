@@ -2105,6 +2105,8 @@ model crm_leads {
   // V6.4: GeoIP detection (same pattern as crm_waitlist for spam detection)
   detected_country_code                                                String?                 @db.VarChar(2)
   ip_address                                                           String?                 @db.VarChar(45)
+  // V6.4-3: Language chosen on homepage (source of truth for emails)
+  language                                                             String                  @default("en") @db.VarChar(5)
   // Relations
   crm_activities                                                       crm_activities[]
   crm_contracts                                                        crm_contracts[]

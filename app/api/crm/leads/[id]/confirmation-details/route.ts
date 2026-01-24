@@ -56,6 +56,8 @@ export async function GET(
         booking_calcom_uid: true,
         wizard_completed: true,
         status: true,
+        reschedule_token: true,
+        language: true,
       },
     });
 
@@ -89,10 +91,10 @@ export async function GET(
       );
     }
 
-    // Build internal reschedule URL (stays on FleetCore domain)
-    // The /book-demo/reschedule page embeds Cal.com iframe
-    const internalRescheduleUrl = lead.booking_calcom_uid
-      ? `/book-demo/reschedule?uid=${lead.booking_calcom_uid}`
+    // Build internal reschedule URL using short token (iOS Mail compatible)
+    const locale = lead.language || "en";
+    const internalRescheduleUrl = lead.reschedule_token
+      ? `/${locale}/r/${lead.reschedule_token}`
       : null;
 
     logger.info(

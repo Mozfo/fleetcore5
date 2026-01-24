@@ -34,25 +34,7 @@ import type { EmailLocale } from "@/lib/i18n/email-translations";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // 60 seconds max
 
-const _SUPPORTED_LOCALES: EmailLocale[] = ["en", "fr", "ar"];
 const DEFAULT_LOCALE: EmailLocale = "en";
-
-// Country to locale mapping (simplified)
-const COUNTRY_LOCALE_MAP: Record<string, EmailLocale> = {
-  FR: "fr",
-  AE: "en", // UAE uses English for business
-  SA: "ar",
-  MA: "fr", // Morocco uses French
-  TN: "fr", // Tunisia uses French
-  DZ: "fr", // Algeria uses French
-  EG: "ar",
-  JO: "ar",
-  LB: "ar",
-  KW: "ar",
-  QA: "ar",
-  BH: "ar",
-  OM: "ar",
-};
 
 // ============================================================================
 // TYPES
@@ -68,6 +50,8 @@ interface LeadToNotify {
   country_code: string | null;
   booking_slot_at: Date;
   booking_calcom_uid: string | null;
+  reschedule_token: string | null;
+  language: string | null;
 }
 
 interface ProcessResult {
@@ -80,14 +64,6 @@ interface ProcessResult {
 // ============================================================================
 // HELPERS
 // ============================================================================
-
-/**
- * Get locale for a country code
- */
-function getLocaleForCountry(countryCode: string | null): EmailLocale {
-  if (!countryCode) return DEFAULT_LOCALE;
-  return COUNTRY_LOCALE_MAP[countryCode.toUpperCase()] || DEFAULT_LOCALE;
-}
 
 /**
  * Format date for email (localized)
@@ -242,6 +218,8 @@ export async function GET(request: Request) {
         country_code: true,
         booking_slot_at: true,
         booking_calcom_uid: true,
+        reschedule_token: true,
+        language: true,
       },
     });
 
@@ -286,13 +264,13 @@ export async function GET(request: Request) {
         // Generate confirmation token
         const confirmationToken = randomUUID();
 
-        // Determine locale
-        const locale = getLocaleForCountry(lead.country_code);
+        // Use lead's language (set on homepage) - no country guessing
+        const locale = (lead.language as EmailLocale) || DEFAULT_LOCALE;
 
         // Build URLs (with locale for i18n pages)
         const confirmUrl = `${baseUrl}/api/crm/leads/confirm-attendance?token=${confirmationToken}`;
-        const rescheduleUrl = lead.booking_calcom_uid
-          ? `${baseUrl}/${locale}/book-demo/reschedule?uid=${lead.booking_calcom_uid}`
+        const rescheduleUrl = lead.reschedule_token
+          ? `${baseUrl}/${locale}/r/${lead.reschedule_token}`
           : `${baseUrl}/${locale}/book-demo`;
 
         // Format date/time

@@ -56,6 +56,8 @@ export async function GET(request: NextRequest) {
         booking_calcom_uid: true,
         attendance_confirmed: true,
         attendance_confirmed_at: true,
+        reschedule_token: true,
+        language: true,
       },
     });
 
@@ -101,9 +103,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build reschedule URL (internal FleetCore page with Cal.com iframe)
-    const rescheduleUrl = lead.booking_calcom_uid
-      ? `/book-demo/reschedule?uid=${lead.booking_calcom_uid}`
+    // Build reschedule URL using short token (iOS Mail compatible)
+    const locale = lead.language || "en";
+    const rescheduleUrl = lead.reschedule_token
+      ? `/${locale}/r/${lead.reschedule_token}`
       : null;
 
     return NextResponse.json({

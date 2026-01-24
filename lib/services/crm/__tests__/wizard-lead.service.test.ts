@@ -110,6 +110,8 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     // V6.4: GeoIP tracking
     ip_address: null,
     detected_country_code: null,
+    // V6.4-3: Language from homepage
+    language: "en",
     // Apply overrides
     ...overrides,
   };

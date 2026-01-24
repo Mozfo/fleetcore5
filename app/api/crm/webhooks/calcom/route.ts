@@ -39,29 +39,8 @@ const CALCOM_WEBHOOK_SECRET = process.env.CALCOM_WEBHOOK_SECRET;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 // ============================================================================
-// LOCALE HELPERS
+// DATE/TIME HELPERS
 // ============================================================================
-
-const COUNTRY_LOCALE_MAP: Record<string, EmailLocale> = {
-  FR: "fr",
-  AE: "en",
-  SA: "ar",
-  MA: "fr",
-  TN: "fr",
-  DZ: "fr",
-  EG: "ar",
-  JO: "ar",
-  LB: "ar",
-  KW: "ar",
-  QA: "ar",
-  BH: "ar",
-  OM: "ar",
-};
-
-function getLocaleForCountry(countryCode: string | null): EmailLocale {
-  if (!countryCode) return "en";
-  return COUNTRY_LOCALE_MAP[countryCode.toUpperCase()] || "en";
-}
 
 function formatBookingDate(date: Date, locale: EmailLocale): string {
   const localeMap: Record<EmailLocale, string> = {
@@ -226,6 +205,7 @@ export async function POST(request: NextRequest) {
         last_name: true,
         country_code: true,
         reschedule_token: true,
+        language: true,
       },
     });
 
@@ -278,7 +258,7 @@ export async function POST(request: NextRequest) {
             const resend = new Resend(RESEND_API_KEY);
             const baseUrl =
               process.env.NEXT_PUBLIC_APP_URL || "https://fleetcore.io";
-            const locale = getLocaleForCountry(lead.country_code);
+            const locale = (lead.language as EmailLocale) || "en";
             const bookingDate = new Date(payload.startTime);
 
             // Build URLs

@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
         booking_calcom_uid: true,
         booking_slot_at: true,
         reschedule_token: true,
+        language: true,
       },
     });
 
@@ -98,14 +99,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // V6.4-3: Use lead's stored language (from homepage), fallback to request locale
+    const emailLocale = lead.language || locale;
+
     // Generate short URL for iOS Mail compatibility (~28 chars vs 88)
     // /r/[token] redirects to /[locale]/book-demo/reschedule?uid=[calcom_uid]
-    const rescheduleUrl = `https://fleetcore.io/${locale}/r/${rescheduleToken}`;
+    const rescheduleUrl = `https://fleetcore.io/${emailLocale}/r/${rescheduleToken}`;
 
     // Render email using template
     const html = await render(
       ModifyBookingRequest({
-        locale,
+        locale: emailLocale as "en" | "fr",
         firstName: lead.first_name || undefined,
         rescheduleUrl,
       })
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: [lead.email],
-      subject: subjects[locale],
+      subject: subjects[emailLocale as keyof typeof subjects] || subjects.en,
       html,
     });
 

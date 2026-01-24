@@ -352,6 +352,8 @@ describe("LeadCreationService", () => {
           // V6.4: GeoIP tracking
           ip_address: null,
           detected_country_code: null,
+          // V6.4-3: Language from homepage
+          language: "en",
         };
         return lead;
       }
