@@ -319,6 +319,8 @@ async function handleFullForm(
       status: "new",
       lead_stage: "top_of_funnel",
       source: "web", // Web form (detail in metadata.source)
+      // V6.4-3: Store homepage language for email notifications
+      language: body.form_locale || "en",
 
       // UTM tracking
       utm_source: body.utm_source || null,
