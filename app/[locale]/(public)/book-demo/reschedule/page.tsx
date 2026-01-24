@@ -232,7 +232,7 @@ export default function ReschedulePage() {
                   calLink={`reschedule/${bookingUid}`}
                   calOrigin={
                     process.env.NEXT_PUBLIC_CALCOM_ORIGIN ||
-                    "https://app.cal.com"
+                    "https://app.cal.eu"
                   }
                   style={{ width: "100%", height: "100%", minHeight: "500px" }}
                   config={{

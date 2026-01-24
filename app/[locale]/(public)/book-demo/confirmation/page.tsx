@@ -476,7 +476,7 @@ export default function BookDemoConfirmationPage() {
               <Cal
                 calLink={`reschedule/${data.booking.calcomUid}`}
                 calOrigin={
-                  process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.com"
+                  process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu"
                 }
                 style={{ width: "100%", height: "100%", minHeight: "500px" }}
                 config={{
