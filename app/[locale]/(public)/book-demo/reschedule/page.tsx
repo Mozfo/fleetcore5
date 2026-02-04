@@ -112,18 +112,9 @@ export default function ReschedulePage() {
   useEffect(() => {
     void (async function () {
       const cal = await getCalApi();
-
-      // Listen for booking success events (new bookings)
+      // Listen for booking success events
       cal("on", {
         action: "bookingSuccessful",
-        callback: () => {
-          setRescheduleComplete(true);
-        },
-      });
-
-      // Listen for reschedule success events
-      cal("on", {
-        action: "rescheduleBookingSuccessful",
         callback: () => {
           setRescheduleComplete(true);
         },
