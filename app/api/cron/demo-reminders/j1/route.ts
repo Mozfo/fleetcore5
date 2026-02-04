@@ -25,6 +25,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { DemoReminderJ1 } from "@/emails/templates/DemoReminderJ1";
 import { EMAIL_FROM } from "@/lib/config/email.config";
+import { URLS } from "@/lib/config/urls.config";
 import type { EmailLocale } from "@/lib/i18n/email-translations";
 
 // ============================================================================
@@ -181,7 +182,7 @@ export async function GET(request: Request) {
     }
 
     const resend = new Resend(resendApiKey);
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://fleetcore.io";
+    const baseUrl = URLS.public;
 
     // ========================================
     // QUERY: Leads to notify (J-1 window)

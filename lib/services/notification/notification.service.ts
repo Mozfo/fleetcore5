@@ -22,6 +22,7 @@ import type { PaginatedResult, PaginationOptions } from "@/lib/core/types";
 import { SYSTEM_USER_ID } from "@/lib/constants/system";
 import type { AuditEntityType } from "@/lib/audit";
 import { logger } from "@/lib/logger";
+import { URLS } from "@/lib/config/urls.config";
 
 /**
  * Selected template result from selectTemplate()
@@ -463,8 +464,7 @@ export class NotificationService extends BaseService {
     variables: Record<string, unknown>
   ): Promise<RenderedTemplate> {
     // ✅ STABLE: Inject baseUrl automatically (React Email best practice)
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.com";
+    const baseUrl = URLS.app;
     const enrichedVariables: Record<string, string> = {
       ...variables,
       baseUrl, // Always inject baseUrl for logo stability

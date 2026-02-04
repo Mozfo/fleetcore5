@@ -7,6 +7,7 @@ import {
   EMAIL_FROM_NAME,
   EMAIL_REPLY_TO,
 } from "@/lib/config/email.config";
+import { URLS } from "@/lib/config/urls.config";
 import type { rid_drivers } from "@prisma/client";
 import type {
   EmailLocale,
@@ -285,7 +286,7 @@ export class EmailService extends BaseService {
     locale: EmailLocale = "en"
   ): Promise<EmailSendResult> {
     const t = this.translations[locale];
-    const loginUrl = process.env.NEXT_PUBLIC_APP_URL || "https://fleetcore.app";
+    const loginUrl = URLS.app;
 
     const template = this.getDriverOnboardingTemplate(
       driver,

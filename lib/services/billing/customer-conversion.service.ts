@@ -26,6 +26,7 @@ import { logger } from "@/lib/logger";
 import { clerkService } from "@/lib/services/clerk/clerk.service";
 import { NotificationQueueService } from "@/lib/services/notification/queue.service";
 import { CountryRepository } from "@/lib/repositories/crm/country.repository";
+import { URLS } from "@/lib/config/urls.config";
 import crypto from "crypto";
 import type Stripe from "stripe";
 
@@ -356,7 +357,7 @@ export class CustomerConversionService {
       const locale = await this.countryRepository.getNotificationLocale(
         lead.country_code || "FR"
       );
-      const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.io"}/${locale}/verify?token=${verificationToken}`;
+      const verificationUrl = `${URLS.app}/${locale}/verify?token=${verificationToken}`;
 
       const emailResult = await this.notificationQueueService.queueNotification(
         {

@@ -10,6 +10,7 @@ import {
 import { assertDefined } from "@/lib/core/errors";
 import { sendNotification } from "@/lib/notifications";
 import { logger } from "@/lib/logger";
+import { URLS } from "@/lib/config/urls.config";
 
 const prisma = new PrismaClient();
 
@@ -231,7 +232,7 @@ export async function POST(req: Request) {
             tenant_name: org.name,
             email: member.email,
             role: member.role === "admin" ? "Administrator" : "Team Member",
-            dashboard_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.io"}/dashboard`,
+            dashboard_url: `${URLS.app}/dashboard`,
           },
           {
             memberId: member.id,

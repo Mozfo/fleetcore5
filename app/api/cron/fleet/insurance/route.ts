@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/notifications";
 import { logger } from "@/lib/logger";
+import { URLS } from "@/lib/config/urls.config";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -127,7 +128,7 @@ export async function GET(request: Request) {
             days_remaining: daysRemaining.toString(),
             insurance_provider: insurance.provider_name,
             policy_number: insurance.policy_number,
-            insurance_details_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.io"}/fleet/insurance/${insurance.id}`,
+            insurance_details_url: `${URLS.app}/fleet/insurance/${insurance.id}`,
           },
           {
             tenantId: tenant.id,

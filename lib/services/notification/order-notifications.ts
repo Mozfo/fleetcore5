@@ -13,6 +13,7 @@
 import { prisma } from "@/lib/prisma";
 import { NotificationService } from "./notification.service";
 import { logger } from "@/lib/logger";
+import { URLS } from "@/lib/config/urls.config";
 
 // Singleton instance
 const notificationService = new NotificationService();
@@ -223,9 +224,7 @@ export async function sendOrderCreatedNotification(
       : autoRenewLabels[locale]?.no || "No";
 
     // 9. Build order URL
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.com";
-    const orderUrl = `${baseUrl}/crm/orders/${order.id}`;
+    const orderUrl = `${URLS.app}/crm/orders/${order.id}`;
 
     // 10. Generate opportunity title from lead company or use stage
     // (opportunity already fetched in step 3)

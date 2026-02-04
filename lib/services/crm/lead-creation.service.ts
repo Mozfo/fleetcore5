@@ -26,6 +26,7 @@ import { CountryService } from "./country.service";
 import { ValidationError } from "@/lib/core/errors";
 import { sendNotification } from "@/lib/notifications";
 import { logger } from "@/lib/logger";
+import { URLS } from "@/lib/config/urls.config";
 import type { CreateLeadInput } from "@/lib/validators/crm/lead.validators";
 import type { crm_leads } from "@prisma/client";
 
@@ -316,7 +317,7 @@ export class LeadCreationService {
               lead_stage: scoring.lead_stage,
               fleet_size: input.fleet_size || "N/A",
               country_code: input.country_code || "N/A",
-              lead_detail_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.io"}/crm/leads/${lead.id}`,
+              lead_detail_url: `${URLS.app}/crm/leads/${lead.id}`,
             },
             {
               leadId: lead.id,

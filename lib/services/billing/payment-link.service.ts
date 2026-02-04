@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { stripeClientService } from "@/lib/services/stripe/stripe-client.service";
 import { leadStatusService } from "@/lib/services/crm/lead-status.service";
 import { logger } from "@/lib/logger";
+import { URLS } from "@/lib/config/urls.config";
 import type Stripe from "stripe";
 
 // ===== TYPES & INTERFACES =====
@@ -274,10 +275,8 @@ export class PaymentLinkService {
       );
 
       // 7. Build Stripe checkout session params
-      const baseUrl =
-        process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.io";
-      const successUrl = `${baseUrl}${settings.checkout.success_path}?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${baseUrl}${settings.checkout.cancel_path}?lead_id=${leadId}`;
+      const successUrl = `${URLS.public}${settings.checkout.success_path}?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${URLS.public}${settings.checkout.cancel_path}?lead_id=${leadId}`;
 
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: "subscription",

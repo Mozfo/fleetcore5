@@ -21,6 +21,7 @@ import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { generateShortToken } from "@/lib/utils/token";
 import { EMAIL_FROM } from "@/lib/config/email.config";
+import { URLS } from "@/lib/config/urls.config";
 import { ModifyBookingRequest } from "@/emails/templates/ModifyBookingRequest";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     // Generate short URL for iOS Mail compatibility (~28 chars vs 88)
     // /r/[token] redirects to /[locale]/book-demo/reschedule?uid=[calcom_uid]
-    const rescheduleUrl = `https://fleetcore.io/${emailLocale}/r/${rescheduleToken}`;
+    const rescheduleUrl = `${URLS.public}/${emailLocale}/r/${rescheduleToken}`;
 
     // Render email using template
     const html = await render(

@@ -33,6 +33,7 @@ import {
 import { generateShortToken } from "@/lib/utils/token";
 import { BookingConfirmation } from "@/emails/templates/BookingConfirmation";
 import { EMAIL_FROM } from "@/lib/config/email.config";
+import { URLS } from "@/lib/config/urls.config";
 import type { EmailLocale } from "@/lib/i18n/email-translations";
 
 const CALCOM_WEBHOOK_SECRET = process.env.CALCOM_WEBHOOK_SECRET;
@@ -256,8 +257,7 @@ export async function POST(request: NextRequest) {
         if (RESEND_API_KEY) {
           try {
             const resend = new Resend(RESEND_API_KEY);
-            const baseUrl =
-              process.env.NEXT_PUBLIC_APP_URL || "https://fleetcore.io";
+            const baseUrl = URLS.public;
             const locale = (lead.language as EmailLocale) || "en";
             const bookingDate = new Date(payload.startTime);
 

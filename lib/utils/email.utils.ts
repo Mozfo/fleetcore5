@@ -7,6 +7,8 @@
  * - Lead detail URL construction
  */
 
+import { URLS } from "@/lib/config/urls.config";
+
 /**
  * Country code to flag emoji mapping
  *
@@ -59,13 +61,11 @@ export function getCountryFlag(countryCode: string): string {
  * @example
  * ```typescript
  * getLeadDetailUrl('abc123-def456')
- * // Returns: 'https://app.fleetcore.com/crm/leads/abc123-def456'
+ * // Returns: 'https://app.fleetcore.io/crm/leads/abc123-def456'
  * ```
  */
 export function getLeadDetailUrl(leadId: string): string {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.com";
-  return `${baseUrl}/crm/leads/${leadId}`;
+  return `${URLS.app}/crm/leads/${leadId}`;
 }
 
 /**

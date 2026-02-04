@@ -29,6 +29,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { EMAIL_FROM } from "@/lib/config/email.config";
+import { URLS } from "@/lib/config/urls.config";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { db } from "@/lib/prisma";
@@ -245,7 +246,7 @@ export async function POST(request: NextRequest) {
 
       // Build survey URL with short token for iOS Mail compatibility
       // Use fleetcore.io (not app.fleetcore.io) + locale + short token = ~31 chars vs 82
-      const surveyUrl = `https://fleetcore.io/${emailLocale}/w/${waitlistEntry.short_token}`;
+      const surveyUrl = `${URLS.public}/${emailLocale}/w/${waitlistEntry.short_token}`;
 
       const emailHtml = await render(
         ExpansionOpportunity({

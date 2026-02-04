@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/notifications";
 import { logger } from "@/lib/logger";
+import { URLS } from "@/lib/config/urls.config";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -169,7 +170,7 @@ export async function GET(request: Request) {
             maintenance_location: maintenance.provider_name || "Service Center",
             maintenance_type: maintenance.maintenance_type,
             estimated_duration: "2-4 hours", // Default estimate
-            maintenance_details_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.fleetcore.io"}/driver/maintenance/${maintenance.id}`,
+            maintenance_details_url: `${URLS.app}/driver/maintenance/${maintenance.id}`,
           },
           {
             tenantId: tenant.id,
