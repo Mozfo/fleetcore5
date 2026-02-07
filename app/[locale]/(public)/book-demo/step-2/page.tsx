@@ -64,8 +64,11 @@ interface BookingStatusResponse {
 // CONSTANTS
 // ============================================================================
 
-// Cal.com event link - format: username/event-slug
-const CALCOM_LINK = process.env.NEXT_PUBLIC_CALCOM_LINK || "fleetcore/30min";
+// Cal.com event links per locale (each has interfaceLanguage forced server-side)
+const CALCOM_LINKS: Record<string, string> = {
+  en: "fleetcore/30min",
+  fr: "fleetcore/30min-fr",
+};
 const CALCOM_ORIGIN =
   process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
 
@@ -350,7 +353,7 @@ export default function BookDemoStep2Page() {
         >
           <Cal
             namespace="fleetcore-inline"
-            calLink={CALCOM_LINK}
+            calLink={CALCOM_LINKS[locale] || CALCOM_LINKS.en}
             calOrigin={CALCOM_ORIGIN}
             style={{ width: "100%", height: "100%", overflow: "auto" }}
             config={{
