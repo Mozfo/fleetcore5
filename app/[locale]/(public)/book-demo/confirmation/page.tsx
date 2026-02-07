@@ -106,46 +106,67 @@ export default function BookDemoConfirmationPage() {
     }
   }, [leadId, locale, router]);
 
-  // Fetch confirmation details
-  useEffect(() => {
+  // Fetch confirmation details (extracted for reuse after reschedule)
+  const fetchConfirmationData = async (showLoader = true) => {
     if (!leadId) return;
+    if (showLoader) setIsLoading(true);
+    try {
+      const response = await fetch(
+        `/api/crm/leads/${leadId}/confirmation-details`
+      );
+      const result: APIResponse = await response.json();
 
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `/api/crm/leads/${leadId}/confirmation-details`
-        );
-        const result: APIResponse = await response.json();
-
-        if (result.success && result.data) {
-          setData(result.data);
-        } else {
-          setError(result.error?.message || "Failed to load confirmation");
-        }
-      } catch (_err) {
-        setError("Network error");
-      } finally {
-        setIsLoading(false);
+      if (result.success && result.data) {
+        setData(result.data);
+      } else {
+        setError(result.error?.message || "Failed to load confirmation");
       }
-    };
+    } catch (_err) {
+      setError("Network error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    void fetchData();
+  // Fetch on mount
+  useEffect(() => {
+    void fetchConfirmationData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadId]);
 
-  // Initialize Cal.com embed API and listen for booking success
+  // Initialize Cal.com embed API and listen for reschedule success
   useEffect(() => {
     if (!showRescheduleModal) return;
 
     void (async function () {
       const cal = await getCalApi();
+
+      // Listen for reschedule-specific event
+      cal("on", {
+        action: "rescheduleBookingSuccessful",
+        callback: () => {
+          setRescheduleSuccess(true);
+          setShowRescheduleModal(false);
+          // Re-fetch data after short delay (wait for webhook to update DB)
+          setTimeout(() => {
+            void fetchConfirmationData(false);
+          }, 3000);
+        },
+      });
+
+      // Keep bookingSuccessful as fallback
       cal("on", {
         action: "bookingSuccessful",
         callback: () => {
           setRescheduleSuccess(true);
           setShowRescheduleModal(false);
+          setTimeout(() => {
+            void fetchConfirmationData(false);
+          }, 3000);
         },
       });
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showRescheduleModal]);
 
   // Don't render if missing leadId
