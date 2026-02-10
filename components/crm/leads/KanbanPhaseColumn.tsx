@@ -61,6 +61,7 @@ interface KanbanPhaseColumnProps {
   onStatusChange?: (leadId: string, status: LeadStatus) => void;
   onEdit?: (leadId: string) => void;
   onConvert?: (leadId: string) => void;
+  onDisqualify?: (leadId: string) => void;
   onDelete?: (leadId: string) => void;
 }
 
@@ -75,6 +76,7 @@ function StatusDropZone({
   onStatusChange,
   onEdit,
   onConvert,
+  onDisqualify,
   onDelete,
 }: {
   status: string;
@@ -86,6 +88,7 @@ function StatusDropZone({
   onStatusChange?: (leadId: string, status: LeadStatus) => void;
   onEdit?: (leadId: string) => void;
   onConvert?: (leadId: string) => void;
+  onDisqualify?: (leadId: string) => void;
   onDelete?: (leadId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -156,6 +159,7 @@ function StatusDropZone({
                 onStatusChange={onStatusChange}
                 onEdit={onEdit}
                 onConvert={onConvert}
+                onDisqualify={onDisqualify}
                 onDelete={onDelete}
               />
             </motion.div>
@@ -176,6 +180,7 @@ export const KanbanPhaseColumn = memo(
     onStatusChange,
     onEdit,
     onConvert,
+    onDisqualify,
     onDelete,
   }: KanbanPhaseColumnProps) {
     const { t } = useTranslation("crm");
@@ -235,6 +240,7 @@ export const KanbanPhaseColumn = memo(
                 onStatusChange={onStatusChange}
                 onEdit={onEdit}
                 onConvert={onConvert}
+                onDisqualify={onDisqualify}
                 onDelete={onDelete}
               />
             );

@@ -25,6 +25,7 @@ import {
   MoreHorizontal,
   Pencil,
   ArrowRightCircle,
+  Ban,
   Trash,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,7 @@ interface KanbanCardProps {
   onView?: (leadId: string) => void; // Navigate to detail
   onEdit?: (leadId: string) => void; // Open edit modal (TODO)
   onConvert?: (leadId: string) => void; // Convert to opportunity (TODO)
+  onDisqualify?: (leadId: string) => void; // Disqualify with reason + blacklist
   onDelete?: (leadId: string) => void; // Delete with confirmation (TODO)
   onStatusChange?: (leadId: string, status: LeadStatus) => void; // Change status
 }
@@ -109,6 +111,7 @@ export const KanbanCard = memo(
     onView,
     onEdit,
     onConvert,
+    onDisqualify,
     onDelete,
     onStatusChange,
   }: KanbanCardProps) {
@@ -164,6 +167,7 @@ export const KanbanCard = memo(
         onEdit={() => onEdit?.(lead.id)}
         onStatusChange={(status) => onStatusChange?.(lead.id, status)}
         onConvert={() => onConvert?.(lead.id)}
+        onDisqualify={() => onDisqualify?.(lead.id)}
         onDelete={() => onDelete?.(lead.id)}
         disabled={showDraggingState}
       >
@@ -257,19 +261,26 @@ export const KanbanCard = memo(
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => onEdit?.(lead.id)}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  {t("leads.drawer.actions.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onConvert?.(lead.id)}>
                   <ArrowRightCircle className="mr-2 h-4 w-4" />
-                  Convert to Opportunity
+                  {t("leads.drawer.actions.convert")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDisqualify?.(lead.id)}
+                  className="text-orange-600 focus:text-orange-600"
+                >
+                  <Ban className="mr-2 h-4 w-4" />
+                  {t("leads.drawer.actions.disqualify")}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => onDelete?.(lead.id)}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash className="mr-2 h-4 w-4" />
-                  Delete
+                  {t("leads.drawer.actions.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

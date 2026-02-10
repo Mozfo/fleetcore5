@@ -53,6 +53,7 @@ import {
 } from "@/lib/actions/crm/lead.actions";
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
 import { DeleteLeadModal } from "./DeleteLeadModal";
+import { DisqualifyLeadModal } from "./DisqualifyLeadModal";
 import type { SavedViewConfig } from "@/lib/types/views";
 import type { ViewMode } from "./ViewToggle";
 import type {
@@ -112,6 +113,11 @@ export function LeadsPageClient({
   // G4: Single delete modal state (for Kanban context menu delete)
   const [deleteTargetLead, setDeleteTargetLead] = useState<Lead | null>(null);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+
+  // T12: Disqualify modal state
+  const [disqualifyTargetLead, setDisqualifyTargetLead] = useState<Lead | null>(
+    null
+  );
 
   // V6.3: Status change reason modal state
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
@@ -697,6 +703,31 @@ export function LeadsPageClient({
     [localLeads]
   );
 
+  // T12: Open disqualify modal
+  const handleDisqualifyLead = useCallback(
+    (leadId: string) => {
+      const lead = localLeads.find((l) => l.id === leadId);
+      if (lead) {
+        setDisqualifyTargetLead(lead);
+      }
+    },
+    [localLeads]
+  );
+
+  // T12: Handle disqualify success - remove lead from Kanban (disqualified is hidden)
+  const handleDisqualifySuccess = useCallback(() => {
+    if (disqualifyTargetLead) {
+      setLocalLeads((prev) =>
+        prev.map((lead) =>
+          lead.id === disqualifyTargetLead.id
+            ? { ...lead, status: "disqualified" as const }
+            : lead
+        )
+      );
+      setDisqualifyTargetLead(null);
+    }
+  }, [disqualifyTargetLead]);
+
   // G4: Open delete modal from Kanban context menu or card action
   const handleDeleteLead = useCallback(
     (leadId: string) => {
@@ -957,6 +988,7 @@ export function LeadsPageClient({
                 onStatusChange={handleStatusChange}
                 onEdit={handleEditLead}
                 onConvert={handleConvertLead}
+                onDisqualify={handleDisqualifyLead}
                 onDelete={handleDeleteLead}
               />
             </div>
@@ -1092,6 +1124,16 @@ export function LeadsPageClient({
           targetStatus={pendingStatusChange.targetStatus}
           leadName={pendingStatusChange.leadName}
           isLoading={isStatusChangeLoading}
+        />
+      )}
+
+      {/* T12: Disqualify Lead Modal */}
+      {disqualifyTargetLead && (
+        <DisqualifyLeadModal
+          isOpen={!!disqualifyTargetLead}
+          onClose={() => setDisqualifyTargetLead(null)}
+          lead={disqualifyTargetLead}
+          onSuccess={handleDisqualifySuccess}
         />
       )}
 

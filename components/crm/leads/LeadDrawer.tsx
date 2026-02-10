@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import {
   Pencil,
   ArrowRightCircle,
+  Ban,
   Trash,
   CheckCircle,
   X,
@@ -47,6 +48,7 @@ import {
 import { CPTQualificationModal } from "./CPTQualificationModal";
 import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
 import { DeleteLeadModal } from "./DeleteLeadModal";
+import { DisqualifyLeadModal } from "./DisqualifyLeadModal";
 import { drawerContainerVariants } from "@/lib/animations/drawer-variants";
 import {
   updateLeadAction,
@@ -134,6 +136,9 @@ export function LeadDrawer({
   // G3: Convert Modal State
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
 
+  // T12: Disqualify Modal State
+  const [isDisqualifyModalOpen, setIsDisqualifyModalOpen] = useState(false);
+
   // G4: Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -145,6 +150,7 @@ export function LeadDrawer({
     setIsSaving(false);
     setIsQualifyModalOpen(false);
     setIsConvertModalOpen(false);
+    setIsDisqualifyModalOpen(false);
     setIsDeleteModalOpen(false);
     setIsDeleting(false);
     setCurrentLead(lead);
@@ -265,6 +271,20 @@ export function LeadDrawer({
     },
     [onLeadUpdated]
   );
+
+  // T12: Handle disqualify
+  const handleDisqualify = useCallback(() => {
+    setIsDisqualifyModalOpen(true);
+  }, []);
+
+  // T12: Handle disqualify success
+  const handleDisqualifySuccess = useCallback(() => {
+    setIsDisqualifyModalOpen(false);
+    onClose();
+    if (lead) {
+      onLeadUpdated?.({ ...lead, status: "disqualified" });
+    }
+  }, [lead, onClose, onLeadUpdated]);
 
   // G4: Handle delete - open modal
   const handleDelete = useCallback(() => {
@@ -512,6 +532,15 @@ export function LeadDrawer({
                 <Button
                   variant="outline"
                   size="sm"
+                  className="gap-2 text-orange-600 hover:bg-orange-50 hover:text-orange-600"
+                  onClick={handleDisqualify}
+                >
+                  <Ban className="h-4 w-4" />
+                  {t("leads.drawer.actions.disqualify")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   data-testid="drawer-delete-button"
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
                   onClick={handleDelete}
@@ -542,6 +571,16 @@ export function LeadDrawer({
           isOpen={isConvertModalOpen}
           onClose={() => setIsConvertModalOpen(false)}
           onSuccess={handleConvertSuccess}
+        />
+      )}
+
+      {/* T12: Disqualify Lead Modal */}
+      {currentLead && (
+        <DisqualifyLeadModal
+          isOpen={isDisqualifyModalOpen}
+          onClose={() => setIsDisqualifyModalOpen(false)}
+          lead={currentLead}
+          onSuccess={handleDisqualifySuccess}
         />
       )}
 

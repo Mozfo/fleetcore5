@@ -373,6 +373,7 @@
       "email": "Send Email",
       "change_status": "Change Status",
       "convert": "Convert to Opportunity",
+      "disqualify": "Disqualify",
       "delete": "Delete",
       "current": "current"
     },
@@ -494,6 +495,7 @@
         "edit": "Edit",
         "qualify": "Qualify",
         "convert": "Convert",
+        "disqualify": "Disqualify",
         "delete": "Delete"
       },
       "consent_status": {
@@ -738,6 +740,31 @@
       "success": "Lead deleted successfully",
       "success_permanent": "Lead permanently deleted (GDPR)",
       "error": "Failed to delete lead"
+    },
+    "disqualify": {
+      "title": "Disqualify Lead",
+      "description": "Disqualify {{name}} from the sales pipeline.",
+      "reasonLabel": "Reason for disqualification",
+      "reasons": {
+        "fantasy_email": "Fantasy email",
+        "competitor": "Competitor",
+        "no_response": "No response",
+        "wrong_market": "Wrong market",
+        "student_test": "Student / Test",
+        "duplicate": "Duplicate",
+        "other": "Other"
+      },
+      "commentLabel": "Comment (optional)",
+      "commentPlaceholder": "Add details about the disqualification...",
+      "commentRequired": "Comment is required when reason is 'Other'",
+      "blacklistLabel": "Add to blacklist",
+      "blacklistHint": "Prevents this contact from requesting a demo again",
+      "cancel": "Cancel",
+      "confirm": "Disqualify",
+      "submitting": "Disqualifying...",
+      "success": "Lead disqualified successfully",
+      "successBlacklist": "Lead disqualified and added to blacklist",
+      "error": "Failed to disqualify lead"
     }
   },
   "reports": {

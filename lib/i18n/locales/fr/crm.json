@@ -373,6 +373,7 @@
       "email": "Envoyer un email",
       "change_status": "Changer le statut",
       "convert": "Convertir en opportunité",
+      "disqualify": "Disqualifier",
       "delete": "Supprimer",
       "current": "actuel"
     },
@@ -494,6 +495,7 @@
         "edit": "Modifier",
         "qualify": "Qualifier",
         "convert": "Convertir",
+        "disqualify": "Disqualifier",
         "delete": "Supprimer"
       },
       "consent_status": {
@@ -738,6 +740,31 @@
       "success": "Lead supprimé avec succès",
       "success_permanent": "Lead définitivement supprimé (RGPD)",
       "error": "Échec de la suppression du lead"
+    },
+    "disqualify": {
+      "title": "Disqualifier le lead",
+      "description": "Disqualifier {{name}} du pipeline commercial.",
+      "reasonLabel": "Raison de disqualification",
+      "reasons": {
+        "fantasy_email": "Email fantaisiste",
+        "competitor": "Concurrent",
+        "no_response": "Sans réponse",
+        "wrong_market": "Mauvais marché",
+        "student_test": "Étudiant / Test",
+        "duplicate": "Doublon",
+        "other": "Autre"
+      },
+      "commentLabel": "Commentaire (optionnel)",
+      "commentPlaceholder": "Ajoutez des détails sur la disqualification...",
+      "commentRequired": "Le commentaire est obligatoire pour la raison 'Autre'",
+      "blacklistLabel": "Ajouter à la liste noire",
+      "blacklistHint": "Empêche ce contact de demander une démo à nouveau",
+      "cancel": "Annuler",
+      "confirm": "Disqualifier",
+      "submitting": "Disqualification...",
+      "success": "Lead disqualifié avec succès",
+      "successBlacklist": "Lead disqualifié et ajouté à la liste noire",
+      "error": "Échec de la disqualification du lead"
     }
   },
   "reports": {

@@ -49,6 +49,7 @@ interface KanbanPhaseBoardProps {
   onStatusChange?: (leadId: string, newStatus: LeadStatus) => void;
   onEdit?: (leadId: string) => void;
   onConvert?: (leadId: string) => void;
+  onDisqualify?: (leadId: string) => void;
   onDelete?: (leadId: string) => void;
 }
 
@@ -61,6 +62,7 @@ export function KanbanPhaseBoard({
   onStatusChange,
   onEdit,
   onConvert,
+  onDisqualify,
   onDelete,
 }: KanbanPhaseBoardProps) {
   const { t } = useTranslation("crm");
@@ -171,6 +173,7 @@ export function KanbanPhaseBoard({
               onStatusChange={onStatusChange}
               onEdit={onEdit}
               onConvert={onConvert}
+              onDisqualify={onDisqualify}
               onDelete={onDelete}
             />
           ))}

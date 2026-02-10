@@ -20,6 +20,7 @@ import {
   Mail,
   RefreshCw,
   ArrowRightCircle,
+  Ban,
   Trash,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -54,6 +55,7 @@ interface LeadContextMenuProps {
   onEdit?: () => void;
   onStatusChange?: (status: LeadStatus) => void;
   onConvert?: () => void;
+  onDisqualify?: () => void;
   onDelete?: () => void;
   disabled?: boolean;
 }
@@ -65,6 +67,7 @@ export function LeadContextMenu({
   onEdit,
   onStatusChange,
   onConvert,
+  onDisqualify,
   onDelete,
   disabled = false,
 }: LeadContextMenuProps) {
@@ -157,7 +160,14 @@ export function LeadContextMenu({
 
         <ContextMenuSeparator />
 
-        {/* DESTRUCTIVE ACTION - Always last */}
+        {/* DESTRUCTIVE ACTIONS */}
+        <ContextMenuItem
+          onClick={onDisqualify}
+          className="text-orange-600 focus:text-orange-600"
+        >
+          <Ban className="mr-2 h-4 w-4" />
+          {t("leads.context_menu.disqualify")}
+        </ContextMenuItem>
         <ContextMenuItem
           onClick={onDelete}
           className="text-destructive focus:text-destructive"
