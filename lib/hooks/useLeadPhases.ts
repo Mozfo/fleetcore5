@@ -1,18 +1,21 @@
 /**
  * useLeadPhases - Hook for Kanban phase-based columns
  *
- * V6.3: Maps 8 lead statuses into 4 Kanban phases for display (one-call close).
+ * V6.6: Maps 10 lead statuses into 4 Kanban phases for display.
  *
  * Kanban Phases:
- * 1. Incomplet: new
+ * 1. Contact: callback_requested
  * 2. Démo: demo
  * 3. Proposition: proposal_sent, payment_pending
- * 4. Terminé: converted, lost, nurturing, disqualified
+ * 4. Finalisé: converted, lost, nurturing
  *
- * V6.3 changes:
- * - demo_scheduled → demo (renamed)
- * - qualified, demo_completed → REMOVED (one-call close philosophy)
- * - 5 phases → 4 phases
+ * Hidden from Kanban: new, email_verified, disqualified
+ *
+ * V6.6 changes:
+ * - Added email_verified, callback_requested statuses
+ * - Phase "incomplete" → "contact" (callback_requested only)
+ * - Phase "completed" → "finalized" (without disqualified)
+ * - disqualified removed from Kanban (invisible)
  *
  * @example
  * const { phases, getPhaseForStatus, groupLeadsByPhase } = useLeadPhases();
@@ -94,22 +97,23 @@ export interface KanbanPhaseColumn {
 }
 
 // ============================================================
-// CONSTANTS - Kanban Phase Mapping (4 columns V6.3)
+// CONSTANTS - Kanban Phase Mapping (4 columns V6.6)
 // ============================================================
 
 /**
- * Kanban UI phase mapping (4 columns V6.3 one-call close)
- * Maps 8 DB statuses to 4 Kanban columns
+ * Kanban UI phase mapping (4 columns V6.6)
+ * Maps 10 DB statuses to 4 Kanban columns
+ * Note: new, email_verified, disqualified are NOT in any phase (hidden from Kanban)
  */
 export const KANBAN_PHASES: KanbanPhase[] = [
   {
-    id: "incomplete",
-    label_en: "Incomplete",
-    label_fr: "Incomplet",
-    label_ar: "غير مكتمل",
+    id: "contact",
+    label_en: "Contact",
+    label_fr: "Contact",
+    label_ar: "اتصال",
     order: 1,
-    color: "gray",
-    statuses: ["new"],
+    color: "amber",
+    statuses: ["callback_requested"],
   },
   {
     id: "demo",
@@ -126,17 +130,17 @@ export const KANBAN_PHASES: KanbanPhase[] = [
     label_fr: "Proposition",
     label_ar: "عرض",
     order: 3,
-    color: "orange",
+    color: "purple",
     statuses: ["proposal_sent", "payment_pending"],
   },
   {
-    id: "completed",
-    label_en: "Completed",
-    label_fr: "Terminé",
-    label_ar: "مكتمل",
+    id: "finalized",
+    label_en: "Finalized",
+    label_fr: "Finalisé",
+    label_ar: "منتهي",
     order: 4,
     color: "green",
-    statuses: ["converted", "lost", "nurturing", "disqualified"],
+    statuses: ["converted", "lost", "nurturing"],
   },
 ];
 
@@ -149,7 +153,7 @@ KANBAN_PHASES.forEach((phase) => {
 });
 
 // ============================================================
-// DEFAULTS (fallback if API unavailable) - V6.3 8 statuts
+// DEFAULTS (fallback if API unavailable) - V6.6 10 statuts
 // ============================================================
 
 export const DEFAULT_STATUSES: StatusConfig[] = [
@@ -158,11 +162,38 @@ export const DEFAULT_STATUSES: StatusConfig[] = [
     label_en: "New",
     label_fr: "Nouveau",
     label_ar: "جديد",
-    phase: "incomplete",
+    phase: "none",
     probability: 5,
     color: "#6B7280",
     icon: "sparkles",
-    allowed_transitions: ["demo", "nurturing", "disqualified"],
+    allowed_transitions: [
+      "email_verified",
+      "demo",
+      "nurturing",
+      "disqualified",
+    ],
+  },
+  {
+    value: "email_verified",
+    label_en: "Email Verified",
+    label_fr: "Email vérifié",
+    label_ar: "تم التحقق من البريد",
+    phase: "none",
+    probability: 10,
+    color: "#06B6D4",
+    icon: "check-circle",
+    allowed_transitions: ["callback_requested", "demo"],
+  },
+  {
+    value: "callback_requested",
+    label_en: "Callback Requested",
+    label_fr: "Rappel demandé",
+    label_ar: "طلب معاودة الاتصال",
+    phase: "contact",
+    probability: 20,
+    color: "#F59E0B",
+    icon: "phone",
+    allowed_transitions: ["demo", "disqualified", "lost"],
   },
   {
     value: "demo",
@@ -182,7 +213,7 @@ export const DEFAULT_STATUSES: StatusConfig[] = [
     label_ar: "تم إرسال العرض",
     phase: "proposal",
     probability: 85,
-    color: "#F97316",
+    color: "#8B5CF6",
     icon: "document-text",
     allowed_transitions: ["payment_pending", "lost", "nurturing"],
   },
@@ -202,7 +233,7 @@ export const DEFAULT_STATUSES: StatusConfig[] = [
     label_en: "Converted",
     label_fr: "Converti",
     label_ar: "تم التحويل",
-    phase: "completed",
+    phase: "finalized",
     probability: 100,
     color: "#22C55E",
     icon: "badge-check",
@@ -215,7 +246,7 @@ export const DEFAULT_STATUSES: StatusConfig[] = [
     label_en: "Lost",
     label_fr: "Perdu",
     label_ar: "خسر",
-    phase: "completed",
+    phase: "finalized",
     probability: 0,
     color: "#EF4444",
     icon: "x-circle",
@@ -227,7 +258,7 @@ export const DEFAULT_STATUSES: StatusConfig[] = [
     label_en: "Nurturing",
     label_fr: "En nurturing",
     label_ar: "رعاية",
-    phase: "completed",
+    phase: "finalized",
     probability: 15,
     color: "#8B5CF6",
     icon: "clock",
@@ -239,7 +270,7 @@ export const DEFAULT_STATUSES: StatusConfig[] = [
     label_en: "Disqualified",
     label_fr: "Disqualifié",
     label_ar: "غير مؤهل",
-    phase: "completed",
+    phase: "none",
     probability: 0,
     color: "#1F2937",
     icon: "ban",

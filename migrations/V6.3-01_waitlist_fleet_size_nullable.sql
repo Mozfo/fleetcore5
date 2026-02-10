@@ -12,3 +12,4 @@ ALTER COLUMN fleet_size DROP NOT NULL;
 
 -- Add comment for documentation
 COMMENT ON COLUMN crm_waitlist.fleet_size IS 'V6.3: Now optional - collected via email survey after initial registration';
+

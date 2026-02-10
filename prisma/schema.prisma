@@ -565,6 +565,11 @@ model adm_provider_employees {
   crm_orders_updated                                                                        crm_orders[]                  @relation("E_jvkn17")
   crm_orders_deleted                                                                        crm_orders[]                  @relation("E_s4w7lp")
   crm_agreements                                                                            crm_agreements[]
+  // V6.6: Blacklist relations
+  crm_blacklist_created                                                                     crm_blacklist[]               @relation("crm_blacklist_blacklisted_by")
+  crm_blacklist_removed                                                                     crm_blacklist[]               @relation("crm_blacklist_removed_by")
+  // V6.6: Disqualification relation inverse
+  crm_leads_disqualified                                                                    crm_leads[]                   @relation("crm_leads_disqualified_by")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -615,6 +620,9 @@ model adm_providers {
   crm_orders             crm_orders[]             @relation("crm_orders_provider")
   // V6.2.1: bil_settings relation
   bil_settings           bil_settings[]           @relation("bil_settings_provider")
+  // V6.6: Nurturing & Blacklist relations
+  crm_nurturing          crm_nurturing[]          @relation("crm_nurturing_provider")
+  crm_blacklist          crm_blacklist[]          @relation("crm_blacklist_provider")
 
   @@index([code], map: "idx_adm_providers_code")
   @@index([country_code], map: "idx_adm_providers_country")
@@ -2107,6 +2115,19 @@ model crm_leads {
   ip_address                                                           String?                 @db.VarChar(45)
   // V6.4-3: Language chosen on homepage (source of truth for emails)
   language                                                             String                  @default("en") @db.VarChar(5)
+  // V6.6: Callback fields (Step 4 - option "Je préfère être rappelé")
+  callback_requested                                                   Boolean                 @default(false)
+  callback_requested_at                                                DateTime?               @db.Timestamptz(6)
+  callback_completed_at                                                DateTime?               @db.Timestamptz(6)
+  callback_notes                                                       String?
+  // V6.6: Disqualification fields (avec traçabilité)
+  disqualified_at                                                      DateTime?               @db.Timestamptz(6)
+  disqualification_reason                                              String?                 @db.VarChar(50)
+  disqualification_comment                                             String?
+  disqualified_by                                                      String?                 @db.Uuid
+  // V6.6: Recovery notification (1h après email_verified sans complétion)
+  recovery_notification_sent_at                                        DateTime?               @db.Timestamptz(6)
+  recovery_notification_clicked_at                                     DateTime?               @db.Timestamptz(6)
   // Relations
   crm_activities                                                       crm_activities[]
   crm_contracts                                                        crm_contracts[]
@@ -2119,6 +2140,8 @@ model crm_leads {
   xylqz06        crm_opportunities?      @relation("X_wp88t7", fields: [opportunity_id], references: [id], onUpdate: NoAction, map: "fk_crm_leads_opportunity")
   crm_lead_sources                                                     crm_lead_sources?       @relation(fields: [source_id], references: [id], onUpdate: NoAction, map: "fk_crm_leads_source")
   ehbvta6  adm_provider_employees? @relation("E_lfnk0b", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_updated_by")
+  // V6.6: Disqualification relation
+  disqualifier                                                         adm_provider_employees? @relation("crm_leads_disqualified_by", fields: [disqualified_by], references: [id], onUpdate: NoAction, map: "fk_crm_leads_disqualified_by")
   xdu9nqz               crm_opportunities[]     @relation("X_giac7o")
   // Quote-to-Cash relations
   crm_orders                                                           crm_orders[]
@@ -2128,6 +2151,9 @@ model crm_leads {
   adm_tenants                                                          adm_tenants?            @relation("crm_leads_tenant", fields: [tenant_id], references: [id], onUpdate: NoAction, map: "fk_crm_leads_tenant")
   // V6.2-3: Relation inverse Lead → clt_masterdata (origine)
   clt_masterdata                                                       clt_masterdata[]
+  // V6.6: Nurturing & Blacklist relations inverses
+  crm_nurturing                                                        crm_nurturing[]         @relation("crm_nurturing_lead")
+  crm_blacklist                                                        crm_blacklist[]         @relation("crm_blacklist_lead")
 
   @@index([created_at(sort: Desc)])
   @@index([deleted_at])
@@ -2152,6 +2178,9 @@ model crm_leads {
   @@index([email, email_verified], map: "idx_crm_leads_email_verification")
   // V6.3.3: Index reschedule token for short URL lookups
   @@index([reschedule_token], map: "idx_crm_leads_reschedule_token")
+  // V6.6: Index callback & disqualification
+  @@index([callback_requested, callback_requested_at], map: "idx_crm_leads_callback")
+  @@index([disqualified_by], map: "idx_crm_leads_disqualified_by")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -6717,4 +6746,67 @@ enum schedule_end_behavior {
   release
   cancel
   none
+}
+
+// ============================================
+// V6.6: CRM Nurturing (prospects abandonnés)
+// ============================================
+model crm_nurturing {
+  id                      String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_id             String                  @db.Uuid
+  email                   String                  @db.VarChar(255)
+  country_code            String                  @db.VarChar(3)
+  email_verified_at       DateTime                @db.Timestamptz(6)
+  language                String                  @default("en") @db.VarChar(5)
+  resume_token            String?                 @unique @db.VarChar(64)
+  resume_token_expires_at DateTime?               @db.Timestamptz(6)
+  nurturing_step          Int                     @default(0)
+  last_nurturing_at       DateTime?               @db.Timestamptz(6)
+  nurturing_clicked_at    DateTime?               @db.Timestamptz(6)
+  original_lead_id        String?                 @db.Uuid
+  archived_at             DateTime?               @db.Timestamptz(6)
+  source                  String?                 @db.VarChar(50)
+  utm_source              String?                 @db.VarChar(100)
+  utm_medium              String?                 @db.VarChar(100)
+  utm_campaign            String?                 @db.VarChar(100)
+  ip_address              String?                 @db.VarChar(45)
+  detected_country_code   String?                 @db.VarChar(2)
+  created_at              DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                @default(now()) @db.Timestamptz(6)
+
+  // Relations
+  adm_providers           adm_providers           @relation("crm_nurturing_provider", fields: [provider_id], references: [id])
+  crm_leads               crm_leads?              @relation("crm_nurturing_lead", fields: [original_lead_id], references: [id])
+
+  @@unique([email, provider_id], map: "uq_nurturing_email_provider")
+  @@index([nurturing_step, last_nurturing_at], map: "idx_crm_nurturing_nurturing")
+  @@index([email], map: "idx_crm_nurturing_email")
+  @@index([resume_token], map: "idx_crm_nurturing_resume_token")
+  @@index([provider_id], map: "idx_crm_nurturing_provider")
+}
+
+// ============================================
+// V6.6: CRM Blacklist (emails disqualifiés)
+// ============================================
+model crm_blacklist {
+  id                      String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_id             String                  @db.Uuid
+  email                   String                  @db.VarChar(255)
+  reason                  String                  @db.VarChar(50)
+  reason_comment          String?
+  original_lead_id        String?                 @db.Uuid
+  blacklisted_by          String?                 @db.Uuid
+  blacklisted_at          DateTime                @default(now()) @db.Timestamptz(6)
+  removed_at              DateTime?               @db.Timestamptz(6)
+  removed_by              String?                 @db.Uuid
+
+  // Relations
+  adm_providers           adm_providers           @relation("crm_blacklist_provider", fields: [provider_id], references: [id])
+  crm_leads               crm_leads?              @relation("crm_blacklist_lead", fields: [original_lead_id], references: [id])
+  blacklister             adm_provider_employees? @relation("crm_blacklist_blacklisted_by", fields: [blacklisted_by], references: [id], onUpdate: NoAction)
+  remover                 adm_provider_employees? @relation("crm_blacklist_removed_by", fields: [removed_by], references: [id], onUpdate: NoAction)
+
+  @@unique([email, provider_id], map: "uq_blacklist_email_provider")
+  @@index([email], map: "idx_crm_blacklist_email")
+  @@index([provider_id], map: "idx_crm_blacklist_provider")
 }

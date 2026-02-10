@@ -28,7 +28,7 @@ describe("LeadCreateSchema", () => {
       phone: "+33612345678",
       first_name: "John",
       last_name: "Doe",
-      fleet_size: "51-100",
+      fleet_size: "50+",
       country_code: "fr",
       gdpr_consent: true,
       form_locale: "en",
@@ -78,7 +78,7 @@ describe("LeadCreateSchema", () => {
       phone: "+971501234567",
       first_name: "Ahmed",
       last_name: "Hassan",
-      fleet_size: "51-100",
+      fleet_size: "50+",
       country_code: "AE",
       gdpr_consent: false, // Should pass
       form_locale: "en",

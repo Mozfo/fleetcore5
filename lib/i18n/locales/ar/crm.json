@@ -1,0 +1,32 @@
+{
+  "leads": {
+    "status": {
+      "new": "جديد",
+      "email_verified": "تم التحقق من البريد",
+      "callback_requested": "طلب معاودة الاتصال",
+      "demo": "عرض توضيحي",
+      "proposal_sent": "تم إرسال العرض",
+      "payment_pending": "في انتظار الدفع",
+      "converted": "تم التحويل",
+      "lost": "خسر",
+      "nurturing": "رعاية",
+      "disqualified": "غير مؤهل"
+    },
+    "phases": {
+      "contact": "اتصال",
+      "demo": "عرض توضيحي",
+      "proposal": "عرض",
+      "finalized": "منتهي"
+    },
+    "empty": {
+      "phase_contact": "لا يوجد عملاء محتملون في الاتصال",
+      "phase_contact_desc": "سيظهر هنا العملاء الذين يطلبون معاودة الاتصال",
+      "phase_demo": "لا يوجد عملاء محتملون في العرض",
+      "phase_demo_desc": "سيظهر هنا العملاء مع عروض مجدولة",
+      "phase_proposal": "لا يوجد عملاء محتملون في العرض",
+      "phase_proposal_desc": "سيظهر هنا العروض المرسلة والمدفوعات المعلقة",
+      "phase_finalized": "لا يوجد عملاء منتهون",
+      "phase_finalized_desc": "سيظهر هنا العملاء المحولون والمفقودون"
+    }
+  }
+}

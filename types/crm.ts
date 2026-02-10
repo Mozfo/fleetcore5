@@ -8,10 +8,12 @@
 export type LeadStatus = string;
 export type LeadStatusExtended = string;
 
-// Pre-defined status values for convenience (V6.3: 8 statuts)
+// Pre-defined status values for convenience (V6.6: 10 statuts)
 export const LEAD_STATUS_VALUES = [
   "new",
-  "demo", // V6.3: Renommé depuis demo_scheduled
+  "email_verified", // V6.6: Email vérifié (wizard step 2)
+  "callback_requested", // V6.6: Rappel demandé (wizard step 4 option)
+  "demo",
   "proposal_sent",
   "payment_pending",
   "converted",

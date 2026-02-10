@@ -1,5 +1,64 @@
 # FleetCore - Claude Code Achievements Log
 
+REGLE ABSOLUE #2 - AUCUNE SUPPRESSION SANS ACCORD
+
+IL EST STRICTEMENT INTERDIT DE :
+
+- Supprimer du code, des variables, des constantes, des env vars, des imports
+- Remplacer une implementation existante par une autre qui supprime des references
+- Retirer une fonctionnalite meme si elle semble inutilisee
+- Decommissionner quoi que ce soit
+
+SANS ACCORD EXPLICITE du user avec les mots "OK", "oui", "valide", "go".
+
+Incident du 07/02/2026: Claude a supprime la reference process.env.NEXT_PUBLIC_CALCOM_LINK
+en la remplacant par un mapping hardcode, sans verifier la valeur en production,
+sans tester, et sans demander l accord. INACCEPTABLE.
+
+La bonne approche:
+
+1. CONSERVER l existant
+2. AJOUTER le nouveau code a cote
+3. Presenter le diff exact au user
+4. Attendre validation EXPLICITE avant de modifier
+
+---
+
+REGLE ABSOLUE #3 - WORKFLOW OBLIGATOIRE
+
+AVANT TOUTE MODIFICATION DE CODE, Claude DOIT suivre ce workflow SANS EXCEPTION :
+
+1. LIRE integralement les fichiers concernes
+2. PRESENTER le plan avec le diff exact (ancien → nouveau)
+3. ATTENDRE "OK" explicite du user
+4. MODIFIER le code
+5. TESTER (TypeScript + build)
+6. MONTRER le resultat au user
+7. NE PAS commit sans instruction explicite "commit"
+8. NE PAS push sans instruction explicite "push"
+
+INTERDICTIONS :
+
+- Ne JAMAIS prendre d initiative non demandee
+- Ne JAMAIS supposer qu une variable est inutilisee
+- Ne JAMAIS dire "je pense que" ou "probablement" - donner des FAITS
+- Ne JAMAIS affirmer sans preuve (screenshot, log, code lu)
+- Ne JAMAIS modifier un fichier non mentionne dans la demande
+
+---
+
+REGLE ABSOLUE #4 - ANALYSE D IMPACT OBLIGATOIRE
+
+Avant de modifier un fichier, Claude DOIT :
+
+1. Grep TOUTES les references de ce qui est modifie (variables, fonctions, constantes)
+2. Lire CHAQUE fichier qui reference l element modifie
+3. Tracer le FLUX COMPLET (de l entree utilisateur jusqu a la base de donnees)
+4. Documenter les impacts dans le plan presente au user
+5. Verifier les env vars en production (Vercel) si une env var est concernee
+
+Si Claude ne peut pas prouver qu il n y a ZERO impact, il DOIT le signaler au user.
+
 **HOW TO UPDATE THIS FILE**: Use Edit tool ONLY. Update summary table + add phase section at end. NO separate completion files.
 
 **Last Updated**: November 28, 2025

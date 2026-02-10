@@ -84,10 +84,7 @@ export const CreateLeadSchema = z.object({
     .nullable(),
 
   // Business context
-  fleet_size: z
-    .enum(["1-10", "11-50", "51-100", "101-500", "500+"])
-    .optional()
-    .nullable(),
+  fleet_size: z.enum(["2-10", "11-50", "50+"]).optional().nullable(),
 
   country_code: z
     .string()
@@ -365,7 +362,7 @@ export const UpdateLeadSchema = z.object({
 
   fleet_size: z.preprocess(
     emptyToNull,
-    z.enum(["1-10", "11-50", "51-100", "101-500", "500+"]).nullable().optional()
+    z.enum(["2-10", "11-50", "50+"]).nullable().optional()
   ),
 
   current_software: z.preprocess(

@@ -108,6 +108,16 @@ vi.mock("@/lib/middleware/gdpr.middleware", () => ({
   captureConsentIp: vi.fn().mockReturnValue(TEST_IP),
 }));
 
+// Mock BlacklistService (V6.6)
+vi.mock("@/lib/services/crm/blacklist.service", () => ({
+  blacklistService: {
+    isBlacklisted: vi.fn().mockResolvedValue(false),
+  },
+  BlacklistService: vi.fn().mockImplementation(() => ({
+    isBlacklisted: vi.fn().mockResolvedValue(false),
+  })),
+}));
+
 describe("CRITICAL: Demo Lead Email Flow (Queue-Based)", () => {
   const OPERATIONAL_COUNTRY = {
     country_code: "AE",
@@ -217,7 +227,10 @@ describe("CRITICAL: Demo Lead Email Flow (Queue-Based)", () => {
     const path = await import("node:path");
 
     // V6.4: Check the new canonical location
-    const routePath = path.join(process.cwd(), "app/api/crm/demo-leads/route.ts");
+    const routePath = path.join(
+      process.cwd(),
+      "app/api/crm/demo-leads/route.ts"
+    );
 
     const routeContent = fs.readFileSync(routePath, "utf-8");
 
@@ -376,7 +389,10 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
     const path = await import("node:path");
 
     // V6.4: Check the new canonical location
-    const routePath = path.join(process.cwd(), "app/api/crm/demo-leads/route.ts");
+    const routePath = path.join(
+      process.cwd(),
+      "app/api/crm/demo-leads/route.ts"
+    );
     const routeContent = fs.readFileSync(routePath, "utf-8");
 
     // Check for wizard_step1 mode handling

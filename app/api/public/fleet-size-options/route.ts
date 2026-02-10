@@ -12,14 +12,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 
-// Default options matching crm_settings.fleet_size_options (critical_crm_settings.sql)
+// Default options aligned with wizard Step 3 (source of truth)
 // These are fallbacks - actual values loaded from database
 const DEFAULT_OPTIONS = [
-  { value: "1-10", label_en: "1-10", label_fr: "1-10", order: 1 },
+  { value: "2-10", label_en: "2-10", label_fr: "2-10", order: 1 },
   { value: "11-50", label_en: "11-50", label_fr: "11-50", order: 2 },
-  { value: "51-100", label_en: "51-100", label_fr: "51-100", order: 3 },
-  { value: "101-500", label_en: "101-500", label_fr: "101-500", order: 4 },
-  { value: "500+", label_en: "500+", label_fr: "500+", order: 5 },
+  { value: "50+", label_en: "50+", label_fr: "50+", order: 3 },
 ];
 
 export async function GET() {

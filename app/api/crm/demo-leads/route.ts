@@ -23,6 +23,7 @@ import { NotificationQueueService } from "@/lib/services/notification/queue.serv
 import { getTemplateLocale } from "@/lib/utils/locale-mapping";
 import { EmailVerificationService } from "@/lib/services/crm/email-verification.service";
 import { GeoIPService } from "@/lib/services/geo/geoip.service";
+import { blacklistService } from "@/lib/services/crm/blacklist.service";
 import { SUPPORT_EMAIL } from "@/lib/config/email.config";
 
 // ===== ZOD SCHEMAS =====
@@ -96,6 +97,30 @@ async function handleWizardStep1(
   const normalizedEmail = body.email.toLowerCase().trim();
   const countryCode = body.country_code.toUpperCase().trim();
   const locale = body.locale || "en";
+
+  // V6.6: Check blacklist before processing
+  const DEFAULT_PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+  const isBlacklisted = await blacklistService.isBlacklisted(
+    normalizedEmail,
+    DEFAULT_PROVIDER_ID
+  );
+
+  if (isBlacklisted) {
+    logger.info(
+      { email: normalizedEmail },
+      "[Wizard Step1] Email is blacklisted"
+    );
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "EMAIL_BLACKLISTED",
+          message: "This email address is not eligible",
+        },
+      },
+      { status: 403 }
+    );
+  }
 
   // Check for existing lead
   const existingLead = await db.crm_leads.findFirst({
@@ -221,6 +246,30 @@ async function handleFullForm(
   request: NextRequest,
   body: FullFormBody
 ): Promise<NextResponse> {
+  // V6.6: Check blacklist before processing
+  const PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+  const isEmailBlacklisted = await blacklistService.isBlacklisted(
+    body.email.toLowerCase().trim(),
+    PROVIDER_ID
+  );
+
+  if (isEmailBlacklisted) {
+    logger.info(
+      { email: body.email.toLowerCase().trim() },
+      "[Demo Lead] Email is blacklisted"
+    );
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "EMAIL_BLACKLISTED",
+          message: "This email address is not eligible",
+        },
+      },
+      { status: 403 }
+    );
+  }
+
   // 1. Vérifier si email existe déjà (exclude soft-deleted)
   const existingLead = await db.crm_leads.findFirst({
     where: {

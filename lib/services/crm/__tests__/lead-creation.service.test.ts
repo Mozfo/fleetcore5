@@ -56,11 +56,9 @@ describe("LeadCreationService", () => {
       if (key === "lead_scoring_config") {
         return Promise.resolve({
           fleet_size_points: {
-            "500+": { vehicles: 600, points: 40 },
-            "101-500": { vehicles: 250, points: 35 },
-            "51-100": { vehicles: 75, points: 30 },
+            "50+": { vehicles: 100, points: 40 },
             "11-50": { vehicles: 30, points: 20 },
-            "1-10": { vehicles: 5, points: 5 },
+            "2-10": { vehicles: 5, points: 5 },
             unknown: { vehicles: 30, points: 10 },
           },
           country_tier_points: {
@@ -133,11 +131,11 @@ describe("LeadCreationService", () => {
       if (key === "lead_assignment_rules") {
         return Promise.resolve({
           fleet_size_priority: {
-            "500+": {
+            "50+": {
               title_patterns: ["%Senior%Account%Manager%"],
               priority: 1,
             },
-            "101-500": {
+            "11-50": {
               title_patterns: ["%Account%Manager%"],
               exclude_patterns: ["%Senior%"],
               priority: 2,
@@ -207,11 +205,11 @@ describe("LeadCreationService", () => {
       if (key === "lead_assignment_rules") {
         return Promise.resolve({
           fleet_size_priority: {
-            "500+": {
+            "50+": {
               title_patterns: ["%Senior%Account%Manager%"],
               priority: 1,
             },
-            "101-500": {
+            "11-50": {
               title_patterns: ["%Account%Manager%"],
               exclude_patterns: ["%Senior%"],
               priority: 2,
@@ -354,6 +352,19 @@ describe("LeadCreationService", () => {
           detected_country_code: null,
           // V6.4-3: Language from homepage
           language: "en",
+          // V6.6: Callback fields
+          callback_requested: false,
+          callback_requested_at: null,
+          callback_completed_at: null,
+          callback_notes: null,
+          // V6.6: Disqualification fields
+          disqualified_at: null,
+          disqualification_reason: null,
+          disqualification_comment: null,
+          disqualified_by: null,
+          // V6.6: Recovery notification
+          recovery_notification_sent_at: null,
+          recovery_notification_clicked_at: null,
         };
         return lead;
       }
@@ -374,7 +385,7 @@ describe("LeadCreationService", () => {
         last_name: "Doe",
         company_name: "Big Fleet Corp",
         phone: "+971501234567",
-        fleet_size: "500+",
+        fleet_size: "50+",
         country_code: "AE",
         message:
           "We operate 600 vehicles and need comprehensive fleet management solution. Budget approved and ready to proceed.",
@@ -393,13 +404,13 @@ describe("LeadCreationService", () => {
       expect(result.lead.email).toBe("ceo@bigfleet.com");
       expect(result.lead.status).toBe("new");
 
-      // Verify scoring (500+ AE + detailed message + phone + high engagement)
-      expect(result.scoring.fit_score).toBe(60); // 40 (500+) + 20 (AE)
+      // Verify scoring (50+ AE + detailed message + phone + high engagement)
+      expect(result.scoring.fit_score).toBe(60); // 40 (50+) + 20 (AE)
       expect(result.scoring.engagement_score).toBeGreaterThanOrEqual(70);
       expect(result.scoring.qualification_score).toBeGreaterThanOrEqual(70); // SQL threshold
       expect(result.scoring.lead_stage).toBe("sales_qualified");
 
-      // Verify assignment (fleet size priority for 500+)
+      // Verify assignment (fleet size priority for 50+)
       expect(result.assignment.assigned_to).toBe("emp-1");
       expect(result.assignment.assignment_reason).toContain(
         "Fleet size priority"
@@ -414,7 +425,7 @@ describe("LeadCreationService", () => {
         email: "manager@mediumfleet.com",
         first_name: "Test",
         last_name: "Manager",
-        fleet_size: "51-100",
+        fleet_size: "50+",
         country_code: "FR",
         message:
           "Interested in your solution for our 75 vehicles. Can you provide pricing?",
@@ -438,7 +449,7 @@ describe("LeadCreationService", () => {
         email: "info@smallfleet.com",
         first_name: "Test",
         last_name: "User",
-        fleet_size: "1-10",
+        fleet_size: "2-10",
         country_code: "US",
         message: "Just looking",
         source: "cold_outreach",
@@ -453,7 +464,7 @@ describe("LeadCreationService", () => {
 
     it("should set urgent priority for score 80+", async () => {
       // To get 80+ qualification score:
-      // fit_score = 40 (500+) + 20 (AE) = 60
+      // fit_score = 40 (50+) + 20 (AE) = 60
       // engagement_score = 30 (message >200 chars) + 20 (phone) + 30 (page_views >10) + 20 (time >600) = 100
       // qualification = 60 * 0.6 + 100 * 0.4 = 36 + 40 = 76
       // Need higher fit score - not achievable with current config max 60
@@ -462,7 +473,7 @@ describe("LeadCreationService", () => {
         email: "urgent@vipfleet.com",
         first_name: "VIP",
         last_name: "Fleet",
-        fleet_size: "500+",
+        fleet_size: "50+",
         country_code: "AE",
         message:
           "We need immediate solution for 800 vehicles across UAE. Budget approved, decision maker here, ready to sign contract next week. Please contact ASAP. We have evaluated multiple providers and FleetCore is our top choice.",
@@ -488,7 +499,7 @@ describe("LeadCreationService", () => {
         email: "campaign@fleet.com",
         first_name: "Campaign",
         last_name: "Test",
-        fleet_size: "101-500",
+        fleet_size: "50+",
         country_code: "FR",
         message: "Saw your ad on Google",
         source: "paid_ad",
@@ -513,7 +524,7 @@ describe("LeadCreationService", () => {
         email: "test@test.com",
         first_name: "Test",
         last_name: "User",
-        fleet_size: "500+",
+        fleet_size: "50+",
         country_code: "AE",
         message: "Test",
         source: "website",
@@ -521,7 +532,7 @@ describe("LeadCreationService", () => {
 
       const result = await service.createLead(input, mockTenantId);
 
-      expect(result.scoring.fit_score).toBe(60); // 40 (500+) + 20 (AE tier1)
+      expect(result.scoring.fit_score).toBe(60); // 40 (50+) + 20 (AE tier1)
     });
 
     it("should calculate engagement score based on message and phone", async () => {
@@ -545,7 +556,7 @@ describe("LeadCreationService", () => {
         email: "test@test.com",
         first_name: "Test",
         last_name: "User",
-        fleet_size: "500+", // fit_score = 60 (40+20)
+        fleet_size: "50+", // fit_score = 60 (40+20)
         country_code: "AE",
         message: "A".repeat(250), // engagement_score high
         phone: "+971501234567",
@@ -559,7 +570,7 @@ describe("LeadCreationService", () => {
       const result = await service.createLead(input, mockTenantId);
 
       // qualification_score = fit_score * 0.6 + engagement_score * 0.4
-      // fit = 60, engagement = 30+20+30+20 = 100
+      // fit = 60 (40 for 50+ + 20 for AE), engagement = 30+20+30+20 = 100
       // qualification = 60*0.6 + 100*0.4 = 36 + 40 = 76
       const expectedMin = Math.round(60 * 0.6 + 50 * 0.4); // ~56
       expect(result.scoring.qualification_score).toBeGreaterThanOrEqual(
@@ -576,7 +587,7 @@ describe("LeadCreationService", () => {
         email: "bigfleet@test.com",
         first_name: "Big",
         last_name: "Fleet",
-        fleet_size: "500+",
+        fleet_size: "50+",
         country_code: "US", // Generic country (no geographic zone)
         message: "Test",
         source: "website",
@@ -615,7 +626,7 @@ describe("LeadCreationService", () => {
         email: "noassign@test.com",
         first_name: "No",
         last_name: "Assign",
-        fleet_size: "500+",
+        fleet_size: "50+",
         country_code: "AE",
         message: "Test",
         source: "website",
@@ -643,7 +654,7 @@ describe("LeadCreationService", () => {
         email: "test@france-fleet.fr",
         first_name: "Jean",
         last_name: "Dupont",
-        fleet_size: "101-500",
+        fleet_size: "50+",
         country_code: "FR",
         message: "We need fleet management",
         source: "website",
@@ -671,7 +682,7 @@ describe("LeadCreationService", () => {
         email: "test@german-fleet.de",
         first_name: "Hans",
         last_name: "Schmidt",
-        fleet_size: "51-100",
+        fleet_size: "50+",
         country_code: "DE",
         message: "Interested in your solution",
         source: "website",
@@ -702,7 +713,7 @@ describe("LeadCreationService", () => {
         email: "valid@france-fleet.fr",
         first_name: "Marie",
         last_name: "Martin",
-        fleet_size: "101-500",
+        fleet_size: "50+",
         country_code: "FR",
         message: "We are ready to proceed with FleetCore",
         source: "website",
@@ -733,7 +744,7 @@ describe("LeadCreationService", () => {
         email: "test@uae-fleet.ae",
         first_name: "Ahmed",
         last_name: "Al Maktoum",
-        fleet_size: "500+",
+        fleet_size: "50+",
         country_code: "AE",
         message: "We need fleet management for Dubai operations",
         source: "website",
@@ -767,7 +778,7 @@ describe("LeadCreationService", () => {
         email: "ceo@brazil-fleet.br",
         first_name: "Carlos",
         last_name: "Silva",
-        fleet_size: "101-500",
+        fleet_size: "50+",
         country_code: "BR",
         message: "Interested in FleetCore for our operations in Brazil",
         source: "website",
@@ -800,7 +811,7 @@ describe("LeadCreationService", () => {
         email: "test@operational.ae",
         first_name: "Ahmed",
         last_name: "Hassan",
-        fleet_size: "500+",
+        fleet_size: "50+",
         country_code: "AE",
         message: "We need FleetCore now",
         source: "website",
@@ -828,7 +839,7 @@ describe("LeadCreationService", () => {
         email: "test@expansion.qa",
         first_name: "Mohammed",
         last_name: "Al Thani",
-        fleet_size: "51-100",
+        fleet_size: "50+",
         country_code: "QA",
         message: "Interested in expansion",
         source: "event",
@@ -864,7 +875,7 @@ describe("LeadCreationService", () => {
         email: "test@italy-fleet.it",
         first_name: "Marco",
         last_name: "Rossi",
-        fleet_size: "101-500",
+        fleet_size: "50+",
         country_code: "IT",
         message: "We need FleetCore in Italy",
         source: "website",

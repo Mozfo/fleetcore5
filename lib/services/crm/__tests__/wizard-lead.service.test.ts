@@ -112,6 +112,19 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     detected_country_code: null,
     // V6.4-3: Language from homepage
     language: "en",
+    // V6.6: Callback fields
+    callback_requested: false,
+    callback_requested_at: null,
+    callback_completed_at: null,
+    callback_notes: null,
+    // V6.6: Disqualification fields
+    disqualified_at: null,
+    disqualification_reason: null,
+    disqualification_comment: null,
+    disqualified_by: null,
+    // V6.6: Recovery notification
+    recovery_notification_sent_at: null,
+    recovery_notification_clicked_at: null,
     // Apply overrides
     ...overrides,
   };

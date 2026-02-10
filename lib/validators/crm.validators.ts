@@ -78,9 +78,8 @@ export const LeadCreateSchema = z
       .trim()
       .optional(),
 
-    fleet_size: z.enum(["1-10", "11-50", "51-100", "101-500", "500+"], {
-      message:
-        "Sélectionnez une taille de flotte valide (1-10, 11-50, 51-100, 101-500, 500+)",
+    fleet_size: z.enum(["2-10", "11-50", "50+"], {
+      message: "Sélectionnez une taille de flotte valide (2-10, 11-50, 50+)",
     }),
 
     country_code: z

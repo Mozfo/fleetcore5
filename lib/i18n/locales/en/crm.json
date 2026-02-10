@@ -119,16 +119,14 @@
       "column_qualified_desc": "Successfully qualified leads will appear here",
       "column_lost": "No lost leads",
       "column_lost_desc": "Leads marked as lost will appear here",
-      "phase_acquisition": "No leads in acquisition",
-      "phase_acquisition_desc": "New leads and scheduled demos will appear here",
-      "phase_qualification": "No leads in qualification",
-      "phase_qualification_desc": "Qualified leads will appear here",
+      "phase_contact": "No leads in contact",
+      "phase_contact_desc": "Leads requesting a callback will appear here",
       "phase_demo": "No leads in demo",
-      "phase_demo_desc": "Leads with completed demos will appear here",
-      "phase_closing": "No leads in closing",
-      "phase_closing_desc": "Proposals sent and pending payments will appear here",
-      "phase_result": "No leads in results",
-      "phase_result_desc": "Converted, lost, nurturing and disqualified leads will appear here",
+      "phase_demo_desc": "Leads with scheduled demos will appear here",
+      "phase_proposal": "No leads in proposal",
+      "phase_proposal_desc": "Proposals sent and pending payments will appear here",
+      "phase_finalized": "No leads in finalized",
+      "phase_finalized_desc": "Converted, lost and nurturing leads will appear here",
       "no_results": "No leads found",
       "no_results_desc": "Try adjusting your filters or search term",
       "create_lead": "Create Lead",
@@ -299,11 +297,14 @@
     "unassigned": "Unassigned",
     "status": {
       "new": "New",
-      "working": "Working",
-      "qualified": "Qualified",
-      "lost": "Lost",
-      "contacted": "Contacted",
+      "email_verified": "Email Verified",
+      "callback_requested": "Callback Requested",
+      "demo": "Demo",
+      "proposal_sent": "Proposal Sent",
+      "payment_pending": "Payment Pending",
       "converted": "Converted",
+      "lost": "Lost",
+      "nurturing": "Nurturing",
       "disqualified": "Disqualified"
     },
     "table": {
@@ -616,11 +617,10 @@
       }
     },
     "phases": {
-      "acquisition": "Acquisition",
-      "qualification": "Qualification",
+      "contact": "Contact",
       "demo": "Demo",
-      "closing": "Closing",
-      "result": "Result"
+      "proposal": "Proposal",
+      "finalized": "Finalized"
     },
     "cpt": {
       "title": "CPT Qualification",

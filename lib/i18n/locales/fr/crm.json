@@ -119,16 +119,14 @@
       "column_qualified_desc": "Les leads qualifiés avec succès apparaîtront ici",
       "column_lost": "Aucun lead perdu",
       "column_lost_desc": "Les leads marqués comme perdus apparaîtront ici",
-      "phase_acquisition": "Aucun lead en acquisition",
-      "phase_acquisition_desc": "Les nouveaux leads et démos planifiées apparaîtront ici",
-      "phase_qualification": "Aucun lead en qualification",
-      "phase_qualification_desc": "Les leads qualifiés apparaîtront ici",
+      "phase_contact": "Aucun lead en contact",
+      "phase_contact_desc": "Les leads demandant un rappel apparaîtront ici",
       "phase_demo": "Aucun lead en démo",
-      "phase_demo_desc": "Les leads avec démos complétées apparaîtront ici",
-      "phase_closing": "Aucun lead en closing",
-      "phase_closing_desc": "Les propositions envoyées et paiements en attente apparaîtront ici",
-      "phase_result": "Aucun lead en résultat",
-      "phase_result_desc": "Les leads convertis, perdus, en nurturing et disqualifiés apparaîtront ici",
+      "phase_demo_desc": "Les leads avec démos planifiées apparaîtront ici",
+      "phase_proposal": "Aucun lead en proposition",
+      "phase_proposal_desc": "Les propositions envoyées et paiements en attente apparaîtront ici",
+      "phase_finalized": "Aucun lead finalisé",
+      "phase_finalized_desc": "Les leads convertis, perdus et en nurturing apparaîtront ici",
       "no_results": "Aucun lead trouvé",
       "no_results_desc": "Essayez d'ajuster vos filtres ou votre recherche",
       "create_lead": "Créer un Lead",
@@ -299,11 +297,14 @@
     "unassigned": "Non assigné",
     "status": {
       "new": "Nouveau",
-      "working": "En cours",
-      "qualified": "Qualifié",
-      "lost": "Perdu",
-      "contacted": "Contacté",
+      "email_verified": "Email vérifié",
+      "callback_requested": "Rappel demandé",
+      "demo": "Démo",
+      "proposal_sent": "Proposition envoyée",
+      "payment_pending": "Paiement en attente",
       "converted": "Converti",
+      "lost": "Perdu",
+      "nurturing": "En nurturing",
       "disqualified": "Disqualifié"
     },
     "table": {
@@ -616,11 +617,10 @@
       }
     },
     "phases": {
-      "acquisition": "Acquisition",
-      "qualification": "Qualification",
+      "contact": "Contact",
       "demo": "Démo",
-      "closing": "Closing",
-      "result": "Résultat"
+      "proposal": "Proposition",
+      "finalized": "Finalisé"
     },
     "cpt": {
       "title": "Qualification CPT",

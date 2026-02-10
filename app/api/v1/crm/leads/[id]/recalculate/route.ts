@@ -12,12 +12,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { LeadScoringService } from "@/lib/services/crm/lead-scoring.service";
 import { logger } from "@/lib/logger";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // Request body schema
 const RecalculateRequestSchema = z.object({
@@ -46,17 +43,24 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // 1. Authentication - Read from middleware-injected headers (consistent with other routes)
+    const userId = request.headers.get("x-user-id");
+    const orgId = request.headers.get("x-org-id");
 
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
+    if (!userId || !orgId) {
+      logger.error(
+        { userId, orgId },
+        "[Recalculate] Missing auth headers - middleware may be misconfigured"
+      );
       return NextResponse.json(
-        { error: "Forbidden: Admin access required" },
-        { status: 403 }
+        {
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required",
+          },
+        },
+        { status: 401 }
       );
     }
 

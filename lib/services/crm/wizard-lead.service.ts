@@ -63,6 +63,8 @@ export interface SetVerificationCodeParams {
  * Parameters for completing lead profile (Step 3)
  */
 export interface CompleteProfileParams {
+  first_name?: string;
+  last_name?: string;
   company_name: string;
   phone?: string;
   fleet_size: string;
@@ -320,8 +322,15 @@ export class WizardLeadService {
     leadId: string,
     params: CompleteProfileParams
   ): Promise<void> {
-    const { company_name, phone, fleet_size, gdpr_consent, consent_ip } =
-      params;
+    const {
+      first_name,
+      last_name,
+      company_name,
+      phone,
+      fleet_size,
+      gdpr_consent,
+      consent_ip,
+    } = params;
 
     const updateData: Record<string, unknown> = {
       company_name: company_name.trim(),
@@ -329,6 +338,14 @@ export class WizardLeadService {
       wizard_completed: true,
       updated_at: new Date(),
     };
+
+    // Optional first/last name (V6.6)
+    if (first_name) {
+      updateData.first_name = first_name.trim();
+    }
+    if (last_name) {
+      updateData.last_name = last_name.trim();
+    }
 
     // Optional phone
     if (phone) {
@@ -353,6 +370,37 @@ export class WizardLeadService {
       { leadId, company_name, fleet_size, gdpr_consent: !!gdpr_consent },
       "[WizardLead] Profile completed"
     );
+  }
+
+  // ============================================
+  // STEP 4 OPTION: REQUEST CALLBACK (V6.6)
+  // ============================================
+
+  /**
+   * Request a callback for a lead (Step 4 alternative to booking demo)
+   *
+   * Updates:
+   * - callback_requested = true
+   * - callback_requested_at = NOW()
+   * - status = 'callback_requested'
+   *
+   * @param leadId - Lead UUID
+   * @returns Updated lead
+   */
+  async requestCallback(leadId: string): Promise<crm_leads> {
+    const lead = await this.prisma.crm_leads.update({
+      where: { id: leadId },
+      data: {
+        callback_requested: true,
+        callback_requested_at: new Date(),
+        status: "callback_requested",
+        updated_at: new Date(),
+      },
+    });
+
+    logger.info({ leadId }, "[WizardLead] Callback requested");
+
+    return lead;
   }
 
   // ============================================

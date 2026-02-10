@@ -269,7 +269,7 @@ export async function GET(request: Request) {
         const locale = (lead.language as EmailLocale) || DEFAULT_LOCALE;
 
         // Build URLs (with locale for i18n pages)
-        const confirmUrl = `${baseUrl}/api/crm/leads/confirm-attendance?token=${confirmationToken}`;
+        const confirmUrl = `${baseUrl}/${locale}/book-demo/confirmed?token=${confirmationToken}`;
         const rescheduleUrl = lead.reschedule_token
           ? `${baseUrl}/${locale}/r/${lead.reschedule_token}`
           : `${baseUrl}/${locale}/book-demo`;

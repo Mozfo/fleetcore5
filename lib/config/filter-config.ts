@@ -229,11 +229,9 @@ export const STATIC_OPTIONS = {
     { value: "urgent", labelKey: "leads.card.priority.urgent" },
   ],
   fleet_sizes: [
-    { value: "1-10", labelKey: "1-10" },
+    { value: "2-10", labelKey: "2-10" },
     { value: "11-50", labelKey: "11-50" },
-    { value: "51-100", labelKey: "51-100" },
-    { value: "101-500", labelKey: "101-500" },
-    { value: "500+", labelKey: "500+" },
+    { value: "50+", labelKey: "50+" },
   ],
 };
 

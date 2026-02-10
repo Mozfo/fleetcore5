@@ -859,6 +859,160 @@ export const bookingConfirmationTranslations = {
 } as const;
 
 // ============================================================================
+// NURTURING RECOVERY (T+1h)
+// ============================================================================
+
+export const nurturingRecoveryTranslations = {
+  en: {
+    preview: "Your FleetCore demo awaits",
+    subject: "Your FleetCore demo awaits",
+    headline: "Ran into a problem?",
+    message:
+      "We noticed you started setting up your FleetCore demo but didn't finish. No worries — these things happen!",
+    techIssue:
+      "If you experienced a technical issue or simply ran out of time, you can pick up right where you left off.",
+    resumeButton: "Resume my request",
+    noAction:
+      "If you're no longer interested, no action is needed. This is the only reminder you'll receive.",
+    unsubscribe: "Unsubscribe from these emails",
+  },
+  fr: {
+    preview: "Votre démo FleetCore vous attend",
+    subject: "Votre démo FleetCore vous attend",
+    headline: "Un problème technique ?",
+    message:
+      "Nous avons remarqué que vous avez commencé à configurer votre démo FleetCore mais n'avez pas terminé. Pas de souci — ça arrive !",
+    techIssue:
+      "Si vous avez rencontré un problème technique ou manqué de temps, vous pouvez reprendre exactement là où vous vous êtes arrêté.",
+    resumeButton: "Reprendre ma demande",
+    noAction:
+      "Si vous n'êtes plus intéressé, aucune action n'est nécessaire. C'est le seul rappel que vous recevrez.",
+    unsubscribe: "Se désabonner de ces emails",
+  },
+  ar: {
+    preview: "عرض FleetCore التوضيحي في انتظارك",
+    subject: "عرض FleetCore التوضيحي في انتظارك",
+    headline: "هل واجهت مشكلة؟",
+    message:
+      "لاحظنا أنك بدأت في إعداد عرض FleetCore التوضيحي لكنك لم تكمل العملية. لا تقلق — هذه الأمور تحدث!",
+    techIssue:
+      "إذا واجهت مشكلة تقنية أو نفد وقتك، يمكنك المتابعة من حيث توقفت.",
+    resumeButton: "استئناف طلبي",
+    noAction:
+      "إذا لم تعد مهتمًا، لا حاجة لأي إجراء. هذا هو التذكير الوحيد الذي ستتلقاه.",
+    unsubscribe: "إلغاء الاشتراك من هذه الرسائل",
+  },
+} as const;
+
+// ============================================================================
+// NURTURING J+1
+// ============================================================================
+
+export const nurturingJ1Translations = {
+  en: {
+    preview: "FleetCore: Save €142/vehicle/month",
+    subject: "FleetCore: Save €142/vehicle/month",
+    headline: "Resume where you left off",
+    message:
+      "You showed interest in FleetCore — our fleet management platform trusted by operators across the UAE and France.",
+    valueProp: "On average, FleetCore customers save:",
+    saving1: "€142–228 per vehicle per month",
+    saving2: "6.5x return on investment in the first year",
+    saving3: "35% reduction in administrative workload",
+    ctaText:
+      "Book a 20-minute personalized demo to see how these savings apply to your fleet.",
+    resumeButton: "Resume my request",
+    unsubscribe: "Unsubscribe from these emails",
+  },
+  fr: {
+    preview: "FleetCore : Économisez 142€/véhicule/mois",
+    subject: "FleetCore : Économisez 142€/véhicule/mois",
+    headline: "Reprenez là où vous vous êtes arrêté",
+    message:
+      "Vous avez montré de l'intérêt pour FleetCore — notre plateforme de gestion de flotte utilisée par des opérateurs aux Émirats et en France.",
+    valueProp: "En moyenne, les clients FleetCore économisent :",
+    saving1: "142–228€ par véhicule par mois",
+    saving2: "6,5x de retour sur investissement la première année",
+    saving3: "35% de réduction de la charge administrative",
+    ctaText:
+      "Réservez une démo personnalisée de 20 minutes pour découvrir comment ces économies s'appliquent à votre flotte.",
+    resumeButton: "Reprendre ma demande",
+    unsubscribe: "Se désabonner de ces emails",
+  },
+  ar: {
+    preview: "FleetCore: وفر 142€ لكل مركبة شهرياً",
+    subject: "FleetCore: وفر 142€ لكل مركبة شهرياً",
+    headline: "تابع من حيث توقفت",
+    message:
+      "لقد أبديت اهتمامًا بـ FleetCore — منصة إدارة الأساطيل المعتمدة من مشغلين في الإمارات وفرنسا.",
+    valueProp: "في المتوسط، يوفر عملاء FleetCore:",
+    saving1: "142-228€ لكل مركبة شهرياً",
+    saving2: "6.5 أضعاف العائد على الاستثمار في السنة الأولى",
+    saving3: "35% تخفيض في عبء العمل الإداري",
+    ctaText:
+      "احجز عرضًا توضيحيًا مخصصًا لمدة 20 دقيقة لمعرفة كيف تنطبق هذه التوفيرات على أسطولك.",
+    resumeButton: "استئناف طلبي",
+    unsubscribe: "إلغاء الاشتراك من هذه الرسائل",
+  },
+} as const;
+
+// ============================================================================
+// NURTURING J+7
+// ============================================================================
+
+export const nurturingJ7Translations = {
+  en: {
+    preview: "Last chance: Your FleetCore demo",
+    subject: "Last chance: Your FleetCore demo",
+    headline: "One last reminder",
+    message:
+      "A week ago, you started requesting a FleetCore demo. We understand that schedules are busy — this is our final reminder.",
+    whatYouGet: "In just 20 minutes, you'll see:",
+    benefit1: "Real-time fleet tracking and management",
+    benefit2: "Automated maintenance and insurance alerts",
+    benefit3: "Financial reporting that saves hours each week",
+    ctaText: "After this email, we won't contact you again about this request.",
+    resumeButton: "Schedule my demo",
+    stayInTouch:
+      "Not the right time? No problem. You can always visit fleetcore.io when you're ready.",
+    unsubscribe: "Unsubscribe from these emails",
+  },
+  fr: {
+    preview: "Dernière chance : Votre démo FleetCore",
+    subject: "Dernière chance : Votre démo FleetCore",
+    headline: "Un dernier rappel",
+    message:
+      "Il y a une semaine, vous avez commencé à demander une démo FleetCore. Nous comprenons que les emplois du temps sont chargés — ceci est notre dernier rappel.",
+    whatYouGet: "En seulement 20 minutes, vous découvrirez :",
+    benefit1: "Suivi et gestion de flotte en temps réel",
+    benefit2: "Alertes automatiques d'entretien et d'assurance",
+    benefit3: "Rapports financiers qui font gagner des heures chaque semaine",
+    ctaText:
+      "Après cet email, nous ne vous recontacterons plus au sujet de cette demande.",
+    resumeButton: "Planifier ma démo",
+    stayInTouch:
+      "Pas le bon moment ? Pas de problème. Vous pouvez toujours visiter fleetcore.io quand vous serez prêt.",
+    unsubscribe: "Se désabonner de ces emails",
+  },
+  ar: {
+    preview: "الفرصة الأخيرة: عرض FleetCore التوضيحي",
+    subject: "الفرصة الأخيرة: عرض FleetCore التوضيحي",
+    headline: "تذكير أخير",
+    message:
+      "قبل أسبوع، بدأت في طلب عرض FleetCore التوضيحي. نحن نتفهم أن الجداول مزدحمة — هذا هو تذكيرنا الأخير.",
+    whatYouGet: "في 20 دقيقة فقط، ستشاهد:",
+    benefit1: "تتبع وإدارة الأسطول في الوقت الحقيقي",
+    benefit2: "تنبيهات تلقائية للصيانة والتأمين",
+    benefit3: "تقارير مالية توفر ساعات كل أسبوع",
+    ctaText: "بعد هذا البريد الإلكتروني، لن نتواصل معك مجددًا بشأن هذا الطلب.",
+    resumeButton: "جدولة العرض التوضيحي",
+    stayInTouch:
+      "ليس الوقت المناسب؟ لا مشكلة. يمكنك دائمًا زيارة fleetcore.io عندما تكون جاهزًا.",
+    unsubscribe: "إلغاء الاشتراك من هذه الرسائل",
+  },
+} as const;
+
+// ============================================================================
 // HELPER FUNCTION
 // ============================================================================
 

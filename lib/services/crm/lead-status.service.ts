@@ -14,6 +14,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { CrmSettingsRepository } from "@/lib/repositories/crm/settings.repository";
+import { BlacklistService } from "./blacklist.service";
 import { logger } from "@/lib/logger";
 import type { StatusTransitionResult } from "@/lib/validators/crm/lead-status.validators";
 
@@ -80,6 +81,18 @@ export interface UpdateStatusOptions {
   lossReasonCode?: string;
   lossReasonDetail?: string;
   performedBy: string;
+}
+
+/**
+ * Input for disqualifying a lead (V6.6)
+ */
+export interface DisqualifyLeadInput {
+  leadId: string;
+  reason: string;
+  comment?: string | null;
+  disqualifiedBy: string;
+  addToBlacklist: boolean;
+  providerId: string;
 }
 
 // ===== SERVICE CLASS =====
@@ -399,6 +412,136 @@ export class LeadStatusService {
         leadId,
         previousStatus: "",
         newStatus,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  // ============================================
+  // DISQUALIFY LEAD (V6.6)
+  // ============================================
+
+  /**
+   * Disqualify a lead with full audit trail
+   *
+   * - Validates transition to 'disqualified' is allowed
+   * - Sets disqualification fields (at, reason, comment, by)
+   * - Creates activity in transaction
+   * - Optionally adds email to blacklist
+   */
+  async disqualifyLead(
+    input: DisqualifyLeadInput
+  ): Promise<StatusTransitionResult> {
+    const {
+      leadId,
+      reason,
+      comment,
+      disqualifiedBy,
+      addToBlacklist,
+      providerId,
+    } = input;
+
+    try {
+      // 1. Get current lead
+      const lead = await prisma.crm_leads.findUnique({
+        where: { id: leadId },
+        select: { id: true, status: true, email: true },
+      });
+
+      if (!lead) {
+        return {
+          success: false,
+          leadId,
+          previousStatus: "",
+          newStatus: "disqualified",
+          error: "Lead not found",
+        };
+      }
+
+      const previousStatus = lead.status || "new";
+
+      // 2. Validate transition
+      const isValid = await this.validateTransition(
+        previousStatus,
+        "disqualified"
+      );
+      if (!isValid) {
+        return {
+          success: false,
+          leadId,
+          previousStatus,
+          newStatus: "disqualified",
+          error: `Invalid transition from '${previousStatus}' to 'disqualified'`,
+        };
+      }
+
+      // 3. Update lead + activity in transaction
+      await prisma.$transaction(async (tx) => {
+        await tx.crm_leads.update({
+          where: { id: leadId },
+          data: {
+            status: "disqualified",
+            disqualified_at: new Date(),
+            disqualification_reason: reason,
+            disqualification_comment: comment || null,
+            disqualified_by: disqualifiedBy,
+            updated_at: new Date(),
+          },
+        });
+
+        await tx.crm_lead_activities.create({
+          data: {
+            lead_id: leadId,
+            activity_type: "status_change",
+            title: `Lead disqualified (from ${previousStatus})`,
+            description: `Reason: ${reason}${comment ? ` - ${comment}` : ""}`,
+            performed_by: disqualifiedBy,
+            created_at: new Date(),
+          },
+        });
+      });
+
+      // 4. Add to blacklist if requested (outside transaction - non-blocking)
+      if (addToBlacklist && lead.email) {
+        try {
+          const blacklistSvc = new BlacklistService();
+          await blacklistSvc.addToBlacklist({
+            providerId,
+            email: lead.email,
+            reason: "disqualified",
+            reasonComment: `Disqualified: ${reason}`,
+            originalLeadId: leadId,
+            blacklistedBy: disqualifiedBy,
+          });
+        } catch (blError) {
+          logger.error(
+            { error: blError, leadId, email: lead.email },
+            "[LeadStatusService] Failed to add to blacklist (non-blocking)"
+          );
+        }
+      }
+
+      logger.info(
+        { leadId, previousStatus, reason, disqualifiedBy, addToBlacklist },
+        "[LeadStatusService] Lead disqualified"
+      );
+
+      return {
+        success: true,
+        leadId,
+        previousStatus,
+        newStatus: "disqualified",
+      };
+    } catch (error) {
+      logger.error(
+        { error, leadId },
+        "[LeadStatusService] Error disqualifying lead"
+      );
+      return {
+        success: false,
+        leadId,
+        previousStatus: "",
+        newStatus: "disqualified",
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }

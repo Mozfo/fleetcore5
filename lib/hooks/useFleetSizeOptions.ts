@@ -51,13 +51,14 @@ interface SettingApiResponse {
 // DEFAULTS (fallback si API indisponible)
 // ============================================================
 
+// Aligned with wizard Step 3 (source of truth): 3 options
 export const DEFAULT_FLEET_SIZE_OPTIONS: FleetSizeOption[] = [
   {
-    value: "1-10",
-    label_en: "1-10 vehicles",
-    label_fr: "1-10 véhicules",
+    value: "2-10",
+    label_en: "2-10 vehicles",
+    label_fr: "2-10 véhicules",
     order: 1,
-    fit_score_weight: 10,
+    fit_score_weight: 20,
     is_active: true,
   },
   {
@@ -65,36 +66,20 @@ export const DEFAULT_FLEET_SIZE_OPTIONS: FleetSizeOption[] = [
     label_en: "11-50 vehicles",
     label_fr: "11-50 véhicules",
     order: 2,
-    fit_score_weight: 30,
-    is_active: true,
-  },
-  {
-    value: "51-100",
-    label_en: "51-100 vehicles",
-    label_fr: "51-100 véhicules",
-    order: 3,
     fit_score_weight: 50,
     is_active: true,
   },
   {
-    value: "101-500",
-    label_en: "101-500 vehicles",
-    label_fr: "101-500 véhicules",
-    order: 4,
-    fit_score_weight: 80,
-    is_active: true,
-  },
-  {
-    value: "500+",
-    label_en: "500+ vehicles",
-    label_fr: "500+ véhicules",
-    order: 5,
+    value: "50+",
+    label_en: "50+ vehicles",
+    label_fr: "50+ véhicules",
+    order: 3,
     fit_score_weight: 100,
     is_active: true,
   },
 ];
 
-export const DEFAULT_FLEET_SIZE = "1-10";
+export const DEFAULT_FLEET_SIZE = "2-10";
 
 // ============================================================
 // FETCHER

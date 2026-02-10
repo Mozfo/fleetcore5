@@ -1,14 +1,16 @@
 /**
  * GET /api/crm/leads/check-email?email=xxx
  *
- * V6.2.4 - Check if email exists in crm_leads and has a booking
+ * V6.6 - Check if email exists in crm_leads, has a booking, or is blacklisted
  *
  * Returns:
  * - exists: boolean - true if lead with this email exists
  * - hasBooking: boolean - true if lead has booking_slot_at set
  * - leadId: string | null - lead ID if exists
+ * - blacklisted: boolean - true if email is in crm_blacklist
  *
  * Used by book-demo wizard to handle returning users:
+ * - Email blacklisted → show "not eligible" message
  * - Email exists WITH booking → show reschedule option
  * - Email exists WITHOUT booking → continue normal flow
  * - Email doesn't exist → continue normal flow
@@ -18,6 +20,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { blacklistService } from "@/lib/services/crm/blacklist.service";
 import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
@@ -53,6 +56,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // V6.6: Check blacklist first
+    const DEFAULT_PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+    const isBlacklisted = await blacklistService.isBlacklisted(
+      email.toLowerCase().trim(),
+      DEFAULT_PROVIDER_ID
+    );
+
+    if (isBlacklisted) {
+      logger.info(
+        { email: email.toLowerCase().trim() },
+        "[CheckEmail] Email is blacklisted"
+      );
+      return NextResponse.json({
+        success: true,
+        data: {
+          exists: false,
+          hasBooking: false,
+          leadId: null,
+          blacklisted: true,
+        },
+      });
+    }
+
     // Check if lead exists
     const lead = await prisma.crm_leads.findFirst({
       where: {
@@ -76,6 +102,7 @@ export async function GET(request: NextRequest) {
           exists: false,
           hasBooking: false,
           leadId: null,
+          blacklisted: false,
         },
       });
     }
@@ -101,6 +128,7 @@ export async function GET(request: NextRequest) {
         leadId: lead.id,
         emailVerified: lead.email_verified,
         status: lead.status,
+        blacklisted: false,
       },
     });
   } catch (error) {
