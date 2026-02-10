@@ -102,7 +102,7 @@ describe("CRITICAL: Verify Email Code Endpoint (V6.2.2)", () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.data.verified).toBe(true);
-      expect(data.data.redirectUrl).toContain("/book-demo/step-2");
+      expect(data.data.redirectUrl).toContain("/book-demo/profile");
       expect(data.data.redirectUrl).toContain(`leadId=${VALID_LEAD_ID}`);
     });
 

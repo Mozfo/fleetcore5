@@ -370,6 +370,7 @@ export function LeadDrawer({
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="right"
+        data-testid="lead-drawer"
         className="flex w-full flex-col overflow-hidden sm:max-w-lg"
       >
         {/* Accessibility: Hidden title for screen readers */}
@@ -511,6 +512,7 @@ export function LeadDrawer({
                 <Button
                   variant="outline"
                   size="sm"
+                  data-testid="drawer-delete-button"
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
                   onClick={handleDelete}
                 >
@@ -549,7 +551,11 @@ export function LeadDrawer({
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleDeleteConfirm}
-          leadName={`${currentLead.first_name} ${currentLead.last_name}`}
+          leadName={
+            currentLead.first_name || currentLead.last_name
+              ? `${currentLead.first_name || ""} ${currentLead.last_name || ""}`.trim()
+              : currentLead.email || "Unknown contact"
+          }
           leadEmail={currentLead.email}
           isLoading={isDeleting}
         />

@@ -1,19 +1,21 @@
 /**
- * Book Demo Wizard - Step 2: Cal.com Booking
+ * Book Demo Wizard - Step 4: Schedule (Cal.com Booking)
  *
- * V6.2.4 - Demo booking via Cal.com INLINE embed.
+ * V6.6 - Demo booking via Cal.com INLINE embed.
+ * Now Step 4 (after Profile), previously Step 2.
  *
- * URL: /[locale]/book-demo/step-2?leadId=xxx
+ * URL: /[locale]/book-demo/schedule?leadId=xxx
  *
  * Prerequisites:
  * - Lead must have email_verified = true
+ * - Lead must have wizard_completed = true (profile filled)
  *
  * Flow:
  * 1. Fetch lead data to verify prerequisites
- * 2. Display Cal.com INLINE embed with pre-filled email
- * 3. After booking → redirect to step-3 (business info)
+ * 2. Display Cal.com INLINE embed with pre-filled email + name
+ * 3. After booking → redirect to confirmation
  *
- * @module app/[locale]/(public)/book-demo/step-2/page
+ * @module app/[locale]/(public)/book-demo/schedule/page
  */
 
 "use client";
@@ -28,6 +30,7 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
+  Phone,
 } from "lucide-react";
 import Link from "next/link";
 import Cal, { getCalApi } from "@calcom/embed-react";
@@ -64,7 +67,7 @@ interface BookingStatusResponse {
 // CONSTANTS
 // ============================================================================
 
-// Cal.com event links per locale (each has interfaceLanguage forced server-side)
+// Cal.com event links per locale
 const CALCOM_LINKS: Record<string, string> = {
   en: "fleetcore/30min",
   fr: "fleetcore/30min-fr",
@@ -72,7 +75,7 @@ const CALCOM_LINKS: Record<string, string> = {
 const CALCOM_ORIGIN =
   process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
 
-// Country to timezone mapping (for Cal.com)
+// Country to timezone mapping
 const COUNTRY_TIMEZONES: Record<string, string> = {
   FR: "Europe/Paris",
   AE: "Asia/Dubai",
@@ -102,7 +105,7 @@ const COUNTRY_TIMEZONES: Record<string, string> = {
 // COMPONENT
 // ============================================================================
 
-export default function BookDemoStep2Page() {
+export default function BookDemoSchedulePage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -126,7 +129,13 @@ export default function BookDemoStep2Page() {
   const [hasBooking, setHasBooking] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Ref to track if Cal.com has been initialized (prevents re-initialization)
+  // Callback state
+  const [preferCallback, setPreferCallback] = useState(false);
+  const [callbackNotes, setCallbackNotes] = useState("");
+  const [isSubmittingCallback, setIsSubmittingCallback] = useState(false);
+  const [callbackError, setCallbackError] = useState<string | null>(null);
+
+  // Ref to track if Cal.com has been initialized
   const calInitializedRef = useRef(false);
 
   // Redirect if missing leadId
@@ -148,17 +157,17 @@ export default function BookDemoStep2Page() {
         if (result.success && result.lead) {
           // Check if email is verified
           if (!result.lead.email_verified) {
-            // Redirect to verification
             router.replace(
               `/${locale}/book-demo/verify?leadId=${leadId}&email=${encodeURIComponent(result.lead.email)}`
             );
             return;
           }
 
-          // CRITICAL: If booking already exists, redirect to step 3
-          // This prevents multiple bookings
+          // If booking already exists, redirect to confirmation
           if (result.data?.hasBooking) {
-            router.replace(`/${locale}/book-demo/step-3?leadId=${leadId}`);
+            router.replace(
+              `/${locale}/book-demo/confirmation?leadId=${leadId}`
+            );
             return;
           }
 
@@ -178,9 +187,7 @@ export default function BookDemoStep2Page() {
   }, [leadId, locale, router]);
 
   // Initialize Cal.com and listen for booking events
-  // IMPORTANT: Only initialize ONCE to prevent Cal.com embed from resetting
   useEffect(() => {
-    // Skip if already initialized or still loading
     if (calInitializedRef.current || isLoading || !leadData) {
       return;
     }
@@ -189,25 +196,23 @@ export default function BookDemoStep2Page() {
       try {
         const cal = await getCalApi({ namespace: "fleetcore-inline" });
 
-        // Listen for booking success
-        // Name is captured via webhook (custom payload), not from this callback
+        // Listen for booking success → redirect to confirmation
         cal("on", {
           action: "bookingSuccessful",
           callback: () => {
             setHasBooking(true);
             setIsRedirecting(true);
 
-            // Redirect to step 3 after short delay
-            // Webhook will have already updated the lead with name from Cal.com
             setTimeout(() => {
               if (leadId) {
-                router.push(`/${locale}/book-demo/step-3?leadId=${leadId}`);
+                router.push(
+                  `/${locale}/book-demo/confirmation?leadId=${leadId}`
+                );
               }
             }, 2000);
           },
         });
 
-        // Mark as initialized to prevent future re-initialization
         calInitializedRef.current = true;
       } catch {
         // Cal.com initialization failed silently
@@ -217,7 +222,7 @@ export default function BookDemoStep2Page() {
     void initCal();
   }, [isLoading, leadData, leadId, locale, router]);
 
-  // Poll for booking status (backup in case event doesn't fire)
+  // Poll for booking status (backup)
   const checkBookingStatus = useCallback(async () => {
     if (!leadId || hasBooking) return;
 
@@ -243,6 +248,41 @@ export default function BookDemoStep2Page() {
 
     return () => clearInterval(interval);
   }, [leadId, hasBooking, isLoading, checkBookingStatus]);
+
+  // Handle callback request
+  const handleRequestCallback = useCallback(async () => {
+    if (!leadId || isSubmittingCallback) return;
+
+    setIsSubmittingCallback(true);
+    setCallbackError(null);
+
+    try {
+      const response = await fetch(
+        `/api/crm/leads/${leadId}/request-callback`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: callbackNotes }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        router.push(
+          `/${locale}/book-demo/confirmation?leadId=${leadId}&type=callback`
+        );
+      } else {
+        setCallbackError(
+          result.error?.message || t("bookDemo.step2.callbackError")
+        );
+      }
+    } catch {
+      setCallbackError(t("bookDemo.step2.callbackError"));
+    } finally {
+      setIsSubmittingCallback(false);
+    }
+  }, [leadId, callbackNotes, locale, router, t, isSubmittingCallback]);
 
   // Don't render if missing leadId
   if (!leadId) {
@@ -307,8 +347,8 @@ export default function BookDemoStep2Page() {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="mx-auto max-w-4xl">
-        {/* Progress Bar - Step 2 of 3 */}
-        <WizardProgressBar currentStep={2} totalSteps={3} className="mb-6" />
+        {/* Progress Bar - Step 4 of 4 */}
+        <WizardProgressBar currentStep={4} totalSteps={4} className="mb-6" />
 
         {/* Header Card */}
         <motion.div
@@ -349,7 +389,9 @@ export default function BookDemoStep2Page() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm"
+          className={`relative overflow-hidden rounded-2xl bg-white shadow-xl transition-opacity duration-300 dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm ${
+            preferCallback ? "pointer-events-none opacity-40" : ""
+          }`}
         >
           <Cal
             namespace="fleetcore-inline"
@@ -362,18 +404,94 @@ export default function BookDemoStep2Page() {
               locale: locale,
               // Pre-fill email from lead
               ...(leadData?.email && { email: leadData.email }),
-              // Pre-fill name if available
+              // Pre-fill name (now available from profile step)
               ...(leadData?.first_name &&
                 leadData?.last_name && {
                   name: `${leadData.first_name} ${leadData.last_name}`,
                 }),
-              // Set timezone based on country selected in step 1
+              // Set timezone based on country
               ...(leadData?.country_code &&
                 COUNTRY_TIMEZONES[leadData.country_code] && {
                   timezone: COUNTRY_TIMEZONES[leadData.country_code],
                 }),
             }}
           />
+        </motion.div>
+
+        {/* Separator */}
+        <div className="my-6 flex items-center gap-4">
+          <div className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
+          <span className="text-sm font-medium text-gray-400 dark:text-slate-500">
+            {t("bookDemo.step2.orSeparator")}
+          </span>
+          <div className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
+        </div>
+
+        {/* Callback Option */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800/50 dark:backdrop-blur-sm"
+        >
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={preferCallback}
+              onChange={(e) => {
+                setPreferCallback(e.target.checked);
+                setCallbackError(null);
+              }}
+              className="mt-1 h-5 w-5 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600"
+            />
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm font-medium text-gray-800 dark:text-slate-200">
+                {t("bookDemo.step2.preferCallback")}
+              </span>
+            </div>
+          </label>
+
+          {preferCallback && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4"
+            >
+              <textarea
+                placeholder={t("bookDemo.step2.callbackNotesPlaceholder")}
+                value={callbackNotes}
+                onChange={(e) => setCallbackNotes(e.target.value)}
+                rows={3}
+                maxLength={500}
+                className="w-full resize-none rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+              />
+
+              {callbackError && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {callbackError}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleRequestCallback}
+                disabled={isSubmittingCallback}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSubmittingCallback ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("bookDemo.step2.callbackSubmitting")}
+                  </>
+                ) : (
+                  t("bookDemo.step2.validateCallback")
+                )}
+              </button>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Navigation */}
@@ -384,7 +502,7 @@ export default function BookDemoStep2Page() {
           className="mt-6 flex items-center justify-between"
         >
           <Link
-            href={`/${locale}/book-demo/verify?leadId=${leadId}&email=${encodeURIComponent(leadData?.email || "")}`}
+            href={`/${locale}/book-demo/profile?leadId=${leadId}`}
             className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
             <ArrowLeft className="h-4 w-4" />

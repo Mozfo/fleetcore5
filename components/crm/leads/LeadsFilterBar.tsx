@@ -123,8 +123,7 @@ export function LeadsFilterBar({
   const { stages, getLabel } = useLeadStages();
 
   // Load statuses dynamically from crm_settings
-  const { statuses: leadStatuses, getLabel: getStatusLabel } =
-    useLeadStatuses();
+  const { statuses: leadStatuses } = useLeadStatuses();
 
   // Debounced search (300ms)
   useEffect(() => {
@@ -277,7 +276,7 @@ export function LeadsFilterBar({
               .filter((status) => !status.is_terminal) // Only show non-terminal statuses in filter
               .map((status) => (
                 <option key={status.value} value={status.value}>
-                  {getStatusLabel(status.value, locale)}
+                  {t(`leads.status.${status.value}`)}
                 </option>
               ))}
           </Select>

@@ -1,14 +1,15 @@
 /**
- * Book Demo Wizard - Step 3: Business Information
+ * Book Demo Wizard - Step 3: Profile
  *
- * V6.2.5 - Collect business info after Cal.com booking.
+ * V6.6 - Collect full profile BEFORE booking.
+ * B2B best practice: qualify before proposing calendar.
  *
- * Name is now captured via Cal.com webhook (custom payload).
- * This step only collects: company_name, phone, fleet_size, GDPR consent.
+ * URL: /[locale]/book-demo/profile?leadId=xxx
  *
- * URL: /[locale]/book-demo/step-3?leadId=xxx
+ * Fields: first_name, last_name, phone, company_name, fleet_size, gdpr_consent
+ * API: PATCH /api/crm/leads/{id}/complete-profile
  *
- * @module app/[locale]/(public)/book-demo/step-3/page
+ * @module app/[locale]/(public)/book-demo/profile/page
  */
 
 "use client";
@@ -24,7 +25,8 @@ import {
   Building2,
   Loader2,
   AlertCircle,
-  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
   Truck,
   User,
 } from "lucide-react";
@@ -87,23 +89,25 @@ const FLEET_SIZE_OPTIONS = [
 ];
 
 // ============================================================================
-// SCHEMA - No longer includes first_name/last_name (from webhook)
+// SCHEMA - V6.6: includes first_name/last_name (collected before booking)
 // ============================================================================
 
-const step3Schema = z.object({
+const profileSchema = z.object({
+  first_name: z.string().min(2, "Required").max(50),
+  last_name: z.string().min(2, "Required").max(50),
   company_name: z.string().min(1, "Required"),
   phone: z.string().min(1, "Required"),
   fleet_size: z.string().min(1, "Required"),
   gdpr_consent: z.boolean().optional(),
 });
 
-type Step3FormData = z.infer<typeof step3Schema>;
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
-export default function BookDemoStep3Page() {
+export default function BookDemoProfilePage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -135,9 +139,11 @@ export default function BookDemoStep3Page() {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<Step3FormData>({
-    resolver: zodResolver(step3Schema),
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
     defaultValues: {
+      first_name: "",
+      last_name: "",
       company_name: "",
       phone: "",
       fleet_size: "",
@@ -207,7 +213,13 @@ export default function BookDemoStep3Page() {
             setPhonePrefixCountry(leadResult.lead.country_code);
           }
 
-          // Pre-fill company_name if available
+          // Pre-fill fields if available
+          if (leadResult.lead.first_name) {
+            setValue("first_name", leadResult.lead.first_name);
+          }
+          if (leadResult.lead.last_name) {
+            setValue("last_name", leadResult.lead.last_name);
+          }
           if (leadResult.lead.company_name) {
             setValue("company_name", leadResult.lead.company_name);
           }
@@ -233,7 +245,7 @@ export default function BookDemoStep3Page() {
     setValue("fleet_size", value);
   };
 
-  const onSubmit = async (data: Step3FormData) => {
+  const onSubmit = async (data: ProfileFormData) => {
     if (!leadId) return;
 
     if (requiresGdpr && !data.gdpr_consent) {
@@ -245,27 +257,32 @@ export default function BookDemoStep3Page() {
     setSubmitError(null);
 
     try {
-      // Combine phone prefix with phone number (E.164 format)
+      // Combine phone prefix with phone number
       const fullPhone = phonePrefix
         ? `${phonePrefix}${data.phone}`
         : data.phone;
 
-      const response = await fetch(`/api/crm/leads/${leadId}/complete-wizard`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          company_name: data.company_name,
-          phone: fullPhone,
-          fleet_size: data.fleet_size,
-          gdpr_consent: data.gdpr_consent || false,
-          wizard_completed: true,
-        }),
-      });
+      const response = await fetch(
+        `/api/crm/leads/${leadId}/complete-profile`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            first_name: data.first_name.trim(),
+            last_name: data.last_name.trim(),
+            company_name: data.company_name.trim(),
+            phone: fullPhone,
+            fleet_size: data.fleet_size,
+            gdpr_consent: data.gdpr_consent || false,
+          }),
+        }
+      );
 
       const result = await response.json();
 
       if (result.success) {
-        router.push(`/${locale}/book-demo/confirmation?leadId=${leadId}`);
+        // V6.6: Profile → Schedule (Cal.com booking)
+        router.push(`/${locale}/book-demo/schedule?leadId=${leadId}`);
       } else {
         setSubmitError(
           result.error?.message || t("bookDemo.step3.errors.generic")
@@ -308,14 +325,6 @@ export default function BookDemoStep3Page() {
     );
   }
 
-  // Build welcome message
-  const firstName = leadData?.first_name;
-  const welcomeMessage = firstName
-    ? locale === "fr"
-      ? `Bonjour ${firstName} !`
-      : `Welcome, ${firstName}!`
-    : null;
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 py-8 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <motion.div
@@ -324,22 +333,14 @@ export default function BookDemoStep3Page() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-2xl"
       >
-        <WizardProgressBar currentStep={3} totalSteps={3} className="mb-8" />
+        <WizardProgressBar currentStep={3} totalSteps={4} className="mb-8" />
 
         <div className="rounded-2xl bg-white p-6 shadow-xl sm:p-8 dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           {/* Header */}
           <div className="mb-6 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/20">
-              <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-500" />
+              <User className="h-8 w-8 text-blue-600 dark:text-blue-500" />
             </div>
-
-            {/* Welcome message with name (from webhook) */}
-            {welcomeMessage && (
-              <div className="mb-3 flex items-center justify-center gap-2 text-lg font-medium text-green-600 dark:text-green-400">
-                <User className="h-5 w-5" />
-                {welcomeMessage}
-              </div>
-            )}
 
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {t("bookDemo.step3.title")}
@@ -356,6 +357,61 @@ export default function BookDemoStep3Page() {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* First Name + Last Name (side by side) */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
+                  <User className="h-4 w-4" />
+                  {t("bookDemo.step3.firstName", {
+                    defaultValue: "First name",
+                  })}{" "}
+                  *
+                </label>
+                <input
+                  {...register("first_name")}
+                  type="text"
+                  autoFocus
+                  className={`w-full rounded-lg border bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500 ${
+                    errors.first_name
+                      ? "border-red-500"
+                      : "border-gray-300 focus:border-blue-500 dark:border-slate-700"
+                  }`}
+                  placeholder={t("bookDemo.step3.firstNamePlaceholder", {
+                    defaultValue: "John",
+                  })}
+                />
+                {errors.first_name && (
+                  <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+                    {t("bookDemo.step3.errors.required")}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
+                  {t("bookDemo.step3.lastName", { defaultValue: "Last name" })}{" "}
+                  *
+                </label>
+                <input
+                  {...register("last_name")}
+                  type="text"
+                  className={`w-full rounded-lg border bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500 ${
+                    errors.last_name
+                      ? "border-red-500"
+                      : "border-gray-300 focus:border-blue-500 dark:border-slate-700"
+                  }`}
+                  placeholder={t("bookDemo.step3.lastNamePlaceholder", {
+                    defaultValue: "Doe",
+                  })}
+                />
+                {errors.last_name && (
+                  <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+                    {t("bookDemo.step3.errors.required")}
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Company Name */}
             <div>
               <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
@@ -457,8 +513,16 @@ export default function BookDemoStep3Page() {
               </div>
             )}
 
-            {/* Submit Button */}
-            <div className="flex items-center justify-end pt-4">
+            {/* Navigation */}
+            <div className="flex items-center justify-between pt-4">
+              <Link
+                href={`/${locale}/book-demo/verify?leadId=${leadId}&email=${encodeURIComponent(leadData?.email || "")}`}
+                className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {t("bookDemo.step2.back")}
+              </Link>
+
               <button
                 type="submit"
                 disabled={isSubmitting || (requiresGdpr && !isGdprValid)}
@@ -471,8 +535,8 @@ export default function BookDemoStep3Page() {
                   </>
                 ) : (
                   <>
-                    {t("bookDemo.step3.submit")}
-                    <CheckCircle2 className="h-4 w-4" />
+                    {t("bookDemo.step3.submit", { defaultValue: "Continue" })}
+                    <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>

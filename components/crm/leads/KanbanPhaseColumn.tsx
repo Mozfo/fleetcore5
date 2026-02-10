@@ -1,12 +1,12 @@
 /**
  * KanbanPhaseColumn - Colonne Kanban phase-based avec groupes de statuts
  *
- * V6.2-11: Affiche une phase (ex: Acquisition) avec ses statuts groupés.
+ * V6.6: Affiche une phase (ex: Contact, Démo) avec ses statuts groupés.
  * Chaque groupe de statut est une zone droppable séparée.
  *
  * Structure:
- * - Phase header (ex: "Acquisition" avec badge total)
- * - Status groups (ex: "new" cards, then "demo" cards) - V6.3: 8 statuts
+ * - Phase header (ex: "Contact" avec badge total)
+ * - Status groups (ex: "callback_requested" cards) - V6.6: 10 statuts
  *   Chaque groupe a son propre header et sa zone droppable
  */
 
@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import type {
   KanbanPhaseColumn as KanbanPhaseColumnType,
   Lead,
@@ -29,17 +30,19 @@ import {
   kanbanItemVariants,
 } from "@/lib/animations/kanban-variants";
 
-// Phase color mapping (V6.3: 4 phases)
+// Phase color mapping (V6.6: 4 phases)
 const PHASE_COLORS: Record<string, string> = {
-  incomplete: "gray",
+  contact: "amber",
   demo: "blue",
-  proposal: "orange",
-  completed: "green",
+  proposal: "purple",
+  finalized: "green",
 };
 
-// Status color mapping (V6.3: 8 statuts)
+// Status color mapping (V6.6: 10 statuts)
 const STATUS_COLORS: Record<string, string> = {
   new: "gray",
+  email_verified: "cyan",
+  callback_requested: "amber",
   demo: "blue",
   proposal_sent: "orange",
   payment_pending: "amber",
@@ -108,6 +111,7 @@ function StatusDropZone({
   return (
     <div
       ref={setNodeRef}
+      data-testid="status-group"
       className={cn(
         "min-h-[60px] rounded-md transition-all duration-200",
         isOver && "bg-blue-50/50 ring-2 ring-blue-400 dark:bg-blue-900/20",
@@ -165,7 +169,7 @@ function StatusDropZone({
 export const KanbanPhaseColumn = memo(
   function KanbanPhaseColumn({
     column,
-    locale,
+    locale: _locale,
     onCardClick,
     onCardDoubleClick,
     onCreate,
@@ -174,19 +178,17 @@ export const KanbanPhaseColumn = memo(
     onConvert,
     onDelete,
   }: KanbanPhaseColumnProps) {
-    // Get phase label based on locale
-    const phaseLabel =
-      locale === "fr"
-        ? column.phase.label_fr
-        : locale === "ar"
-          ? column.phase.label_ar || column.phase.label_en
-          : column.phase.label_en;
+    const { t } = useTranslation("crm");
+
+    // Get phase label from i18n
+    const phaseLabel = t(`leads.phases.${column.phase.id}`);
 
     // Phase color
     const phaseColor = PHASE_COLORS[column.phase.id] || "gray";
 
-    // Header color class
+    // Header color class (V6.6: amber, blue, purple, green)
     const headerColorClass: Record<string, string> = {
+      amber: "border-l-amber-500",
       blue: "border-l-blue-500",
       green: "border-l-green-500",
       purple: "border-l-purple-500",
@@ -196,6 +198,7 @@ export const KanbanPhaseColumn = memo(
 
     return (
       <motion.div
+        data-testid="kanban-phase"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -220,18 +223,11 @@ export const KanbanPhaseColumn = memo(
         {/* V6.2-11: Always show all status drop zones, even when empty */}
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
           {column.statusGroups.map((group) => {
-            const statusLabel =
-              locale === "fr"
-                ? group.statusConfig.label_fr
-                : locale === "ar"
-                  ? group.statusConfig.label_ar || group.statusConfig.label_en
-                  : group.statusConfig.label_en;
-
             return (
               <StatusDropZone
                 key={group.status}
                 status={group.status}
-                statusLabel={statusLabel}
+                statusLabel={t(`leads.status.${group.status}`)}
                 statusColor={STATUS_COLORS[group.status] || "gray"}
                 leads={group.leads}
                 onCardClick={onCardClick}

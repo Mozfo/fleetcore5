@@ -31,6 +31,7 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
+  Phone,
 } from "lucide-react";
 import Link from "next/link";
 import { AddToCalendarButtons } from "@/components/booking/AddToCalendarButtons";
@@ -69,7 +70,7 @@ interface APIResponse {
 // CONSTANTS
 // ============================================================================
 
-const DEMO_DURATION_MINUTES = 20;
+const DEMO_DURATION_MINUTES = 30;
 
 // ============================================================================
 // COMPONENT
@@ -84,6 +85,7 @@ export default function BookDemoConfirmationPage() {
 
   // Query params
   const leadId = searchParams.get("leadId");
+  const confirmationType = searchParams.get("type"); // "callback" or null (booking)
 
   // Initialize i18n
   useEffect(() => {
@@ -106,6 +108,8 @@ export default function BookDemoConfirmationPage() {
     }
   }, [leadId, locale, router]);
 
+  const isCallback = confirmationType === "callback";
+
   // Fetch confirmation details (extracted for reuse after reschedule)
   const fetchConfirmationData = async (showLoader = true) => {
     if (!leadId) return;
@@ -118,11 +122,14 @@ export default function BookDemoConfirmationPage() {
 
       if (result.success && result.data) {
         setData(result.data);
-      } else {
+      } else if (!isCallback) {
+        // Only treat as error for booking confirmations
         setError(result.error?.message || "Failed to load confirmation");
       }
     } catch (_err) {
-      setError("Network error");
+      if (!isCallback) {
+        setError("Network error");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -252,7 +259,7 @@ export default function BookDemoConfirmationPage() {
       >
         {/* Success Card */}
         <div className="rounded-2xl bg-white p-6 shadow-xl sm:p-8 dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
-          {/* Animated Check Icon */}
+          {/* Animated Icon */}
           <div className="mb-6 flex justify-center">
             <motion.div
               initial={{ scale: 0 }}
@@ -263,7 +270,11 @@ export default function BookDemoConfirmationPage() {
                 damping: 20,
                 delay: 0.2,
               }}
-              className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20"
+              className={`flex h-20 w-20 items-center justify-center rounded-full ${
+                isCallback
+                  ? "bg-blue-100 dark:bg-blue-500/20"
+                  : "bg-green-100 dark:bg-green-500/20"
+              }`}
             >
               <motion.div
                 initial={{ scale: 0 }}
@@ -275,7 +286,11 @@ export default function BookDemoConfirmationPage() {
                   delay: 0.4,
                 }}
               >
-                <CheckCircle2 className="h-12 w-12 text-green-500" />
+                {isCallback ? (
+                  <Phone className="h-12 w-12 text-blue-500" />
+                ) : (
+                  <CheckCircle2 className="h-12 w-12 text-green-500" />
+                )}
               </motion.div>
             </motion.div>
           </div>
@@ -288,15 +303,19 @@ export default function BookDemoConfirmationPage() {
             className="mb-6 text-center"
           >
             <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">
-              {t("bookDemo.confirmation.title")}
+              {isCallback
+                ? t("bookDemo.confirmation.callbackTitle")
+                : t("bookDemo.confirmation.title")}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-slate-400">
-              {t("bookDemo.confirmation.subtitle")}
+              {isCallback
+                ? t("bookDemo.confirmation.callbackSubtitle")
+                : t("bookDemo.confirmation.subtitle")}
             </p>
           </motion.div>
 
-          {/* Booking Details */}
-          {bookingDate && (
+          {/* Booking Details (only for booking, not callback) */}
+          {bookingDate && !isCallback && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -342,11 +361,15 @@ export default function BookDemoConfirmationPage() {
             <Mail className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
             <div>
               <p className="text-sm text-blue-700 dark:text-blue-200">
-                {t("bookDemo.confirmation.checkEmail")}
+                {isCallback
+                  ? t("bookDemo.confirmation.callbackCheckEmail")
+                  : t("bookDemo.confirmation.checkEmail")}
               </p>
-              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                {data?.lead.email}
-              </p>
+              {data?.lead.email && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                  {data.lead.email}
+                </p>
+              )}
             </div>
           </motion.div>
 
@@ -358,7 +381,9 @@ export default function BookDemoConfirmationPage() {
             className="mb-6"
           >
             <h2 className="mb-3 text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-slate-400">
-              {t("bookDemo.confirmation.whatNext")}
+              {isCallback
+                ? t("bookDemo.confirmation.callbackWhatNext")
+                : t("bookDemo.confirmation.whatNext")}
             </h2>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
@@ -366,7 +391,9 @@ export default function BookDemoConfirmationPage() {
                   1
                 </span>
                 <span className="text-sm text-gray-700 dark:text-slate-300">
-                  {t("bookDemo.confirmation.step1")}
+                  {isCallback
+                    ? t("bookDemo.confirmation.callbackStep1")
+                    : t("bookDemo.confirmation.step1")}
                 </span>
               </li>
               <li className="flex items-start gap-3">
@@ -374,7 +401,9 @@ export default function BookDemoConfirmationPage() {
                   2
                 </span>
                 <span className="text-sm text-gray-700 dark:text-slate-300">
-                  {t("bookDemo.confirmation.step2")}
+                  {isCallback
+                    ? t("bookDemo.confirmation.callbackStep2")
+                    : t("bookDemo.confirmation.step2")}
                 </span>
               </li>
               <li className="flex items-start gap-3">
@@ -382,14 +411,16 @@ export default function BookDemoConfirmationPage() {
                   3
                 </span>
                 <span className="text-sm text-gray-700 dark:text-slate-300">
-                  {t("bookDemo.confirmation.step3")}
+                  {isCallback
+                    ? t("bookDemo.confirmation.callbackStep3")
+                    : t("bookDemo.confirmation.step3")}
                 </span>
               </li>
             </ul>
           </motion.div>
 
-          {/* Add to Calendar Buttons */}
-          {calendarEvent && (
+          {/* Add to Calendar Buttons (booking only) */}
+          {calendarEvent && !isCallback && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -403,8 +434,8 @@ export default function BookDemoConfirmationPage() {
             </motion.div>
           )}
 
-          {/* Reschedule Button */}
-          {data?.booking.calcomUid && !rescheduleSuccess && (
+          {/* Reschedule Button (booking only) */}
+          {data?.booking.calcomUid && !rescheduleSuccess && !isCallback && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

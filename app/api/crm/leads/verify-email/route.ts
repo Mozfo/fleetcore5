@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           leadId: leadId,
           verified: true,
           alreadyVerified: true,
-          redirectUrl: `/book-demo/step-2?leadId=${leadId}`,
+          redirectUrl: `/book-demo/profile?leadId=${leadId}`,
         },
       });
     }
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         data: {
           leadId: leadId,
           verified: true,
-          redirectUrl: `/book-demo/step-2?leadId=${leadId}`,
+          redirectUrl: `/book-demo/profile?leadId=${leadId}`,
         },
       });
     }

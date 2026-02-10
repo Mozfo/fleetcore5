@@ -85,10 +85,12 @@ const fetchAllLeads = cache(
     // Fetch leads, operational countries, AND sales team members in parallel
     const [rawLeads, operationalCountries, salesTeamMembers] =
       await Promise.all([
-        // Query ALL leads (client will filter)
+        // Query leads visible in CRM (client will filter further)
+        // V6.6: Only show leads that completed the wizard
         db.crm_leads.findMany({
           where: {
-            deleted_at: null, // Exclude soft-deleted only
+            deleted_at: null,
+            wizard_completed: true,
           },
           include: {
             eu1f9qh: {

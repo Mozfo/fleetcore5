@@ -82,7 +82,9 @@ test.describe("Wizard Step 1: Email Entry", () => {
 
     // Should show verification or proceed to step 2
     // (depends on whether email verification is enabled)
-    await expect(page).toHaveURL(/book-demo\/(verify|step-2|calendar)/);
+    await expect(page).toHaveURL(
+      /book-demo\/(verify|profile|schedule|calendar)/
+    );
   });
 
   test("should detect existing customer email", async ({ page }) => {
@@ -161,7 +163,9 @@ test.describe("Wizard Step 2: Cal.com Booking", () => {
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Wait for step 2
-    await page.waitForURL(/book-demo\/(step-2|calendar)/, { timeout: 10000 });
+    await page.waitForURL(/book-demo\/(profile|schedule|calendar)/, {
+      timeout: 10000,
+    });
 
     // Calendar should be visible (Cal.com embed or similar)
     await expect(page.getByText(/choose.*time|select.*slot/i)).toBeVisible();

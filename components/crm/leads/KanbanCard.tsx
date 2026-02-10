@@ -169,6 +169,7 @@ export const KanbanCard = memo(
       >
         <motion.div
           ref={setNodeRef}
+          data-testid="lead-card"
           // Pattern officiel dnd-kit + framer-motion: utiliser animate au lieu de style.transform
           // @see https://github.com/clauderic/dnd-kit/blob/master/stories/2%20-%20Presets/Sortable/FramerMotion.tsx
           animate={
@@ -297,9 +298,11 @@ export const KanbanCard = memo(
           </div>
 
           {/* Contact Name (secondary) */}
-          <p className="relative z-10 text-sm text-gray-600 dark:text-gray-400">
-            {lead.first_name} {lead.last_name}
-          </p>
+          {(lead.first_name || lead.last_name) && (
+            <p className="relative z-10 text-sm text-gray-600 dark:text-gray-400">
+              {lead.first_name || ""} {lead.last_name || ""}
+            </p>
+          )}
 
           {/* Progress Bar - Qualification Score */}
           {lead.qualification_score !== null && (

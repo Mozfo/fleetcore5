@@ -32,15 +32,12 @@ async function loginAsAdmin(page: Page) {
   }
 
   // Navigate to login page
-  await page.goto("/en/sign-in");
+  await page.goto("/en/login");
 
-  // Fill credentials
+  // Fill credentials (single-page login form)
   await page.getByLabel(/email/i).fill(adminEmail);
-  await page.getByRole("button", { name: /continue/i }).click();
-
-  // Wait for password field and fill
   await page.getByLabel(/password/i).fill(adminPassword);
-  await page.getByRole("button", { name: /continue/i }).click();
+  await page.getByRole("button", { name: /sign in/i }).click();
 
   // Wait for redirect to dashboard
   await page.waitForURL(/\/(dashboard|crm)/, { timeout: 30000 });

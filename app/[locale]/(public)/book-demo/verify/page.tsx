@@ -8,7 +8,7 @@
  * Flow:
  * 1. User enters 6-digit code from email
  * 2. Auto-submit on completion
- * 3. Success → Redirect to /book-demo/step-2?leadId=xxx
+ * 3. Success → Redirect to /book-demo/profile?leadId=xxx
  * 4. Error → Show message, allow resend
  *
  * @module app/[locale]/(public)/book-demo/verify/page
@@ -226,7 +226,7 @@ export default function VerifyCodePage() {
           // Success - redirect to step 2
           // Use leadId from response if available, fallback to URL param
           const targetLeadId = result.data?.leadId || leadId;
-          router.push(`/${locale}/book-demo/step-2?leadId=${targetLeadId}`);
+          router.push(`/${locale}/book-demo/profile?leadId=${targetLeadId}`);
           // Don't reset isVerifying - let navigation happen
           return;
         }
@@ -330,7 +330,7 @@ export default function VerifyCodePage() {
         className="w-full max-w-md"
       >
         {/* Progress Bar */}
-        <WizardProgressBar currentStep={1} totalSteps={3} className="mb-8" />
+        <WizardProgressBar currentStep={2} totalSteps={4} className="mb-8" />
 
         {/* Card */}
         <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">

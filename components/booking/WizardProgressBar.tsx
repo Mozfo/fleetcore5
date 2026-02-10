@@ -54,39 +54,57 @@ export function WizardProgressBar({
           style={{ width: `${progressPercent}%` }}
         />
 
-        {/* Step circles */}
+        {/* Step circles with labels */}
         {Array.from({ length: totalSteps }, (_, i) => {
           const stepNum = i + 1;
           const isCompleted = stepNum < currentStep;
           const isActive = stepNum === currentStep;
+          const label = t(`bookDemo.progress.labels.${stepNum}`, {
+            defaultValue: "",
+          });
 
           return (
             <div
               key={stepNum}
-              className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300 ${
-                isCompleted
-                  ? "border-blue-500 bg-blue-500 text-white"
-                  : isActive
-                    ? "border-blue-500 bg-white text-blue-500 ring-4 ring-blue-500/20 dark:bg-slate-900"
-                    : "border-gray-300 bg-gray-100 text-gray-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-500"
-              }`}
+              className="relative z-10 flex flex-col items-center"
             >
-              {isCompleted ? (
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={3}
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300 ${
+                  isCompleted
+                    ? "border-blue-500 bg-blue-500 text-white"
+                    : isActive
+                      ? "border-blue-500 bg-white text-blue-500 ring-4 ring-blue-500/20 dark:bg-slate-900"
+                      : "border-gray-300 bg-gray-100 text-gray-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-500"
+                }`}
+              >
+                {isCompleted ? (
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                ) : (
+                  stepNum
+                )}
+              </div>
+              {label && (
+                <span
+                  className={`mt-1.5 text-xs font-medium ${
+                    isCompleted || isActive
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-400 dark:text-slate-500"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                stepNum
+                  {label}
+                </span>
               )}
             </div>
           );

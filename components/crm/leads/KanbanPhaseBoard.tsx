@@ -1,11 +1,13 @@
 /**
  * KanbanPhaseBoard - Board Kanban avec 4 phases + Drag & Drop
  *
- * V6.3: 4 colonnes phase-based (one-call close):
- * - Incomplet (new)
+ * V6.6: 4 colonnes phase-based:
+ * - Contact (callback_requested)
  * - Démo (demo)
  * - Proposition (proposal_sent, payment_pending)
- * - Terminé (converted, lost, nurturing, disqualified)
+ * - Finalisé (converted, lost, nurturing)
+ *
+ * Hidden from Kanban: new, email_verified, disqualified
  *
  * Leads are grouped by status within each phase column.
  * DnD allows moving leads between statuses.
@@ -151,6 +153,7 @@ export function KanbanPhaseBoard({
       <AnimatePresence mode="wait">
         <motion.div
           key="kanban-phase-board"
+          data-testid="kanban-board"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -164,7 +167,7 @@ export function KanbanPhaseBoard({
               locale={locale}
               onCardClick={onCardClick}
               onCardDoubleClick={onCardDoubleClick}
-              onCreate={column.id === "incomplete" ? onCreate : undefined}
+              onCreate={column.id === "contact" ? onCreate : undefined}
               onStatusChange={onStatusChange}
               onEdit={onEdit}
               onConvert={onConvert}

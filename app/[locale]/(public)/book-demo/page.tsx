@@ -335,7 +335,7 @@ export default function BookDemoPage() {
           const { leadId, requiresVerification, alreadyVerified } = result.data;
 
           if (alreadyVerified) {
-            router.push(`/${locale}/book-demo/step-2?leadId=${leadId}`);
+            router.push(`/${locale}/book-demo/profile?leadId=${leadId}`);
           } else if (requiresVerification) {
             router.push(
               `/${locale}/book-demo/verify?leadId=${leadId}&email=${encodeURIComponent(data.email)}`
@@ -423,7 +423,7 @@ export default function BookDemoPage() {
       >
         {/* Progress Bar - Only show for wizard flow (not for country not available) */}
         {!showCountryNotAvailable && (
-          <WizardProgressBar currentStep={1} totalSteps={3} className="mb-6" />
+          <WizardProgressBar currentStep={1} totalSteps={4} className="mb-6" />
         )}
 
         {/* Card */}

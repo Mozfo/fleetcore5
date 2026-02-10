@@ -2,7 +2,13 @@
   "bookDemo": {
     "progress": {
       "step": "Étape",
-      "of": "sur"
+      "of": "sur",
+      "labels": {
+        "1": "Email",
+        "2": "Vérification",
+        "3": "Profil",
+        "4": "Rendez-vous"
+      }
     },
     "step1": {
       "title": "Réservez votre démo personnalisée",
@@ -117,7 +123,13 @@
       "noBooking": "Veuillez d'abord sélectionner un créneau",
       "back": "Retour",
       "next": "Suivant",
-      "selectCountryFirst": "Sélectionnez d'abord un pays pour voir l'indicatif"
+      "selectCountryFirst": "Sélectionnez d'abord un pays pour voir l'indicatif",
+      "preferCallback": "Je préfère être rappelé dans les meilleurs délais",
+      "callbackNotesPlaceholder": "Des notes supplémentaires ? (optionnel)",
+      "validateCallback": "Valider mon choix",
+      "callbackSubmitting": "Envoi...",
+      "callbackError": "Impossible de soumettre la demande. Veuillez réessayer.",
+      "orSeparator": "ou"
     },
     "step3": {
       "title": "Parlez-nous de votre activité",
@@ -166,6 +178,26 @@
       "step2": "Notre expert flotte vous appellera à l'heure prévue",
       "step3": "Nous préparerons une démo adaptée à la taille de votre flotte et vos besoins",
       "addToCalendar": "Ajouter au calendrier",
+      "backToHome": "Retour à l'accueil",
+      "callbackTitle": "Demande reçue !",
+      "callbackSubtitle": "Nous vous rappellerons dans les meilleurs délais.",
+      "callbackCheckEmail": "Vous recevrez un email de confirmation sous peu.",
+      "callbackWhatNext": "Et ensuite ?",
+      "callbackStep1": "Notre équipe traitera votre demande rapidement",
+      "callbackStep2": "Un expert flotte vous rappellera dans les meilleurs délais",
+      "callbackStep3": "Nous préparerons une démo adaptée à la taille de votre flotte et vos besoins"
+    },
+    "resume": {
+      "loading": "Validation de votre lien...",
+      "expired": "Ce lien a expiré",
+      "expiredSubtitle": "Les liens de reprise sont valides 30 jours.",
+      "invalid": "Lien invalide",
+      "invalidSubtitle": "Ce lien n'est pas valide ou a déjà été utilisé.",
+      "error": "Une erreur s'est produite",
+      "errorSubtitle": "Impossible de valider votre lien. Veuillez réessayer.",
+      "restartDemo": "Demander une nouvelle démo",
+      "alreadyCompleted": "Vous avez déjà complété votre demande",
+      "alreadyCompletedSubtitle": "Votre demande de démo a déjà été traitée.",
       "backToHome": "Retour à l'accueil"
     },
     "confirmed": {

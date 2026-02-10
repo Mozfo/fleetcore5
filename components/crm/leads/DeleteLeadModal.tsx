@@ -97,7 +97,10 @@ export function DeleteLeadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent
+        className="sm:max-w-[480px]"
+        data-testid="delete-lead-modal"
+      >
         <DialogHeader>
           <DialogTitle className="text-destructive flex items-center gap-2">
             <Trash2 className="h-5 w-5" />
@@ -209,13 +212,19 @@ export function DeleteLeadModal({
         )}
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isLoading}
+            data-testid="delete-lead-cancel"
+          >
             {t("common:cancel")}
           </Button>
           <Button
             variant="destructive"
             onClick={handleConfirm}
             disabled={!canSubmit || isLoading}
+            data-testid="delete-lead-confirm"
           >
             {isLoading ? (
               <span className="flex items-center gap-2">

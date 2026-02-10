@@ -3,7 +3,7 @@
  *
  * V6.2.3 - Save business info and mark wizard as completed
  *
- * Called from step-3 after successful Cal.com booking.
+ * Called from the schedule step after successful Cal.com booking.
  * Saves company_name, phone, fleet_size, gdpr_consent.
  * Sets wizard_completed=true and updates status to "demo".
  *
@@ -29,7 +29,9 @@ import { z } from "zod";
 const completeWizardSchema = z.object({
   company_name: z.string().min(1),
   phone: z.string().min(1),
-  fleet_size: z.string().min(1),
+  fleet_size: z.enum(["2-10", "11-50", "50+"], {
+    message: "Invalid fleet size",
+  }),
   gdpr_consent: z.boolean().optional().default(false),
   wizard_completed: z.literal(true),
 });
@@ -139,7 +141,7 @@ export async function PATCH(
     const hasBooking = !!(lead.booking_slot_at && lead.booking_calcom_uid);
     const newStatus = hasBooking ? "demo" : lead.status;
 
-    // Get client IP for GDPR audit (same pattern as business-info route)
+    // Get client IP for GDPR audit
     const clientIp =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||

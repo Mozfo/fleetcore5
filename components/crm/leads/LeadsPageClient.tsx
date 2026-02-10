@@ -51,6 +51,8 @@ import {
   updateLeadAction,
   updateLeadStatusAction,
 } from "@/lib/actions/crm/lead.actions";
+import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
+import { DeleteLeadModal } from "./DeleteLeadModal";
 import type { SavedViewConfig } from "@/lib/types/views";
 import type { ViewMode } from "./ViewToggle";
 import type {
@@ -106,6 +108,10 @@ export function LeadsPageClient({
   const [isBulkStatusOpen, setIsBulkStatusOpen] = useState(false);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isBulkLoading, setIsBulkLoading] = useState(false);
+
+  // G4: Single delete modal state (for Kanban context menu delete)
+  const [deleteTargetLead, setDeleteTargetLead] = useState<Lead | null>(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
 
   // V6.3: Status change reason modal state
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
@@ -691,13 +697,55 @@ export function LeadsPageClient({
     [localLeads]
   );
 
+  // G4: Open delete modal from Kanban context menu or card action
   const handleDeleteLead = useCallback(
-    (_leadId: string) => {
-      // TODO: Show delete confirmation modal
-      toast.info(_t("leads.actions.delete_coming_soon"));
+    (leadId: string) => {
+      const lead = localLeads.find((l) => l.id === leadId);
+      if (lead) {
+        setDeleteTargetLead(lead);
+      }
     },
-    [_t]
+    [localLeads]
   );
+
+  // G4: Handle delete confirmation from standalone modal
+  const handleDeleteConfirm = useCallback(
+    async (reason: string, permanentDelete: boolean) => {
+      if (!deleteTargetLead) return;
+      setIsDeleteLoading(true);
+      try {
+        const result = await deleteLeadAction(
+          deleteTargetLead.id,
+          reason,
+          permanentDelete
+        );
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        toast.success(
+          permanentDelete
+            ? _t("leads.delete.success_permanent")
+            : _t("leads.delete.success")
+        );
+        setLocalLeads((prev) =>
+          prev.filter((l) => l.id !== deleteTargetLead.id)
+        );
+        setDeleteTargetLead(null);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : _t("leads.delete.error")
+        );
+      } finally {
+        setIsDeleteLoading(false);
+      }
+    },
+    [deleteTargetLead, _t]
+  );
+
+  // G4: Handle lead removed (callback for LeadDrawer after successful delete)
+  const handleLeadDeleted = useCallback((leadId: string) => {
+    setLocalLeads((prev) => prev.filter((l) => l.id !== leadId));
+  }, []);
 
   // Handle sort change (E1-A)
   const handleSortChange = useCallback(
@@ -1016,7 +1064,7 @@ export function LeadsPageClient({
         lead={drawerLead}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        onDelete={handleDeleteLead}
+        onDelete={handleLeadDeleted}
         onOpenFullPage={handleOpenFullPage}
         onLeadUpdated={handleLeadUpdated}
         owners={owners}
@@ -1044,6 +1092,22 @@ export function LeadsPageClient({
           targetStatus={pendingStatusChange.targetStatus}
           leadName={pendingStatusChange.leadName}
           isLoading={isStatusChangeLoading}
+        />
+      )}
+
+      {/* G4: Single Delete Modal (Kanban context menu) */}
+      {deleteTargetLead && (
+        <DeleteLeadModal
+          isOpen={!!deleteTargetLead}
+          onClose={() => setDeleteTargetLead(null)}
+          onConfirm={handleDeleteConfirm}
+          leadName={
+            deleteTargetLead.first_name || deleteTargetLead.last_name
+              ? `${deleteTargetLead.first_name || ""} ${deleteTargetLead.last_name || ""}`.trim()
+              : deleteTargetLead.email || "Unknown contact"
+          }
+          leadEmail={deleteTargetLead.email || ""}
+          isLoading={isDeleteLoading}
         />
       )}
     </>

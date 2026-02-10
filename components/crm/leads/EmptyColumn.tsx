@@ -14,9 +14,9 @@ import {
   CheckCircle2,
   XCircle,
   Plus,
-  Target,
+  Phone,
   Presentation,
-  Handshake,
+  FileText,
   Flag,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -36,32 +36,27 @@ interface EmptyConfig {
 export function EmptyColumn({ columnId, onCreate }: EmptyColumnProps) {
   const { t } = useTranslation("crm");
 
-  // V6.2-11: Phase-based empty configs
+  // V6.6: Phase-based empty configs (4 phases)
   const phaseConfigs: Record<string, EmptyConfig> = {
-    acquisition: {
-      icon: <Target className="h-12 w-12" />,
-      titleKey: "leads.empty.phase_acquisition",
-      descriptionKey: "leads.empty.phase_acquisition_desc",
-    },
-    qualification: {
-      icon: <CheckCircle2 className="h-12 w-12" />,
-      titleKey: "leads.empty.phase_qualification",
-      descriptionKey: "leads.empty.phase_qualification_desc",
+    contact: {
+      icon: <Phone className="h-12 w-12" />,
+      titleKey: "leads.empty.phase_contact",
+      descriptionKey: "leads.empty.phase_contact_desc",
     },
     demo: {
       icon: <Presentation className="h-12 w-12" />,
       titleKey: "leads.empty.phase_demo",
       descriptionKey: "leads.empty.phase_demo_desc",
     },
-    closing: {
-      icon: <Handshake className="h-12 w-12" />,
-      titleKey: "leads.empty.phase_closing",
-      descriptionKey: "leads.empty.phase_closing_desc",
+    proposal: {
+      icon: <FileText className="h-12 w-12" />,
+      titleKey: "leads.empty.phase_proposal",
+      descriptionKey: "leads.empty.phase_proposal_desc",
     },
-    result: {
+    finalized: {
       icon: <Flag className="h-12 w-12" />,
-      titleKey: "leads.empty.phase_result",
-      descriptionKey: "leads.empty.phase_result_desc",
+      titleKey: "leads.empty.phase_finalized",
+      descriptionKey: "leads.empty.phase_finalized_desc",
     },
   };
 
@@ -97,9 +92,9 @@ export function EmptyColumn({ columnId, onCreate }: EmptyColumnProps) {
       descriptionKey: "leads.empty.no_results_desc",
     };
 
-  // Show create action only for acquisition phase or new status
+  // Show create action only for contact phase or new status
   const showCreateAction =
-    (columnId === "acquisition" || columnId === "new") && onCreate;
+    (columnId === "contact" || columnId === "new") && onCreate;
 
   return (
     <EmptyState
