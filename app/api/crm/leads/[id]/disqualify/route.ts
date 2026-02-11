@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { leadStatusService } from "@/lib/services/crm/lead-status.service";
+import { getProviderEmployeeUuidFromClerkUserId } from "@/lib/utils/clerk-uuid-mapper";
 import { logger } from "@/lib/logger";
 
 // ============================================================================
@@ -130,12 +131,16 @@ export async function POST(
       blacklist: addToBlacklist,
     } = validationResult.data;
 
+    // Resolve Clerk userId to provider employee UUID
+    const employee = await getProviderEmployeeUuidFromClerkUserId(userId);
+    const employeeUuid = employee?.id || null;
+
     // Disqualify lead via service
     const result = await leadStatusService.disqualifyLead({
       leadId,
       reason,
       comment: comment || null,
-      disqualifiedBy: userId,
+      disqualifiedBy: employeeUuid,
       addToBlacklist: addToBlacklist ?? true,
       providerId: DEFAULT_PROVIDER_ID,
     });

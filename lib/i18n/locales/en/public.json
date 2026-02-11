@@ -159,6 +159,9 @@
         "freenow": "FreeNow",
         "other": "Other"
       },
+      "message": "Message",
+      "messagePlaceholder": "Tell us more about your needs...",
+      "optional": "optional",
       "submit": "Complete Booking",
       "submitting": "Submitting...",
       "back": "Back",

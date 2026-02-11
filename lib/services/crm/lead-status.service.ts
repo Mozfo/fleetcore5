@@ -90,7 +90,7 @@ export interface DisqualifyLeadInput {
   leadId: string;
   reason: string;
   comment?: string | null;
-  disqualifiedBy: string;
+  disqualifiedBy: string | null;
   addToBlacklist: boolean;
   providerId: string;
 }
@@ -424,7 +424,7 @@ export class LeadStatusService {
   /**
    * Disqualify a lead with full audit trail
    *
-   * - Validates transition to 'disqualified' is allowed
+   * - Disqualification is a terminal admin action: allowed from ANY status
    * - Sets disqualification fields (at, reason, comment, by)
    * - Creates activity in transaction
    * - Optionally adds email to blacklist
@@ -460,20 +460,8 @@ export class LeadStatusService {
 
       const previousStatus = lead.status || "new";
 
-      // 2. Validate transition
-      const isValid = await this.validateTransition(
-        previousStatus,
-        "disqualified"
-      );
-      if (!isValid) {
-        return {
-          success: false,
-          leadId,
-          previousStatus,
-          newStatus: "disqualified",
-          error: `Invalid transition from '${previousStatus}' to 'disqualified'`,
-        };
-      }
+      // 2. Disqualification is a terminal admin action - allowed from ANY status
+      // (no workflow transition validation needed)
 
       // 3. Update lead + activity in transaction
       await prisma.$transaction(async (tx) => {
@@ -496,6 +484,7 @@ export class LeadStatusService {
             title: `Lead disqualified (from ${previousStatus})`,
             description: `Reason: ${reason}${comment ? ` - ${comment}` : ""}`,
             performed_by: disqualifiedBy,
+            performed_by_name: disqualifiedBy ? null : "system",
             created_at: new Date(),
           },
         });

@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/opportunities/rotting",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/nurturing",
+      "schedule": "0 * * * *"
     }
   ]
 }

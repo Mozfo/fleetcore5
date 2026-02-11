@@ -619,8 +619,8 @@
       }
     },
     "phases": {
-      "contact": "Contact",
-      "demo": "Demo",
+      "contact": "To Contact",
+      "demo": "Demo Scheduled",
       "proposal": "Proposal",
       "finalized": "Finalized"
     },

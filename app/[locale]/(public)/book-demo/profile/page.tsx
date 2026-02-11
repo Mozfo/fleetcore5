@@ -29,6 +29,7 @@ import {
   ArrowLeft,
   Truck,
   User,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { WizardProgressBar } from "@/components/booking/WizardProgressBar";
@@ -98,6 +99,7 @@ const profileSchema = z.object({
   company_name: z.string().min(1, "Required"),
   phone: z.string().min(1, "Required"),
   fleet_size: z.string().min(1, "Required"),
+  message: z.string().max(1000),
   gdpr_consent: z.boolean().optional(),
 });
 
@@ -147,6 +149,7 @@ export default function BookDemoProfilePage() {
       company_name: "",
       phone: "",
       fleet_size: "",
+      message: "",
       gdpr_consent: false,
     },
   });
@@ -273,6 +276,7 @@ export default function BookDemoProfilePage() {
             company_name: data.company_name.trim(),
             phone: fullPhone,
             fleet_size: data.fleet_size,
+            message: data.message?.trim() || null,
             gdpr_consent: data.gdpr_consent || false,
           }),
         }
@@ -299,7 +303,7 @@ export default function BookDemoProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
@@ -307,7 +311,7 @@ export default function BookDemoProfilePage() {
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="flex items-center justify-center py-10">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
           <h1 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">
@@ -326,12 +330,12 @@ export default function BookDemoProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 py-8 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="w-full py-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-2xl"
+        className="w-full"
       >
         <WizardProgressBar currentStep={3} totalSteps={4} className="mb-8" />
 
@@ -494,6 +498,25 @@ export default function BookDemoProfilePage() {
                   {t("bookDemo.step3.errors.required")}
                 </p>
               )}
+            </div>
+
+            {/* Message (optional) */}
+            <div>
+              <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
+                <MessageSquare className="h-4 w-4" />
+                {t("bookDemo.step3.message", { defaultValue: "Message" })}{" "}
+                <span className="text-xs font-normal text-gray-400 dark:text-slate-500">
+                  ({t("bookDemo.step3.optional", { defaultValue: "optional" })})
+                </span>
+              </label>
+              <textarea
+                {...register("message")}
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500"
+                placeholder={t("bookDemo.step3.messagePlaceholder", {
+                  defaultValue: "Tell us more about your needs...",
+                })}
+              />
             </div>
 
             {/* GDPR Consent */}

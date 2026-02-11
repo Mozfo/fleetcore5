@@ -44,7 +44,7 @@ export function BookDemoLayoutClient({ children }: BookDemoLayoutClientProps) {
 
         {/* Form Content */}
         <div className="flex flex-1 items-center justify-center px-4 py-4 lg:px-8">
-          <div className="w-full max-w-md">{children}</div>
+          <div className="w-full max-w-2xl">{children}</div>
         </div>
       </div>
 

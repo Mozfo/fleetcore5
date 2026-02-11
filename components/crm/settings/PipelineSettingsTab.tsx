@@ -810,6 +810,7 @@ function SortableLeadStageRow({
 }
 
 function LeadStageRowContent({ stage }: { stage: LeadStage }) {
+  const { i18n } = useTranslation("crm");
   const colorClass =
     COLOR_CLASSES[stage.color as StageColor] || COLOR_CLASSES.gray;
 
@@ -821,7 +822,9 @@ function LeadStageRowContent({ stage }: { stage: LeadStage }) {
       <span
         className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorClass}`}
       >
-        {stage.label_en}
+        {i18n.language === "fr"
+          ? stage.label_fr || stage.label_en
+          : stage.label_en}
       </span>
       <span className="text-muted-foreground text-xs">{stage.value}</span>
     </>
@@ -891,6 +894,7 @@ function SortableOpportunityStageRow({
 }
 
 function OpportunityStageRowContent({ stage }: { stage: OpportunityStage }) {
+  const { i18n } = useTranslation("crm");
   const colorClass =
     COLOR_CLASSES[stage.color as StageColor] || COLOR_CLASSES.gray;
 
@@ -902,7 +906,9 @@ function OpportunityStageRowContent({ stage }: { stage: OpportunityStage }) {
       <span
         className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorClass}`}
       >
-        {stage.label_en}
+        {i18n.language === "fr"
+          ? stage.label_fr || stage.label_en
+          : stage.label_en}
       </span>
       <div className="text-muted-foreground flex items-center gap-3 text-xs">
         <span className="bg-muted rounded px-1.5 py-0.5">

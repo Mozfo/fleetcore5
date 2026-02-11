@@ -292,7 +292,7 @@ export default function BookDemoSchedulePage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
@@ -301,7 +301,7 @@ export default function BookDemoSchedulePage() {
   // Error state
   if (loadError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="flex items-center justify-center py-10">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
           <h1 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">
@@ -323,7 +323,7 @@ export default function BookDemoSchedulePage() {
   // Redirecting state after booking
   if (isRedirecting) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="flex items-center justify-center py-20">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -345,8 +345,8 @@ export default function BookDemoSchedulePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="mx-auto max-w-4xl">
+    <div className="w-full py-4">
+      <div className="mx-auto w-full">
         {/* Progress Bar - Step 4 of 4 */}
         <WizardProgressBar currentStep={4} totalSteps={4} className="mb-6" />
 

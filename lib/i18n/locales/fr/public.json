@@ -159,6 +159,9 @@
         "freenow": "FreeNow",
         "other": "Autre"
       },
+      "message": "Message",
+      "messagePlaceholder": "Parlez-nous de vos besoins...",
+      "optional": "optionnel",
       "submit": "Finaliser la réservation",
       "submitting": "Envoi...",
       "back": "Retour",

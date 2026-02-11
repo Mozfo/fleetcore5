@@ -322,12 +322,12 @@ export default function VerifyCodePage() {
   const isLocked = error?.code === "MAX_ATTEMPTS";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="w-full py-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="mx-auto w-full max-w-md"
       >
         {/* Progress Bar */}
         <WizardProgressBar currentStep={2} totalSteps={4} className="mb-8" />
