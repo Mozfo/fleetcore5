@@ -22,6 +22,7 @@ import type {
   Lead,
   LeadStatus,
 } from "@/types/crm";
+import { FCBadge } from "@/components/fc";
 import { KanbanCard } from "./KanbanCard";
 import { EmptyColumn } from "./EmptyColumn";
 import {
@@ -37,18 +38,25 @@ const PHASE_COLORS: Record<string, string> = {
   finalized: "green",
 };
 
-// Status color mapping (V6.6: 10 statuts)
-const STATUS_COLORS: Record<string, string> = {
-  new: "gray",
-  email_verified: "cyan",
-  callback_requested: "amber",
-  demo: "blue",
-  proposal_sent: "orange",
-  payment_pending: "amber",
-  converted: "green",
-  lost: "red",
-  nurturing: "purple",
-  disqualified: "gray",
+// Status → FCBadge variant mapping (V6.6: 10 statuts)
+type BadgeVariant =
+  | "default"
+  | "primary"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info";
+const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
+  new: "primary",
+  email_verified: "info",
+  callback_requested: "warning",
+  demo: "info",
+  proposal_sent: "warning",
+  payment_pending: "warning",
+  converted: "success",
+  lost: "danger",
+  nurturing: "info",
+  disqualified: "default",
 };
 
 interface KanbanPhaseColumnProps {
@@ -68,7 +76,7 @@ interface KanbanPhaseColumnProps {
 function StatusDropZone({
   status,
   statusLabel,
-  statusColor,
+  badgeVariant,
   leads,
   onCardClick,
   onCardDoubleClick,
@@ -80,7 +88,7 @@ function StatusDropZone({
 }: {
   status: string;
   statusLabel: string;
-  statusColor: string;
+  badgeVariant: BadgeVariant;
   leads: Lead[];
   onCardClick?: (leadId: string) => void;
   onCardDoubleClick?: (leadId: string) => void;
@@ -91,47 +99,27 @@ function StatusDropZone({
   onDelete?: (leadId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
-    id: status, // Droppable ID is the status (for DnD)
+    id: status,
   });
-
-  const colorClasses: Record<string, string> = {
-    gray: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-    blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-    green:
-      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-    purple:
-      "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-    orange:
-      "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
-    amber:
-      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-    red: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-    yellow:
-      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-  };
 
   return (
     <div
       ref={setNodeRef}
       data-testid="status-group"
       className={cn(
-        "min-h-[60px] rounded-md transition-all duration-200",
-        isOver && "bg-blue-50/50 ring-2 ring-blue-400 dark:bg-blue-900/20",
+        "rounded-fc-md min-h-[60px] transition-all duration-200",
+        isOver &&
+          "bg-fc-primary-50/50 ring-fc-primary-500 ring-2 dark:bg-blue-900/20",
         leads.length === 0 &&
-          "border border-dashed border-gray-200 dark:border-gray-700"
+          "border-fc-border-light border border-dashed dark:border-gray-700"
       )}
     >
       {/* Status header */}
       <div className="flex items-center gap-2 px-1 py-1.5">
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-xs font-medium",
-            colorClasses[statusColor] || colorClasses.gray
-          )}
-        >
+        <FCBadge variant={badgeVariant} size="sm">
           {statusLabel}
-        </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        </FCBadge>
+        <span className="text-fc-text-muted text-xs dark:text-gray-400">
           {leads.length}
         </span>
       </div>
@@ -144,7 +132,7 @@ function StatusDropZone({
         className="space-y-2"
       >
         {leads.length === 0 ? (
-          <div className="flex items-center justify-center py-2 text-xs text-gray-400 dark:text-gray-500">
+          <div className="text-fc-text-muted flex items-center justify-center py-2 text-xs dark:text-gray-500">
             Drop here
           </div>
         ) : (
@@ -192,12 +180,12 @@ export const KanbanPhaseColumn = memo(
 
     // Phase indicator color (Cosmos rounded pill)
     const phaseIndicatorClass: Record<string, string> = {
-      amber: "bg-amber-500",
-      blue: "bg-blue-500",
-      green: "bg-green-500",
+      amber: "bg-fc-warning-500",
+      blue: "bg-fc-primary-500",
+      green: "bg-fc-success-500",
       purple: "bg-purple-500",
       orange: "bg-orange-500",
-      gray: "bg-gray-500",
+      gray: "bg-fc-neutral-500",
     };
 
     return (
@@ -206,23 +194,23 @@ export const KanbanPhaseColumn = memo(
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="flex h-full flex-col rounded-lg border border-gray-200 bg-gray-50/50 dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-fc-lg border-fc-border-light bg-fc-bg-card/50 flex h-full flex-col border dark:border-gray-700 dark:bg-gray-800/50"
       >
         {/* Phase Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-lg border-b border-gray-200 bg-gray-50/95 px-3 py-2.5 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95">
+        <div className="border-fc-border-light bg-fc-bg-card/95 sticky top-0 z-10 flex items-center justify-between rounded-t-lg border-b px-3 py-2.5 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95">
           <div className="flex items-center gap-2">
             <div
               className={cn(
                 "h-5 w-1.5 rounded-full",
-                phaseIndicatorClass[phaseColor] || "bg-gray-500"
+                phaseIndicatorClass[phaseColor] || "bg-fc-neutral-500"
               )}
             />
-            <h3 className="text-sm font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300">
+            <h3 className="text-fc-text-primary text-sm font-semibold tracking-wide uppercase dark:text-gray-300">
               {phaseLabel}
             </h3>
           </div>
           <span
-            className="inline-flex min-w-[28px] items-center justify-center rounded-full bg-gray-500 px-2 text-xs font-bold text-white"
+            className="bg-fc-neutral-500 inline-flex min-w-[28px] items-center justify-center rounded-full px-2 text-xs font-bold text-white"
             style={{ height: 24 }}
           >
             {column.totalCount}
@@ -237,7 +225,7 @@ export const KanbanPhaseColumn = memo(
                 key={group.status}
                 status={group.status}
                 statusLabel={t(`leads.status.${group.status}`)}
-                statusColor={STATUS_COLORS[group.status] || "gray"}
+                badgeVariant={STATUS_BADGE_VARIANT[group.status] || "default"}
                 leads={group.leads}
                 onCardClick={onCardClick}
                 onCardDoubleClick={onCardDoubleClick}

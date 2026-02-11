@@ -21,7 +21,10 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { LeadsPageHeader } from "./LeadsPageHeader";
+import { FCPageHeader } from "@/components/fc";
+import { Plus, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ViewToggle, type ViewMode } from "./ViewToggle";
 import { LeadsFilterBar, type LeadsFilters } from "./LeadsFilterBar";
 import { LeadsTable } from "./LeadsTable";
 import { TablePagination } from "./TablePagination";
@@ -61,7 +64,6 @@ import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { DisqualifyLeadModal } from "./DisqualifyLeadModal";
 import type { SavedViewConfig } from "@/lib/types/views";
-import type { ViewMode } from "./ViewToggle";
 import type { Lead, KanbanPhaseColumn, LeadStatus } from "@/types/crm";
 
 const VIEW_MODE_STORAGE_KEY = "crm_leads_view";
@@ -790,11 +792,32 @@ export function LeadsPageClient({
     <>
       <div className="absolute inset-0 flex flex-col overflow-hidden">
         {/* Compact Header (48px) */}
-        <LeadsPageHeader
-          onNewLead={handleCreateLead}
-          onExport={handleExport}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
+        <FCPageHeader
+          title={_t("leads.title")}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="h-8 gap-1.5 text-xs"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">
+                  {_t("leads.actions.export", { defaultValue: "Export" })}
+                </span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleCreateLead}
+                className="h-8 gap-1.5 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {_t("leads.actions.new_lead")}
+              </Button>
+              <ViewToggle value={viewMode} onChange={handleViewModeChange} />
+            </>
+          }
         />
 
         {/* Quick Filters Bar + Filter Sheet */}
@@ -810,7 +833,7 @@ export function LeadsPageClient({
         {/* Content Area - Kanban fills remaining space */}
         <div className="flex-1 overflow-hidden">
           {viewMode === "kanban" ? (
-            <div className="h-full bg-gray-50 p-3 dark:bg-gray-900/50">
+            <div className="bg-fc-bg-app h-full p-3 dark:bg-gray-900/50">
               <KanbanPhaseBoard
                 columns={kanbanPhaseColumns}
                 onCardClick={handleCardClick}
@@ -826,7 +849,7 @@ export function LeadsPageClient({
           ) : (
             <div className="flex h-full flex-col">
               {/* Column Selector - Table view only */}
-              <div className="flex shrink-0 justify-end border-b border-gray-200 bg-gray-50 px-4 py-1.5 dark:border-gray-800 dark:bg-gray-900">
+              <div className="border-fc-border-light bg-fc-bg-card flex shrink-0 justify-end border-b px-4 py-1.5 dark:border-gray-800 dark:bg-gray-900">
                 <ColumnSelector
                   columns={orderedColumns}
                   onToggle={toggleColumn}
@@ -861,7 +884,7 @@ export function LeadsPageClient({
               </div>
 
               {/* Pagination */}
-              <div className="shrink-0 border-t border-gray-200 dark:border-gray-800">
+              <div className="border-fc-border-light shrink-0 border-t dark:border-gray-800">
                 <TablePagination
                   currentPage={currentPage}
                   pageSize={pageSize}

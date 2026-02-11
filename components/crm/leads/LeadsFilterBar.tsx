@@ -86,11 +86,11 @@ function FilterSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-7 cursor-pointer appearance-none rounded-md border border-gray-300 bg-white py-0 pr-7 pl-3 text-sm font-medium text-gray-700 transition-all duration-150 hover:border-gray-400 hover:bg-gray-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+        className="rounded-fc-md border-fc-border-light text-fc-text-primary hover:border-fc-border-medium hover:bg-fc-bg-hover focus:border-fc-primary-500 focus:ring-fc-primary-500/30 h-7 cursor-pointer appearance-none border bg-white py-0 pr-7 pl-3 text-sm font-medium transition-all duration-150 focus:ring-2 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
       >
         {children}
       </select>
-      <ChevronDown className="pointer-events-none absolute top-1/2 right-1.5 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+      <ChevronDown className="text-fc-text-muted pointer-events-none absolute top-1/2 right-1.5 h-3.5 w-3.5 -translate-y-1/2" />
     </div>
   );
 }
@@ -145,28 +145,28 @@ export function LeadsFilterBar({
   };
 
   return (
-    <div className="flex h-10 items-center gap-3 border-b border-gray-200 bg-white px-4">
+    <div className="border-fc-border-light flex h-10 items-center gap-3 border-b bg-white px-4 dark:border-gray-800 dark:bg-gray-900">
       {/* Search */}
       <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+        <Search className="text-fc-text-muted pointer-events-none absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
         <input
           type="text"
           placeholder={t("leads.filters.search")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="h-7 w-44 rounded-md border border-gray-300 bg-white pr-7 pl-7 text-sm text-gray-700 transition-all duration-150 placeholder:text-gray-400 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+          className="rounded-fc-md border-fc-border-light text-fc-text-primary placeholder:text-fc-text-muted hover:border-fc-border-medium focus:border-fc-primary-500 focus:ring-fc-primary-500/30 h-7 w-44 border bg-white pr-7 pl-7 text-sm transition-all duration-150 focus:ring-2 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
         />
         {searchInput && (
           <button
             onClick={() => setSearchInput("")}
-            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="text-fc-text-muted hover:text-fc-text-primary absolute top-1/2 right-2 -translate-y-1/2"
           >
             <X className="h-3 w-3" />
           </button>
         )}
       </div>
 
-      <div className="h-5 w-px bg-gray-200" />
+      <div className="bg-fc-border-light h-5 w-px" />
 
       {/* Stage */}
       <FilterSelect
@@ -232,7 +232,7 @@ export function LeadsFilterBar({
       {hasActiveFilters && (
         <button
           onClick={handleReset}
-          className="text-xs text-gray-500 transition-colors hover:text-gray-700"
+          className="text-fc-text-muted hover:text-fc-text-primary text-xs transition-colors"
         >
           <X className="mr-0.5 inline h-3 w-3" />
           {t("leads.filters.reset")}
@@ -241,7 +241,7 @@ export function LeadsFilterBar({
 
       {/* Lead count */}
       {totalCount !== undefined && (
-        <div className="ml-auto text-sm font-medium text-gray-500">
+        <div className="text-fc-text-muted ml-auto text-sm font-medium dark:text-gray-400">
           {totalCount} leads
         </div>
       )}
