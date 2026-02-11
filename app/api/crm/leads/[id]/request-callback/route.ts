@@ -18,6 +18,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { wizardLeadService } from "@/lib/services/crm/wizard-lead.service";
+import { NotificationQueueService } from "@/lib/services/notification/queue.service";
+import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
 // ============================================================================
@@ -95,6 +97,31 @@ export async function POST(
 
     // Request callback via service
     const updatedLead = await wizardLeadService.requestCallback(leadId);
+
+    // Queue confirmation email (reuse lead_confirmation template)
+    try {
+      const queueService = new NotificationQueueService(prisma);
+      await queueService.queueNotification({
+        templateCode: "lead_confirmation",
+        recipientEmail: lead.email,
+        locale: lead.language || "en",
+        variables: {
+          first_name: lead.first_name || "",
+          company_name: lead.company_name || "",
+          fleet_size: lead.fleet_size || "",
+          country_name: lead.country_code || "",
+          country_preposition: "",
+        },
+        leadId,
+        idempotencyKey: `callback_confirmation_${leadId}`,
+        processImmediately: true,
+      });
+    } catch (emailError) {
+      logger.warn(
+        { leadId, error: emailError },
+        "[RequestCallback] Failed to queue confirmation email (non-blocking)"
+      );
+    }
 
     logger.info(
       { leadId, email: lead.email },

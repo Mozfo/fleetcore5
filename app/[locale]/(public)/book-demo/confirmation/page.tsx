@@ -255,7 +255,7 @@ export default function BookDemoConfirmationPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-lg"
+        className="mx-auto w-full max-w-lg"
       >
         {/* Success Card */}
         <div className="rounded-2xl bg-white p-6 shadow-xl sm:p-8 dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm">
