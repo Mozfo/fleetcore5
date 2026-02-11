@@ -7,7 +7,6 @@
 
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
@@ -44,11 +43,11 @@ export const KanbanColumn = memo(
 
     // Color mapping for columns
     const colorClasses: Record<string, string> = {
-      blue: "bg-blue-500",
+      blue: "bg-fc-primary-500",
       purple: "bg-purple-500",
-      yellow: "bg-yellow-500",
+      yellow: "bg-fc-warning-500",
       orange: "bg-orange-500",
-      green: "bg-green-500",
+      green: "bg-fc-success-500",
     };
 
     return (
@@ -58,32 +57,36 @@ export const KanbanColumn = memo(
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          "flex h-full flex-col rounded-lg border border-gray-200 bg-gray-50/50 transition-all duration-200 dark:border-gray-700 dark:bg-gray-800/50",
-          isOver && "bg-blue-50/30 ring-2 ring-blue-500 dark:bg-blue-900/30"
+          "rounded-fc-lg border-fc-border-light bg-fc-bg-card/50 flex h-full flex-col border transition-all duration-200 dark:border-gray-700 dark:bg-gray-800/50",
+          isOver &&
+            "bg-fc-primary-50/30 ring-fc-primary-500 ring-2 dark:bg-blue-900/30"
         )}
       >
         {/* Column Header */}
-        <div className="sticky top-0 z-10 flex flex-col gap-2 rounded-t-lg border-b border-gray-200/50 bg-gray-50/95 p-4 pb-3 backdrop-blur-sm dark:border-gray-800/50 dark:bg-gray-900/95">
+        <div className="border-fc-border-light bg-fc-bg-card/95 sticky top-0 z-10 flex flex-col gap-2 rounded-t-lg border-b px-3 py-2.5 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div
                 className={cn(
-                  "h-2 w-2 rounded-full",
-                  colorClasses[column.color] || "bg-gray-500"
+                  "h-5 w-1.5 rounded-full",
+                  colorClasses[column.color] || "bg-fc-neutral-500"
                 )}
               />
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <h3 className="text-fc-text-primary text-sm font-semibold tracking-wide uppercase dark:text-gray-300">
                 {column.title}
               </h3>
             </div>
-            <Badge variant="secondary" className="text-xs">
+            <span
+              className="bg-fc-neutral-500 inline-flex min-w-[28px] items-center justify-center rounded-full px-2 text-xs font-bold text-white"
+              style={{ height: 24 }}
+            >
               {column.count}
-            </Badge>
+            </span>
           </div>
           {/* Value summary */}
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="text-fc-text-muted flex items-center justify-between text-xs dark:text-gray-500">
             <span>{t("opportunity.column.value", "Value")}</span>
-            <span className="font-medium text-gray-700 dark:text-gray-300">
+            <span className="text-fc-text-primary font-medium dark:text-gray-300">
               {formatCurrency(column.totalValue)}
             </span>
           </div>
@@ -94,7 +97,7 @@ export const KanbanColumn = memo(
           variants={kanbanContainerVariants}
           initial="hidden"
           animate="visible"
-          className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 pt-3"
+          className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
         >
           {column.opportunities.length > 0 ? (
             column.opportunities.map((opportunity) => (
@@ -107,7 +110,7 @@ export const KanbanColumn = memo(
             ))
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-sm text-gray-400">
+              <p className="text-fc-text-muted text-sm dark:text-gray-500">
                 {t("opportunity.column.empty", "No deals in this stage")}
               </p>
             </div>

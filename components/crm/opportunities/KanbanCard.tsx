@@ -15,10 +15,10 @@ import {
   AlertTriangle,
   User,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import { FCBadge } from "@/components/fc";
 import type { Opportunity } from "@/types/crm";
 
 interface KanbanCardProps {
@@ -89,37 +89,31 @@ export const KanbanCard = memo(
         {...listeners}
         onClick={onClick}
         className={cn(
-          "group cursor-grab space-y-3 rounded-lg border bg-white p-4 dark:bg-gray-900",
-          "relative overflow-hidden",
-          "before:absolute before:inset-0",
-          "before:bg-gradient-to-br before:from-blue-50/50 before:to-transparent",
-          "before:opacity-0 before:transition-opacity",
-          "hover:before:opacity-100",
-          "dark:before:from-blue-900/20",
-          // Rotting state
+          "rounded-fc-lg cursor-grab space-y-2 border bg-white p-3 dark:bg-gray-900",
+          "transition-all duration-150",
+          "hover:border-fc-border-medium hover:shadow-fc-md",
           isRotting
-            ? "border-red-300 dark:border-red-800"
-            : "border-gray-200 dark:border-gray-800",
-          // Dragging state
+            ? "border-fc-danger-500/50 dark:border-red-800"
+            : "border-fc-border-light dark:border-gray-700",
           showDraggingState &&
-            "cursor-grabbing opacity-60 shadow-2xl ring-2 ring-blue-500"
+            "shadow-fc-lg ring-fc-primary-500 cursor-grabbing opacity-60 ring-1"
         )}
       >
         {/* Rotting Alert */}
         {isRotting && (
-          <div className="absolute top-2 right-2 z-20">
-            <Badge variant="destructive" className="gap-1 text-xs">
+          <div className="flex justify-end">
+            <FCBadge variant="danger" size="sm" className="gap-1">
               <AlertTriangle className="h-3 w-3" />
               {t("opportunity.card.rotting", "Rotting")}
-            </Badge>
+            </FCBadge>
           </div>
         )}
 
         {/* Header: Company + Flag */}
-        <div className="relative z-10 flex items-start justify-between pr-16">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Building2 className="h-4 w-4 flex-shrink-0 text-gray-400" />
-            <span className="truncate text-sm font-medium">
+            <Building2 className="text-fc-text-muted h-4 w-4 flex-shrink-0" />
+            <span className="text-fc-text-primary truncate text-sm font-medium dark:text-white">
               {opportunity.lead?.company_name ||
                 t("opportunity.card.unknown", "Unknown")}
             </span>
@@ -136,15 +130,15 @@ export const KanbanCard = memo(
 
         {/* Contact Name */}
         {opportunity.lead && (
-          <p className="relative z-10 text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-fc-text-secondary truncate text-xs dark:text-gray-400">
             {opportunity.lead.first_name} {opportunity.lead.last_name}
           </p>
         )}
 
         {/* Value + Probability */}
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-1 text-sm font-semibold text-green-600 dark:text-green-400">
-            <DollarSign className="h-4 w-4" />
+        <div className="flex items-center justify-between">
+          <div className="text-fc-success-600 flex items-center gap-1 text-sm font-semibold dark:text-green-400">
+            <DollarSign className="h-3.5 w-3.5" />
             {opportunity.expected_value
               ? formatCurrency(
                   opportunity.expected_value,
@@ -153,14 +147,14 @@ export const KanbanCard = memo(
               : "-"}
           </div>
           {opportunity.probability_percent !== null && (
-            <Badge variant="outline" className="text-xs">
+            <span className="bg-fc-neutral-50 text-fc-neutral-500 inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold">
               {opportunity.probability_percent}%
-            </Badge>
+            </span>
           )}
         </div>
 
         {/* Days in Stage */}
-        <div className="relative z-10 flex items-center gap-2 text-xs text-gray-500">
+        <div className="text-fc-text-muted flex items-center gap-2 text-xs dark:text-gray-500">
           <Clock className="h-3 w-3" />
           <span>
             {t("opportunity.card.daysInStage", {
@@ -171,22 +165,22 @@ export const KanbanCard = memo(
         </div>
 
         {/* Footer: Owner */}
-        <div className="relative z-10 flex items-center justify-between border-t border-gray-200 pt-2 dark:border-gray-800">
+        <div className="border-fc-border-light flex items-center justify-between border-t pt-2 dark:border-gray-700">
           <div className="flex items-center gap-2">
             {opportunity.assignedTo ? (
               <div
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500 text-xs font-medium text-white"
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-600 text-[10px] font-medium text-white"
                 title={`${opportunity.assignedTo.first_name} ${opportunity.assignedTo.last_name}`}
               >
                 {getInitials(opportunity.assignedTo)}
               </div>
             ) : (
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-800">
-                <User className="h-3 w-3 text-gray-400" />
+              <div className="bg-fc-neutral-50 flex h-5 w-5 items-center justify-center rounded-full dark:bg-gray-800">
+                <User className="text-fc-text-muted h-3 w-3" />
               </div>
             )}
             {opportunity.expected_close_date && (
-              <span className="text-xs text-gray-500">
+              <span className="text-fc-text-muted text-xs">
                 {t("opportunity.card.closeDate", "Close")}:{" "}
                 {new Date(opportunity.expected_close_date).toLocaleDateString()}
               </span>

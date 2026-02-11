@@ -14,7 +14,17 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { OpportunitiesPageHeader } from "./OpportunitiesPageHeader";
+import {
+  Plus,
+  Download,
+  DollarSign,
+  Target,
+  TrendingUp,
+  AlertTriangle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FCPageHeader, FCStatCard } from "@/components/fc";
+import { ViewToggle, type ViewMode } from "../leads/ViewToggle";
 import { OpportunitiesFilterBar } from "./OpportunitiesFilterBar";
 import { KanbanBoard } from "./KanbanBoard";
 import { OpportunitiesTable } from "./OpportunitiesTable";
@@ -35,7 +45,15 @@ import type {
   OpportunityKanbanColumn,
 } from "@/types/crm";
 import type { OpportunitiesFilters } from "@/app/[locale]/(app)/crm/opportunities/page";
-// LossReasonOption type removed - drawer loads loss reasons dynamically via useOpportunityLossReasons
+
+function formatCurrency(value: number, currency: string = "EUR"): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 const VIEW_MODE_STORAGE_KEY = "crm_opportunities_view";
 
@@ -75,7 +93,7 @@ export function OpportunitiesPageClient({
   const [filters, setFilters] = useState<OpportunitiesFilters>(initialFilters);
 
   // View mode (kanban or table)
-  const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
   // Table state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -117,7 +135,7 @@ export function OpportunitiesPageClient({
     }
   }, []);
 
-  const handleViewModeChange = useCallback((mode: "kanban" | "table") => {
+  const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
     try {
       localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
@@ -514,50 +532,118 @@ export function OpportunitiesPageClient({
 
   return (
     <div className="absolute inset-0 flex flex-col overflow-hidden">
-      {/* Sticky Header Section - Non-scrolling, constrained width to prevent overflow when table columns are resized */}
-      <div className="max-w-full shrink-0 space-y-4 overflow-x-hidden border-b border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
-        {/* Header with stats - Same pattern as Leads */}
-        <OpportunitiesPageHeader
-          stats={stats}
-          onNewOpportunity={() => setIsFormModalOpen(true)}
-          onExport={() => {
-            // TODO: Implement export
-          }}
-          onSettings={() => {
-            // TODO: Implement settings
-          }}
-        />
+      {/* Page Header - 48px (FCPageHeader) */}
+      <FCPageHeader
+        title={t("opportunity.title", "Opportunities")}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                /* TODO: export */
+              }}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">
+                {t("opportunity.actions.export", "Export")}
+              </span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setIsFormModalOpen(true)}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t("opportunity.actions.new_opportunity", "New Opportunity")}
+            </Button>
+            <ViewToggle value={viewMode} onChange={handleViewModeChange} />
+          </>
+        }
+      />
 
-        {/* Filter bar - ViewToggle is here (same as Leads) */}
-        <OpportunitiesFilterBar
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          owners={owners}
-          rottingCount={stats.rottingCount}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          // Column selector props NOT here - moved to table section like Leads
-        />
-      </div>
+      {/* Filter Bar - 40px inline */}
+      <OpportunitiesFilterBar
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        owners={owners}
+        rottingCount={stats.rottingCount}
+      />
 
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-auto">
-        {/* Kanban board */}
-        {viewMode === "kanban" && (
-          <div className="p-6">
-            <KanbanBoard
-              columns={kanbanColumns}
-              onStageChange={handleStageChange}
-              onCardClick={handleOpportunityClick}
-            />
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden">
+        {viewMode === "kanban" ? (
+          <div className="bg-fc-bg-app flex h-full flex-col dark:bg-gray-900/50">
+            {/* Stats Cards */}
+            <div className="grid shrink-0 grid-cols-2 gap-3 p-3 sm:grid-cols-4">
+              <FCStatCard
+                label={t("opportunity.stats.openDeals", "Open Deals")}
+                value={stats.total}
+                variant="primary"
+                icon={<Target className="h-5 w-5" />}
+              />
+              <FCStatCard
+                label={t("opportunity.stats.pipelineValue", "Pipeline")}
+                value={formatCurrency(stats.totalValue)}
+                variant="success"
+                icon={<DollarSign className="h-5 w-5" />}
+              />
+              <FCStatCard
+                label={t("opportunity.stats.weightedValue", "Weighted")}
+                value={formatCurrency(stats.weightedValue)}
+                variant="primary"
+                icon={<TrendingUp className="h-5 w-5" />}
+              />
+              <FCStatCard
+                label={t("opportunity.stats.rottingDeals", "Rotting")}
+                value={stats.rottingCount}
+                variant={stats.rottingCount > 0 ? "danger" : "default"}
+                icon={<AlertTriangle className="h-5 w-5" />}
+              />
+            </div>
+
+            {/* Kanban Board */}
+            <div className="flex-1 overflow-hidden px-3 pb-3">
+              <KanbanBoard
+                columns={kanbanColumns}
+                onStageChange={handleStageChange}
+                onCardClick={handleOpportunityClick}
+              />
+            </div>
           </div>
-        )}
-
-        {/* Table view - Exact same structure as Leads */}
-        {viewMode === "table" && (
+        ) : (
           <div className="flex h-full flex-col">
-            {/* Column Selector - Table view only (same position as Leads) */}
-            <div className="flex shrink-0 justify-end border-b border-gray-200 bg-gray-50 px-6 py-2 dark:border-gray-800 dark:bg-gray-900">
+            {/* Stats Cards - Table view */}
+            <div className="border-fc-border-light grid shrink-0 grid-cols-2 gap-3 border-b bg-white p-3 sm:grid-cols-4 dark:border-gray-800 dark:bg-gray-950">
+              <FCStatCard
+                label={t("opportunity.stats.openDeals", "Open Deals")}
+                value={stats.total}
+                variant="primary"
+                icon={<Target className="h-5 w-5" />}
+              />
+              <FCStatCard
+                label={t("opportunity.stats.pipelineValue", "Pipeline")}
+                value={formatCurrency(stats.totalValue)}
+                variant="success"
+                icon={<DollarSign className="h-5 w-5" />}
+              />
+              <FCStatCard
+                label={t("opportunity.stats.weightedValue", "Weighted")}
+                value={formatCurrency(stats.weightedValue)}
+                variant="primary"
+                icon={<TrendingUp className="h-5 w-5" />}
+              />
+              <FCStatCard
+                label={t("opportunity.stats.rottingDeals", "Rotting")}
+                value={stats.rottingCount}
+                variant={stats.rottingCount > 0 ? "danger" : "default"}
+                icon={<AlertTriangle className="h-5 w-5" />}
+              />
+            </div>
+
+            {/* Column Selector */}
+            <div className="border-fc-border-light bg-fc-bg-card flex shrink-0 justify-end border-b px-4 py-1.5 dark:border-gray-800 dark:bg-gray-900">
               <OpportunityColumnSelector
                 columns={orderedColumns}
                 onToggle={toggleColumn}
@@ -566,7 +652,7 @@ export function OpportunitiesPageClient({
               />
             </div>
 
-            {/* Table with sticky header */}
+            {/* Table */}
             <div className="flex-1 overflow-auto">
               <OpportunitiesTable
                 opportunities={paginatedOpportunities}
@@ -587,8 +673,8 @@ export function OpportunitiesPageClient({
               />
             </div>
 
-            {/* Pagination - Fixed at bottom (same as Leads) */}
-            <div className="shrink-0 border-t border-gray-200 dark:border-gray-800">
+            {/* Pagination */}
+            <div className="border-fc-border-light shrink-0 border-t dark:border-gray-800">
               <TablePagination
                 currentPage={currentPage}
                 pageSize={pageSize}

@@ -84,7 +84,7 @@ export function KanbanBoard({
   // Loading State
   if (isLoading) {
     return (
-      <div className="grid h-[calc(100vh-320px)] grid-cols-1 gap-4 lg:grid-cols-5">
+      <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-5">
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
@@ -138,7 +138,7 @@ export function KanbanBoard({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="grid h-[calc(100vh-320px)] grid-cols-1 gap-4 lg:grid-cols-5"
+          className="grid h-full grid-cols-1 gap-4 lg:grid-cols-5"
         >
           {columns.map((column) => (
             <KanbanColumn
