@@ -103,7 +103,7 @@ export function KanbanPhaseBoard({
   // Loading state
   if (isLoading) {
     return (
-      <div className="grid h-[calc(100vh-280px)] grid-cols-1 gap-4 lg:grid-cols-4">
+      <div className="grid h-full grid-cols-1 gap-3 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
@@ -160,7 +160,7 @@ export function KanbanPhaseBoard({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="grid h-[calc(100vh-280px)] grid-cols-1 gap-4 lg:grid-cols-4"
+          className="grid h-full grid-cols-1 gap-3 lg:grid-cols-4"
         >
           {columns.map((column) => (
             <KanbanPhaseColumn

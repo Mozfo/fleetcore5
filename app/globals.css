@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* --- shadcn/ui tokens --- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -41,6 +42,80 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* ========================================
+     FLEETCORE DESIGN SYSTEM V1 — Tailwind mappings
+     Maps --fc-* CSS variables → Tailwind utility classes
+     Usage: bg-fc-primary-500, text-fc-text-primary, p-fc-3, etc.
+     ======================================== */
+
+  /* --- FC Colors: Primary --- */
+  --color-fc-primary-50: var(--fc-primary-50);
+  --color-fc-primary-100: var(--fc-primary-100);
+  --color-fc-primary-500: var(--fc-primary-500);
+  --color-fc-primary-600: var(--fc-primary-600);
+  --color-fc-primary-700: var(--fc-primary-700);
+
+  /* --- FC Colors: Success --- */
+  --color-fc-success-50: var(--fc-success-50);
+  --color-fc-success-500: var(--fc-success-500);
+  --color-fc-success-600: var(--fc-success-600);
+
+  /* --- FC Colors: Warning --- */
+  --color-fc-warning-50: var(--fc-warning-50);
+  --color-fc-warning-500: var(--fc-warning-500);
+  --color-fc-warning-600: var(--fc-warning-600);
+
+  /* --- FC Colors: Danger --- */
+  --color-fc-danger-50: var(--fc-danger-50);
+  --color-fc-danger-500: var(--fc-danger-500);
+  --color-fc-danger-600: var(--fc-danger-600);
+
+  /* --- FC Colors: Info --- */
+  --color-fc-info-50: var(--fc-info-50);
+  --color-fc-info-500: var(--fc-info-500);
+  --color-fc-info-600: var(--fc-info-600);
+
+  /* --- FC Colors: Neutral --- */
+  --color-fc-neutral-50: var(--fc-neutral-50);
+  --color-fc-neutral-500: var(--fc-neutral-500);
+  --color-fc-neutral-600: var(--fc-neutral-600);
+
+  /* --- FC Colors: Surfaces --- */
+  --color-fc-bg-app: var(--fc-bg-app);
+  --color-fc-bg-card: var(--fc-bg-card);
+  --color-fc-bg-elevated: var(--fc-bg-elevated);
+  --color-fc-bg-hover: var(--fc-bg-hover);
+  --color-fc-bg-selected: var(--fc-bg-selected);
+
+  /* --- FC Colors: Borders --- */
+  --color-fc-border-light: var(--fc-border-light);
+  --color-fc-border-medium: var(--fc-border-medium);
+  --color-fc-border-dark: var(--fc-border-dark);
+
+  /* --- FC Colors: Text --- */
+  --color-fc-text-primary: var(--fc-text-primary);
+  --color-fc-text-secondary: var(--fc-text-secondary);
+  --color-fc-text-muted: var(--fc-text-muted);
+  --color-fc-text-inverse: var(--fc-text-inverse);
+
+  /* --- FC Spacing --- */
+  --spacing-fc-1: var(--fc-space-1);
+  --spacing-fc-2: var(--fc-space-2);
+  --spacing-fc-3: var(--fc-space-3);
+  --spacing-fc-4: var(--fc-space-4);
+  --spacing-fc-5: var(--fc-space-5);
+  --spacing-fc-6: var(--fc-space-6);
+
+  /* --- FC Border Radius --- */
+  --radius-fc-sm: var(--fc-radius-sm);
+  --radius-fc-md: var(--fc-radius-md);
+  --radius-fc-lg: var(--fc-radius-lg);
+
+  /* --- FC Shadows --- */
+  --shadow-fc-sm: var(--fc-shadow-sm);
+  --shadow-fc-md: var(--fc-shadow-md);
+  --shadow-fc-lg: var(--fc-shadow-lg);
 }
 
 :root {
@@ -131,6 +206,94 @@
   100% {
     transform: translateX(100%);
   }
+}
+
+/* ========================================
+   FLEETCORE DESIGN SYSTEM V1
+   Inspiré Salesforce Lightning / Cosmos
+   ======================================== */
+:root {
+  /* --- COULEURS PRIMAIRES --- */
+  --fc-primary-50: #ebf5ff;
+  --fc-primary-100: #e1effe;
+  --fc-primary-500: #0176d3;
+  --fc-primary-600: #0b5cab;
+  --fc-primary-700: #014486;
+
+  /* --- COULEURS STATUS (VIVES) --- */
+  /* Success */
+  --fc-success-50: #ebf7ee;
+  --fc-success-500: #2e844a;
+  --fc-success-600: #22683e;
+
+  /* Warning */
+  --fc-warning-50: #fff7ed;
+  --fc-warning-500: #dd7a01;
+  --fc-warning-600: #ba5d00;
+
+  /* Danger */
+  --fc-danger-50: #fee2e2;
+  --fc-danger-500: #c23934;
+  --fc-danger-600: #a31b16;
+
+  /* Info */
+  --fc-info-50: #e0f7fa;
+  --fc-info-500: #0891b2;
+  --fc-info-600: #0e7490;
+
+  /* Neutral */
+  --fc-neutral-50: #f9fafb;
+  --fc-neutral-500: #6b7280;
+  --fc-neutral-600: #4b5563;
+
+  /* --- SURFACES & BACKGROUNDS --- */
+  --fc-bg-app: #f3f3f3;
+  --fc-bg-card: #ffffff;
+  --fc-bg-elevated: #ffffff;
+  --fc-bg-hover: #f9fafb;
+  --fc-bg-selected: #ebf5ff;
+
+  /* --- BORDERS --- */
+  --fc-border-light: #e5e5e5;
+  --fc-border-medium: #d1d5db;
+  --fc-border-dark: #9ca3af;
+
+  /* --- TEXTE --- */
+  --fc-text-primary: #181818;
+  --fc-text-secondary: #444444;
+  --fc-text-muted: #706e6b;
+  --fc-text-inverse: #ffffff;
+
+  /* --- ESPACEMENTS --- */
+  --fc-space-1: 0.25rem;
+  --fc-space-2: 0.5rem;
+  --fc-space-3: 0.75rem;
+  --fc-space-4: 1rem;
+  --fc-space-5: 1.25rem;
+  --fc-space-6: 1.5rem;
+
+  /* --- LAYOUT --- */
+  --fc-header-height: 56px;
+  --fc-page-header-height: 48px;
+  --fc-filter-bar-height: 48px;
+  --fc-sidebar-width-collapsed: 56px;
+  --fc-sidebar-width-expanded: 240px;
+
+  /* --- RADIUS --- */
+  --fc-radius-sm: 4px;
+  --fc-radius-md: 6px;
+  --fc-radius-lg: 8px;
+
+  /* --- SHADOWS --- */
+  --fc-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --fc-shadow-md:
+    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --fc-shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* --- TRANSITIONS --- */
+  --fc-transition-fast: 150ms ease;
+  --fc-transition-normal: 200ms ease;
 }
 
 /* 2025 Color System - Warm & Sophisticated */

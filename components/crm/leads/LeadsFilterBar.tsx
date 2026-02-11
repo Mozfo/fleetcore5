@@ -1,34 +1,17 @@
 /**
- * LeadsFilterBar - Barre de filtres avec debounce et visual feedback
- * Affiche: search, status, stage, owner, country, min_score
- * Active state: badge avec compteur + reset button
+ * LeadsFilterBar - Salesforce Cosmos inline filter bar (40px)
  *
- * Uses dynamic lead stages from crm_settings via useLeadStages hook.
+ * Always visible, compact. Inline FilterDropdown buttons.
+ * No Sheet/Drawer. No Quick Filter toggle buttons.
  */
 
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Search,
-  X,
-  SlidersHorizontal,
-  CalendarCheck,
-  CheckSquare,
-  CreditCard,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select } from "@/components/ui/select";
+import { Search, X, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
-import { ViewToggle, type ViewMode } from "./ViewToggle";
-import { AdvancedFilters } from "./AdvancedFilters";
-import { SavedViews } from "./SavedViews";
 import { useLeadStages } from "@/lib/hooks/useLeadStages";
-import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
 import type {
   FilterGroup,
   LogicOperator,
@@ -36,6 +19,7 @@ import type {
 } from "@/lib/config/filter-config";
 import type { LeadStatus, LeadStage } from "@/types/crm";
 import type { SavedView, SavedViewConfig } from "@/lib/types/views";
+import type { ViewMode } from "./ViewToggle";
 
 export interface LeadsFilters {
   status?: LeadStatus | "all";
@@ -44,7 +28,6 @@ export interface LeadsFilters {
   country_code?: string | "all";
   min_score?: number;
   search?: string;
-  // V6.2.1: New booking/wizard filters
   has_booking?: boolean;
   wizard_completed?: boolean;
   payment_pending?: boolean;
@@ -59,31 +42,57 @@ interface LeadsFilterBarProps {
     flag_emoji: string;
   }>;
   owners?: Array<{ id: string; first_name: string; last_name: string | null }>;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
-  // Advanced filters props (E2-A)
-  advancedFilterGroup: FilterGroup;
-  advancedFiltersActive: boolean;
-  advancedConditionsCount: number;
-  onAdvancedSetLogic: (logic: LogicOperator) => void;
-  onAdvancedReset: () => void;
-  onAdvancedAddCondition: (groupId?: string) => void;
-  onAdvancedUpdateCondition: (
+  totalCount?: number;
+  // Backward compat (Phase 2 cleanup)
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
+  isSheetOpen?: boolean;
+  onSheetOpenChange?: (open: boolean) => void;
+  advancedFilterGroup?: FilterGroup;
+  advancedFiltersActive?: boolean;
+  advancedConditionsCount?: number;
+  onAdvancedSetLogic?: (logic: LogicOperator) => void;
+  onAdvancedReset?: () => void;
+  onAdvancedAddCondition?: (groupId?: string) => void;
+  onAdvancedUpdateCondition?: (
     conditionId: string,
     updates: Partial<Omit<FilterCondition, "id">>
   ) => void;
-  onAdvancedRemoveCondition: (conditionId: string) => void;
-  onAdvancedAddGroup: (parentGroupId?: string) => void;
-  onAdvancedUpdateGroupLogic: (groupId: string, logic: LogicOperator) => void;
-  onAdvancedRemoveGroup: (groupId: string) => void;
-  // Saved Views props (E2-B)
-  savedViews: SavedView[];
-  activeViewId: string | null;
-  onSelectView: (id: string) => void;
-  onSaveView: (name: string, isDefault: boolean) => void;
-  onDeleteView: (id: string) => void;
-  onSetDefaultView: (id: string) => void;
-  getCurrentConfig: () => SavedViewConfig;
+  onAdvancedRemoveCondition?: (conditionId: string) => void;
+  onAdvancedAddGroup?: (parentGroupId?: string) => void;
+  onAdvancedUpdateGroupLogic?: (groupId: string, logic: LogicOperator) => void;
+  onAdvancedRemoveGroup?: (groupId: string) => void;
+  savedViews?: SavedView[];
+  activeViewId?: string | null;
+  onSelectView?: (id: string) => void;
+  onSaveView?: (name: string, isDefault: boolean) => void;
+  onDeleteView?: (id: string) => void;
+  onSetDefaultView?: (id: string) => void;
+  getCurrentConfig?: () => SavedViewConfig;
+}
+
+// Cosmos-style FilterSelect
+function FilterSelect({
+  value,
+  onChange,
+  children,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative inline-flex">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-7 cursor-pointer appearance-none rounded-md border border-gray-300 bg-white py-0 pr-7 pl-3 text-sm font-medium text-gray-700 transition-all duration-150 hover:border-gray-400 hover:bg-gray-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+      >
+        {children}
+      </select>
+      <ChevronDown className="pointer-events-none absolute top-1/2 right-1.5 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+    </div>
+  );
 }
 
 export function LeadsFilterBar({
@@ -91,39 +100,15 @@ export function LeadsFilterBar({
   onFiltersChange,
   countries = [],
   owners = [],
-  viewMode,
-  onViewModeChange,
-  // Advanced filters (E2-A)
-  advancedFilterGroup,
-  advancedFiltersActive,
-  advancedConditionsCount,
-  onAdvancedSetLogic,
+  totalCount,
   onAdvancedReset,
-  onAdvancedAddCondition,
-  onAdvancedUpdateCondition,
-  onAdvancedRemoveCondition,
-  onAdvancedAddGroup,
-  onAdvancedUpdateGroupLogic,
-  onAdvancedRemoveGroup,
-  // Saved Views (E2-B)
-  savedViews,
-  activeViewId,
-  onSelectView,
-  onSaveView,
-  onDeleteView,
-  onSetDefaultView,
-  getCurrentConfig,
 }: LeadsFilterBarProps) {
   const { t } = useTranslation("crm");
   const params = useParams();
   const locale = (params.locale as string) || "en";
   const [searchInput, setSearchInput] = useState(filters.search || "");
 
-  // Load stages dynamically from crm_settings
   const { stages, getLabel } = useLeadStages();
-
-  // Load statuses dynamically from crm_settings
-  const { statuses: leadStatuses } = useLeadStatuses();
 
   // Debounced search (300ms)
   useEffect(() => {
@@ -132,18 +117,16 @@ export function LeadsFilterBar({
         onFiltersChange({ ...filters, search: searchInput || undefined });
       }
     }, 300);
-
     return () => clearTimeout(timer);
   }, [searchInput, filters, onFiltersChange]);
 
-  // Count active filters (exclude search and "all" values)
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
-    if (key === "search") return false;
+  // Active filters detection
+  const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+    if (key === "search") return !!value;
     if (value === "all" || value === undefined) return false;
-    // V6.2.1: Count boolean filters only when true
     if (typeof value === "boolean" && value === false) return false;
     return true;
-  }).length;
+  });
 
   const handleReset = () => {
     setSearchInput("");
@@ -154,273 +137,114 @@ export function LeadsFilterBar({
       country_code: "all",
       min_score: undefined,
       search: undefined,
-      // V6.2.1: Reset new filters
       has_booking: undefined,
       wizard_completed: undefined,
       payment_pending: undefined,
     });
+    onAdvancedReset?.();
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="w-full space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
-    >
-      {/* Search + Active Filters Badge */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Search Input */}
-        <div className="relative min-w-[280px] flex-1">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            type="text"
-            placeholder={t("leads.filters.search")}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pr-9 pl-9"
-          />
-          {searchInput && (
-            <button
-              onClick={() => setSearchInput("")}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Active Filters Badge + Reset */}
-        <AnimatePresence>
-          {activeFiltersCount > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="flex items-center gap-2"
-            >
-              <Badge variant="secondary" className="gap-1">
-                <SlidersHorizontal className="h-3 w-3" />
-                {t("leads.filters.active_filters", {
-                  count: activeFiltersCount,
-                })}
-              </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReset}
-                className="h-8 text-xs"
-              >
-                {t("leads.filters.reset")}
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Saved Views (E2-B) */}
-        <SavedViews
-          views={savedViews}
-          activeViewId={activeViewId}
-          onSelectView={onSelectView}
-          onSaveView={onSaveView}
-          onDeleteView={onDeleteView}
-          onSetDefault={onSetDefaultView}
-          getCurrentConfig={getCurrentConfig}
-          advancedConditionsCount={advancedConditionsCount}
+    <div className="flex h-10 items-center gap-3 border-b border-gray-200 bg-white px-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder={t("leads.filters.search")}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="h-7 w-44 rounded-md border border-gray-300 bg-white pr-7 pl-7 text-sm text-gray-700 transition-all duration-150 placeholder:text-gray-400 hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
         />
-
-        {/* Advanced Filters (E2-A) */}
-        <AdvancedFilters
-          filterGroup={advancedFilterGroup}
-          isActive={advancedFiltersActive}
-          conditionsCount={advancedConditionsCount}
-          onSetLogic={onAdvancedSetLogic}
-          onReset={onAdvancedReset}
-          onAddCondition={onAdvancedAddCondition}
-          onUpdateCondition={onAdvancedUpdateCondition}
-          onRemoveCondition={onAdvancedRemoveCondition}
-          onAddGroup={onAdvancedAddGroup}
-          onUpdateGroupLogic={onAdvancedUpdateGroupLogic}
-          onRemoveGroup={onAdvancedRemoveGroup}
-          countries={countries}
-        />
-
-        {/* View Toggle (Kanban/Table) */}
-        <div className="ml-auto">
-          <ViewToggle value={viewMode} onChange={onViewModeChange} />
-        </div>
-      </div>
-
-      {/* Filter Dropdowns */}
-      <div
-        className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${viewMode === "kanban" ? "lg:grid-cols-4" : "lg:grid-cols-5"}`}
-      >
-        {/* Status Filter - Hidden in Kanban (columns ARE statuses) */}
-        {viewMode === "table" && (
-          <Select
-            value={filters.status || "all"}
-            onChange={(e) =>
-              onFiltersChange({
-                ...filters,
-                status: e.target.value,
-              })
-            }
-            className={
-              filters.status && filters.status !== "all"
-                ? "border-blue-500 dark:border-blue-400"
-                : ""
-            }
+        {searchInput && (
+          <button
+            onClick={() => setSearchInput("")}
+            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
           >
-            <option value="all">{t("leads.filters.all_status")}</option>
-            {leadStatuses
-              .filter((status) => !status.is_terminal) // Only show non-terminal statuses in filter
-              .map((status) => (
-                <option key={status.value} value={status.value}>
-                  {t(`leads.status.${status.value}`)}
-                </option>
-              ))}
-          </Select>
+            <X className="h-3 w-3" />
+          </button>
         )}
-
-        {/* Lead Stage Filter - Dynamic from crm_settings */}
-        <Select
-          value={filters.lead_stage || "all"}
-          onChange={(e) =>
-            onFiltersChange({
-              ...filters,
-              lead_stage: e.target.value,
-            })
-          }
-          className={
-            filters.lead_stage && filters.lead_stage !== "all"
-              ? "border-blue-500 dark:border-blue-400"
-              : ""
-          }
-        >
-          <option value="all">{t("leads.filters.all_stages")}</option>
-          {stages
-            .filter((stage) => stage.value !== "opportunity") // Exclude opportunity (handled separately)
-            .map((stage) => (
-              <option key={stage.value} value={stage.value}>
-                {getLabel(stage.value, locale)}
-              </option>
-            ))}
-        </Select>
-
-        {/* Assigned To Filter */}
-        <Select
-          value={filters.assigned_to || "all"}
-          onChange={(e) =>
-            onFiltersChange({ ...filters, assigned_to: e.target.value })
-          }
-          className={
-            filters.assigned_to && filters.assigned_to !== "all"
-              ? "border-blue-500 dark:border-blue-400"
-              : ""
-          }
-        >
-          <option value="all">{t("leads.filters.all_owners")}</option>
-          <option value="unassigned">{t("leads.filters.unassigned")}</option>
-          {owners.map((owner) => (
-            <option key={owner.id} value={owner.id}>
-              {owner.first_name} {owner.last_name}
-            </option>
-          ))}
-        </Select>
-
-        {/* Country Filter */}
-        <Select
-          value={filters.country_code || "all"}
-          onChange={(e) =>
-            onFiltersChange({ ...filters, country_code: e.target.value })
-          }
-          className={
-            filters.country_code && filters.country_code !== "all"
-              ? "border-blue-500 dark:border-blue-400"
-              : ""
-          }
-        >
-          <option value="all">{t("leads.filters.all_countries")}</option>
-          {countries.map((country) => (
-            <option key={country.country_code} value={country.country_code}>
-              {country.flag_emoji} {country.country_name_en}
-            </option>
-          ))}
-        </Select>
-
-        {/* Min Score Filter */}
-        <Input
-          type="number"
-          min="0"
-          max="100"
-          placeholder={t("leads.filters.min_score")}
-          value={filters.min_score || ""}
-          onChange={(e) =>
-            onFiltersChange({
-              ...filters,
-              min_score: e.target.value ? parseInt(e.target.value) : undefined,
-            })
-          }
-          className={
-            filters.min_score ? "border-blue-500 dark:border-blue-400" : ""
-          }
-        />
       </div>
 
-      {/* V6.2.1: Quick Toggle Filters */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-2 dark:border-gray-800">
-        <span className="mr-2 text-xs text-gray-500 dark:text-gray-400">
-          {t("leads.filters.quick_filters")}
-        </span>
+      <div className="h-5 w-px bg-gray-200" />
 
-        {/* Has Demo Booked */}
-        <Button
-          variant={filters.has_booking ? "default" : "outline"}
-          size="sm"
-          onClick={() =>
-            onFiltersChange({
-              ...filters,
-              has_booking: filters.has_booking ? undefined : true,
-            })
-          }
-          className="h-7 gap-1.5 text-xs"
-        >
-          <CalendarCheck className="h-3.5 w-3.5" />
-          {t("leads.filters.has_booking")}
-        </Button>
+      {/* Stage */}
+      <FilterSelect
+        value={filters.lead_stage || "all"}
+        onChange={(val) => onFiltersChange({ ...filters, lead_stage: val })}
+      >
+        <option value="all">{t("leads.filters.all_stages")}</option>
+        {stages
+          .filter((stage) => stage.value !== "opportunity")
+          .map((stage) => (
+            <option key={stage.value} value={stage.value}>
+              {getLabel(stage.value, locale)}
+            </option>
+          ))}
+      </FilterSelect>
 
-        {/* Wizard Completed */}
-        <Button
-          variant={filters.wizard_completed ? "default" : "outline"}
-          size="sm"
-          onClick={() =>
-            onFiltersChange({
-              ...filters,
-              wizard_completed: filters.wizard_completed ? undefined : true,
-            })
-          }
-          className="h-7 gap-1.5 text-xs"
-        >
-          <CheckSquare className="h-3.5 w-3.5" />
-          {t("leads.filters.wizard_completed")}
-        </Button>
+      {/* Owner */}
+      <FilterSelect
+        value={filters.assigned_to || "all"}
+        onChange={(val) => onFiltersChange({ ...filters, assigned_to: val })}
+      >
+        <option value="all">{t("leads.filters.all_owners")}</option>
+        <option value="unassigned">{t("leads.filters.unassigned")}</option>
+        {owners.map((owner) => (
+          <option key={owner.id} value={owner.id}>
+            {owner.first_name} {owner.last_name}
+          </option>
+        ))}
+      </FilterSelect>
 
-        {/* Payment Pending */}
-        <Button
-          variant={filters.payment_pending ? "default" : "outline"}
-          size="sm"
-          onClick={() =>
-            onFiltersChange({
-              ...filters,
-              payment_pending: filters.payment_pending ? undefined : true,
-            })
-          }
-          className="h-7 gap-1.5 text-xs"
+      {/* Country */}
+      <FilterSelect
+        value={filters.country_code || "all"}
+        onChange={(val) => onFiltersChange({ ...filters, country_code: val })}
+      >
+        <option value="all">{t("leads.filters.all_countries")}</option>
+        {countries.map((country) => (
+          <option key={country.country_code} value={country.country_code}>
+            {country.flag_emoji} {country.country_name_en}
+          </option>
+        ))}
+      </FilterSelect>
+
+      {/* Score */}
+      <FilterSelect
+        value={
+          filters.min_score === undefined ? "any" : String(filters.min_score)
+        }
+        onChange={(val) =>
+          onFiltersChange({
+            ...filters,
+            min_score: val === "any" ? undefined : parseInt(val),
+          })
+        }
+      >
+        <option value="any">{t("leads.filters.min_score")}</option>
+        <option value="40">40+</option>
+        <option value="70">70+</option>
+        <option value="90">90+</option>
+      </FilterSelect>
+
+      {/* Reset */}
+      {hasActiveFilters && (
+        <button
+          onClick={handleReset}
+          className="text-xs text-gray-500 transition-colors hover:text-gray-700"
         >
-          <CreditCard className="h-3.5 w-3.5" />
-          {t("leads.filters.payment_pending")}
-        </Button>
-      </div>
-    </motion.div>
+          <X className="mr-0.5 inline h-3 w-3" />
+          {t("leads.filters.reset")}
+        </button>
+      )}
+
+      {/* Lead count */}
+      {totalCount !== undefined && (
+        <div className="ml-auto text-sm font-medium text-gray-500">
+          {totalCount} leads
+        </div>
+      )}
+    </div>
   );
 }

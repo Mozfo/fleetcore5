@@ -14,7 +14,6 @@
 
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -191,14 +190,14 @@ export const KanbanPhaseColumn = memo(
     // Phase color
     const phaseColor = PHASE_COLORS[column.phase.id] || "gray";
 
-    // Header color class (V6.6: amber, blue, purple, green)
-    const headerColorClass: Record<string, string> = {
-      amber: "border-l-amber-500",
-      blue: "border-l-blue-500",
-      green: "border-l-green-500",
-      purple: "border-l-purple-500",
-      orange: "border-l-orange-500",
-      gray: "border-l-gray-500",
+    // Phase indicator color (Cosmos rounded pill)
+    const phaseIndicatorClass: Record<string, string> = {
+      amber: "bg-amber-500",
+      blue: "bg-blue-500",
+      green: "bg-green-500",
+      purple: "bg-purple-500",
+      orange: "bg-orange-500",
+      gray: "bg-gray-500",
     };
 
     return (
@@ -210,23 +209,28 @@ export const KanbanPhaseColumn = memo(
         className="flex h-full flex-col rounded-lg border border-gray-200 bg-gray-50/50 dark:border-gray-700 dark:bg-gray-800/50"
       >
         {/* Phase Header */}
-        <div
-          className={cn(
-            "sticky top-0 z-10 flex items-center justify-between rounded-t-lg border-b border-l-4 border-gray-200/50 bg-gray-50/95 p-3 backdrop-blur-sm dark:border-gray-800/50 dark:bg-gray-900/95",
-            headerColorClass[phaseColor]
-          )}
-        >
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            {phaseLabel}
-          </h3>
-          <Badge variant="secondary" className="text-xs">
+        <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-lg border-b border-gray-200 bg-gray-50/95 px-3 py-2.5 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95">
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                "h-5 w-1.5 rounded-full",
+                phaseIndicatorClass[phaseColor] || "bg-gray-500"
+              )}
+            />
+            <h3 className="text-sm font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300">
+              {phaseLabel}
+            </h3>
+          </div>
+          <span
+            className="inline-flex min-w-[28px] items-center justify-center rounded-full bg-gray-500 px-2 text-xs font-bold text-white"
+            style={{ height: 24 }}
+          >
             {column.totalCount}
-          </Badge>
+          </span>
         </div>
 
         {/* Status Groups Container - Scrollable */}
-        {/* V6.2-11: Always show all status drop zones, even when empty */}
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
           {column.statusGroups.map((group) => {
             return (
               <StatusDropZone

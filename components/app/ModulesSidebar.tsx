@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronsLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHasPermission } from "@/lib/hooks/useHasPermission";
 import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
@@ -19,20 +19,33 @@ import { useCrmFeatureFlags } from "@/lib/hooks/useCrmFeatureFlags";
 
 interface ModulesSidebarProps {
   className?: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 // Timing constants (Linear-style UX)
-const HOVER_OPEN_DELAY = 150; // ms before opening on hover
-const HOVER_CLOSE_DELAY = 300; // ms before closing when leaving
+const HOVER_OPEN_DELAY = 150;
+const HOVER_CLOSE_DELAY = 300;
 
-export function ModulesSidebar({ className }: ModulesSidebarProps) {
+/**
+ * ModulesSidebar - FleetCore Design System navigation sidebar
+ *
+ * Collapsible: 56px (icons only) ↔ 240px (icons + labels)
+ * Active state: bg-fc-primary-50 text-fc-primary-600
+ * Hover expand for sub-navigation (Linear-style 150ms/300ms)
+ */
+export function ModulesSidebar({
+  className,
+  isExpanded = true,
+  onToggleExpand,
+}: ModulesSidebarProps) {
   const { t } = useTranslation("common");
   const pathname = usePathname();
   const { localizedPath } = useLocalizedPath();
   const { accessibleModules, orgRole } = useHasPermission();
   const { opportunitiesEnabled, quotesEnabled } = useCrmFeatureFlags();
 
-  // Track expanded modules
+  // Track expanded modules (sub-nav open/close)
   const [expandedModules, setExpandedModules] = useState<string[]>(() => {
     const currentModule = getModuleByPath(pathname);
     return currentModule ? [currentModule.key] : [];
@@ -66,55 +79,49 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
     );
   }, []);
 
-  // Handle mouse enter with delay (Linear-style)
+  // Handle mouse enter with delay (Linear-style) — only when sidebar expanded
   const handleMouseEnter = useCallback(
     (moduleKey: string, hasSubNav: boolean) => {
-      if (!hasSubNav) return;
+      if (!hasSubNav || !isExpanded) return;
 
-      // Clear any pending close timeout
       const existingTimeout = hoverTimeoutRefs.current[moduleKey];
       if (existingTimeout) {
         clearTimeout(existingTimeout);
         hoverTimeoutRefs.current[moduleKey] = null;
       }
 
-      // Set open timeout
       hoverTimeoutRefs.current[moduleKey] = setTimeout(() => {
         expandModule(moduleKey);
       }, HOVER_OPEN_DELAY);
     },
-    [expandModule]
+    [expandModule, isExpanded]
   );
 
   // Handle mouse leave with delay
   const handleMouseLeave = useCallback(
     (moduleKey: string, hasSubNav: boolean) => {
-      if (!hasSubNav) return;
+      if (!hasSubNav || !isExpanded) return;
 
-      // Clear any pending open timeout
       const existingOpenTimeout = hoverTimeoutRefs.current[moduleKey];
       if (existingOpenTimeout) {
         clearTimeout(existingOpenTimeout);
         hoverTimeoutRefs.current[moduleKey] = null;
       }
 
-      // Set close timeout
       hoverTimeoutRefs.current[moduleKey] = setTimeout(() => {
         collapseModule(moduleKey);
       }, HOVER_CLOSE_DELAY);
     },
-    [collapseModule]
+    [collapseModule, isExpanded]
   );
 
   const isModuleActive = (module: ModuleConfig): boolean => {
     const pathWithoutLocale = pathname.replace(/^\/(en|fr)/, "");
 
-    // Check main module href
     if (pathWithoutLocale.startsWith(module.href)) {
       return true;
     }
 
-    // Also check subNav items (e.g., /crm/opportunities is part of CRM module)
     if (module.subNav) {
       for (const sub of module.subNav) {
         if (pathWithoutLocale.startsWith(sub.href)) {
@@ -134,31 +141,17 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-full w-64 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900",
+        "border-fc-border-light flex h-full flex-col border-r bg-white transition-all duration-200 dark:border-gray-800 dark:bg-gray-900",
+        isExpanded ? "w-60" : "w-14",
         className
       )}
     >
-      {/* Logo */}
-      <div className="flex h-16 items-center border-b border-gray-200 px-6 dark:border-gray-800">
-        <Link
-          href={localizedPath("dashboard")}
-          className="flex items-center gap-2"
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-700">
-            <span className="text-sm font-bold text-white">F</span>
-          </div>
-          <span className="text-lg font-semibold text-gray-900 dark:text-white">
-            FleetCore
-          </span>
-        </Link>
-      </div>
-
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-1">
+      <nav className="flex-1 overflow-y-auto py-3">
+        <ul className={cn("space-y-1", isExpanded ? "px-3" : "px-1.5")}>
           {accessibleModules.map((module) => {
             const isActive = isModuleActive(module);
-            const isExpanded = expandedModules.includes(module.key);
+            const isModuleExpanded = expandedModules.includes(module.key);
             const hasSubNav = module.subNav && module.subNav.length > 0;
             const Icon = module.icon;
 
@@ -171,45 +164,56 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
                 {/* Module item */}
                 <div
                   className={cn(
-                    "group flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                    "group rounded-fc-md flex h-10 items-center transition-colors duration-150",
+                    isExpanded ? "justify-between px-3" : "justify-center",
                     isActive
-                      ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                      ? "bg-fc-primary-50 text-fc-primary-600 dark:bg-blue-900/20 dark:text-blue-400"
+                      : "text-fc-text-secondary hover:bg-fc-bg-hover hover:text-fc-text-primary dark:text-gray-300 dark:hover:bg-gray-800"
                   )}
                 >
                   <Link
                     href={localizedPath(module.href.slice(1))}
-                    className="flex flex-1 items-center gap-3"
+                    className={cn(
+                      "flex items-center gap-3",
+                      isExpanded ? "flex-1" : "justify-center"
+                    )}
+                    title={!isExpanded ? t(module.labelKey) : undefined}
                   >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    <span>{t(module.labelKey)}</span>
-                    {module.badge && (
-                      <span
-                        className={cn(
-                          "ml-auto rounded-full px-2 py-0.5 text-xs font-medium",
-                          module.badge === "new"
-                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {isExpanded && (
+                      <>
+                        <span className="truncate text-sm font-medium">
+                          {t(module.labelKey)}
+                        </span>
+                        {module.badge && (
+                          <span
+                            className={cn(
+                              "ml-auto rounded-full px-2 py-0.5 text-xs font-medium",
+                              module.badge === "new"
+                                ? "bg-fc-success-50 text-fc-success-600 dark:bg-green-900/30 dark:text-green-400"
+                                : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                            )}
+                          >
+                            {module.badge}
+                          </span>
                         )}
-                      >
-                        {module.badge}
-                      </span>
+                      </>
                     )}
                   </Link>
 
                   {/* Expand/collapse chevron for modules with subNav */}
-                  {hasSubNav && (
+                  {hasSubNav && isExpanded && (
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         toggleModule(module.key);
                       }}
-                      className="ml-2 rounded p-1 opacity-60 transition-opacity hover:bg-gray-200 hover:opacity-100 dark:hover:bg-gray-700"
-                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                      className="hover:bg-fc-bg-hover ml-1 rounded p-1 opacity-60 transition-opacity hover:opacity-100 dark:hover:bg-gray-700"
+                      aria-label={isModuleExpanded ? "Collapse" : "Expand"}
                     >
                       <motion.div
-                        animate={{ rotate: isExpanded ? 90 : 0 }}
+                        animate={{ rotate: isModuleExpanded ? 90 : 0 }}
                         transition={{ duration: 0.15, ease: "easeOut" }}
                       >
                         <ChevronRight className="h-4 w-4" />
@@ -218,20 +222,24 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
                   )}
                 </div>
 
-                {/* Sub-navigation with smooth animation */}
+                {/* Sub-navigation with smooth animation (only when sidebar expanded) */}
                 <AnimatePresence initial={false}>
-                  {hasSubNav && isExpanded && (
+                  {hasSubNav && isModuleExpanded && isExpanded && (
                     <motion.ul
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{
-                        height: { type: "spring", stiffness: 400, damping: 25 },
+                        height: {
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 25,
+                        },
                         opacity: { duration: 0.15 },
                       }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-1 ml-4 space-y-0.5 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
+                      <div className="border-fc-border-light mt-1 ml-4 space-y-0.5 border-l-2 pl-4 dark:border-gray-700">
                         {module.subNav?.map((subNav, index) => {
                           // Check permission for subNav item
                           if (
@@ -242,8 +250,6 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
                           }
 
                           // V6.2-11: Hide Opportunities and Quotes based on feature flags
-                          // Opportunities = FREEZE (future upsell for existing customers)
-                          // Quotes = INLINE in Lead detail (Segment 4 only)
                           if (
                             module.key === "crm" &&
                             subNav.key === "opportunities" &&
@@ -274,10 +280,10 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
                               <Link
                                 href={localizedPath(subNav.href.slice(1))}
                                 className={cn(
-                                  "block rounded-md px-3 py-1.5 text-sm transition-all duration-150",
+                                  "rounded-fc-md block px-3 py-1.5 text-sm transition-colors duration-150",
                                   isSubActive
-                                    ? "bg-blue-50 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-gray-200"
+                                    ? "bg-fc-primary-50 text-fc-primary-600 font-medium dark:bg-blue-900/20 dark:text-blue-400"
+                                    : "text-fc-text-muted hover:bg-fc-bg-hover hover:text-fc-text-primary dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-gray-200"
                                 )}
                               >
                                 {t(subNav.labelKey)}
@@ -295,11 +301,29 @@ export function ModulesSidebar({ className }: ModulesSidebarProps) {
         </ul>
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-gray-200 p-4 dark:border-gray-800">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          FleetCore v1.0
-        </p>
+      {/* Footer: Collapse toggle + version */}
+      <div className="border-fc-border-light border-t dark:border-gray-800">
+        {onToggleExpand && (
+          <button
+            onClick={onToggleExpand}
+            className="hover:bg-fc-bg-hover flex h-10 w-full items-center justify-center transition-colors duration-150 dark:hover:bg-gray-800"
+            aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <ChevronsLeft
+              className={cn(
+                "text-fc-text-muted h-4 w-4 transition-transform duration-150",
+                !isExpanded && "rotate-180"
+              )}
+            />
+          </button>
+        )}
+        {isExpanded && (
+          <div className="px-4 pt-1 pb-3">
+            <p className="text-fc-text-muted text-xs dark:text-gray-400">
+              FleetCore v1.0
+            </p>
+          </div>
+        )}
       </div>
     </aside>
   );
