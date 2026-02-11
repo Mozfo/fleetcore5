@@ -1,8 +1,8 @@
 /**
  * Book Demo Wizard - Step 4: Schedule (Cal.com Booking)
  *
- * V6.6 - Demo booking via Cal.com INLINE embed.
- * Now Step 4 (after Profile), previously Step 2.
+ * V6.6.1 - Radio button UX: booking vs callback visible immediately.
+ * No textarea, zero friction.
  *
  * URL: /[locale]/book-demo/schedule?leadId=xxx
  *
@@ -11,9 +11,9 @@
  * - Lead must have wizard_completed = true (profile filled)
  *
  * Flow:
- * 1. Fetch lead data to verify prerequisites
- * 2. Display Cal.com INLINE embed with pre-filled email + name
- * 3. After booking → redirect to confirmation
+ * 1. User picks contact mode (radio: booking / callback)
+ * 2. booking → Cal.com inline embed
+ * 3. callback → single button, no notes
  *
  * @module app/[locale]/(public)/book-demo/schedule/page
  */
@@ -62,6 +62,8 @@ interface BookingStatusResponse {
     message: string;
   };
 }
+
+type ContactMode = "booking" | "callback";
 
 // ============================================================================
 // CONSTANTS
@@ -129,9 +131,8 @@ export default function BookDemoSchedulePage() {
   const [hasBooking, setHasBooking] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Callback state
-  const [preferCallback, setPreferCallback] = useState(false);
-  const [callbackNotes, setCallbackNotes] = useState("");
+  // Contact mode
+  const [contactMode, setContactMode] = useState<ContactMode>("booking");
   const [isSubmittingCallback, setIsSubmittingCallback] = useState(false);
   const [callbackError, setCallbackError] = useState<string | null>(null);
 
@@ -262,7 +263,7 @@ export default function BookDemoSchedulePage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ notes: callbackNotes }),
+          body: JSON.stringify({}),
         }
       );
 
@@ -282,7 +283,7 @@ export default function BookDemoSchedulePage() {
     } finally {
       setIsSubmittingCallback(false);
     }
-  }, [leadId, callbackNotes, locale, router, t, isSubmittingCallback]);
+  }, [leadId, locale, router, t, isSubmittingCallback]);
 
   // Don't render if missing leadId
   if (!leadId) {
@@ -350,149 +351,192 @@ export default function BookDemoSchedulePage() {
         {/* Progress Bar - Step 4 of 4 */}
         <WizardProgressBar currentStep={4} totalSteps={4} className="mb-6" />
 
-        {/* Header Card */}
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-6 rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm"
+          className="mb-6 text-center"
         >
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/20">
-              <Calendar className="h-7 w-7 text-blue-600 dark:text-blue-500" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                {t("bookDemo.step2.title")}
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-slate-400">
-                {t("bookDemo.step2.subtitle")}
-              </p>
-            </div>
-          </div>
-
-          {/* Booking Success Indicator */}
-          {hasBooking && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-green-600 dark:bg-green-500/10 dark:text-green-400"
-            >
-              <CheckCircle className="h-5 w-5" />
-              <span className="font-medium">{t("bookDemo.step2.booked")}</span>
-            </motion.div>
-          )}
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {t("bookDemo.step2.title")}
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
+            {t("bookDemo.step2.subtitle")}
+          </p>
         </motion.div>
 
-        {/* Cal.com Inline Embed */}
+        {/* Contact Mode Selection - Radio Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className={`relative overflow-hidden rounded-2xl bg-white shadow-xl transition-opacity duration-300 dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm ${
-            preferCallback ? "pointer-events-none opacity-40" : ""
-          }`}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="mb-6 space-y-3"
         >
-          <Cal
-            namespace="fleetcore-inline"
-            calLink={CALCOM_LINKS[locale] || CALCOM_LINKS.en}
-            calOrigin={CALCOM_ORIGIN}
-            style={{ width: "100%", height: "100%", overflow: "auto" }}
-            config={{
-              layout: "month_view",
-              theme: "auto",
-              locale: locale,
-              // Pre-fill email from lead
-              ...(leadData?.email && { email: leadData.email }),
-              // Pre-fill name (now available from profile step)
-              ...(leadData?.first_name &&
-                leadData?.last_name && {
-                  name: `${leadData.first_name} ${leadData.last_name}`,
-                }),
-              // Set timezone based on country
-              ...(leadData?.country_code &&
-                COUNTRY_TIMEZONES[leadData.country_code] && {
-                  timezone: COUNTRY_TIMEZONES[leadData.country_code],
-                }),
-            }}
-          />
-        </motion.div>
-
-        {/* Separator */}
-        <div className="my-6 flex items-center gap-4">
-          <div className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
-          <span className="text-sm font-medium text-gray-400 dark:text-slate-500">
-            {t("bookDemo.step2.orSeparator")}
-          </span>
-          <div className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
-        </div>
-
-        {/* Callback Option */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800/50 dark:backdrop-blur-sm"
-        >
-          <label className="flex cursor-pointer items-start gap-3">
+          {/* Option 1: Book a time slot */}
+          <label
+            className={`flex cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all ${
+              contactMode === "booking"
+                ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
+                : "border-gray-200 bg-white hover:border-gray-300 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600"
+            }`}
+          >
             <input
-              type="checkbox"
-              checked={preferCallback}
-              onChange={(e) => {
-                setPreferCallback(e.target.checked);
+              type="radio"
+              name="contactMode"
+              value="booking"
+              checked={contactMode === "booking"}
+              onChange={() => {
+                setContactMode("booking");
                 setCallbackError(null);
               }}
-              className="mt-1 h-5 w-5 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600"
+              className="mt-1 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-gray-800 dark:text-slate-200">
-                {t("bookDemo.step2.preferCallback")}
-              </span>
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+              <div>
+                <div className="font-medium text-gray-900 dark:text-white">
+                  {t("bookDemo.step2.optionBooking", {
+                    defaultValue: "Book a time slot",
+                  })}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-slate-400">
+                  {t("bookDemo.step2.optionBookingDesc", {
+                    defaultValue:
+                      "Choose a convenient time for your personalized demo",
+                  })}
+                </div>
+              </div>
             </div>
           </label>
 
-          {preferCallback && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mt-4"
-            >
-              <textarea
-                placeholder={t("bookDemo.step2.callbackNotesPlaceholder")}
-                value={callbackNotes}
-                onChange={(e) => setCallbackNotes(e.target.value)}
-                rows={3}
-                maxLength={500}
-                className="w-full resize-none rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
-              />
-
-              {callbackError && (
-                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                  {callbackError}
-                </p>
-              )}
-
-              <button
-                type="button"
-                onClick={handleRequestCallback}
-                disabled={isSubmittingCallback}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSubmittingCallback ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("bookDemo.step2.callbackSubmitting")}
-                  </>
-                ) : (
-                  t("bookDemo.step2.validateCallback")
-                )}
-              </button>
-            </motion.div>
-          )}
+          {/* Option 2: Request a callback */}
+          <label
+            className={`flex cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all ${
+              contactMode === "callback"
+                ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
+                : "border-gray-200 bg-white hover:border-gray-300 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600"
+            }`}
+          >
+            <input
+              type="radio"
+              name="contactMode"
+              value="callback"
+              checked={contactMode === "callback"}
+              onChange={() => {
+                setContactMode("callback");
+                setCallbackError(null);
+              }}
+              className="mt-1 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <div className="flex items-center gap-3">
+              <Phone className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+              <div>
+                <div className="font-medium text-gray-900 dark:text-white">
+                  {t("bookDemo.step2.optionCallback", {
+                    defaultValue: "Request a callback",
+                  })}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-slate-400">
+                  {t("bookDemo.step2.optionCallbackDesc", {
+                    defaultValue: "We'll call you as soon as possible",
+                  })}
+                </div>
+              </div>
+            </div>
+          </label>
         </motion.div>
+
+        {/* Conditional Content */}
+        {contactMode === "booking" ? (
+          <>
+            {/* Booking Success Indicator */}
+            {hasBooking && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-green-600 dark:bg-green-500/10 dark:text-green-400"
+              >
+                <CheckCircle className="h-5 w-5" />
+                <span className="font-medium">
+                  {t("bookDemo.step2.booked")}
+                </span>
+              </motion.div>
+            )}
+
+            {/* Cal.com Inline Embed */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="relative overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm"
+            >
+              <Cal
+                namespace="fleetcore-inline"
+                calLink={CALCOM_LINKS[locale] || CALCOM_LINKS.en}
+                calOrigin={CALCOM_ORIGIN}
+                style={{ width: "100%", height: "100%", overflow: "auto" }}
+                config={{
+                  layout: "month_view",
+                  theme: "auto",
+                  locale: locale,
+                  ...(leadData?.email && { email: leadData.email }),
+                  ...(leadData?.first_name &&
+                    leadData?.last_name && {
+                      name: `${leadData.first_name} ${leadData.last_name}`,
+                    }),
+                  ...(leadData?.country_code &&
+                    COUNTRY_TIMEZONES[leadData.country_code] && {
+                      timezone: COUNTRY_TIMEZONES[leadData.country_code],
+                    }),
+                }}
+              />
+            </motion.div>
+          </>
+        ) : (
+          /* Callback mode - single button, no textarea */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="rounded-2xl bg-white p-6 text-center shadow-xl dark:bg-slate-800/50 dark:shadow-none dark:backdrop-blur-sm"
+          >
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/20">
+              <Phone className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <p className="mb-6 text-sm text-gray-600 dark:text-slate-400">
+              {t("bookDemo.step2.optionCallbackDesc", {
+                defaultValue: "We'll call you as soon as possible",
+              })}
+            </p>
+
+            {callbackError && (
+              <div className="mb-4 flex items-center justify-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{callbackError}</span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleRequestCallback}
+              disabled={isSubmittingCallback}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-3.5 font-medium text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSubmittingCallback ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("bookDemo.step2.callbackSubmitting")}
+                </>
+              ) : (
+                <>
+                  <Phone className="h-4 w-4" />
+                  {t("bookDemo.step2.validateCallback")}
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
 
         {/* Navigation */}
         <motion.div

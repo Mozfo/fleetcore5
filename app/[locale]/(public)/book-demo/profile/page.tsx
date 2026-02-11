@@ -29,7 +29,6 @@ import {
   ArrowLeft,
   Truck,
   User,
-  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { WizardProgressBar } from "@/components/booking/WizardProgressBar";
@@ -99,7 +98,6 @@ const profileSchema = z.object({
   company_name: z.string().min(1, "Required"),
   phone: z.string().min(1, "Required"),
   fleet_size: z.string().min(1, "Required"),
-  message: z.string().max(1000),
   gdpr_consent: z.boolean().optional(),
 });
 
@@ -149,7 +147,6 @@ export default function BookDemoProfilePage() {
       company_name: "",
       phone: "",
       fleet_size: "",
-      message: "",
       gdpr_consent: false,
     },
   });
@@ -276,7 +273,6 @@ export default function BookDemoProfilePage() {
             company_name: data.company_name.trim(),
             phone: fullPhone,
             fleet_size: data.fleet_size,
-            message: data.message?.trim() || null,
             gdpr_consent: data.gdpr_consent || false,
           }),
         }
@@ -498,25 +494,6 @@ export default function BookDemoProfilePage() {
                   {t("bookDemo.step3.errors.required")}
                 </p>
               )}
-            </div>
-
-            {/* Message (optional) */}
-            <div>
-              <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-300">
-                <MessageSquare className="h-4 w-4" />
-                {t("bookDemo.step3.message", { defaultValue: "Message" })}{" "}
-                <span className="text-xs font-normal text-gray-400 dark:text-slate-500">
-                  ({t("bookDemo.step3.optional", { defaultValue: "optional" })})
-                </span>
-              </label>
-              <textarea
-                {...register("message")}
-                rows={3}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500"
-                placeholder={t("bookDemo.step3.messagePlaceholder", {
-                  defaultValue: "Tell us more about your needs...",
-                })}
-              />
             </div>
 
             {/* GDPR Consent */}

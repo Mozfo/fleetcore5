@@ -112,24 +112,20 @@
       }
     },
     "step2": {
-      "title": "Choose Your Demo Time",
-      "subtitle": "Select a time that works best for you. We'll call you at the exact time you choose.",
+      "title": "How would you like to be contacted?",
+      "subtitle": "Choose the option that works best for you",
       "loading": "Loading calendar...",
       "error": "Failed to load calendar. Please refresh the page.",
       "booked": "Demo time selected!",
-      "afterBooking": "After selecting your time, click Continue",
       "continue": "Continue",
-      "checking": "Checking...",
-      "noBooking": "Please select a time slot first",
       "back": "Back",
-      "next": "Next",
-      "selectCountryFirst": "Select a country first to see phone prefix",
-      "preferCallback": "I prefer to be called back as soon as possible",
-      "callbackNotesPlaceholder": "Any additional notes? (optional)",
-      "validateCallback": "Validate my choice",
+      "optionBooking": "Book a time slot",
+      "optionBookingDesc": "Choose a convenient time for your personalized demo",
+      "optionCallback": "Request a callback",
+      "optionCallbackDesc": "We'll call you as soon as possible",
+      "validateCallback": "Request callback",
       "callbackSubmitting": "Submitting...",
-      "callbackError": "Failed to submit callback request. Please try again.",
-      "orSeparator": "or"
+      "callbackError": "Failed to submit callback request. Please try again."
     },
     "step3": {
       "title": "Tell Us About Your Business",
@@ -159,9 +155,6 @@
         "freenow": "FreeNow",
         "other": "Other"
       },
-      "message": "Message",
-      "messagePlaceholder": "Tell us more about your needs...",
-      "optional": "optional",
       "submit": "Complete Booking",
       "submitting": "Submitting...",
       "back": "Back",

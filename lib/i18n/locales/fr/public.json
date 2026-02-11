@@ -112,24 +112,20 @@
       }
     },
     "step2": {
-      "title": "Choisissez votre créneau",
-      "subtitle": "Sélectionnez le moment qui vous convient. Nous vous appellerons à l'heure exacte choisie.",
+      "title": "Comment souhaitez-vous être contacté ?",
+      "subtitle": "Choisissez l'option qui vous convient",
       "loading": "Chargement du calendrier...",
       "error": "Impossible de charger le calendrier. Veuillez rafraîchir la page.",
       "booked": "Créneau sélectionné !",
-      "afterBooking": "Après avoir sélectionné votre créneau, cliquez sur Continuer",
       "continue": "Continuer",
-      "checking": "Vérification...",
-      "noBooking": "Veuillez d'abord sélectionner un créneau",
       "back": "Retour",
-      "next": "Suivant",
-      "selectCountryFirst": "Sélectionnez d'abord un pays pour voir l'indicatif",
-      "preferCallback": "Je préfère être rappelé dans les meilleurs délais",
-      "callbackNotesPlaceholder": "Des notes supplémentaires ? (optionnel)",
-      "validateCallback": "Valider mon choix",
+      "optionBooking": "Réserver un créneau",
+      "optionBookingDesc": "Choisissez un horaire pour votre démo personnalisée",
+      "optionCallback": "Être rappelé",
+      "optionCallbackDesc": "Nous vous rappelons dans les meilleurs délais",
+      "validateCallback": "Demander un rappel",
       "callbackSubmitting": "Envoi...",
-      "callbackError": "Impossible de soumettre la demande. Veuillez réessayer.",
-      "orSeparator": "ou"
+      "callbackError": "Impossible de soumettre la demande. Veuillez réessayer."
     },
     "step3": {
       "title": "Parlez-nous de votre activité",
@@ -159,9 +155,6 @@
         "freenow": "FreeNow",
         "other": "Autre"
       },
-      "message": "Message",
-      "messagePlaceholder": "Parlez-nous de vos besoins...",
-      "optional": "optionnel",
       "submit": "Finaliser la réservation",
       "submitting": "Envoi...",
       "back": "Retour",
