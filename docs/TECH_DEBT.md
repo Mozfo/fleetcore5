@@ -114,6 +114,56 @@ Production scripts kept:
 
 ---
 
+## Notification System - Technical Debt (V6.6.1)
+
+> Added: 2026-02-10
+
+### Architecture actuelle : 3 chemins coexistants
+
+| Chemin             | Mécanisme                                                                                                | Utilisé par                                                                     | Status   |
+| ------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------- |
+| **CRM (correct)**  | `NotificationQueueService.queueNotification()` → `dir_notification_templates` DB → `EmailService.send()` | Lead confirmation, callback confirmation, nurturing crons, booking confirmation | OK       |
+| **Cron (correct)** | `NotificationQueueService` via cron jobs                                                                 | Fleet expiry, document expiry, driver expiry                                    | OK       |
+| **DETTE: Inline**  | `EmailService.sendXxx()` méthodes inline (HTML hardcodé)                                                 | Fleet, Driver, Document CRUD                                                    | A MIGRER |
+
+### EmailService inline methods - DETTE A MIGRER
+
+Ces 6 méthodes dans `lib/services/email.service.ts` utilisent du HTML inline au lieu de templates DB :
+
+| Méthode                              | Contexte                  | Variables                       |
+| ------------------------------------ | ------------------------- | ------------------------------- |
+| `sendFleetCreatedNotification()`     | Création de flotte        | fleet_name, fleet_size, country |
+| `sendFleetUpdatedNotification()`     | Modification de flotte    | fleet_name, changes             |
+| `sendDriverCreatedNotification()`    | Ajout de chauffeur        | driver_name, fleet_name         |
+| `sendDriverUpdatedNotification()`    | Modification de chauffeur | driver_name, changes            |
+| `sendDocumentUploadedNotification()` | Upload de document        | document_name, entity           |
+| `sendDocumentExpiredNotification()`  | Expiration de document    | document_name, expiry_date      |
+
+### Plan de migration (Phase future)
+
+Pour chaque méthode inline :
+
+1. Créer un React Email template (`.tsx`) dans `emails/templates/`
+2. Générer le HTML compilé via `pnpm exec tsx`
+3. Créer migration SQL pour insérer dans `dir_notification_templates`
+4. Remplacer l'appel `EmailService.sendXxx()` par `NotificationQueueService.queueNotification()`
+5. Supprimer la méthode inline de `EmailService`
+
+### Templates DB actifs (19 total)
+
+| template_code           | Locales  | Utilisé                  |
+| ----------------------- | -------- | ------------------------ |
+| `lead_confirmation`     | en,fr,ar | Wizard Step 3            |
+| `callback_confirmation` | en,fr,ar | Wizard Step 4 (callback) |
+| `booking_confirmation`  | en,fr,ar | Wizard Step 4 (booking)  |
+| `otp_verification`      | en,fr,ar | Wizard Step 2            |
+| `lead_nurturing_*` (5)  | en,fr,ar | Cron nurturing           |
+| `fleet_expiry_*` (3)    | en,fr    | Cron expiry              |
+| `document_expiry_*` (3) | en,fr    | Cron expiry              |
+| `driver_expiry_*` (3)   | en,fr    | Cron expiry              |
+
+---
+
 ## Notes
 
 Technical debt identified and tracked. No blocking issues for production deployment.

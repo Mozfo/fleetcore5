@@ -104,6 +104,55 @@ export const leadConfirmationTranslations = {
 } as const;
 
 // ============================================================================
+// CALLBACK CONFIRMATION (V6.6.1 - Wizard callback request)
+// ============================================================================
+
+export const callbackConfirmationTranslations = {
+  en: {
+    preview: "We'll call you back shortly",
+    title: "We'll call you back!",
+    thankYou:
+      "Thank you for your interest in FleetCore! We've received your callback request and our team will reach out to you shortly.",
+    requestDetails: "Your details:",
+    company: "Company",
+    fleetSize: "Fleet size",
+    phone: "Phone",
+    whatNext: "What happens next?",
+    step1: "Our team will review your request shortly",
+    step2: "A fleet expert will call you back as soon as possible",
+    step3: "We'll prepare a demo tailored to your fleet size and needs",
+  },
+  fr: {
+    preview: "Nous vous rappelons bientôt",
+    title: "Nous vous rappelons !",
+    thankYou:
+      "Merci de votre intérêt pour FleetCore ! Nous avons bien reçu votre demande de rappel et notre équipe vous contactera très prochainement.",
+    requestDetails: "Vos informations :",
+    company: "Entreprise",
+    fleetSize: "Taille de flotte",
+    phone: "Téléphone",
+    whatNext: "Et ensuite ?",
+    step1: "Notre équipe examinera votre demande rapidement",
+    step2: "Un expert flotte vous rappellera dès que possible",
+    step3: "Nous préparerons une démo adaptée à la taille de votre flotte",
+  },
+  ar: {
+    preview: "سنعاود الاتصال بك قريباً",
+    title: "سنعاود الاتصال بك!",
+    thankYou:
+      "شكراً لاهتمامك بـ FleetCore! لقد تلقينا طلب معاودة الاتصال وسيتواصل معك فريقنا قريباً.",
+    requestDetails: "بياناتك:",
+    company: "الشركة",
+    fleetSize: "حجم الأسطول",
+    phone: "الهاتف",
+    whatNext: "ماذا بعد؟",
+    step1: "سيراجع فريقنا طلبك قريباً",
+    step2: "سيتصل بك خبير أساطيل في أقرب وقت",
+    step3: "سنحضر عرضاً توضيحياً مخصصاً لحجم أسطولك",
+  },
+} as const;
+
+// ============================================================================
 // EXPANSION OPPORTUNITY (V6.3 - Marketing-focused waitlist email)
 // ============================================================================
 

@@ -98,19 +98,19 @@ export async function POST(
     // Request callback via service
     const updatedLead = await wizardLeadService.requestCallback(leadId);
 
-    // Queue confirmation email (reuse lead_confirmation template)
+    // Queue callback confirmation email
     try {
       const queueService = new NotificationQueueService(prisma);
       await queueService.queueNotification({
-        templateCode: "lead_confirmation",
+        templateCode: "callback_confirmation",
         recipientEmail: lead.email,
         locale: lead.language || "en",
         variables: {
           first_name: lead.first_name || "",
+          last_name: lead.last_name || "",
           company_name: lead.company_name || "",
+          phone: lead.phone || "",
           fleet_size: lead.fleet_size || "",
-          country_name: lead.country_code || "",
-          country_preposition: "",
         },
         leadId,
         idempotencyKey: `callback_confirmation_${leadId}`,
