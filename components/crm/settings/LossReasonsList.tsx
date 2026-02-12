@@ -158,14 +158,14 @@ export function LossReasonsList({
                         category
                       )}
                     </span>
-                    <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                    <span className="bg-fc-neutral-200 text-fc-text-secondary rounded-full px-2 py-0.5 text-xs font-medium dark:bg-gray-700 dark:text-gray-300">
                       {categoryReasons.length}
                     </span>
                   </div>
                   {isOpen ? (
-                    <ChevronDown className="text-muted-foreground h-4 w-4" />
+                    <ChevronDown className="text-fc-text-muted h-4 w-4" />
                   ) : (
-                    <ChevronRight className="text-muted-foreground h-4 w-4" />
+                    <ChevronRight className="text-fc-text-muted h-4 w-4" />
                   )}
                 </button>
               </CollapsibleTrigger>
@@ -174,7 +174,7 @@ export function LossReasonsList({
               <CollapsibleContent>
                 <div className="space-y-1 border-t px-4 py-2">
                   {categoryReasons.length === 0 ? (
-                    <p className="text-muted-foreground py-3 text-center text-sm">
+                    <p className="text-fc-text-muted py-3 text-center text-sm">
                       {t(
                         "settings.lossReasons.noReasonsInCategory",
                         "No reasons in this category"
@@ -194,7 +194,7 @@ export function LossReasonsList({
                           <div className="flex flex-shrink-0 items-center gap-1.5">
                             {reason.is_recoverable && (
                               <span
-                                className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                className="bg-fc-success-50 text-fc-success-600 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium dark:bg-green-900/30 dark:text-green-400"
                                 title={t(
                                   "settings.lossReasons.recoverableTooltip",
                                   `Recoverable after ${reason.recovery_delay_days} days`
@@ -232,7 +232,7 @@ export function LossReasonsList({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 w-7 p-0 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+                            className="text-fc-danger-500 hover:bg-fc-danger-50 hover:text-fc-danger-600 h-7 w-7 p-0 dark:text-red-400 dark:hover:bg-red-900/20"
                             onClick={() => onDelete(reason)}
                             title={t("settings.delete", "Delete")}
                           >
@@ -247,7 +247,7 @@ export function LossReasonsList({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground hover:text-foreground mt-1 w-full justify-start"
+                    className="text-fc-text-muted hover:text-foreground mt-1 w-full justify-start"
                     onClick={() => onAddToCategory(category)}
                   >
                     <Plus className="mr-2 h-4 w-4" />

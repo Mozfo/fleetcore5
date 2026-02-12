@@ -114,7 +114,7 @@ export function RecoveryWorkflowSettings({
               {t("settings.lossReasons.recovery.title", "Recovery Workflow")}
             </CardTitle>
             {hasChanges && (
-              <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+              <span className="bg-fc-warning-50 text-fc-warning-600 rounded-full px-2 py-0.5 text-xs font-medium dark:bg-yellow-900/50 dark:text-yellow-300">
                 {t("settings.unsavedChanges", "Unsaved")}
               </span>
             )}
@@ -132,7 +132,7 @@ export function RecoveryWorkflowSettings({
         {/* Auto-create follow-up */}
         <div className="flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-start gap-3">
-            <ListTodo className="text-muted-foreground mt-0.5 h-5 w-5" />
+            <ListTodo className="text-fc-text-muted mt-0.5 h-5 w-5" />
             <div>
               <Label className="text-sm font-medium">
                 {t(
@@ -140,7 +140,7 @@ export function RecoveryWorkflowSettings({
                   "Auto-create follow-up task"
                 )}
               </Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-fc-text-muted text-sm">
                 {t(
                   "settings.lossReasons.recovery.autoFollowupDesc",
                   "Automatically create a follow-up task when recovery date is reached"
@@ -157,7 +157,7 @@ export function RecoveryWorkflowSettings({
         {/* Send reminder email */}
         <div className="flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-start gap-3">
-            <MailOpen className="text-muted-foreground mt-0.5 h-5 w-5" />
+            <MailOpen className="text-fc-text-muted mt-0.5 h-5 w-5" />
             <div>
               <Label className="text-sm font-medium">
                 {t(
@@ -165,7 +165,7 @@ export function RecoveryWorkflowSettings({
                   "Send reminder email"
                 )}
               </Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-fc-text-muted text-sm">
                 {t(
                   "settings.lossReasons.recovery.sendReminderDesc",
                   "Send email notification to opportunity owner before recovery date"
@@ -181,7 +181,7 @@ export function RecoveryWorkflowSettings({
 
         {/* Reminder days before - only if send_reminder_email is enabled */}
         {localConfig.send_reminder_email && (
-          <div className="border-primary/20 ml-8 space-y-2 border-l-2 pl-4">
+          <div className="border-fc-primary-500/20 ml-8 space-y-2 border-l-2 pl-4">
             <Label htmlFor="reminderDays">
               {t(
                 "settings.lossReasons.recovery.reminderDays",
@@ -189,7 +189,7 @@ export function RecoveryWorkflowSettings({
               )}
             </Label>
             <div className="flex items-center gap-3">
-              <Calendar className="text-muted-foreground h-4 w-4" />
+              <Calendar className="text-fc-text-muted h-4 w-4" />
               <Input
                 id="reminderDays"
                 type="number"
@@ -201,7 +201,7 @@ export function RecoveryWorkflowSettings({
                 }
                 className="w-24"
               />
-              <span className="text-muted-foreground text-sm">
+              <span className="text-fc-text-muted text-sm">
                 {t(
                   "settings.lossReasons.recovery.daysBefore",
                   "days before recovery date"
@@ -214,7 +214,7 @@ export function RecoveryWorkflowSettings({
         {/* Auto-reopen */}
         <div className="flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-start gap-3">
-            <RefreshCw className="text-muted-foreground mt-0.5 h-5 w-5" />
+            <RefreshCw className="text-fc-text-muted mt-0.5 h-5 w-5" />
             <div>
               <Label className="text-sm font-medium">
                 {t(
@@ -222,13 +222,13 @@ export function RecoveryWorkflowSettings({
                   "Auto-reopen opportunity"
                 )}
               </Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-fc-text-muted text-sm">
                 {t(
                   "settings.lossReasons.recovery.autoReopenDesc",
                   "Automatically reopen the opportunity when recovery date is reached"
                 )}
               </p>
-              <div className="mt-2 flex items-start gap-2 rounded-md bg-amber-50 p-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+              <div className="bg-fc-warning-50 text-fc-warning-600 mt-2 flex items-start gap-2 rounded-md p-2 text-xs dark:bg-amber-900/20 dark:text-amber-300">
                 <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
                 <span>
                   {t(
@@ -246,7 +246,7 @@ export function RecoveryWorkflowSettings({
         </div>
 
         {/* Info box */}
-        <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+        <div className="bg-fc-primary-50 text-fc-primary-600 flex items-start gap-2 rounded-lg p-3 text-sm dark:bg-blue-900/20 dark:text-blue-300">
           <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <span>
             {t(

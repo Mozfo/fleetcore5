@@ -26,9 +26,9 @@ import {
   Bell,
   ShieldCheck,
   Globe,
-  Settings,
   Lock,
 } from "lucide-react";
+import { FCPageHeader } from "@/components/fc";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PipelineSettingsTab } from "./PipelineSettingsTab";
 import { LossReasonsSettingsTab } from "./LossReasonsSettingsTab";
@@ -116,77 +116,68 @@ export function CrmSettingsPageClient({
   );
 
   return (
-    <div className="flex h-full flex-col space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
-            <Settings className="text-primary h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {t("settings.title", "CRM Settings")}
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t(
-                "settings.description",
-                "Configure pipeline stages, loss reasons, and other CRM settings"
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="bg-fc-bg-app flex h-full flex-col">
+      {/* FCPageHeader 48px */}
+      <FCPageHeader
+        title={t("settings.title", "CRM Settings")}
+        subtitle={t(
+          "settings.description",
+          "Configure pipeline stages, loss reasons, and other CRM settings"
+        )}
+      />
 
-      {/* Tabs Navigation */}
-      <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="flex-1"
-      >
-        <TabsList className="grid w-full grid-cols-7 lg:inline-flex lg:w-auto">
-          {SETTINGS_TABS.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                disabled={!tab.enabled}
-                className="data-[state=active]:bg-background relative flex items-center gap-2"
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden lg:inline">
-                  {t(tab.labelKey, tab.id)}
-                </span>
-                {!tab.enabled && (
-                  <Lock className="text-muted-foreground absolute -top-1 -right-1 h-3 w-3" />
-                )}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-auto p-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="flex-1"
+        >
+          <TabsList className="grid w-full grid-cols-7 lg:inline-flex lg:w-auto">
+            {SETTINGS_TABS.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  disabled={!tab.enabled}
+                  className="data-[state=active]:bg-background relative flex items-center gap-2"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden lg:inline">
+                    {t(tab.labelKey, tab.id)}
+                  </span>
+                  {!tab.enabled && (
+                    <Lock className="text-fc-text-muted absolute -top-1 -right-1 h-3 w-3" />
+                  )}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
 
-        {/* Tab Contents */}
-        <TabsContent value="pipeline" className="mt-6 flex-1">
-          <PipelineSettingsTab
-            leadStages={settings.leadStages}
-            opportunityStages={settings.opportunityStages}
-          />
-        </TabsContent>
-
-        <TabsContent value="loss_reasons" className="mt-6 flex-1">
-          <LossReasonsSettingsTab lossReasons={settings.lossReasons} />
-        </TabsContent>
-
-        {/* Disabled tabs - Coming Soon */}
-        {SETTINGS_TABS.filter((tab) => !tab.enabled).map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-6">
-            <ComingSoonPlaceholder
-              tabName={t(tab.labelKey, tab.id)}
-              phase={tab.phase}
+          {/* Tab Contents */}
+          <TabsContent value="pipeline" className="mt-6 flex-1">
+            <PipelineSettingsTab
+              leadStages={settings.leadStages}
+              opportunityStages={settings.opportunityStages}
             />
           </TabsContent>
-        ))}
-      </Tabs>
+
+          <TabsContent value="loss_reasons" className="mt-6 flex-1">
+            <LossReasonsSettingsTab lossReasons={settings.lossReasons} />
+          </TabsContent>
+
+          {/* Disabled tabs - Coming Soon */}
+          {SETTINGS_TABS.filter((tab) => !tab.enabled).map((tab) => (
+            <TabsContent key={tab.id} value={tab.id} className="mt-6">
+              <ComingSoonPlaceholder
+                tabName={t(tab.labelKey, tab.id)}
+                phase={tab.phase}
+              />
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
     </div>
   );
 }
@@ -204,12 +195,12 @@ function ComingSoonPlaceholder({
   const { t } = useTranslation("crm");
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-16 dark:border-gray-700 dark:bg-gray-900">
-      <Lock className="h-12 w-12 text-gray-400" />
-      <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+    <div className="border-fc-border-light bg-fc-bg-hover flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-16 dark:border-gray-700 dark:bg-gray-900">
+      <Lock className="text-fc-text-muted h-12 w-12" />
+      <h3 className="text-fc-text-primary mt-4 text-lg font-medium dark:text-white">
         {tabName}
       </h3>
-      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+      <p className="text-fc-text-muted mt-2 text-sm dark:text-gray-400">
         {t("settings.comingSoon", "Coming in Phase {{phase}}", { phase })}
       </p>
     </div>

@@ -104,9 +104,9 @@ export default async function CrmSettingsPage({
       <Suspense
         fallback={
           <div className="space-y-6 p-6">
-            <div className="h-12 w-64 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
-            <div className="h-10 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
-            <div className="h-96 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+            <div className="bg-fc-neutral-100 h-12 w-64 animate-pulse rounded-lg dark:bg-gray-800" />
+            <div className="bg-fc-neutral-100 h-10 w-full animate-pulse rounded-lg dark:bg-gray-800" />
+            <div className="bg-fc-neutral-100 h-96 animate-pulse rounded-lg dark:bg-gray-800" />
           </div>
         }
       >

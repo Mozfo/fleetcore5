@@ -137,7 +137,7 @@ export function DealRottingSettings({
               )}
             </CardTitle>
             {hasChanges && (
-              <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+              <span className="bg-fc-warning-50 text-fc-warning-600 rounded-full px-2 py-0.5 text-xs font-medium dark:bg-yellow-900/50 dark:text-yellow-300">
                 {t("settings.unsavedChanges", "Unsaved")}
               </span>
             )}
@@ -168,7 +168,7 @@ export function DealRottingSettings({
 
             <div className="space-y-3">
               {/* Option 1: Use stage max days */}
-              <label className="hover:bg-accent/50 flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors">
+              <label className="hover:bg-fc-bg-hover flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors">
                 <input
                   type="radio"
                   name="thresholdMode"
@@ -183,7 +183,7 @@ export function DealRottingSettings({
                       "Use stage max days"
                     )}
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-fc-text-muted text-sm">
                     {t(
                       "settings.pipeline.dealRotting.useStageMaxDaysDesc",
                       "Each stage has its own max days threshold (configured above)"
@@ -193,7 +193,7 @@ export function DealRottingSettings({
               </label>
 
               {/* Option 2: Global threshold */}
-              <label className="hover:bg-accent/50 flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors">
+              <label className="hover:bg-fc-bg-hover flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors">
                 <input
                   type="radio"
                   name="thresholdMode"
@@ -208,7 +208,7 @@ export function DealRottingSettings({
                       "Global threshold"
                     )}
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-fc-text-muted text-sm">
                     {t(
                       "settings.pipeline.dealRotting.globalThresholdDesc",
                       "Apply the same threshold to all stages"
@@ -226,7 +226,7 @@ export function DealRottingSettings({
                         }
                         className="w-24"
                       />
-                      <span className="text-muted-foreground text-sm">
+                      <span className="text-fc-text-muted text-sm">
                         {t("settings.pipeline.dealRotting.days", "days")}
                       </span>
                     </div>
@@ -249,7 +249,7 @@ export function DealRottingSettings({
               {/* Alert Owner */}
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <div className="flex items-center gap-3">
-                  <Bell className="text-muted-foreground h-4 w-4" />
+                  <Bell className="text-fc-text-muted h-4 w-4" />
                   <div>
                     <div className="font-medium">
                       {t(
@@ -257,7 +257,7 @@ export function DealRottingSettings({
                         "Alert deal owner"
                       )}
                     </div>
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-fc-text-muted text-sm">
                       {t(
                         "settings.pipeline.dealRotting.alertOwnerDesc",
                         "Send email notification to the opportunity owner"
@@ -274,7 +274,7 @@ export function DealRottingSettings({
               {/* Alert Manager */}
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <div className="flex items-center gap-3">
-                  <Bell className="text-muted-foreground h-4 w-4" />
+                  <Bell className="text-fc-text-muted h-4 w-4" />
                   <div>
                     <div className="font-medium">
                       {t(
@@ -282,7 +282,7 @@ export function DealRottingSettings({
                         "Alert manager"
                       )}
                     </div>
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-fc-text-muted text-sm">
                       {t(
                         "settings.pipeline.dealRotting.alertManagerDesc",
                         "Include rotting deals in daily manager digest"
@@ -304,7 +304,7 @@ export function DealRottingSettings({
               {t("settings.pipeline.dealRotting.checkTime", "Daily check time")}
             </Label>
             <div className="flex items-center gap-3">
-              <Clock className="text-muted-foreground h-4 w-4" />
+              <Clock className="text-fc-text-muted h-4 w-4" />
               <Input
                 id="cronTime"
                 type="time"
@@ -312,14 +312,14 @@ export function DealRottingSettings({
                 onChange={(e) => handleCronTimeChange(e.target.value)}
                 className="w-32"
               />
-              <span className="text-muted-foreground text-sm">
+              <span className="text-fc-text-muted text-sm">
                 {t(
                   "settings.pipeline.dealRotting.timezone",
                   "(server timezone)"
                 )}
               </span>
             </div>
-            <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+            <div className="bg-fc-primary-50 text-fc-primary-600 flex items-start gap-2 rounded-lg p-3 text-sm dark:bg-blue-900/20 dark:text-blue-300">
               <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <span>
                 {t(

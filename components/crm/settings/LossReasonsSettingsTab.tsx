@@ -260,7 +260,7 @@ export function LossReasonsSettingsTab({
                 {t("settings.lossReasons.title", "Loss Reasons")}
               </CardTitle>
               {hasChanges && (
-                <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+                <span className="bg-fc-warning-50 text-fc-warning-600 rounded-full px-2 py-0.5 text-xs font-medium dark:bg-yellow-900/50 dark:text-yellow-300">
                   {t("settings.unsavedChanges", "Unsaved")}
                 </span>
               )}
@@ -281,7 +281,7 @@ export function LossReasonsSettingsTab({
         <CardContent className="space-y-4">
           {/* Error message */}
           {error && (
-            <div className="flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-300">
+            <div className="bg-fc-danger-50 text-fc-danger-600 flex items-center gap-2 rounded-md p-3 text-sm dark:bg-red-900/20 dark:text-red-300">
               <AlertCircle className="h-4 w-4" />
               {error}
             </div>
@@ -368,9 +368,9 @@ export function LossReasonsSettingsTab({
           </DialogHeader>
 
           {reasonToDelete && (
-            <div className="rounded-md bg-gray-50 p-3 dark:bg-gray-900">
+            <div className="bg-fc-bg-hover rounded-md p-3 dark:bg-gray-900">
               <p className="font-medium">{reasonToDelete.label_en}</p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-fc-text-muted text-sm">
                 {reasonToDelete.label_fr}
               </p>
             </div>

@@ -240,7 +240,7 @@ export function LossReasonEditor({
         <div className="space-y-4 py-4">
           {/* Error message */}
           {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-300">
+            <div className="bg-fc-danger-50 text-fc-danger-600 rounded-md p-3 text-sm dark:bg-red-900/20 dark:text-red-300">
               {error}
             </div>
           )}
@@ -250,7 +250,7 @@ export function LossReasonEditor({
             <div className="space-y-2">
               <Label htmlFor="labelEn">
                 {t("settings.lossReasons.fields.labelEn", "Label (English)")}
-                <span className="text-red-500">*</span>
+                <span className="text-fc-danger-500">*</span>
               </Label>
               <Input
                 id="labelEn"
@@ -263,7 +263,7 @@ export function LossReasonEditor({
             <div className="space-y-2">
               <Label htmlFor="labelFr">
                 {t("settings.lossReasons.fields.labelFr", "Label (French)")}
-                <span className="text-red-500">*</span>
+                <span className="text-fc-danger-500">*</span>
               </Label>
               <Input
                 id="labelFr"
@@ -286,7 +286,7 @@ export function LossReasonEditor({
               onChange={(e) =>
                 setCategory(e.target.value as LossReasonCategory)
               }
-              className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-input bg-background placeholder:text-fc-text-muted focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -302,7 +302,7 @@ export function LossReasonEditor({
               <Label className="text-sm font-medium">
                 {t("settings.lossReasons.fields.isRecoverable", "Recoverable")}
               </Label>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-fc-text-muted text-xs">
                 {t(
                   "settings.lossReasons.fields.isRecoverableDesc",
                   "Enable follow-up after a delay to attempt recovery"
@@ -317,7 +317,7 @@ export function LossReasonEditor({
 
           {/* Recovery Delay - only if recoverable */}
           {isRecoverable && (
-            <div className="border-primary/20 space-y-2 border-l-2 pl-4">
+            <div className="border-fc-primary-500/20 space-y-2 border-l-2 pl-4">
               <Label htmlFor="recoveryDelay">
                 {t(
                   "settings.lossReasons.fields.recoveryDelay",
@@ -334,11 +334,11 @@ export function LossReasonEditor({
                   onChange={(e) => setRecoveryDelayDays(Number(e.target.value))}
                   className="w-24"
                 />
-                <span className="text-muted-foreground text-sm">
+                <span className="text-fc-text-muted text-sm">
                   {t("settings.lossReasons.fields.days", "days")}
                 </span>
               </div>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-fc-text-muted text-xs">
                 {t(
                   "settings.lossReasons.fields.recoveryDelayDesc",
                   "Days to wait before scheduling a follow-up"
@@ -357,7 +357,7 @@ export function LossReasonEditor({
                     "Require Competitor Name"
                   )}
                 </Label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-fc-text-muted text-xs">
                   {t(
                     "settings.lossReasons.fields.requireCompetitorDesc",
                     "Require entering competitor name when selecting this reason"

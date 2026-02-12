@@ -82,7 +82,7 @@ export function OpportunityPipelinePreview({
     <Card className="mt-4">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Eye className="text-muted-foreground h-4 w-4" />
+          <Eye className="text-fc-text-muted h-4 w-4" />
           <CardTitle className="text-base">
             {t("settings.pipeline.preview.title", "Pipeline Preview")}
           </CardTitle>
@@ -112,20 +112,20 @@ export function OpportunityPipelinePreview({
                     {stage.probability}%
                   </span>
                 </div>
-                <span className="text-muted-foreground mt-1 text-xs">
+                <span className="text-fc-text-muted mt-1 text-xs">
                   {stage.max_days}d max
                 </span>
               </div>
 
               {/* Arrow */}
               {index < sortedStages.length - 1 && (
-                <ArrowRight className="text-muted-foreground mx-1 h-4 w-4 flex-shrink-0" />
+                <ArrowRight className="text-fc-text-muted mx-1 h-4 w-4 flex-shrink-0" />
               )}
             </div>
           ))}
 
           {/* Final States */}
-          <ArrowRight className="text-muted-foreground mx-1 h-4 w-4 flex-shrink-0" />
+          <ArrowRight className="text-fc-text-muted mx-1 h-4 w-4 flex-shrink-0" />
 
           <div className="flex gap-2">
             {/* Won */}
@@ -151,13 +151,13 @@ export function OpportunityPipelinePreview({
         {/* Summary Stats */}
         <div className="mt-4 flex flex-wrap gap-4 border-t pt-4 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">
+            <span className="text-fc-text-muted">
               {t("settings.pipeline.preview.stages", "Stages:")}
             </span>
             <span className="font-medium">{stages.length}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">
+            <span className="text-fc-text-muted">
               {t(
                 "settings.pipeline.preview.avgProbability",
                 "Avg probability:"
@@ -172,7 +172,7 @@ export function OpportunityPipelinePreview({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">
+            <span className="text-fc-text-muted">
               {t("settings.pipeline.preview.totalDays", "Total max days:")}
             </span>
             <span className="font-medium">
@@ -206,7 +206,7 @@ export function LeadPipelinePreview({ stages }: LeadPipelinePreviewProps) {
     <Card className="mt-4">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Eye className="text-muted-foreground h-4 w-4" />
+          <Eye className="text-fc-text-muted h-4 w-4" />
           <CardTitle className="text-base">
             {t("settings.pipeline.preview.leadTitle", "Lead Flow Preview")}
           </CardTitle>
@@ -244,7 +244,7 @@ export function LeadPipelinePreview({ stages }: LeadPipelinePreviewProps) {
 
               {/* Arrow */}
               {index < sortedStages.length - 1 && (
-                <ArrowRight className="text-muted-foreground mx-1 h-4 w-4 flex-shrink-0" />
+                <ArrowRight className="text-fc-text-muted mx-1 h-4 w-4 flex-shrink-0" />
               )}
             </div>
           ))}
@@ -253,7 +253,7 @@ export function LeadPipelinePreview({ stages }: LeadPipelinePreviewProps) {
         {/* Summary Stats */}
         <div className="mt-4 flex flex-wrap gap-4 border-t pt-4 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">
+            <span className="text-fc-text-muted">
               {t("settings.pipeline.preview.stages", "Stages:")}
             </span>
             <span className="font-medium">{stages.length}</span>

@@ -286,7 +286,7 @@ export function PipelineSettingsTab({
     <div className="space-y-6">
       {/* Error Alert */}
       {saveError && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-300">
+        <div className="border-fc-danger-200 bg-fc-danger-50 text-fc-danger-600 flex items-center gap-2 rounded-lg border p-3 text-sm dark:border-red-900 dark:bg-red-900/20 dark:text-red-300">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           {saveError}
           <Button
@@ -420,7 +420,7 @@ function LeadStagesCard({
               {t("settings.pipeline.leadStages.title", "Lead Stages")}
             </CardTitle>
             {hasChanges && (
-              <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+              <span className="bg-fc-warning-50 text-fc-warning-600 rounded-full px-2 py-0.5 text-xs font-medium dark:bg-yellow-900/50 dark:text-yellow-300">
                 {t("settings.unsavedChanges", "Unsaved")}
               </span>
             )}
@@ -466,7 +466,7 @@ function LeadStagesCard({
             </SortableContext>
             <DragOverlay>
               {activeStage && (
-                <div className="bg-card rounded-lg border p-3 shadow-lg">
+                <div className="rounded-lg border bg-white p-3 shadow-lg dark:bg-gray-900">
                   <LeadStageRowContent stage={activeStage} />
                 </div>
               )}
@@ -624,7 +624,7 @@ function OpportunityStagesCard({
               )}
             </CardTitle>
             {hasChanges && (
-              <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+              <span className="bg-fc-warning-50 text-fc-warning-600 rounded-full px-2 py-0.5 text-xs font-medium dark:bg-yellow-900/50 dark:text-yellow-300">
                 {t("settings.unsavedChanges", "Unsaved")}
               </span>
             )}
@@ -670,7 +670,7 @@ function OpportunityStagesCard({
             </SortableContext>
             <DragOverlay>
               {activeStage && (
-                <div className="bg-card rounded-lg border p-3 shadow-lg">
+                <div className="rounded-lg border bg-white p-3 shadow-lg dark:bg-gray-900">
                   <OpportunityStageRowContent stage={activeStage} />
                 </div>
               )}
@@ -777,14 +777,14 @@ function SortableLeadStageRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-card hover:bg-accent/50 flex items-center gap-3 rounded-lg border p-3 transition-colors"
+      className="hover:bg-fc-bg-hover flex items-center gap-3 rounded-lg border bg-white p-3 transition-colors dark:bg-gray-900"
     >
       <button
         {...attributes}
         {...listeners}
         className="cursor-grab touch-none focus:outline-none active:cursor-grabbing"
       >
-        <GripVertical className="text-muted-foreground h-4 w-4" />
+        <GripVertical className="text-fc-text-muted h-4 w-4" />
       </button>
       <LeadStageRowContent stage={stage} />
       <div className="ml-auto flex items-center gap-1">
@@ -799,7 +799,7 @@ function SortableLeadStageRow({
         <Button
           variant="ghost"
           size="icon"
-          className="text-destructive hover:text-destructive h-7 w-7"
+          className="text-fc-danger-500 hover:text-fc-danger-500 h-7 w-7"
           onClick={onDelete}
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -816,7 +816,7 @@ function LeadStageRowContent({ stage }: { stage: LeadStage }) {
 
   return (
     <>
-      <span className="text-muted-foreground w-6 text-center text-sm">
+      <span className="text-fc-text-muted w-6 text-center text-sm">
         {stage.order}
       </span>
       <span
@@ -826,7 +826,7 @@ function LeadStageRowContent({ stage }: { stage: LeadStage }) {
           ? stage.label_fr || stage.label_en
           : stage.label_en}
       </span>
-      <span className="text-muted-foreground text-xs">{stage.value}</span>
+      <span className="text-fc-text-muted text-xs">{stage.value}</span>
     </>
   );
 }
@@ -861,14 +861,14 @@ function SortableOpportunityStageRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-card hover:bg-accent/50 flex items-center gap-3 rounded-lg border p-3 transition-colors"
+      className="hover:bg-fc-bg-hover flex items-center gap-3 rounded-lg border bg-white p-3 transition-colors dark:bg-gray-900"
     >
       <button
         {...attributes}
         {...listeners}
         className="cursor-grab touch-none focus:outline-none active:cursor-grabbing"
       >
-        <GripVertical className="text-muted-foreground h-4 w-4" />
+        <GripVertical className="text-fc-text-muted h-4 w-4" />
       </button>
       <OpportunityStageRowContent stage={stage} />
       <div className="ml-auto flex items-center gap-1">
@@ -883,7 +883,7 @@ function SortableOpportunityStageRow({
         <Button
           variant="ghost"
           size="icon"
-          className="text-destructive hover:text-destructive h-7 w-7"
+          className="text-fc-danger-500 hover:text-fc-danger-500 h-7 w-7"
           onClick={onDelete}
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -900,7 +900,7 @@ function OpportunityStageRowContent({ stage }: { stage: OpportunityStage }) {
 
   return (
     <>
-      <span className="text-muted-foreground w-6 text-center text-sm">
+      <span className="text-fc-text-muted w-6 text-center text-sm">
         {stage.order}
       </span>
       <span
@@ -910,8 +910,8 @@ function OpportunityStageRowContent({ stage }: { stage: OpportunityStage }) {
           ? stage.label_fr || stage.label_en
           : stage.label_en}
       </span>
-      <div className="text-muted-foreground flex items-center gap-3 text-xs">
-        <span className="bg-muted rounded px-1.5 py-0.5">
+      <div className="text-fc-text-muted flex items-center gap-3 text-xs">
+        <span className="bg-fc-neutral-50 rounded px-1.5 py-0.5">
           {stage.probability}%
         </span>
         <span>{stage.max_days}d max</span>
@@ -1050,7 +1050,7 @@ function LeadStageModal({
                       COLOR_CLASSES[c].split(" ")[0]
                     } ${
                       color === c
-                        ? "ring-primary ring-2 ring-offset-2"
+                        ? "ring-fc-primary-500 ring-2 ring-offset-2"
                         : "opacity-60 hover:opacity-100"
                     }`}
                   />
@@ -1060,7 +1060,7 @@ function LeadStageModal({
 
             {/* Error */}
             {error && (
-              <div className="text-destructive flex items-center gap-2 text-sm">
+              <div className="text-fc-danger-500 flex items-center gap-2 text-sm">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </div>
@@ -1248,7 +1248,7 @@ function OpportunityStageModal({
                       COLOR_CLASSES[c].split(" ")[0]
                     } ${
                       color === c
-                        ? "ring-primary ring-2 ring-offset-2"
+                        ? "ring-fc-primary-500 ring-2 ring-offset-2"
                         : "opacity-60 hover:opacity-100"
                     }`}
                   />
@@ -1258,7 +1258,7 @@ function OpportunityStageModal({
 
             {/* Error */}
             {error && (
-              <div className="text-destructive flex items-center gap-2 text-sm">
+              <div className="text-fc-danger-500 flex items-center gap-2 text-sm">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </div>
@@ -1286,8 +1286,8 @@ function OpportunityStageModal({
 function EmptyStateMessage({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-8 text-center">
-      <GitBranch className="text-muted-foreground/50 h-10 w-10" />
-      <p className="text-muted-foreground mt-2 text-sm">{message}</p>
+      <GitBranch className="text-fc-text-muted/50 h-10 w-10" />
+      <p className="text-fc-text-muted mt-2 text-sm">{message}</p>
     </div>
   );
 }
