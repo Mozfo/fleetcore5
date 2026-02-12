@@ -68,18 +68,18 @@ export function QuotesKanbanCard({
     <div
       onClick={onClick}
       className={cn(
-        "cursor-pointer rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-gray-900",
-        isExpiringSoon() && "border-orange-300 dark:border-orange-700"
+        "rounded-fc-lg border-fc-border-light hover:border-fc-border-medium hover:shadow-fc-md cursor-pointer border bg-white p-3 transition-all dark:border-gray-700 dark:bg-gray-900",
+        isExpiringSoon() && "border-fc-warning-500/50 dark:border-orange-700"
       )}
     >
       {/* Header */}
       <div className="mb-2 flex items-start justify-between">
         <div className="flex-1 truncate">
-          <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+          <p className="text-fc-text-primary truncate text-sm font-medium dark:text-white">
             {quote.quote_reference}
           </p>
           {quote.quote_code && (
-            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-fc-text-muted truncate text-xs dark:text-gray-400">
               {quote.quote_code}
             </p>
           )}
@@ -137,13 +137,13 @@ export function QuotesKanbanCard({
 
       {/* Value */}
       <div className="mb-2">
-        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+        <p className="text-fc-text-primary text-lg font-semibold dark:text-white">
           {formatCurrency(quote.total_value ? Number(quote.total_value) : null)}
         </p>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+      <div className="text-fc-text-muted flex items-center justify-between text-xs dark:text-gray-400">
         <div className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
           <span>
@@ -163,7 +163,7 @@ export function QuotesKanbanCard({
 
       {/* Expiring soon warning */}
       {isExpiringSoon() && (
-        <div className="mt-2 rounded bg-orange-100 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+        <div className="bg-fc-warning-50 text-fc-warning-600 mt-2 rounded px-2 py-1 text-xs dark:bg-orange-900/30 dark:text-orange-400">
           {t("quotes.card.expiring_soon", "Expiring soon")}
         </div>
       )}

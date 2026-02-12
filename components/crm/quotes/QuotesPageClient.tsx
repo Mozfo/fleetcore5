@@ -13,7 +13,17 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { QuotesPageHeader } from "./QuotesPageHeader";
+import {
+  Plus,
+  Download,
+  FileText,
+  Send,
+  CheckCircle,
+  DollarSign,
+} from "lucide-react";
+import { FCPageHeader, FCStatCard } from "@/components/fc";
+import { ViewToggle, type ViewMode } from "../leads/ViewToggle";
+import { Button } from "@/components/ui/button";
 import { QuotesFilterBar } from "./QuotesFilterBar";
 import { QuotesKanbanBoard } from "./QuotesKanbanBoard";
 import { QuotesTable } from "./QuotesTable";
@@ -54,7 +64,7 @@ export function QuotesPageClient({
   initialFilters,
 }: QuotesPageClientProps) {
   const router = useRouter();
-  useTranslation("crm"); // Load CRM namespace
+  const { t } = useTranslation("crm");
 
   // Local state for optimistic updates
   const [localQuotes, setLocalQuotes] = useState(allQuotes);
@@ -63,7 +73,7 @@ export function QuotesPageClient({
   const [filters, setFilters] = useState<QuotesFilters>(initialFilters);
 
   // View mode (kanban or table)
-  const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
   // Table state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -107,7 +117,7 @@ export function QuotesPageClient({
     }
   }, []);
 
-  const handleViewModeChange = useCallback((mode: "kanban" | "table") => {
+  const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
     try {
       localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
@@ -266,64 +276,146 @@ export function QuotesPageClient({
     );
   }, []);
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "EUR",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  };
+
   return (
-    <div className="flex h-full flex-col space-y-4 p-6">
-      {/* Header with stats */}
-      <QuotesPageHeader
-        stats={computedStats}
-        onNewQuote={() => router.push("/crm/quotes/new")}
-      />
-
-      {/* Filter bar */}
-      <QuotesFilterBar
-        filters={filters}
-        onFiltersChange={setFilters}
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-      />
-
-      {/* Column selector for table view */}
-      {viewMode === "table" && (
-        <div className="flex justify-end">
-          <QuoteColumnSelector
-            columns={orderedColumns}
-            visibleColumns={visibleColumnKeys}
-            columnOrder={orderedColumns.map((c) => c.key)}
-            onToggleColumn={toggleColumn}
-            onReorderColumns={reorderColumns}
-            onResetColumns={resetColumns}
-          />
-        </div>
-      )}
-
-      {/* Main content */}
-      <div className="flex-1 overflow-hidden">
-        {viewMode === "kanban" ? (
-          <QuotesKanbanBoard
-            columns={kanbanColumns}
-            onQuoteClick={handleQuoteClick}
-            onSendQuote={handleSendQuote}
-            onConvertQuote={handleConvertToOrder}
-            onDeleteQuote={handleDeleteQuote}
-          />
-        ) : (
+    <div className="absolute inset-0 flex flex-col overflow-hidden">
+      {/* FCPageHeader 48px */}
+      <FCPageHeader
+        title={t("quotes.title", "Quotes")}
+        badge={
+          <span className="bg-fc-neutral-100 text-fc-text-muted rounded-full px-2 py-0.5 text-xs font-medium">
+            {computedStats.total}
+          </span>
+        }
+        actions={
           <>
-            <QuotesTable
-              quotes={sortedAndPaginatedQuotes}
-              columns={orderedVisibleColumns}
-              selectedIds={selectedIds}
-              sortColumn={sortColumn}
-              sortDirection={sortDirection}
+            <Button variant="outline" size="sm">
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              {t("quotes.actions.export", "Export")}
+            </Button>
+            <Button size="sm" onClick={() => router.push("/crm/quotes/new")}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              {t("quotes.actions.new_quote", "New Quote")}
+            </Button>
+            <ViewToggle value={viewMode} onChange={handleViewModeChange} />
+          </>
+        }
+      />
+
+      {/* Filter bar 40px */}
+      <QuotesFilterBar filters={filters} onFiltersChange={setFilters} />
+
+      {/* Content area */}
+      {viewMode === "kanban" ? (
+        <div className="bg-fc-bg-app flex h-full flex-col">
+          {/* Stats strip */}
+          <div className="grid shrink-0 grid-cols-2 gap-3 p-4 md:grid-cols-4">
+            <FCStatCard
+              label={t("quotes.stats.draft", "Drafts")}
+              value={computedStats.draft}
+              icon={<FileText className="h-5 w-5" />}
+              variant="default"
+            />
+            <FCStatCard
+              label={t("quotes.stats.sent", "Sent")}
+              value={computedStats.sent}
+              icon={<Send className="h-5 w-5" />}
+              variant="primary"
+            />
+            <FCStatCard
+              label={t("quotes.stats.accepted", "Accepted")}
+              value={computedStats.accepted}
+              icon={<CheckCircle className="h-5 w-5" />}
+              variant="success"
+            />
+            <FCStatCard
+              label={t("quotes.stats.totalValue", "Total Value")}
+              value={formatCurrency(computedStats.totalValue)}
+              icon={<DollarSign className="h-5 w-5" />}
+              variant="primary"
+            />
+          </div>
+          {/* Kanban board */}
+          <div className="min-h-0 flex-1 overflow-hidden px-4 pb-4">
+            <QuotesKanbanBoard
+              columns={kanbanColumns}
               onQuoteClick={handleQuoteClick}
-              onSort={handleSort}
-              onSelectAll={handleSelectAll}
-              onSelectQuote={handleSelectQuote}
-              getColumnWidth={getColumnWidth}
-              onResizeColumn={resizeColumn}
               onSendQuote={handleSendQuote}
               onConvertQuote={handleConvertToOrder}
               onDeleteQuote={handleDeleteQuote}
             />
+          </div>
+        </div>
+      ) : (
+        <div className="bg-fc-bg-app flex-1 overflow-auto">
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
+            <FCStatCard
+              label={t("quotes.stats.draft", "Drafts")}
+              value={computedStats.draft}
+              icon={<FileText className="h-5 w-5" />}
+              variant="default"
+            />
+            <FCStatCard
+              label={t("quotes.stats.sent", "Sent")}
+              value={computedStats.sent}
+              icon={<Send className="h-5 w-5" />}
+              variant="primary"
+            />
+            <FCStatCard
+              label={t("quotes.stats.accepted", "Accepted")}
+              value={computedStats.accepted}
+              icon={<CheckCircle className="h-5 w-5" />}
+              variant="success"
+            />
+            <FCStatCard
+              label={t("quotes.stats.totalValue", "Total Value")}
+              value={formatCurrency(computedStats.totalValue)}
+              icon={<DollarSign className="h-5 w-5" />}
+              variant="primary"
+            />
+          </div>
+
+          {/* Column selector */}
+          <div className="border-fc-border-light flex justify-end border-b px-4 pb-2">
+            <QuoteColumnSelector
+              columns={orderedColumns}
+              visibleColumns={visibleColumnKeys}
+              columnOrder={orderedColumns.map((c) => c.key)}
+              onToggleColumn={toggleColumn}
+              onReorderColumns={reorderColumns}
+              onResetColumns={resetColumns}
+            />
+          </div>
+
+          {/* Table */}
+          <QuotesTable
+            quotes={sortedAndPaginatedQuotes}
+            columns={orderedVisibleColumns}
+            selectedIds={selectedIds}
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+            onQuoteClick={handleQuoteClick}
+            onSort={handleSort}
+            onSelectAll={handleSelectAll}
+            onSelectQuote={handleSelectQuote}
+            getColumnWidth={getColumnWidth}
+            onResizeColumn={resizeColumn}
+            onSendQuote={handleSendQuote}
+            onConvertQuote={handleConvertToOrder}
+            onDeleteQuote={handleDeleteQuote}
+          />
+
+          {/* Pagination */}
+          <div className="border-fc-border-light border-t">
             <TablePagination
               currentPage={currentPage}
               totalItems={filteredQuotes.length}
@@ -331,9 +423,9 @@ export function QuotesPageClient({
               onPageChange={setCurrentPage}
               onPageSizeChange={setPageSize}
             />
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* Drawer */}
       <QuoteDrawer
