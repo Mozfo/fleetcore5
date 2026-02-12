@@ -3,6 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useTranslation } from "react-i18next";
 import { DashboardGrid } from "@/components/app/widgets";
+import { FCPageHeader } from "@/components/fc";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -12,29 +13,26 @@ export default function DashboardPage() {
   // Wait for Clerk to load user data
   const displayName = isLoaded && user?.firstName ? user.firstName : null;
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {t("dashboard_page.welcome")}
-          {displayName ? (
-            `, ${displayName}`
-          ) : isLoaded ? (
-            ""
-          ) : (
-            <span className="ml-2 inline-flex items-center">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-            </span>
-          )}
-        </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {t("dashboard_page.subtitle")}
-        </p>
-      </div>
+  const titleText = displayName
+    ? `${t("dashboard_page.welcome")}, ${displayName}`
+    : isLoaded
+      ? t("dashboard_page.welcome")
+      : t("dashboard_page.welcome");
 
-      {/* Dashboard Grid */}
-      <DashboardGrid />
+  return (
+    <div className="bg-fc-bg-app flex h-full flex-col">
+      <FCPageHeader
+        title={titleText}
+        subtitle={t("dashboard_page.subtitle")}
+        badge={
+          !isLoaded ? (
+            <Loader2 className="text-fc-text-muted h-4 w-4 animate-spin" />
+          ) : undefined
+        }
+      />
+      <div className="flex-1 overflow-auto p-4">
+        <DashboardGrid />
+      </div>
     </div>
   );
 }

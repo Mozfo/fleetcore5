@@ -29,25 +29,25 @@ export function WidgetWrapper({
   return (
     <div
       className={cn(
-        "flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900",
-        isEditing && "ring-2 ring-blue-500/20",
+        "rounded-fc-lg border-fc-border-light flex h-full flex-col border bg-white dark:border-gray-700 dark:bg-gray-900",
+        isEditing && "ring-fc-primary-500/20 ring-2",
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+      <div className="border-fc-border-light flex items-center justify-between border-b px-4 py-3 dark:border-gray-800">
         <div className="flex items-center gap-2">
           {isEditing && (
-            <GripVertical className="drag-handle h-4 w-4 cursor-grab text-gray-400 active:cursor-grabbing" />
+            <GripVertical className="text-fc-text-muted drag-handle h-4 w-4 cursor-grab active:cursor-grabbing" />
           )}
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+          <h3 className="text-fc-text-primary text-sm font-medium dark:text-white">
             {title}
           </h3>
         </div>
 
         <div className="flex items-center gap-1">
           {!isEditing && (
-            <button className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800">
+            <button className="text-fc-text-muted hover:bg-fc-bg-hover rounded p-1 hover:text-gray-600 dark:hover:bg-gray-800">
               <MoreHorizontal className="h-4 w-4" />
             </button>
           )}

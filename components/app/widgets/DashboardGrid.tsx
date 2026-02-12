@@ -136,16 +136,16 @@ function KPICard({
   const content = (
     <div
       className={cn(
-        "flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-gray-900",
+        "rounded-fc-lg border-fc-border-light hover:shadow-fc-md flex h-full flex-col border bg-white p-6 transition-all dark:border-gray-700 dark:bg-gray-900",
         href &&
-          "cursor-pointer hover:border-blue-300 dark:hover:border-blue-700"
+          "hover:border-fc-primary-300 cursor-pointer dark:hover:border-blue-700"
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div
           className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-xl",
+            "rounded-fc-lg flex h-10 w-10 items-center justify-center",
             iconColor
           )}
         >
@@ -156,8 +156,8 @@ function KPICard({
             className={cn(
               "flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-medium",
               change >= 0
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                : "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400"
+                ? "bg-fc-success-50 text-fc-success-600 dark:bg-emerald-950/50 dark:text-emerald-400"
+                : "bg-fc-danger-50 text-fc-danger-600 dark:bg-red-950/50 dark:text-red-400"
             )}
           >
             {change >= 0 ? (
@@ -179,14 +179,14 @@ function KPICard({
           </div>
         ) : (
           <>
-            <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <p className="text-fc-text-primary text-2xl font-semibold tracking-tight dark:text-white">
               {value}
             </p>
-            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+            <p className="text-fc-text-muted mt-1 text-xs font-medium dark:text-gray-400">
               {title}
             </p>
             {changeLabel && (
-              <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-fc-text-muted mt-0.5 text-xs dark:text-gray-500">
                 {changeLabel}
               </p>
             )}
@@ -232,17 +232,17 @@ function StatusChart({
   const total = data.reduce((sum, d) => sum + d.count, 0);
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-fc-lg border-fc-border-light flex h-full flex-col border bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-fc-text-primary text-sm font-semibold dark:text-white">
             {t("widgets.crm_leads_by_status")}
           </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-fc-text-muted text-xs dark:text-gray-400">
             Pipeline distribution
           </p>
         </div>
-        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+        <span className="bg-fc-neutral-50 text-fc-text-muted rounded-full px-2.5 py-1 text-xs font-medium dark:bg-gray-800 dark:text-gray-300">
           {total} total
         </span>
       </div>
@@ -332,12 +332,12 @@ function SourcesChart({
   const total = data.reduce((sum, d) => sum + d.count, 0);
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-fc-lg border-fc-border-light flex h-full flex-col border bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-fc-text-primary text-sm font-semibold dark:text-white">
           {t("widgets.crm_top_sources")}
         </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-fc-text-muted text-xs dark:text-gray-400">
           Lead acquisition channels
         </p>
       </div>
@@ -384,10 +384,10 @@ function SourcesChart({
             </ResponsiveContainer>
             {/* Center text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-lg font-bold text-gray-900 dark:text-white">
+              <span className="text-fc-text-primary text-lg font-bold dark:text-white">
                 {total}
               </span>
-              <span className="text-[10px] text-gray-500">total</span>
+              <span className="text-fc-text-muted text-[10px]">total</span>
             </div>
           </div>
 
@@ -403,11 +403,11 @@ function SourcesChart({
                     className="h-3 w-3 rounded-full"
                     style={{ backgroundColor: item.fill }}
                   />
-                  <span className="text-gray-600 dark:text-gray-400">
+                  <span className="text-fc-text-secondary dark:text-gray-400">
                     {item.name}
                   </span>
                 </div>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="text-fc-text-primary font-medium dark:text-white">
                   {item.value}
                 </span>
               </div>
@@ -442,17 +442,17 @@ function TrendChart({
   const total = data.reduce((sum, d) => sum + d.count, 0);
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-fc-lg border-fc-border-light flex h-full flex-col border bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-fc-text-primary text-sm font-semibold dark:text-white">
             Leads Trend
           </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-fc-text-muted text-xs dark:text-gray-400">
             Last 12 weeks
           </p>
         </div>
-        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/50 dark:text-blue-400">
+        <span className="bg-fc-primary-50 text-fc-primary-600 rounded-full px-2.5 py-1 text-xs font-medium dark:bg-blue-950/50 dark:text-blue-400">
           {total} leads
         </span>
       </div>
@@ -529,7 +529,11 @@ function QualityScores({
   isLoading?: boolean;
 }) {
   const scores = [
-    { label: "Fit Score", value: data.avg_fit_score, color: "bg-blue-500" },
+    {
+      label: "Fit Score",
+      value: data.avg_fit_score,
+      color: "bg-fc-primary-500",
+    },
     {
       label: "Engagement",
       value: data.avg_engagement_score,
@@ -538,17 +542,17 @@ function QualityScores({
     {
       label: "Qualification",
       value: data.avg_qualification_score,
-      color: "bg-emerald-500",
+      color: "bg-fc-success-500",
     },
   ];
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-fc-lg border-fc-border-light flex h-full flex-col border bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-fc-text-primary text-sm font-semibold dark:text-white">
           Lead Quality
         </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-fc-text-muted text-xs dark:text-gray-400">
           Average scores across all leads
         </p>
       </div>
@@ -562,14 +566,14 @@ function QualityScores({
           {scores.map((score, i) => (
             <div key={i}>
               <div className="mb-1 flex items-center justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">
+                <span className="text-fc-text-secondary dark:text-gray-400">
                   {score.label}
                 </span>
-                <span className="font-semibold text-gray-900 dark:text-white">
+                <span className="text-fc-text-primary font-semibold dark:text-white">
                   {score.value.toFixed(1)}
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+              <div className="bg-fc-neutral-50 h-2 w-full overflow-hidden rounded-full dark:bg-gray-800">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
@@ -614,8 +618,8 @@ function QuickActionsCard() {
   ];
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+    <div className="rounded-fc-lg border-fc-border-light flex h-full flex-col border bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+      <h3 className="text-fc-text-primary mb-4 text-sm font-semibold dark:text-white">
         {t("widgets.quick_actions")}
       </h3>
       <div className="flex flex-1 flex-col gap-2">
@@ -623,7 +627,7 @@ function QuickActionsCard() {
           <Link
             key={idx}
             href={action.href}
-            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition-all hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-blue-600 dark:hover:bg-blue-950/50"
+            className="rounded-fc-md border-fc-border-light bg-fc-bg-hover text-fc-text-primary hover:border-fc-primary-300 flex items-center gap-3 border px-4 py-3 text-sm font-medium transition-all hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-blue-600 dark:hover:bg-blue-950/50"
           >
             <div
               className={cn(
@@ -634,7 +638,7 @@ function QuickActionsCard() {
               <action.icon className="h-4 w-4" />
             </div>
             {action.label}
-            <ArrowRight className="ml-auto h-4 w-4 text-gray-400" />
+            <ArrowRight className="text-fc-text-muted ml-auto h-4 w-4" />
           </Link>
         ))}
       </div>

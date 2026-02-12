@@ -13,13 +13,14 @@ interface StatWidgetProps {
 }
 
 const colorClasses = {
-  blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
-  green: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+  blue: "bg-fc-primary-50 text-fc-primary-500 dark:bg-blue-900/30 dark:text-blue-400",
+  green:
+    "bg-fc-success-50 text-fc-success-500 dark:bg-green-900/30 dark:text-green-400",
   purple:
     "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
   orange:
-    "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
-  red: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+    "bg-fc-warning-50 text-fc-warning-500 dark:bg-orange-900/30 dark:text-orange-400",
+  red: "bg-fc-danger-50 text-fc-danger-500 dark:bg-red-900/30 dark:text-red-400",
 };
 
 /**
@@ -45,8 +46,8 @@ export function StatWidget({
   };
 
   const getTrendColor = () => {
-    if (change === undefined || change === 0) return "text-gray-500";
-    return change > 0 ? "text-green-600" : "text-red-600";
+    if (change === undefined || change === 0) return "text-fc-text-muted";
+    return change > 0 ? "text-fc-success-500" : "text-fc-danger-500";
   };
 
   return (
@@ -65,11 +66,11 @@ export function StatWidget({
       </div>
 
       <div className="mt-4">
-        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+        <p className="text-fc-text-primary text-2xl font-semibold dark:text-white">
           {value}
         </p>
         {label && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-fc-text-muted mt-1 text-xs dark:text-gray-400">
             {label}
           </p>
         )}
