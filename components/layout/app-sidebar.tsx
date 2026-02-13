@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { useHasPermission } from "@/lib/hooks/useHasPermission";
 import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import { useCrmFeatureFlags } from "@/lib/hooks/useCrmFeatureFlags";
@@ -45,6 +44,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -147,8 +147,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              size="lg"
-              className="hover:bg-sidebar-accent/50"
+              className="hover:text-foreground h-10 group-data-[collapsible=icon]:px-0! hover:bg-[var(--primary)]/5"
               asChild
             >
               <Link href={localizedPath("dashboard")}>
@@ -164,124 +163,138 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 
       {/* ---- Content: Navigation ---- */}
       <SidebarContent>
-        {groups.map((grp, gi) => (
-          <SidebarGroup key={gi}>
-            {grp.group && <SidebarGroupLabel>{grp.group}</SidebarGroupLabel>}
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {grp.items.map((mod) => {
-                  const Icon = mod.icon;
-                  const active = isModuleActive(mod);
-                  const visibleSubs = mod.subNav?.filter((s) =>
-                    filterSubNav(mod, s)
-                  );
-                  const hasSubs = visibleSubs && visibleSubs.length > 0;
+        <ScrollArea className="h-full">
+          {groups.map((grp, gi) => (
+            <SidebarGroup key={gi}>
+              {grp.group && <SidebarGroupLabel>{grp.group}</SidebarGroupLabel>}
+              <SidebarGroupContent className="flex flex-col gap-2">
+                <SidebarMenu>
+                  {grp.items.map((mod) => {
+                    const Icon = mod.icon;
+                    const active = isModuleActive(mod);
+                    const visibleSubs = mod.subNav?.filter((s) =>
+                      filterSubNav(mod, s)
+                    );
+                    const hasSubs = visibleSubs && visibleSubs.length > 0;
 
-                  if (hasSubs) {
-                    return (
-                      <SidebarMenuItem key={mod.key}>
-                        {/* Icon-collapsed: DropdownMenu */}
-                        <div className="hidden group-data-[collapsible=icon]:block">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <SidebarMenuButton tooltip={t(mod.labelKey)}>
-                                <Icon />
-                                <span>{t(mod.labelKey)}</span>
-                                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                              </SidebarMenuButton>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              side={isMobile ? "bottom" : "right"}
-                              align={isMobile ? "end" : "start"}
-                              className="min-w-48 rounded-lg"
-                            >
-                              <DropdownMenuLabel>
-                                {t(mod.labelKey)}
-                              </DropdownMenuLabel>
-                              {visibleSubs.map((sub) => (
-                                <DropdownMenuItem key={sub.key} asChild>
-                                  <Link href={localizedPath(sub.href.slice(1))}>
-                                    {t(sub.labelKey)}
-                                  </Link>
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-
-                        {/* Expanded: Collapsible */}
-                        <Collapsible
-                          className="block group-data-[collapsible=icon]:hidden"
-                          defaultOpen={active}
-                        >
-                          <CollapsibleTrigger asChild>
-                            <SidebarMenuButton tooltip={t(mod.labelKey)}>
-                              <Icon />
-                              <span>{t(mod.labelKey)}</span>
-                              <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                            </SidebarMenuButton>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <SidebarMenuSub>
-                              {visibleSubs.map((sub) => (
-                                <SidebarMenuSubItem key={sub.key}>
-                                  <SidebarMenuSubButton
-                                    isActive={isSubNavActive(sub)}
+                    if (hasSubs) {
+                      return (
+                        <SidebarMenuItem key={mod.key}>
+                          {/* Icon-collapsed: DropdownMenu */}
+                          <div className="hidden group-data-[collapsible=icon]:block">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <SidebarMenuButton
+                                  className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10 active:bg-[var(--primary)]/10"
+                                  tooltip={t(mod.labelKey)}
+                                >
+                                  <Icon />
+                                  <span>{t(mod.labelKey)}</span>
+                                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                </SidebarMenuButton>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                side={isMobile ? "bottom" : "right"}
+                                align={isMobile ? "end" : "start"}
+                                className="min-w-48 rounded-lg"
+                              >
+                                <DropdownMenuLabel>
+                                  {t(mod.labelKey)}
+                                </DropdownMenuLabel>
+                                {visibleSubs.map((sub) => (
+                                  <DropdownMenuItem
+                                    className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10! active:bg-[var(--primary)]/10!"
+                                    key={sub.key}
                                     asChild
                                   >
                                     <Link
                                       href={localizedPath(sub.href.slice(1))}
                                     >
-                                      <span>{t(sub.labelKey)}</span>
+                                      {t(sub.labelKey)}
                                     </Link>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              ))}
-                            </SidebarMenuSub>
-                          </CollapsibleContent>
-                        </Collapsible>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+
+                          {/* Expanded: Collapsible */}
+                          <Collapsible
+                            className="group/collapsible block group-data-[collapsible=icon]:hidden"
+                            defaultOpen={active}
+                          >
+                            <CollapsibleTrigger asChild>
+                              <SidebarMenuButton
+                                className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10 active:bg-[var(--primary)]/10"
+                                tooltip={t(mod.labelKey)}
+                              >
+                                <Icon />
+                                <span>{t(mod.labelKey)}</span>
+                                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                              </SidebarMenuButton>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <SidebarMenuSub>
+                                {visibleSubs.map((sub) => (
+                                  <SidebarMenuSubItem key={sub.key}>
+                                    <SidebarMenuSubButton
+                                      className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10 active:bg-[var(--primary)]/10"
+                                      isActive={isSubNavActive(sub)}
+                                      asChild
+                                    >
+                                      <Link
+                                        href={localizedPath(sub.href.slice(1))}
+                                      >
+                                        <span>{t(sub.labelKey)}</span>
+                                      </Link>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                ))}
+                              </SidebarMenuSub>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </SidebarMenuItem>
+                      );
+                    }
+
+                    // No sub-nav
+                    return (
+                      <SidebarMenuItem key={mod.key}>
+                        <SidebarMenuButton
+                          className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10 active:bg-[var(--primary)]/10"
+                          isActive={active}
+                          tooltip={t(mod.labelKey)}
+                          asChild
+                        >
+                          <Link href={localizedPath(mod.href.slice(1))}>
+                            <Icon />
+                            <span>{t(mod.labelKey)}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                        {mod.badge === "new" && (
+                          <SidebarMenuBadge className="border border-green-400 text-green-600 peer-hover/menu-button:text-green-600">
+                            New
+                          </SidebarMenuBadge>
+                        )}
+                        {mod.badge === "beta" && (
+                          <SidebarMenuBadge className="peer-hover/menu-button:text-foreground opacity-50">
+                            Beta
+                          </SidebarMenuBadge>
+                        )}
                       </SidebarMenuItem>
                     );
-                  }
-
-                  // No sub-nav
-                  return (
-                    <SidebarMenuItem key={mod.key}>
-                      <SidebarMenuButton
-                        isActive={active}
-                        tooltip={t(mod.labelKey)}
-                        asChild
-                      >
-                        <Link href={localizedPath(mod.href.slice(1))}>
-                          <Icon />
-                          <span>{t(mod.labelKey)}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                      {mod.badge && (
-                        <SidebarMenuBadge
-                          className={cn(
-                            "border text-xs",
-                            mod.badge === "new"
-                              ? "border-green-400 text-green-600"
-                              : "border-purple-400 text-purple-600"
-                          )}
-                        >
-                          {mod.badge}
-                        </SidebarMenuBadge>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
+        </ScrollArea>
       </SidebarContent>
 
       {/* ---- Footer ---- */}
       <SidebarFooter>
-        <div className="text-muted-foreground px-2 py-1 text-xs group-data-[collapsible=icon]:hidden">
-          FleetCore v1.0
+        <div className="text-muted-foreground px-2 py-1 text-center text-xs group-data-[collapsible=icon]:hidden">
+          &copy; FleetCore 2026
         </div>
       </SidebarFooter>
 

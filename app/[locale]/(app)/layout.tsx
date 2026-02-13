@@ -32,13 +32,16 @@ export default async function AppLayout({
             "--sidebar-width": "calc(var(--spacing) * 64)",
             "--header-height": "calc(var(--spacing) * 14)",
             "--content-padding": "calc(var(--spacing) * 4)",
+            "--content-margin": "calc(var(--spacing) * 1.5)",
+            "--content-full-height":
+              "calc(100vh - var(--header-height) - (var(--content-padding) * 2) - (var(--content-margin) * 2))",
           } as React.CSSProperties
         }
       >
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
-          <div className="flex flex-1 flex-col">
+          <div className="bg-muted/40 flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2 p-(--content-padding) pt-0">
               {children}
             </div>
