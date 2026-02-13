@@ -3,7 +3,6 @@
  *
  * Provides:
  * - Back navigation to Settings
- * - Breadcrumb: Settings / CRM Settings
  *
  * @module app/[locale]/(app)/settings/crm/layout
  */

@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { BreadcrumbOverride } from "@/lib/contexts/BreadcrumbContext";
 import type { Lead, LeadStatus } from "@/types/crm";
 import { LeadSearchCommand } from "./LeadSearchCommand";
 
@@ -174,10 +173,6 @@ export function LeadDetailHeader({
 
   return (
     <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
-      <BreadcrumbOverride
-        segment={lead.id}
-        label={lead.lead_code || companyName}
-      />
       {/* Top Bar: Back button + Navigation */}
       <div className="mb-3 flex items-center justify-between">
         {/* Left: Back */}

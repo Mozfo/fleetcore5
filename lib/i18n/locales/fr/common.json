@@ -438,10 +438,6 @@
     "admin_notifications": "Notifications",
     "crm_directory": "Répertoire"
   },
-  "breadcrumbs": {
-    "new": "Nouveau",
-    "edit": "Modifier"
-  },
   "widgets": {
     "crm_my_leads": "Mes Prospects Actifs",
     "crm_all_active_leads": "Tous les Prospects Actifs",

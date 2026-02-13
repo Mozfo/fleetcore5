@@ -388,10 +388,6 @@
     "admin_notifications": "Notifications",
     "crm_directory": "Directory"
   },
-  "breadcrumbs": {
-    "new": "New",
-    "edit": "Edit"
-  },
   "widgets": {
     "crm_my_leads": "My Active Leads",
     "crm_all_active_leads": "All Active Leads",

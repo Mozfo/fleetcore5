@@ -5,7 +5,6 @@ import { Toaster } from "sonner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
-import { BreadcrumbProvider } from "@/lib/contexts/BreadcrumbContext";
 
 export default async function AppLayout({
   children,
@@ -41,14 +40,12 @@ export default async function AppLayout({
       >
         <AppSidebar variant="inset" />
         <SidebarInset>
-          <BreadcrumbProvider>
-            <SiteHeader />
-            <div className="bg-muted/40 flex flex-1 flex-col">
-              <div className="@container/main flex flex-1 flex-col gap-2 p-(--content-padding) pt-0">
-                {children}
-              </div>
+          <SiteHeader />
+          <div className="bg-muted/40 flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2 p-(--content-padding) pt-0">
+              {children}
             </div>
-          </BreadcrumbProvider>
+          </div>
         </SidebarInset>
       </SidebarProvider>
       <Toaster position="top-right" richColors />

@@ -29,7 +29,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -297,8 +296,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           &copy; FleetCore 2026
         </div>
       </SidebarFooter>
-
-      <SidebarRail />
     </Sidebar>
   );
 }
