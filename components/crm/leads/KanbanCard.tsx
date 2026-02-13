@@ -41,6 +41,20 @@ const STATUS_VARIANT: Record<string, BadgeVariant> = {
   disqualified: "default",
 };
 
+// Map lead status → left border color (Salesforce-style colored left accent)
+const STATUS_BORDER_COLOR: Record<string, string> = {
+  new: "border-l-blue-500",
+  email_verified: "border-l-sky-400",
+  callback_requested: "border-l-amber-500",
+  demo: "border-l-sky-500",
+  proposal_sent: "border-l-purple-500",
+  payment_pending: "border-l-orange-500",
+  converted: "border-l-green-500",
+  lost: "border-l-red-500",
+  nurturing: "border-l-teal-500",
+  disqualified: "border-l-gray-400",
+};
+
 interface KanbanCardProps {
   lead: Lead;
   onClick?: () => void;
@@ -165,21 +179,22 @@ export const KanbanCard = memo(
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
           className={cn(
-            "rounded-fc-lg border-fc-border-light cursor-grab border bg-white p-3 dark:border-gray-700 dark:bg-gray-900",
+            "border-fc-border-light cursor-grab rounded-r-lg border border-l-[3px] bg-white p-2.5 shadow-sm dark:border-gray-700 dark:bg-gray-900",
             "transition-all duration-150",
-            "hover:border-fc-border-medium hover:shadow-fc-md",
+            "hover:shadow-md",
+            STATUS_BORDER_COLOR[lead.status] || "border-l-gray-400",
             showDraggingState &&
-              "shadow-fc-lg ring-fc-primary-500 cursor-grabbing opacity-60 ring-1"
+              "ring-fc-primary-500 cursor-grabbing opacity-60 shadow-lg ring-1"
           )}
         >
-          {/* Header: Company + Flag */}
-          <div className="mb-1 flex items-start justify-between gap-2">
-            <h4 className="text-fc-text-primary truncate text-sm font-semibold dark:text-white">
+          {/* Line 1: Company + Flag */}
+          <div className="flex items-center justify-between gap-1.5">
+            <h4 className="text-fc-text-primary truncate text-[13px] font-bold dark:text-white">
               {lead.company_name || "Unknown Company"}
             </h4>
             {lead.country?.flag_emoji && (
               <span
-                className="flex-shrink-0 text-base"
+                className="flex-shrink-0 text-sm"
                 title={lead.country.country_name_en}
               >
                 {lead.country.flag_emoji}
@@ -187,64 +202,67 @@ export const KanbanCard = memo(
             )}
           </div>
 
-          {/* Contact */}
+          {/* Line 2: Contact name */}
           {(lead.first_name || lead.last_name) && (
-            <p className="text-fc-text-secondary mb-2 truncate text-xs dark:text-gray-400">
+            <p className="text-fc-text-muted mt-0.5 truncate text-[11px] dark:text-gray-400">
               {lead.first_name || ""} {lead.last_name || ""}
             </p>
           )}
 
-          {/* Metrics row */}
-          <div className="text-fc-text-muted mb-2 flex items-center gap-3 text-xs dark:text-gray-500">
+          {/* Line 3: Metrics (fleet + score + stage) */}
+          <div className="text-fc-text-muted mt-1.5 flex items-center gap-2 text-[11px] dark:text-gray-500">
             {lead.fleet_size && (
-              <span className="inline-flex items-center gap-1">
-                <Car className="h-3.5 w-3.5" />
+              <span className="inline-flex items-center gap-0.5">
+                <Car className="h-3 w-3" />
                 {lead.fleet_size}
               </span>
             )}
-            {lead.fleet_size && lead.lead_stage && (
-              <span className="text-fc-border-medium">&bull;</span>
+            {score !== null && score !== undefined && (
+              <span
+                className={cn(
+                  "inline-flex items-center rounded px-1 py-px text-[10px] font-bold",
+                  score >= 70
+                    ? "bg-fc-success-50 text-fc-success-600"
+                    : score >= 40
+                      ? "bg-fc-warning-50 text-fc-warning-600"
+                      : "bg-fc-neutral-50 text-fc-neutral-500"
+                )}
+              >
+                {score}
+              </span>
             )}
             {lead.lead_stage && (
-              <span>{getStageLabel(lead.lead_stage, locale)}</span>
+              <span className="truncate">
+                {getStageLabel(lead.lead_stage, locale)}
+              </span>
             )}
           </div>
 
-          {/* Footer: Status + Score + Avatar + Time */}
-          <div className="border-fc-border-light flex items-center justify-between border-t pt-2 dark:border-gray-700">
+          {/* Line 4: Status badge */}
+          <div className="mt-1.5">
             <FCBadge
               variant={STATUS_VARIANT[lead.status] || "default"}
               size="sm"
             >
               {t(`leads.status.${lead.status}`)}
             </FCBadge>
-            <div className="flex items-center gap-2">
-              {score !== null && score !== undefined && (
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold",
-                    score >= 70
-                      ? "bg-fc-success-50 text-fc-success-600"
-                      : score >= 40
-                        ? "bg-fc-warning-50 text-fc-warning-600"
-                        : "bg-fc-neutral-50 text-fc-neutral-500"
-                  )}
-                >
-                  {score}
-                </span>
-              )}
+          </div>
+
+          {/* Line 5: Avatar + Time */}
+          <div className="mt-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
               {lead.assigned_to && (
                 <div
-                  className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-600 text-[10px] font-medium text-white"
+                  className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-600 text-[9px] font-medium text-white"
                   title={`${lead.assigned_to.first_name} ${lead.assigned_to.last_name || ""}`}
                 >
                   {getInitials(lead.assigned_to)}
                 </div>
               )}
-              <span className="text-fc-text-muted text-xs">
-                {formatTimeAgo(lead.created_at, t)}
-              </span>
             </div>
+            <span className="text-fc-text-muted text-[10px]">
+              {formatTimeAgo(lead.created_at, t)}
+            </span>
           </div>
         </motion.div>
       </LeadContextMenu>

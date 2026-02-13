@@ -148,12 +148,17 @@ export function ModulesSidebar({
     >
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3">
-        <ul className={cn("space-y-1", isExpanded ? "px-3" : "px-1.5")}>
-          {accessibleModules.map((module) => {
+        <ul className={cn("space-y-0.5", isExpanded ? "px-3" : "px-1.5")}>
+          {accessibleModules.map((module, index) => {
             const isActive = isModuleActive(module);
             const isModuleExpanded = expandedModules.includes(module.key);
             const hasSubNav = module.subNav && module.subNav.length > 0;
             const Icon = module.icon;
+
+            // Show group header when group changes
+            const prevModule = index > 0 ? accessibleModules[index - 1] : null;
+            const showGroupHeader =
+              isExpanded && module.group && module.group !== prevModule?.group;
 
             return (
               <li
@@ -161,14 +166,26 @@ export function ModulesSidebar({
                 onMouseEnter={() => handleMouseEnter(module.key, !!hasSubNav)}
                 onMouseLeave={() => handleMouseLeave(module.key, !!hasSubNav)}
               >
+                {/* Section header */}
+                {showGroupHeader && (
+                  <div
+                    className={cn(
+                      "text-fc-text-muted px-3 text-[10px] font-bold tracking-widest uppercase dark:text-gray-500",
+                      index > 0 ? "mt-4 mb-2" : "mb-2"
+                    )}
+                  >
+                    {module.group}
+                  </div>
+                )}
+
                 {/* Module item */}
                 <div
                   className={cn(
-                    "group rounded-fc-md flex h-10 items-center transition-colors duration-150",
+                    "group flex h-10 items-center transition-colors duration-150",
                     isExpanded ? "justify-between px-3" : "justify-center",
                     isActive
-                      ? "bg-fc-primary-50 text-fc-primary-600 dark:bg-blue-900/20 dark:text-blue-400"
-                      : "text-fc-text-secondary hover:bg-fc-bg-hover hover:text-fc-text-primary dark:text-gray-300 dark:hover:bg-gray-800"
+                      ? "rounded-fc-md border-fc-primary-500 bg-fc-primary-50 text-fc-primary-600 border-l-[3px] dark:bg-blue-900/20 dark:text-blue-400"
+                      : "rounded-fc-md text-fc-text-secondary hover:bg-fc-bg-hover hover:text-fc-text-primary dark:text-gray-300 dark:hover:bg-gray-800"
                   )}
                 >
                   <Link

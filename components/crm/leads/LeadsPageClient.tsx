@@ -21,8 +21,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { FCPageHeader } from "@/components/fc";
-import { Plus, Download } from "lucide-react";
+import { Plus, Download, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ViewToggle, type ViewMode } from "./ViewToggle";
 import { LeadsFilterBar, type LeadsFilters } from "./LeadsFilterBar";
@@ -337,8 +336,34 @@ export function LeadsPageClient({
     return filteredLeads.slice(startIndex, startIndex + pageSize);
   }, [filteredLeads, currentPage, pageSize]);
 
-  // Calculate stats (kept for internal use, not displayed)
-  const _stats = useMemo(() => calculateStats(filteredLeads), [filteredLeads]);
+  // Calculate stats for header metrics
+  const stats = useMemo(() => calculateStats(filteredLeads), [filteredLeads]);
+
+  // Header metrics (Salesforce-style)
+  const headerStats = useMemo(() => {
+    const total = filteredLeads.length;
+    const qualified = filteredLeads.filter(
+      (l) =>
+        l.lead_stage === "sales_qualified" ||
+        l.lead_stage === "marketing_qualified"
+    ).length;
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thisWeek = filteredLeads.filter(
+      (l) => new Date(l.created_at) >= weekAgo
+    ).length;
+    const scores = filteredLeads
+      .map((l) => l.qualification_score)
+      .filter((s): s is number => s !== null && s !== undefined);
+    const avgScore =
+      scores.length > 0
+        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+        : 0;
+    const converted = filteredLeads.filter(
+      (l) => l.status === "converted"
+    ).length;
+    return { total, qualified, thisWeek, avgScore, converted };
+  }, [filteredLeads]);
 
   // Phase-based Kanban columns
   const kanbanPhaseColumns: KanbanPhaseColumn[] = useMemo(
@@ -791,34 +816,97 @@ export function LeadsPageClient({
   return (
     <>
       <div className="absolute inset-0 flex flex-col overflow-hidden">
-        {/* Compact Header (48px) */}
-        <FCPageHeader
-          title={_t("leads.title")}
-          actions={
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                className="h-8 gap-1.5 text-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">
-                  {_t("leads.actions.export", { defaultValue: "Export" })}
-                </span>
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleCreateLead}
-                className="h-8 gap-1.5 text-xs"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {_t("leads.actions.new_lead")}
-              </Button>
-              <ViewToggle value={viewMode} onChange={handleViewModeChange} />
-            </>
-          }
-        />
+        {/* HEADER COMPACT (48px) - Salesforce Lightning style */}
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#0070D2]">
+              <Users className="h-4 w-4 text-white" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                {_t("leads.title")}
+              </span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                Pipeline View
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">
+                {_t("leads.actions.export", { defaultValue: "Export" })}
+              </span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCreateLead}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {_t("leads.actions.new_lead")}
+            </Button>
+            <ViewToggle value={viewMode} onChange={handleViewModeChange} />
+          </div>
+        </header>
+
+        {/* BANDE MÉTRIQUES BLEUE (60px) - Salesforce #0070D2 */}
+        <div className="flex h-[60px] shrink-0 items-center justify-between bg-[#0070D2] px-5">
+          <div className="flex items-center gap-8">
+            <div>
+              <p className="text-[10px] font-medium tracking-wider text-white/70 uppercase">
+                Total Leads
+              </p>
+              <p className="text-xl leading-tight font-bold text-white">
+                {headerStats.total}
+              </p>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
+            <div>
+              <p className="text-[10px] font-medium tracking-wider text-white/70 uppercase">
+                Qualified
+              </p>
+              <p className="text-xl leading-tight font-bold text-white">
+                {headerStats.qualified}
+              </p>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
+            <div>
+              <p className="text-[10px] font-medium tracking-wider text-white/70 uppercase">
+                This Week
+              </p>
+              <p className="text-xl leading-tight font-bold text-white">
+                {headerStats.thisWeek}
+              </p>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
+            <div>
+              <p className="text-[10px] font-medium tracking-wider text-white/70 uppercase">
+                Avg Score
+              </p>
+              <p className="text-xl leading-tight font-bold text-white">
+                {headerStats.avgScore}
+              </p>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
+            <div>
+              <p className="text-[10px] font-medium tracking-wider text-white/70 uppercase">
+                Pipeline
+              </p>
+              <p className="text-xl leading-tight font-bold text-white">
+                {stats.pipelineValue}
+              </p>
+            </div>
+          </div>
+          <div className="rounded-md bg-white/20 px-3 py-1.5 text-xs font-medium text-white">
+            This Quarter
+          </div>
+        </div>
 
         {/* Quick Filters Bar + Filter Sheet */}
         <LeadsFilterBar
@@ -833,7 +921,7 @@ export function LeadsPageClient({
         {/* Content Area - Kanban fills remaining space */}
         <div className="flex-1 overflow-hidden">
           {viewMode === "kanban" ? (
-            <div className="bg-fc-bg-app h-full p-3 dark:bg-gray-900/50">
+            <div className="h-full bg-[#f3f3f3] p-3 dark:bg-gray-900/50">
               <KanbanPhaseBoard
                 columns={kanbanPhaseColumns}
                 onCardClick={handleCardClick}

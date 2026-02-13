@@ -39,6 +39,7 @@ export interface ModuleConfig {
   permission: Permission; // Required to see in sidebar
   subNav?: SubNavItem[];
   badge?: "new" | "beta"; // Optional badge
+  group?: string; // Section header label (e.g., "CRM", "FLEET", "ADMIN")
 }
 
 /**
@@ -60,6 +61,7 @@ export const MODULES: ModuleConfig[] = [
     labelKey: "modules.crm",
     href: "/crm/leads",
     permission: "crm:view",
+    group: "CRM",
     subNav: [
       {
         key: "leads_pipeline",
@@ -99,6 +101,7 @@ export const MODULES: ModuleConfig[] = [
     labelKey: "modules.fleet",
     href: "/fleet/vehicles",
     permission: "fleet:view",
+    group: "FLEET",
     subNav: [
       {
         key: "vehicles",
@@ -176,6 +179,7 @@ export const MODULES: ModuleConfig[] = [
     labelKey: "modules.settings",
     href: "/settings",
     permission: "settings:view",
+    group: "ADMIN",
     subNav: [
       {
         key: "settings_crm",
