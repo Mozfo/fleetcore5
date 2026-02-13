@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui/select-native";
 
 type Lead = {
   id: string;

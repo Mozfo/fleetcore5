@@ -41,7 +41,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui/select-native";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Lead } from "@/types/crm";

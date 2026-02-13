@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./themes.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -44,9 +45,9 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   /* ========================================
-     FLEETCORE DESIGN SYSTEM V1 — Tailwind mappings
+     FLEETCORE DESIGN SYSTEM — Tailwind mappings
      Maps --fc-* CSS variables → Tailwind utility classes
-     Usage: bg-fc-primary-500, text-fc-text-primary, p-fc-3, etc.
+     Usage: bg-fc-primary-500, text-fc-text-primary, etc.
      ======================================== */
 
   /* --- FC Colors: Primary --- */
@@ -119,72 +120,185 @@
 }
 
 :root {
+  /* --- Base scale (neutral grays, OKLCH) --- */
+  --base-50: oklch(0.985 0.002 250);
+  --base-100: oklch(0.965 0.004 250);
+  --base-200: oklch(0.922 0.008 255);
+  --base-300: oklch(0.872 0.012 258);
+  --base-400: oklch(0.714 0.019 261);
+  --base-500: oklch(0.551 0.023 264);
+  --base-600: oklch(0.446 0.026 257);
+  --base-700: oklch(0.387 0.02 256);
+  --base-800: oklch(0.275 0.012 256);
+  --base-900: oklch(0.209 0.008 256);
+  --base-950: oklch(0.14 0.006 256);
+  --base-1000: oklch(0.096 0.004 256);
+
+  /* --- Primary scale (FleetCore Blue, OKLCH) --- */
+  --primary-50: oklch(0.966 0.017 248);
+  --primary-100: oklch(0.946 0.025 250);
+  --primary-200: oklch(0.882 0.06 252);
+  --primary-300: oklch(0.78 0.11 252);
+  --primary-400: oklch(0.66 0.145 252);
+  --primary-500: oklch(0.563 0.167 252);
+  --primary-600: oklch(0.476 0.145 254);
+  --primary-700: oklch(0.391 0.126 254);
+  --primary-800: oklch(0.33 0.1 254);
+  --primary-900: oklch(0.28 0.08 254);
+  --primary-950: oklch(0.2 0.05 254);
+  --primary-1000: oklch(0.14 0.03 254);
+
+  /* --- Semantic tokens (light) --- */
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --foreground: var(--base-800);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: var(--base-800);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --popover-foreground: var(--base-800);
+  --primary: var(--primary-500);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--base-200);
+  --secondary-foreground: var(--base-800);
+  --muted: var(--base-100);
+  --muted-foreground: var(--base-500);
+  --accent: var(--base-100);
+  --accent-foreground: var(--base-800);
+  --destructive: oklch(0.548 0.175 27);
+  --border: var(--base-200);
+  --input: var(--base-300);
+  --ring: var(--primary-500);
+  --chart-1: var(--primary-500);
+  --chart-2: oklch(0.547 0.122 151);
+  --chart-3: var(--primary-300);
+  --chart-4: oklch(0.676 0.16 59);
+  --chart-5: var(--primary-100);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: var(--base-800);
+  --sidebar-primary: var(--primary-500);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: var(--primary-50);
+  --sidebar-accent-foreground: var(--primary-600);
+  --sidebar-border: var(--base-200);
+  --sidebar-ring: var(--primary-500);
+
+  /* --- FC Design System (OKLCH) --- */
+
+  /* FC Primary → Primary scale */
+  --fc-primary-50: var(--primary-50);
+  --fc-primary-100: var(--primary-100);
+  --fc-primary-500: var(--primary-500);
+  --fc-primary-600: var(--primary-600);
+  --fc-primary-700: var(--primary-700);
+
+  /* FC Success (OKLCH) */
+  --fc-success-50: oklch(0.965 0.017 154);
+  --fc-success-500: oklch(0.547 0.121 151);
+  --fc-success-600: oklch(0.462 0.098 154);
+
+  /* FC Warning (OKLCH) */
+  --fc-warning-50: oklch(0.98 0.016 74);
+  --fc-warning-500: oklch(0.676 0.16 59);
+  --fc-warning-600: oklch(0.58 0.146 54);
+
+  /* FC Danger (OKLCH) */
+  --fc-danger-50: oklch(0.936 0.031 18);
+  --fc-danger-500: oklch(0.548 0.175 27);
+  --fc-danger-600: oklch(0.462 0.171 28);
+
+  /* FC Info (OKLCH) */
+  --fc-info-50: oklch(0.96 0.024 206);
+  --fc-info-500: oklch(0.609 0.111 222);
+  --fc-info-600: oklch(0.52 0.094 223);
+
+  /* FC Neutral → Base scale */
+  --fc-neutral-50: var(--base-50);
+  --fc-neutral-500: var(--base-500);
+  --fc-neutral-600: var(--base-600);
+
+  /* FC Surfaces */
+  --fc-bg-app: var(--base-100);
+  --fc-bg-card: oklch(1 0 0);
+  --fc-bg-elevated: oklch(1 0 0);
+  --fc-bg-hover: var(--base-50);
+  --fc-bg-selected: var(--primary-50);
+
+  /* FC Borders → Base scale */
+  --fc-border-light: var(--base-200);
+  --fc-border-medium: var(--base-300);
+  --fc-border-dark: var(--base-400);
+
+  /* FC Text → Base scale */
+  --fc-text-primary: var(--base-950);
+  --fc-text-secondary: var(--base-700);
+  --fc-text-muted: var(--base-500);
+  --fc-text-inverse: oklch(1 0 0);
+
+  /* FC Spacing */
+  --fc-space-1: 0.25rem;
+  --fc-space-2: 0.5rem;
+  --fc-space-3: 0.75rem;
+  --fc-space-4: 1rem;
+  --fc-space-5: 1.25rem;
+  --fc-space-6: 1.5rem;
+
+  /* FC Layout */
+  --fc-header-height: 56px;
+  --fc-page-header-height: 48px;
+  --fc-filter-bar-height: 48px;
+  --fc-sidebar-width-collapsed: 56px;
+  --fc-sidebar-width-expanded: 240px;
+
+  /* FC Radius */
+  --fc-radius-sm: 4px;
+  --fc-radius-md: 6px;
+  --fc-radius-lg: 8px;
+
+  /* FC Shadows */
+  --fc-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --fc-shadow-md:
+    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --fc-shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* FC Transitions */
+  --fc-transition-fast: 150ms ease;
+  --fc-transition-normal: 200ms ease;
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* --- Semantic tokens (dark) --- */
+  --background: var(--base-950);
+  --foreground: var(--base-200);
+  --card: var(--base-900);
+  --card-foreground: var(--base-200);
+  --popover: var(--base-900);
+  --popover-foreground: var(--base-200);
+  --primary: var(--primary-400);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--base-800);
+  --secondary-foreground: var(--base-200);
+  --muted: var(--base-800);
+  --muted-foreground: var(--base-400);
+  --accent: var(--base-800);
+  --accent-foreground: var(--base-200);
+  --destructive: oklch(0.704 0.191 22);
+  --border: var(--base-800);
+  --input: var(--base-700);
+  --ring: var(--primary-400);
+  --chart-1: var(--primary-400);
+  --chart-2: oklch(0.696 0.17 162);
+  --chart-3: var(--primary-300);
+  --chart-4: oklch(0.769 0.188 70);
+  --chart-5: var(--primary-100);
+  --sidebar: var(--base-900);
+  --sidebar-foreground: var(--base-200);
+  --sidebar-primary: var(--primary-400);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: var(--base-800);
+  --sidebar-accent-foreground: var(--base-200);
+  --sidebar-border: var(--base-800);
+  --sidebar-ring: var(--primary-400);
 }
 
 @layer base {
@@ -206,105 +320,6 @@
   100% {
     transform: translateX(100%);
   }
-}
-
-/* ========================================
-   FLEETCORE DESIGN SYSTEM V1
-   Inspiré Salesforce Lightning / Cosmos
-   ======================================== */
-:root {
-  /* --- COULEURS PRIMAIRES --- */
-  --fc-primary-50: #ebf5ff;
-  --fc-primary-100: #e1effe;
-  --fc-primary-500: #0176d3;
-  --fc-primary-600: #0b5cab;
-  --fc-primary-700: #014486;
-
-  /* --- COULEURS STATUS (VIVES) --- */
-  /* Success */
-  --fc-success-50: #ebf7ee;
-  --fc-success-500: #2e844a;
-  --fc-success-600: #22683e;
-
-  /* Warning */
-  --fc-warning-50: #fff7ed;
-  --fc-warning-500: #dd7a01;
-  --fc-warning-600: #ba5d00;
-
-  /* Danger */
-  --fc-danger-50: #fee2e2;
-  --fc-danger-500: #c23934;
-  --fc-danger-600: #a31b16;
-
-  /* Info */
-  --fc-info-50: #e0f7fa;
-  --fc-info-500: #0891b2;
-  --fc-info-600: #0e7490;
-
-  /* Neutral */
-  --fc-neutral-50: #f9fafb;
-  --fc-neutral-500: #6b7280;
-  --fc-neutral-600: #4b5563;
-
-  /* --- SURFACES & BACKGROUNDS --- */
-  --fc-bg-app: #f3f3f3;
-  --fc-bg-card: #ffffff;
-  --fc-bg-elevated: #ffffff;
-  --fc-bg-hover: #f9fafb;
-  --fc-bg-selected: #ebf5ff;
-
-  /* --- BORDERS --- */
-  --fc-border-light: #e5e5e5;
-  --fc-border-medium: #d1d5db;
-  --fc-border-dark: #9ca3af;
-
-  /* --- TEXTE --- */
-  --fc-text-primary: #181818;
-  --fc-text-secondary: #444444;
-  --fc-text-muted: #706e6b;
-  --fc-text-inverse: #ffffff;
-
-  /* --- ESPACEMENTS --- */
-  --fc-space-1: 0.25rem;
-  --fc-space-2: 0.5rem;
-  --fc-space-3: 0.75rem;
-  --fc-space-4: 1rem;
-  --fc-space-5: 1.25rem;
-  --fc-space-6: 1.5rem;
-
-  /* --- LAYOUT --- */
-  --fc-header-height: 56px;
-  --fc-page-header-height: 48px;
-  --fc-filter-bar-height: 48px;
-  --fc-sidebar-width-collapsed: 56px;
-  --fc-sidebar-width-expanded: 240px;
-
-  /* --- RADIUS --- */
-  --fc-radius-sm: 4px;
-  --fc-radius-md: 6px;
-  --fc-radius-lg: 8px;
-
-  /* --- SHADOWS --- */
-  --fc-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --fc-shadow-md:
-    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --fc-shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-
-  /* --- TRANSITIONS --- */
-  --fc-transition-fast: 150ms ease;
-  --fc-transition-normal: 200ms ease;
-}
-
-/* 2025 Color System - Warm & Sophisticated */
-:root {
-  --color-cream: #faf7f2;
-  --color-mocha: #a47864;
-  --color-charcoal: #1c1917;
-  --color-sand: #e8dfd3;
-  --color-terracotta: #d4735f;
-  --color-forest: #2d4739;
-  --color-gold: #d4a574;
 }
 
 /* Animations Blob pour Request Demo */

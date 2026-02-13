@@ -10,7 +10,7 @@ import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui/select-native";
 import {
   LEADS_FILTERABLE_FIELDS,
   OPERATOR_LABELS,

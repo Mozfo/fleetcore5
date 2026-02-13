@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui/select-native";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 

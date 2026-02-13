@@ -1,0 +1,125 @@
+/* ========================================
+   FLEETCORE THEME PRESET — OKLCH
+   Brand: Salesforce Lightning-inspired blue
+   Primary: #0176d3, Success: #2e844a
+   ======================================== */
+
+body {
+  @apply overscroll-none antialiased;
+}
+
+[data-theme-preset="fleetcore"] {
+  /* --- Base scale (neutral grays, OKLCH) --- */
+  --base-50: oklch(0.985 0.002 250);
+  --base-100: oklch(0.965 0.004 250);
+  --base-200: oklch(0.922 0.008 255);
+  --base-300: oklch(0.872 0.012 258);
+  --base-400: oklch(0.714 0.019 261);
+  --base-500: oklch(0.551 0.023 264);
+  --base-600: oklch(0.446 0.026 257);
+  --base-700: oklch(0.387 0.02 256);
+  --base-800: oklch(0.275 0.012 256);
+  --base-900: oklch(0.209 0.008 256);
+  --base-950: oklch(0.14 0.006 256);
+  --base-1000: oklch(0.096 0.004 256);
+
+  /* --- Primary scale (FleetCore Blue, OKLCH) --- */
+  --primary-50: oklch(0.966 0.017 248);
+  --primary-100: oklch(0.946 0.025 250);
+  --primary-200: oklch(0.882 0.06 252);
+  --primary-300: oklch(0.78 0.11 252);
+  --primary-400: oklch(0.66 0.145 252);
+  --primary-500: oklch(0.563 0.167 252);
+  --primary-600: oklch(0.476 0.145 254);
+  --primary-700: oklch(0.391 0.126 254);
+  --primary-800: oklch(0.33 0.1 254);
+  --primary-900: oklch(0.28 0.08 254);
+  --primary-950: oklch(0.2 0.05 254);
+  --primary-1000: oklch(0.14 0.03 254);
+
+  /* --- Semantic tokens (light) --- */
+  --background: var(--color-white);
+  --foreground: var(--base-800);
+  --card: var(--color-white);
+  --card-foreground: var(--base-800);
+  --popover: var(--color-white);
+  --popover-foreground: var(--base-800);
+  --primary: var(--primary-500);
+  --primary-foreground: var(--color-white);
+  --secondary: var(--base-200);
+  --secondary-foreground: var(--base-800);
+  --muted: var(--base-100);
+  --muted-foreground: var(--base-500);
+  --accent: var(--base-100);
+  --accent-foreground: var(--base-800);
+  --destructive: oklch(0.548 0.175 27);
+  --border: var(--base-200);
+  --input: var(--base-300);
+  --ring: var(--primary-500);
+  --chart-1: var(--primary-500);
+  --chart-2: oklch(0.547 0.122 151);
+  --chart-3: var(--primary-300);
+  --chart-4: oklch(0.676 0.16 59);
+  --chart-5: var(--primary-100);
+  --radius: 0.375rem;
+  --sidebar: var(--color-white);
+  --sidebar-foreground: var(--base-800);
+  --sidebar-primary: var(--primary-500);
+  --sidebar-primary-foreground: var(--color-white);
+  --sidebar-accent: var(--primary-50);
+  --sidebar-accent-foreground: var(--primary-600);
+  --sidebar-border: var(--base-200);
+  --sidebar-ring: var(--primary-500);
+
+  /* --- Dark variant --- */
+  @variant dark {
+    --background: var(--base-950);
+    --foreground: var(--base-200);
+    --card: var(--base-900);
+    --card-foreground: var(--base-200);
+    --popover: var(--base-900);
+    --popover-foreground: var(--base-200);
+    --primary: var(--primary-400);
+    --primary-foreground: var(--color-white);
+    --secondary: var(--base-800);
+    --secondary-foreground: var(--base-200);
+    --muted: var(--base-800);
+    --muted-foreground: var(--base-400);
+    --accent: var(--base-800);
+    --accent-foreground: var(--base-200);
+    --destructive: oklch(0.704 0.191 22);
+    --border: var(--base-800);
+    --input: var(--base-700);
+    --ring: var(--primary-400);
+    --chart-1: var(--primary-400);
+    --chart-2: oklch(0.696 0.17 162);
+    --chart-3: var(--primary-300);
+    --chart-4: oklch(0.769 0.188 70);
+    --chart-5: var(--primary-100);
+    --sidebar: var(--base-900);
+    --sidebar-foreground: var(--base-200);
+    --sidebar-primary: var(--primary-400);
+    --sidebar-primary-foreground: var(--color-white);
+    --sidebar-accent: var(--base-800);
+    --sidebar-accent-foreground: var(--base-200);
+    --sidebar-border: var(--base-800);
+    --sidebar-ring: var(--primary-400);
+  }
+}
+
+/* --- Radius presets --- */
+[data-theme-radius="none"] {
+  --radius: 0rem;
+}
+[data-theme-radius="sm"] {
+  --radius: 0.25rem;
+}
+[data-theme-radius="md"] {
+  --radius: 0.375rem;
+}
+[data-theme-radius="lg"] {
+  --radius: 0.5rem;
+}
+[data-theme-radius="xl"] {
+  --radius: 1rem;
+}

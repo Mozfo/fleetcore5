@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui/select-native";
 import { Switch } from "@/components/ui/switch";
 import { markOpportunityWonAction } from "@/lib/actions/crm/opportunity.actions";
 import type { Opportunity } from "@/types/crm";

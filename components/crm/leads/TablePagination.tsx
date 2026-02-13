@@ -12,7 +12,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui/select-native";
 import { useTranslation } from "react-i18next";
 
 interface TablePaginationProps {

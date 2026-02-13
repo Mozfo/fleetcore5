@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui/select-native";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
