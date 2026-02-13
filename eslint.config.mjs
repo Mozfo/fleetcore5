@@ -1,19 +1,10 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-import tseslint from "@typescript-eslint/eslint-plugin";
-import tsparser from "@typescript-eslint/parser";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 
 const eslintConfig = [
-  // 1. Next.js defaults
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // 1. Next.js defaults (native flat config in v16)
+  ...nextCoreWebVitals,
+  ...nextTypescript,
 
   // 2. Ignores
   {
@@ -31,19 +22,14 @@ const eslintConfig = [
     ],
   },
 
-  // 3. TypeScript STRICT rules
+  // 3. TypeScript STRICT rules (plugin/parser provided by nextTypescript)
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
-      parser: tsparser,
       parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-        project: "./tsconfig.json",
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
       },
-    },
-    plugins: {
-      "@typescript-eslint": tseslint,
     },
     rules: {
       // 🚫 BLOCKERS - Dette technique interdite
@@ -66,6 +52,11 @@ const eslintConfig = [
       eqeqeq: ["error", "always"],
       "no-var": "error",
       "@typescript-eslint/no-floating-promises": "error",
+
+      // React Compiler rules (new in Next 16) — disabled until code is adapted
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/incompatible-library": "off",
     },
   },
 

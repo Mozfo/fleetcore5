@@ -13,10 +13,6 @@ const nextConfig: NextConfig = {
     "thread-stream",
     "@sentry/profiling-node",
   ],
-
-  experimental: {
-    turbo: {}, // Support pour Turbopack dans Next.js 15
-  },
 };
 
 export default withSentryConfig(nextConfig, {
