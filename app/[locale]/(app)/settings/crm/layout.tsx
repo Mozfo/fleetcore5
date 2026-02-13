@@ -9,7 +9,7 @@
  */
 
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Settings } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 interface CrmSettingsLayoutProps {
   children: React.ReactNode;
@@ -35,22 +35,6 @@ export default async function CrmSettingsLayout({
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Back to Settings</span>
           </Link>
-
-          {/* Separator */}
-          <div className="bg-border h-4 w-px" />
-
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm">
-            <Link
-              href={`/${locale}/settings`}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
-            >
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-            <ChevronRight className="text-muted-foreground h-4 w-4" />
-            <span className="text-foreground font-medium">CRM Settings</span>
-          </nav>
         </div>
       </div>
 

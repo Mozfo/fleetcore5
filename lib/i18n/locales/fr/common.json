@@ -435,7 +435,12 @@
     "admin_users": "Utilisateurs",
     "admin_roles": "Rôles & Permissions",
     "admin_audit": "Journal d'audit",
-    "admin_notifications": "Notifications"
+    "admin_notifications": "Notifications",
+    "crm_directory": "Répertoire"
+  },
+  "breadcrumbs": {
+    "new": "Nouveau",
+    "edit": "Modifier"
   },
   "widgets": {
     "crm_my_leads": "Mes Prospects Actifs",

@@ -385,7 +385,12 @@
     "admin_users": "Users",
     "admin_roles": "Roles & Permissions",
     "admin_audit": "Audit Logs",
-    "admin_notifications": "Notifications"
+    "admin_notifications": "Notifications",
+    "crm_directory": "Directory"
+  },
+  "breadcrumbs": {
+    "new": "New",
+    "edit": "Edit"
   },
   "widgets": {
     "crm_my_leads": "My Active Leads",

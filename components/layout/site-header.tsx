@@ -6,6 +6,7 @@ import { PanelLeftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useSidebar } from "@/components/ui/sidebar";
+import Breadcrumbs from "@/components/layout/header/breadcrumbs";
 import Search from "@/components/layout/header/search";
 import Notifications from "@/components/layout/header/notifications";
 import ThemeSwitch from "@/components/layout/header/theme-switch";
@@ -24,6 +25,7 @@ export function SiteHeader() {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
+        <Breadcrumbs />
         <Search />
 
         <div className="ml-auto flex items-center gap-2">

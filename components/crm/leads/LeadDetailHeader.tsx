@@ -7,7 +7,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion as _motion } from "framer-motion";
 import {
@@ -37,6 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { BreadcrumbOverride } from "@/lib/contexts/BreadcrumbContext";
 import type { Lead, LeadStatus } from "@/types/crm";
 import { LeadSearchCommand } from "./LeadSearchCommand";
 
@@ -174,9 +174,13 @@ export function LeadDetailHeader({
 
   return (
     <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
-      {/* Top Bar: Back button + Breadcrumb + Navigation */}
+      <BreadcrumbOverride
+        segment={lead.id}
+        label={lead.lead_code || companyName}
+      />
+      {/* Top Bar: Back button + Navigation */}
       <div className="mb-3 flex items-center justify-between">
-        {/* Left: Back + Breadcrumb */}
+        {/* Left: Back */}
         <div className="flex items-center gap-3">
           {/* Back Button */}
           <Button
@@ -190,21 +194,6 @@ export function LeadDetailHeader({
               {t("leads.navigation.back_to_list")}
             </span>
           </Button>
-
-          {/* Breadcrumb */}
-          <nav className="hidden items-center gap-1 text-sm text-gray-500 sm:flex dark:text-gray-400">
-            <span className="text-gray-300 dark:text-gray-600">|</span>
-            <Link
-              href={`/${locale}/crm/leads`}
-              className="ml-2 transition-colors hover:text-gray-900 dark:hover:text-white"
-            >
-              {t("leads.title")}
-            </Link>
-            <ChevronRight className="h-4 w-4" />
-            <span className="font-medium text-gray-900 dark:text-white">
-              {lead.lead_code || companyName}
-            </span>
-          </nav>
         </div>
 
         {/* Right: Navigation Controls */}

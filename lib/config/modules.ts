@@ -93,6 +93,12 @@ export const MODULES: ModuleConfig[] = [
         href: "/crm/leads/reports",
         permission: "crm:view",
       },
+      {
+        key: "directory",
+        labelKey: "modules.crm_directory",
+        href: "/crm/leads/directory",
+        permission: "crm:view",
+      },
     ],
   },
   {
