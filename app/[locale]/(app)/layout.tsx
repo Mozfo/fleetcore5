@@ -42,7 +42,7 @@ export default async function AppLayout({
         <SidebarInset>
           <SiteHeader />
           <div className="bg-muted/40 flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col gap-2 p-(--content-padding) pt-0">
+            <div className="@container/main p-(--content-padding) xl:group-data-[theme-content-layout=centered]/layout:container xl:group-data-[theme-content-layout=centered]/layout:mx-auto">
               {children}
             </div>
           </div>
