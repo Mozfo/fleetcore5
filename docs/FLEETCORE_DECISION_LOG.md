@@ -1,7 +1,7 @@
 # PHASE 1C — Journal des Ecarts et Decisions
 
 > Document vivant. Mis a jour a chaque step.
-> Derniere mise a jour : 2026-02-10 — Steps 1 a 5 termines (non commites)
+> Derniere mise a jour : 2026-02-14 — Phase 2 Steps 1-3 termines
 
 ---
 
@@ -265,3 +265,33 @@ Les modifications suivantes doivent etre apportees au plan d'execution
 | Decision                | CEO — accepte                                                                                                                                                                                              |
 | Impact                  | Aucun sur pages existantes. NuqsAdapter est un context provider passthrough qui active uniquement les hooks nuqs. Les pages n'utilisant pas nuqs ne sont pas affectees.                                    |
 | Verification            | `pnpm tsc --noEmit` → 0 erreurs. `pnpm build` → succes. 7/7 criteres DataTable valides.                                                                                                                    |
+
+---
+
+### ECART 13 — types/crm.ts est un God File (~394L, 2 interfaces Lead concurrentes)
+
+| Champ                   | Detail                                                                                                                                                                                                                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Date                    | 2026-02-14                                                                                                                                                                                                                                                                                                                        |
+| Step concerne           | Phase 2 Step 3A (creation features/crm/leads/types/lead.types.ts)                                                                                                                                                                                                                                                                 |
+| Ce que le plan disait   | Re-export types depuis @/types/crm                                                                                                                                                                                                                                                                                                |
+| Ce qui a ete implemente | Re-export conforme. Mais l'analyse revele que types/crm.ts est un God File (~394L) melangeant Lead, Opportunity, Kanban, Filter, Stats dans un seul fichier. De plus, `interface Lead` (types/crm.ts L61-152, dates=string) coexiste avec `type Lead = crm_leads` (lib/types/crm/lead.types.ts L308, dates=Date, scores=Decimal). |
+| Cause racine            | types/crm.ts a ete cree comme fichier unique pour toutes les entites CRM. Aucun split par entite n'a ete fait. Le type Prisma-generated dans lib/types/crm/lead.types.ts a ete ajoute independamment.                                                                                                                             |
+| Decision                | CEO — re-export OK pour Phase 2. Split prevu en Phase 4 : types/crm.ts sera eclate en types/crm/lead.ts, types/crm/opportunity.ts, etc. L'interface dupliquee lib/types/crm/lead.types.ts sera reconciliee a ce moment.                                                                                                           |
+| Impact                  | Aucun impact fonctionnel immediat. `ColumnDef<Lead>` utilise l'interface de types/crm.ts (dates=string, compatible avec les reponses API JSON). La facade features/crm/leads/types/lead.types.ts isole les consommateurs du God File.                                                                                             |
+| Verification            | `grep "interface Lead" types/crm.ts` → L61. `grep "type Lead" lib/types/crm/lead.types.ts` → L1. Les deux existent mais seul types/crm.ts est re-exporte via la facade.                                                                                                                                                           |
+
+---
+
+### ECART 14 — Duplication validators : 3 fichiers ~1137L pour les schemas Lead
+
+| Champ                   | Detail                                                                                                                                                                                                                                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Date                    | 2026-02-14                                                                                                                                                                                                                                                                                                           |
+| Step concerne           | Phase 2 Step 3B (creation features/crm/leads/schemas/lead.schema.ts)                                                                                                                                                                                                                                                 |
+| Ce que le plan disait   | Facade re-export depuis les 3 modules validators existants                                                                                                                                                                                                                                                           |
+| Ce qui a ete implemente | Facade conforme (31L). Mais l'analyse revele une duplication significative entre les 3 fichiers source : `lib/validators/crm/lead.validators.ts` (~451L, API v1), `lib/validators/crm.validators.ts` (~551L, public form + query), `lib/validators/crm/lead-status.validators.ts` (~137L, status transitions + CPT). |
+| Cause racine            | Les validators ont ete crees a des moments differents pour des contextes differents (API v1 vs formulaire public vs transitions de statut). Resultats : `CreateLeadSchema` (API v1) et `LeadCreateSchema` (public form) partagent ~70% des champs avec des regles legerement differentes.                            |
+| Decision                | CEO — facade propre OK pour Phase 2. Consolidation prevue en Phase 4 : un seul fichier base avec schemas composes (`.pick()`, `.extend()`, `.merge()`) pour eliminer la duplication tout en preservant les differences de validation par contexte.                                                                   |
+| Impact                  | Aucun impact fonctionnel. La facade isole les consommateurs. Les 3 fichiers source continuent a fonctionner independamment. La duplication n'introduit pas de bugs car les schemas valident des contextes differents.                                                                                                |
+| Verification            | `wc -l lib/validators/crm/lead.validators.ts lib/validators/crm.validators.ts lib/validators/crm/lead-status.validators.ts` → 451 + 551 + 137 = 1139L. La facade re-exporte 11 schemas et 5 types depuis ces 3 fichiers.                                                                                             |

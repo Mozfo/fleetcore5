@@ -19,7 +19,7 @@ void i18n
     fallbackLng: defaultLocale,
     supportedLngs: locales,
     defaultNS: "common",
-    ns: ["common", "auth", "public", "admin"],
+    ns: ["common", "auth", "public", "admin", "crm"],
     interpolation: {
       escapeValue: false,
     },

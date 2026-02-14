@@ -56,7 +56,7 @@ export default function PageContainer({
   }
 
   const page = (
-    <div className="space-y-4">
+    <div className="flex flex-1 flex-col gap-4">
       <div className="flex flex-row items-center justify-between">
         {pageDescription ? (
           <div>
