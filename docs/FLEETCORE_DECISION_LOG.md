@@ -250,3 +250,18 @@ Les modifications suivantes doivent etre apportees au plan d'execution
 | 4   | L'architecture audit server-side-only est une decision d'architecture correcte, pas un manque.                                                                          |
 | 5   | La correction de duplication doit etre faite IMMEDIATEMENT, pas repoussee.                                                                                              |
 | 6   | Quand un helper comme `unwrapActionResult()` existe, l'utiliser systematiquement. Le code duplique manuellement (guard + throw) introduit des bugs que le helper evite. |
+
+---
+
+### ECART 12 — NuqsAdapter non prevu au plan
+
+| Champ                   | Detail                                                                                                                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Date                    | 2026-02-14                                                                                                                                                                                                 |
+| Step concerne           | Phase 2 Step 2 (validation DataTable avec donnees statiques)                                                                                                                                               |
+| Ce que le plan disait   | Creer page test uniquement                                                                                                                                                                                 |
+| Ce qui a ete implemente | Modification app/[locale]/providers.tsx pour ajouter NuqsAdapter                                                                                                                                           |
+| Cause racine            | nuqs v2 (^2.8.8) exige NuqsAdapter dans l'arbre React pour que useQueryState/useQueryStates fonctionnent avec le App Router. Prerequis de use-data-table.ts installe au Step 1, non identifie a ce moment. |
+| Decision                | CEO — accepte                                                                                                                                                                                              |
+| Impact                  | Aucun sur pages existantes. NuqsAdapter est un context provider passthrough qui active uniquement les hooks nuqs. Les pages n'utilisant pas nuqs ne sont pas affectees.                                    |
+| Verification            | `pnpm tsc --noEmit` → 0 erreurs. `pnpm build` → succes. 7/7 criteres DataTable valides.                                                                                                                    |
