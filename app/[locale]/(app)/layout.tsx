@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
+import { RefineProvider } from "@/components/providers/refine-provider";
 
 export default async function AppLayout({
   children,
@@ -38,15 +39,17 @@ export default async function AppLayout({
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="inset" />
-        <SidebarInset>
-          <SiteHeader />
-          <div className="bg-muted/40 flex flex-1 flex-col">
-            <div className="@container/main p-(--content-padding) xl:group-data-[theme-content-layout=centered]/layout:container xl:group-data-[theme-content-layout=centered]/layout:mx-auto">
-              {children}
+        <RefineProvider>
+          <AppSidebar variant="inset" />
+          <SidebarInset>
+            <SiteHeader />
+            <div className="bg-muted/40 flex flex-1 flex-col">
+              <div className="@container/main p-(--content-padding) xl:group-data-[theme-content-layout=centered]/layout:container xl:group-data-[theme-content-layout=centered]/layout:mx-auto">
+                {children}
+              </div>
             </div>
-          </div>
-        </SidebarInset>
+          </SidebarInset>
+        </RefineProvider>
       </SidebarProvider>
       <Toaster position="top-right" richColors />
     </>
