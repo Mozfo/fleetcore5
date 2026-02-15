@@ -263,7 +263,7 @@ export default async function LeadsPage({
   const { leads, countries, owners } = await fetchAllLeads();
 
   return (
-    <div className="h-full">
+    <div className="relative flex h-full flex-col">
       <LeadsViewRouter
         allLeads={leads}
         countries={countries}
