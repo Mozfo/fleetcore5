@@ -1,8 +1,19 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/ui/table/data-table-column-header";
 import type { Option } from "@/types/data-table";
 import type { Lead, LeadStatusConfig } from "../types/lead.types";
@@ -85,6 +96,24 @@ export function getLeadColumns(
           title={t("leads.table.columns.contact")}
         />
       ),
+      cell: ({ row }) => {
+        const lead = row.original;
+        const fullName =
+          [lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—";
+        const initials =
+          [lead.first_name?.[0], lead.last_name?.[0]]
+            .filter(Boolean)
+            .join("")
+            .toUpperCase() || "?";
+        return (
+          <div className="flex items-center gap-2">
+            <Avatar className="size-7">
+              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+            </Avatar>
+            <span>{fullName}</span>
+          </div>
+        );
+      },
       meta: { label: t("leads.table.columns.contact") },
     },
     {
@@ -115,6 +144,10 @@ export function getLeadColumns(
             variant="outline"
             style={{ borderColor: config?.color, color: config?.color }}
           >
+            <span
+              className="size-1.5 rounded-full"
+              style={{ backgroundColor: config?.color }}
+            />
             {config?.label_en ?? value}
           </Badge>
         );
@@ -176,6 +209,43 @@ export function getLeadColumns(
         return date ? new Date(date).toLocaleDateString() : "—";
       },
       meta: { label: t("leads.table.columns.created") },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const lead = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8">
+                <MoreHorizontal className="size-4" />
+                <span className="sr-only">Actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/crm/leads/${lead.id}`}>
+                  <Eye className="mr-2 size-4" />
+                  {t("leads.actions.view")}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Pencil className="mr-2 size-4" />
+                {t("leads.actions.edit")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 size-4" />
+                {t("leads.actions.delete")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+      enableColumnFilter: false,
+      size: 40,
     },
   ];
 }

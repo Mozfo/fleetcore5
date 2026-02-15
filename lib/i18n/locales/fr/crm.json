@@ -129,11 +129,16 @@
       "phase_finalized_desc": "Les leads convertis, perdus et en nurturing apparaîtront ici",
       "no_results": "Aucun lead trouvé",
       "no_results_desc": "Essayez d'ajuster vos filtres ou votre recherche",
+      "no_data": "Aucun lead pour le moment",
+      "no_data_desc": "Commencez par créer votre premier lead",
       "create_lead": "Créer un Lead",
       "clear_filters": "Effacer les filtres"
     },
     "actions": {
       "new_lead": "Nouveau Lead",
+      "view": "Voir",
+      "edit": "Modifier",
+      "delete": "Supprimer",
       "export": "Exporter",
       "settings": "Paramètres",
       "qualify_coming_soon": "Fonctionnalité Qualifier bientôt disponible",

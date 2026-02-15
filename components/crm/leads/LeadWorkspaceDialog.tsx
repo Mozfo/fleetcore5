@@ -129,7 +129,7 @@ export function LeadWorkspaceDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex h-[85vh] max-w-4xl flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
         {/* Accessibility */}
         <VisuallyHidden.Root>
           <DialogTitle>{lead.company_name || "Lead"} - Details</DialogTitle>

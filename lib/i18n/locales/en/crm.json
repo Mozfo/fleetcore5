@@ -129,11 +129,16 @@
       "phase_finalized_desc": "Converted, lost and nurturing leads will appear here",
       "no_results": "No leads found",
       "no_results_desc": "Try adjusting your filters or search term",
+      "no_data": "No leads yet",
+      "no_data_desc": "Get started by creating your first lead",
       "create_lead": "Create Lead",
       "clear_filters": "Clear filters"
     },
     "actions": {
       "new_lead": "New Lead",
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
       "export": "Export",
       "settings": "Settings",
       "qualify_coming_soon": "Qualify feature coming soon",

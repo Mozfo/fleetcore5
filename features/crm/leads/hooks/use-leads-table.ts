@@ -101,6 +101,13 @@ export function useLeadsTable({
     getRowId: (row) => row.id,
     initialState: {
       pagination: { pageIndex: 0, pageSize: initialPageSize },
+      columnVisibility: {
+        lead_code: false,
+        email: false,
+        priority: false,
+        country_code: false,
+        created_at: false,
+      },
     },
   });
 
