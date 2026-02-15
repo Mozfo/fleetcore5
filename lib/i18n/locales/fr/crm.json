@@ -249,6 +249,7 @@
     },
     "toast": {
       "success_created": "Lead créé avec succès",
+      "success_updated": "Lead mis à jour avec succès",
       "error_email_exists": "Un lead avec cet email existe déjà",
       "error_validation": "Veuillez vérifier les champs du formulaire",
       "error_generic": "Une erreur s'est produite. Veuillez réessayer.",

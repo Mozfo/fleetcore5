@@ -249,6 +249,7 @@
     },
     "toast": {
       "success_created": "Lead created successfully",
+      "success_updated": "Lead updated successfully",
       "error_email_exists": "A lead with this email already exists",
       "error_validation": "Please check the form fields",
       "error_generic": "An error occurred. Please try again.",

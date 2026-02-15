@@ -1,7 +1,6 @@
 "use client";
 
 import { Plus, Users } from "lucide-react";
-import Link from "next/link";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -15,14 +14,18 @@ import { DataTableToolbar } from "@/components/ui/table/data-table-toolbar";
 import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
 
 import { getLeadColumns } from "./lead-columns";
+import { LeadsCreateDialog } from "./leads-create-dialog";
+import { LeadsEditDrawer } from "./leads-edit-drawer";
 import { useLeadsTable } from "../hooks/use-leads-table";
 
 export function LeadsListPage() {
   const { t } = useTranslation("crm");
   const { statuses, isLoading: statusesLoading } = useLeadStatuses();
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [editLeadId, setEditLeadId] = React.useState<string | null>(null);
 
   const columns = React.useMemo(
-    () => getLeadColumns(t, statuses),
+    () => getLeadColumns(t, statuses, (id) => setEditLeadId(id)),
     [t, statuses]
   );
 
@@ -50,7 +53,7 @@ export function LeadsListPage() {
         description={t("leads.empty.no_data_desc")}
         action={{
           label: t("leads.actions.new_lead"),
-          onClick: () => toast.info("Coming soon"),
+          onClick: () => setCreateOpen(true),
           icon: <Plus className="size-4" />,
         }}
       />
@@ -72,13 +75,20 @@ export function LeadsListPage() {
       }
     >
       <DataTableToolbar table={table}>
-        <Button size="sm" asChild>
-          <Link href="/crm/leads/new">
-            <Plus className="mr-2 size-4" />
-            {t("leads.actions.new_lead")}
-          </Link>
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Plus className="mr-2 size-4" />
+          {t("leads.actions.new_lead")}
         </Button>
       </DataTableToolbar>
+
+      <LeadsCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <LeadsEditDrawer
+        open={editLeadId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditLeadId(null);
+        }}
+        leadId={editLeadId}
+      />
     </DataTable>
   );
 }

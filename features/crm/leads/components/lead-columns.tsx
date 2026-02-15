@@ -26,10 +26,12 @@ type TranslationFn = (key: string) => string;
  *
  * @param t - Translation function (from useTranslation)
  * @param statuses - Dynamic status configs (from useLeadStatuses)
+ * @param onEdit - Callback when user clicks "Edit" on a row
  */
 export function getLeadColumns(
   t: TranslationFn,
-  statuses: LeadStatusConfig[]
+  statuses: LeadStatusConfig[],
+  onEdit?: (leadId: string) => void
 ): ColumnDef<Lead>[] {
   const statusOptions: Option[] = statuses.map((s) => ({
     label: s.label_en,
@@ -229,7 +231,7 @@ export function getLeadColumns(
                   {t("leads.actions.view")}
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit?.(lead.id)}>
                 <Pencil className="mr-2 size-4" />
                 {t("leads.actions.edit")}
               </DropdownMenuItem>
