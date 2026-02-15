@@ -76,6 +76,7 @@ interface LeadsPageClientProps {
   }>;
   owners: Array<{ id: string; first_name: string; last_name: string | null }>;
   initialFilters: LeadsFilters;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 export function LeadsPageClient({
@@ -83,6 +84,7 @@ export function LeadsPageClient({
   countries,
   owners,
   initialFilters,
+  onViewModeChange,
 }: LeadsPageClientProps) {
   const params = useParams();
   const locale = params.locale as string;
@@ -191,14 +193,18 @@ export function LeadsPageClient({
   }, []);
 
   // Handle view mode change with localStorage persistence
-  const handleViewModeChange = useCallback((mode: ViewMode) => {
-    setViewMode(mode);
-    try {
-      localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
-    } catch {
-      // Silently fail - localStorage not available
-    }
-  }, []);
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode) => {
+      setViewMode(mode);
+      try {
+        localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+      } catch {
+        // Silently fail - localStorage not available
+      }
+      onViewModeChange?.(mode);
+    },
+    [onViewModeChange]
+  );
 
   // Get current config for saving a view (E2-B)
   const getCurrentConfig = useCallback((): SavedViewConfig => {

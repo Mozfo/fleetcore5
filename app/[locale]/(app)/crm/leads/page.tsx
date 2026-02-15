@@ -4,11 +4,10 @@
  * Filtres: gérés côté client avec useMemo (instantané)
  */
 
-import { Suspense, cache } from "react";
+import { cache } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
-import { LeadsPageClient } from "@/components/crm/leads/LeadsPageClient";
-import { LeadCardSkeleton } from "@/components/crm/leads/LeadCardSkeleton";
+import { LeadsViewRouter } from "@/features/crm/leads/components/leads-view-router";
 import { localizedRedirect } from "@/lib/navigation";
 import { getMemberUuidFromClerkUserId } from "@/lib/utils/clerk-uuid-mapper";
 import type { Lead, LeadStatus, LeadStage } from "@/types/crm";
@@ -265,29 +264,12 @@ export default async function LeadsPage({
 
   return (
     <div className="h-full">
-      <Suspense
-        fallback={
-          <div className="space-y-6">
-            <div className="h-32 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-900" />
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="space-y-3">
-                  <LeadCardSkeleton />
-                  <LeadCardSkeleton />
-                  <LeadCardSkeleton />
-                </div>
-              ))}
-            </div>
-          </div>
-        }
-      >
-        <LeadsPageClient
-          allLeads={leads}
-          countries={countries}
-          owners={owners}
-          initialFilters={initialFilters}
-        />
-      </Suspense>
+      <LeadsViewRouter
+        allLeads={leads}
+        countries={countries}
+        owners={owners}
+        initialFilters={initialFilters}
+      />
     </div>
   );
 }
