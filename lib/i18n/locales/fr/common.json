@@ -436,6 +436,7 @@
     "admin_roles": "Rôles & Permissions",
     "admin_audit": "Journal d'audit",
     "admin_notifications": "Notifications",
+    "crm_dashboard": "Tableau de bord",
     "crm_directory": "Répertoire"
   },
   "widgets": {

@@ -384,42 +384,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: leads.map((lead) => ({
-          id: lead.id,
-          lead_code: lead.lead_code,
-          email: lead.email,
-          first_name: lead.first_name,
-          last_name: lead.last_name,
-          company_name: lead.company_name,
-          phone: lead.phone,
-          country_code: lead.country_code,
-          country: lead.crm_countries as unknown as {
-            country_code: string;
-            country_name_en: string;
-            flag_emoji: string;
-          } | null,
-          fleet_size: lead.fleet_size,
-          status: lead.status,
-          lead_stage: lead.lead_stage,
-          priority: lead.priority,
-          fit_score: lead.fit_score ? Number(lead.fit_score) : null,
-          engagement_score: lead.engagement_score
-            ? Number(lead.engagement_score)
-            : null,
-          qualification_score: lead.qualification_score
-            ? Number(lead.qualification_score)
-            : null,
-          assigned_to: lead.eu1f9qh
-            ? {
-                id: lead.eu1f9qh.id,
-                first_name: lead.eu1f9qh.first_name,
-                last_name: lead.eu1f9qh.last_name,
-                email: lead.eu1f9qh.email,
-              }
-            : null,
-          created_at: lead.created_at.toISOString(),
-          updated_at: lead.updated_at?.toISOString() || null,
-        })),
+        data: leads.map((lead) => {
+          // Destructure Prisma relation keys to exclude from spread
+          const { eu1f9qh, crm_countries, ...scalar } = lead;
+          return {
+            ...scalar,
+            // Decimal → number (Prisma Decimal serializes to string)
+            fit_score: lead.fit_score ? Number(lead.fit_score) : null,
+            engagement_score: lead.engagement_score
+              ? Number(lead.engagement_score)
+              : null,
+            // Relations → clean objects
+            country: crm_countries ?? null,
+            assigned_to: eu1f9qh
+              ? {
+                  id: eu1f9qh.id,
+                  first_name: eu1f9qh.first_name,
+                  last_name: eu1f9qh.last_name,
+                  email: eu1f9qh.email,
+                }
+              : null,
+          };
+        }),
         pagination: {
           page,
           limit,

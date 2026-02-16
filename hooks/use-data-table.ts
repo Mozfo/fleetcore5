@@ -2,7 +2,12 @@
 
 import {
   type ColumnFiltersState,
+  type ColumnOrderState,
+  type ColumnPinningState,
+  type ExpandedState,
+  type GroupingState,
   type PaginationState,
+  type RowPinningState,
   type RowSelectionState,
   type SortingState,
   type TableOptions,
@@ -10,14 +15,20 @@ import {
   type Updater,
   type VisibilityState,
   getCoreRowModel,
+  getExpandedRowModel,
   getFacetedMinMaxValues,
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getGroupedRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+
+import type { FilterFn } from "@tanstack/react-table";
+
+import { fuzzyFilter } from "@/lib/table-filters";
 import {
   type Parser,
   type UseQueryStateOptions,
@@ -108,6 +119,22 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>(initialState?.columnVisibility ?? {});
+  const [columnPinning, setColumnPinning] = React.useState<ColumnPinningState>(
+    initialState?.columnPinning ?? { left: [], right: [] }
+  );
+  const [columnOrder, setColumnOrder] = React.useState<ColumnOrderState>(
+    initialState?.columnOrder ?? []
+  );
+  const [expanded, setExpanded] = React.useState<ExpandedState>(
+    initialState?.expanded ?? {}
+  );
+  const [grouping, setGrouping] = React.useState<GroupingState>(
+    (initialState?.grouping as GroupingState) ?? []
+  );
+  const [rowPinning, setRowPinning] = React.useState<RowPinningState>(
+    initialState?.rowPinning ?? { top: [], bottom: [] }
+  );
+  const [globalFilter, setGlobalFilter] = React.useState<string>("");
 
   const [page, setPage] = useQueryState(
     PAGE_KEY,
@@ -269,17 +296,48 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
       columnVisibility,
       rowSelection,
       columnFilters,
+      columnPinning,
+      columnOrder,
+      expanded,
+      grouping,
+      rowPinning,
+      globalFilter,
     },
     defaultColumn: {
       ...tableProps.defaultColumn,
       enableColumnFilter: false,
     },
+    // Filtering
+    filterFns: { fuzzy: fuzzyFilter as FilterFn<TData> },
+    globalFilterFn: fuzzyFilter as FilterFn<TData>,
+    // Resizing
+    enableColumnResizing: true,
+    columnResizeMode: "onChange" as const,
+    // Selection
     enableRowSelection: true,
+    // Pinning
+    enableColumnPinning: true,
+    enableRowPinning: true,
+    keepPinnedRows: true,
+    // Expanding
+    enableExpanding: true,
+    getRowCanExpand: () => true,
+    // Grouping
+    enableGrouping: true,
+    groupedColumnMode: "reorder" as const,
+    // State handlers
     onRowSelectionChange: setRowSelection,
     onPaginationChange,
     onSortingChange,
     onColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
+    onColumnPinningChange: setColumnPinning,
+    onColumnOrderChange: setColumnOrder,
+    onExpandedChange: setExpanded,
+    onGroupingChange: setGrouping,
+    onRowPinningChange: setRowPinning,
+    onGlobalFilterChange: setGlobalFilter,
+    // Row models
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -287,6 +345,8 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getGroupedRowModel: getGroupedRowModel(),
     manualPagination: true,
     manualSorting: true,
     manualFiltering: true,

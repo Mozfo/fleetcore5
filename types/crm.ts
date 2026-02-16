@@ -149,6 +149,73 @@ export interface Lead {
   deletion_reason?: string | null;
   created_by?: string | null;
   updated_by?: string | null;
+
+  // Activity tracking
+  last_activity_at?: string | null;
+
+  // Provider
+  provider_id?: string | null;
+
+  // Stage tracking (V5: CLOSING)
+  stage_entered_at?: string | null;
+  loss_reason_code?: string | null;
+  loss_reason_detail?: string | null;
+  competitor_name?: string | null;
+
+  // Booking (V6.2: CAL.COM)
+  booking_slot_at?: string | null;
+  booking_confirmed_at?: string | null;
+  booking_calcom_uid?: string | null;
+
+  // Wizard & Platforms (V6.2)
+  platforms_used?: string[] | null;
+  wizard_completed?: boolean | null;
+
+  // Tenant
+  tenant_id?: string | null;
+
+  // Conversion (V6.2)
+  converted_at?: string | null;
+
+  // Email verification (V6.2.2)
+  email_verified?: boolean;
+  email_verification_code?: string | null;
+  email_verification_expires_at?: string | null;
+  email_verification_attempts?: number;
+
+  // Attendance confirmation (V6.2.6)
+  confirmation_token?: string | null;
+  attendance_confirmed?: boolean;
+  attendance_confirmed_at?: string | null;
+
+  // J-1 reminder (V6.2.6)
+  j1_reminder_sent_at?: string | null;
+
+  // Reschedule (V6.3.3)
+  reschedule_token?: string | null;
+
+  // GeoIP detection (V6.4)
+  detected_country_code?: string | null;
+  ip_address?: string | null;
+
+  // Language (V6.4-3)
+  language?: string;
+
+  // Callback (V6.6)
+  callback_requested?: boolean;
+  callback_requested_at?: string | null;
+  callback_completed_at?: string | null;
+  callback_notes?: string | null;
+
+  // Disqualification (V6.6)
+  disqualified_at?: string | null;
+  disqualification_reason?: string | null;
+  disqualification_comment?: string | null;
+  disqualified_by?: string | null;
+
+  // Recovery notification (V6.6)
+  recovery_notification_sent_at?: string | null;
+  recovery_notification_clicked_at?: string | null;
 }
 
 export interface LeadsApiResponse {

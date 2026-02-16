@@ -44,6 +44,12 @@ export function DataTableToolbar<TData>({
       {...props}
     >
       <div className="flex flex-1 flex-wrap items-center gap-2">
+        <Input
+          placeholder="Search all columns..."
+          value={(table.getState().globalFilter as string) ?? ""}
+          onChange={(e) => table.setGlobalFilter(e.target.value)}
+          className="h-8 w-40 lg:w-64"
+        />
         {columns.map((column) => (
           <DataTableToolbarFilter key={column.id} column={column} />
         ))}

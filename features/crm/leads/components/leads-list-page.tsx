@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Users } from "lucide-react";
+import { Download, FileSpreadsheet, Plus, Users } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -8,12 +8,16 @@ import { toast } from "sonner";
 import { BulkActionsBar } from "@/components/crm/leads/BulkActionsBar";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { DataTable } from "@/components/ui/table/data-table";
+import { DataTable, type TableDensity } from "@/components/ui/table/data-table";
+import { DataTableDensityToggle } from "@/components/ui/table/data-table-density-toggle";
 import { DataTableSkeleton } from "@/components/ui/table/data-table-skeleton";
 import { DataTableToolbar } from "@/components/ui/table/data-table-toolbar";
 import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
+import { exportTableToCSV, exportTableToExcel } from "@/lib/utils/table-export";
+import { useTablePreferences } from "@/hooks/use-table-preferences";
 
 import { getLeadColumns } from "./lead-columns";
+import { LeadExpandedRow } from "./lead-expanded-row";
 import { LeadsCreateDialog } from "./leads-create-dialog";
 import { LeadsEditDrawer } from "./leads-edit-drawer";
 import { useLeadsTable } from "../hooks/use-leads-table";
@@ -23,6 +27,20 @@ export function LeadsListPage() {
   const { statuses, isLoading: statusesLoading } = useLeadStatuses();
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editLeadId, setEditLeadId] = React.useState<string | null>(null);
+
+  // Table preferences (localStorage persistence)
+  const { preferences, save: savePreferences } = useTablePreferences("leads");
+  const [density, setDensity] = React.useState<TableDensity>(
+    preferences.density ?? "normal"
+  );
+
+  const handleDensityChange = React.useCallback(
+    (d: TableDensity) => {
+      setDensity(d);
+      savePreferences({ density: d });
+    },
+    [savePreferences]
+  );
 
   const columns = React.useMemo(
     () => getLeadColumns(t, statuses, (id) => setEditLeadId(id)),
@@ -63,6 +81,8 @@ export function LeadsListPage() {
   return (
     <DataTable
       table={table}
+      density={density}
+      renderExpandedRow={(row) => <LeadExpandedRow lead={row.original} />}
       actionBar={
         <BulkActionsBar
           selectedCount={selectedCount}
@@ -75,6 +95,38 @@ export function LeadsListPage() {
       }
     >
       <DataTableToolbar table={table}>
+        <DataTableDensityToggle
+          density={density}
+          onDensityChange={handleDensityChange}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8"
+          onClick={() =>
+            exportTableToCSV(table, {
+              filename: "leads",
+              onlySelected: selectedCount > 0,
+            })
+          }
+        >
+          <Download className="mr-2 size-4" />
+          CSV
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8"
+          onClick={() =>
+            exportTableToExcel(table, {
+              filename: "leads",
+              onlySelected: selectedCount > 0,
+            })
+          }
+        >
+          <FileSpreadsheet className="mr-2 size-4" />
+          Excel
+        </Button>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="mr-2 size-4" />
           {t("leads.actions.new_lead")}

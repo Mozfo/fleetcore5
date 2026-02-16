@@ -2,10 +2,13 @@
 
 import type { Column } from "@tanstack/react-table";
 import {
+  ArrowLeftToLine,
+  ArrowRightToLine,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
   EyeOff,
+  Rows3,
   X,
 } from "lucide-react";
 
@@ -14,6 +17,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -30,9 +34,17 @@ export function DataTableColumnHeader<TData, TValue>({
   className,
   ...props
 }: DataTableColumnHeaderProps<TData, TValue>) {
-  if (!column.getCanSort() && !column.getCanHide()) {
+  const canSort = column.getCanSort();
+  const canHide = column.getCanHide();
+  const canPin = column.getCanPin();
+  const canGroup = column.getCanGroup();
+
+  if (!canSort && !canHide && !canPin && !canGroup) {
     return <div className={cn(className)}>{title}</div>;
   }
+
+  const isPinned = column.getIsPinned();
+  const isGrouped = column.getIsGrouped();
 
   return (
     <DropdownMenu>
@@ -44,7 +56,7 @@ export function DataTableColumnHeader<TData, TValue>({
         {...props}
       >
         {title}
-        {column.getCanSort() &&
+        {canSort &&
           (column.getIsSorted() === "desc" ? (
             <ChevronDown />
           ) : column.getIsSorted() === "asc" ? (
@@ -53,8 +65,9 @@ export function DataTableColumnHeader<TData, TValue>({
             <ChevronsUpDown />
           ))}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-28">
-        {column.getCanSort() && (
+      <DropdownMenuContent align="start" className="w-36">
+        {/* ── Sort ─────────────────────────── */}
+        {canSort && (
           <>
             <DropdownMenuCheckboxItem
               className="[&_svg]:text-muted-foreground relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
@@ -83,15 +96,69 @@ export function DataTableColumnHeader<TData, TValue>({
             )}
           </>
         )}
-        {column.getCanHide() && (
-          <DropdownMenuCheckboxItem
-            className="[&_svg]:text-muted-foreground relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
-            checked={!column.getIsVisible()}
-            onClick={() => column.toggleVisibility(false)}
-          >
-            <EyeOff />
-            Hide
-          </DropdownMenuCheckboxItem>
+
+        {/* ── Pin ──────────────────────────── */}
+        {canPin && (
+          <>
+            {canSort && <DropdownMenuSeparator />}
+            {isPinned !== "left" && (
+              <DropdownMenuItem
+                className="[&_svg]:text-muted-foreground pl-2"
+                onClick={() => column.pin("left")}
+              >
+                <ArrowLeftToLine />
+                Pin Left
+              </DropdownMenuItem>
+            )}
+            {isPinned !== "right" && (
+              <DropdownMenuItem
+                className="[&_svg]:text-muted-foreground pl-2"
+                onClick={() => column.pin("right")}
+              >
+                <ArrowRightToLine />
+                Pin Right
+              </DropdownMenuItem>
+            )}
+            {isPinned && (
+              <DropdownMenuItem
+                className="[&_svg]:text-muted-foreground pl-2"
+                onClick={() => column.pin(false)}
+              >
+                <X />
+                Unpin
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
+
+        {/* ── Group ────────────────────────── */}
+        {canGroup && (
+          <>
+            {(canSort || canPin) && <DropdownMenuSeparator />}
+            <DropdownMenuCheckboxItem
+              className="[&_svg]:text-muted-foreground relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
+              checked={isGrouped}
+              onClick={() => column.toggleGrouping()}
+            >
+              <Rows3 />
+              Group By
+            </DropdownMenuCheckboxItem>
+          </>
+        )}
+
+        {/* ── Hide ─────────────────────────── */}
+        {canHide && (
+          <>
+            {(canSort || canPin || canGroup) && <DropdownMenuSeparator />}
+            <DropdownMenuCheckboxItem
+              className="[&_svg]:text-muted-foreground relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
+              checked={!column.getIsVisible()}
+              onClick={() => column.toggleVisibility(false)}
+            >
+              <EyeOff />
+              Hide
+            </DropdownMenuCheckboxItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

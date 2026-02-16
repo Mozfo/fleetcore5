@@ -59,10 +59,16 @@ export const MODULES: ModuleConfig[] = [
     key: "crm",
     icon: Users,
     labelKey: "modules.crm",
-    href: "/crm/leads",
+    href: "/crm",
     permission: "crm:view",
     group: "CRM",
     subNav: [
+      {
+        key: "crm_dashboard",
+        labelKey: "modules.crm_dashboard",
+        href: "/crm",
+        permission: "crm:view",
+      },
       {
         key: "leads_pipeline",
         labelKey: "modules.crm_leads_pipeline",
