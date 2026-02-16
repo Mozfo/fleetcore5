@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useSidebar } from "@/components/ui/sidebar";
 import Search from "@/components/layout/header/search";
 import Notifications from "@/components/layout/header/notifications";
-import ThemeSwitch from "@/components/layout/header/theme-switch";
+import { ThemeCustomizerPanel } from "@/components/theme-customizer";
 
 export function SiteHeader() {
   const { toggleSidebar } = useSidebar();
@@ -28,7 +28,7 @@ export function SiteHeader() {
 
         <div className="ml-auto flex items-center gap-2">
           <Notifications />
-          <ThemeSwitch />
+          <ThemeCustomizerPanel />
           <Separator
             orientation="vertical"
             className="mx-2 data-[orientation=vertical]:h-4"

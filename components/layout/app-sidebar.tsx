@@ -150,7 +150,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
               asChild
             >
               <Link href={localizedPath("dashboard")}>
-                <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-700">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-700">
                   <span className="text-sm font-bold text-white">F</span>
                 </div>
                 <span className="text-foreground font-semibold">FleetCore</span>
