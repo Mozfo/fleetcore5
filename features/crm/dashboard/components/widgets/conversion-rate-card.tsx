@@ -1,25 +1,47 @@
 "use client";
 
+import { TrendingUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
 import type { ConversionRateCardProps } from "../../types/dashboard.types";
 
 export function ConversionRateCard({
-  rate: _rate,
-  trend: _trend,
-  qualified: _qualified,
+  rate,
+  trend,
+  qualified,
 }: ConversionRateCardProps) {
   const { t } = useTranslation("crm");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("dashboard.conversion_rate")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-muted-foreground flex h-[200px] items-center justify-center">
-          Placeholder
+        <CardDescription>{t("dashboard.conversion_rate")}</CardDescription>
+        <div className="flex flex-col gap-2">
+          <h4 className="font-display text-2xl lg:text-3xl">
+            {rate.toFixed(1)}%
+          </h4>
+          <div className="text-muted-foreground text-sm">
+            <span className={trend >= 0 ? "text-green-600" : "text-red-600"}>
+              {trend >= 0 ? "+" : ""}
+              {trend.toFixed(1)}%
+            </span>{" "}
+            {t("dashboard.from_previous")} · {qualified}{" "}
+            {t("dashboard.qualified")}
+          </div>
         </div>
-      </CardContent>
+        <CardAction>
+          <div className="flex gap-4">
+            <div className="bg-muted flex size-12 items-center justify-center rounded-full border">
+              <TrendingUp className="size-5" />
+            </div>
+          </div>
+        </CardAction>
+      </CardHeader>
     </Card>
   );
 }

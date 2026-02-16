@@ -1,24 +1,42 @@
 "use client";
 
+import { Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
 import type { TotalLeadsCardProps } from "../../types/dashboard.types";
 
-export function TotalLeadsCard({
-  total: _total,
-  trend: _trend,
-}: TotalLeadsCardProps) {
+export function TotalLeadsCard({ total, trend }: TotalLeadsCardProps) {
   const { t } = useTranslation("crm");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("dashboard.total_leads")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-muted-foreground flex h-[200px] items-center justify-center">
-          Placeholder
+        <CardDescription>{t("dashboard.total_leads")}</CardDescription>
+        <div className="flex flex-col gap-2">
+          <h4 className="font-display text-2xl lg:text-3xl">
+            {total.toLocaleString()}
+          </h4>
+          <div className="text-muted-foreground text-sm">
+            <span className={trend >= 0 ? "text-green-600" : "text-red-600"}>
+              {trend >= 0 ? "+" : ""}
+              {trend.toFixed(1)}%
+            </span>{" "}
+            {t("dashboard.from_previous")}
+          </div>
         </div>
-      </CardContent>
+        <CardAction>
+          <div className="flex gap-4">
+            <div className="bg-muted flex size-12 items-center justify-center rounded-full border">
+              <Users className="size-5" />
+            </div>
+          </div>
+        </CardAction>
+      </CardHeader>
     </Card>
   );
 }

@@ -1,23 +1,36 @@
 "use client";
 
+import { Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
 import type { TimeToConvertCardProps } from "../../types/dashboard.types";
 
-export function TimeToConvertCard({
-  avgDays: _avgDays,
-}: TimeToConvertCardProps) {
+export function TimeToConvertCard({ avgDays }: TimeToConvertCardProps) {
   const { t } = useTranslation("crm");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("dashboard.time_to_convert")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-muted-foreground flex h-[200px] items-center justify-center">
-          Placeholder
+        <CardDescription>{t("dashboard.time_to_convert")}</CardDescription>
+        <div className="flex flex-col gap-2">
+          <h4 className="font-display text-2xl lg:text-3xl">{avgDays}</h4>
+          <div className="text-muted-foreground text-sm">
+            {t("dashboard.days")} · {t("dashboard.avg_to_qualification")}
+          </div>
         </div>
-      </CardContent>
+        <CardAction>
+          <div className="flex gap-4">
+            <div className="bg-muted flex size-12 items-center justify-center rounded-full border">
+              <Clock className="size-5" />
+            </div>
+          </div>
+        </CardAction>
+      </CardHeader>
     </Card>
   );
 }

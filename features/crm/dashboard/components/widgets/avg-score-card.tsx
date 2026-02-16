@@ -1,25 +1,43 @@
 "use client";
 
+import { BarChart3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
 import type { AvgScoreCardProps } from "../../types/dashboard.types";
 
 export function AvgScoreCard({
-  avgQualificationScore: _avgQualificationScore,
-  avgFitScore: _avgFitScore,
-  avgEngagementScore: _avgEngagementScore,
+  avgQualificationScore,
+  avgFitScore,
+  avgEngagementScore,
 }: AvgScoreCardProps) {
   const { t } = useTranslation("crm");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("dashboard.avg_score")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-muted-foreground flex h-[200px] items-center justify-center">
-          Placeholder
+        <CardDescription>{t("dashboard.avg_score")}</CardDescription>
+        <div className="flex flex-col gap-2">
+          <h4 className="font-display text-2xl lg:text-3xl">
+            {avgQualificationScore}
+          </h4>
+          <div className="text-muted-foreground text-sm">
+            {t("dashboard.fit")}: {avgFitScore} · {t("dashboard.engagement")}:{" "}
+            {avgEngagementScore}
+          </div>
         </div>
-      </CardContent>
+        <CardAction>
+          <div className="flex gap-4">
+            <div className="bg-muted flex size-12 items-center justify-center rounded-full border">
+              <BarChart3 className="size-5" />
+            </div>
+          </div>
+        </CardAction>
+      </CardHeader>
     </Card>
   );
 }
