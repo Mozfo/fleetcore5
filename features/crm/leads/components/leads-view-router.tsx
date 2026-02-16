@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import PageContainer from "@/components/layout/page-container";
@@ -26,6 +26,7 @@ export function LeadsViewRouter({
 }: LeadsViewRouterProps) {
   const { t } = useTranslation("crm");
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+  const [total, setTotal] = useState<number | null>(null);
 
   // Load viewMode from localStorage on mount (SSR-safe)
   useEffect(() => {
@@ -60,9 +61,20 @@ export function LeadsViewRouter({
     );
   }
 
+  const pageTitle: ReactNode = (
+    <>
+      {t("leads.title")}
+      {total !== null && (
+        <span className="text-muted-foreground ml-2 text-base font-normal">
+          ({total})
+        </span>
+      )}
+    </>
+  );
+
   return (
     <PageContainer
-      pageTitle={t("leads.title")}
+      pageTitle={pageTitle}
       pageDescription={t("leads.page_description", {
         defaultValue: "Manage your leads pipeline",
       })}
@@ -70,7 +82,7 @@ export function LeadsViewRouter({
         <ViewToggle value={viewMode} onChange={handleViewModeChange} />
       }
     >
-      <LeadsListPage />
+      <LeadsListPage onTotalChange={setTotal} />
     </PageContainer>
   );
 }

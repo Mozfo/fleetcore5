@@ -125,12 +125,14 @@ export function DataTable<TData>({
           });
           const cellStyle = { width: cell.column.getSize(), ...pinStyles };
 
+          const metaClassName = cell.column.columnDef.meta?.className;
+
           // Grouped cell (group header with expand/collapse)
           if (cell.getIsGrouped()) {
             return (
               <TableCell
                 key={cell.id}
-                className={cn(cellDensity)}
+                className={cn(cellDensity, metaClassName)}
                 style={cellStyle}
               >
                 <button
@@ -156,7 +158,7 @@ export function DataTable<TData>({
             return (
               <TableCell
                 key={cell.id}
-                className={cn(cellDensity)}
+                className={cn(cellDensity, metaClassName)}
                 style={cellStyle}
               >
                 {flexRender(
@@ -173,7 +175,7 @@ export function DataTable<TData>({
             return (
               <TableCell
                 key={cell.id}
-                className={cn(cellDensity)}
+                className={cn(cellDensity, metaClassName)}
                 style={cellStyle}
               />
             );
@@ -183,7 +185,7 @@ export function DataTable<TData>({
           return (
             <TableCell
               key={cell.id}
-              className={cn(cellDensity)}
+              className={cn(cellDensity, metaClassName)}
               style={cellStyle}
             >
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -246,7 +248,10 @@ export function DataTable<TData>({
                         <TableHead
                           key={header.id}
                           colSpan={header.colSpan}
-                          className="relative"
+                          className={cn(
+                            "relative",
+                            header.column.columnDef.meta?.className
+                          )}
                           draggable={!header.isPlaceholder && !isPinned}
                           onDragStart={(e) => handleDragStart(e, header.id)}
                           onDragOver={(e) => e.preventDefault()}

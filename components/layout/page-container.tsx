@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageContainerProps {
   children: ReactNode;
-  pageTitle: string;
+  pageTitle: ReactNode;
   pageDescription?: string;
   pageHeaderAction?: ReactNode;
   isLoading?: boolean;

@@ -4,6 +4,12 @@
   "saving": "Enregistrement...",
   "converting": "Conversion...",
   "optional": "optionnel",
+  "table": {
+    "rows_per_page": "Lignes par page",
+    "rows_selected": "{{selected}} sur {{total}} ligne(s) sélectionnée(s).",
+    "rows_total": "{{count}} ligne(s) au total.",
+    "page_of": "Page {{current}} sur {{total}}"
+  },
   "welcome": "Bienvenue sur FleetCore",
   "title": "Gestion de Flotte",
   "description": "Solution complète de gestion de flotte",

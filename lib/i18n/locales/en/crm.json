@@ -369,6 +369,7 @@
       "created_at": "Created",
       "columns": {
         "ref": "Ref",
+        "client_account": "Client Account",
         "code": "Code",
         "contact": "Contact",
         "email": "Email",
@@ -461,6 +462,9 @@
         "label": "Manage columns",
         "reset": "Reset to default",
         "drag_hint": "Drag to reorder"
+      },
+      "expanded": {
+        "no_notes": "No notes"
       },
       "select_all": "Select all",
       "no_results": "No leads found",

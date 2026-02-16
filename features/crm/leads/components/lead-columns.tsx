@@ -2,14 +2,18 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import {
+  BadgeCheck,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Eye,
+  Minus,
   MoreHorizontal,
   Pencil,
   Pin,
   PinOff,
   Trash2,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -149,10 +153,10 @@ export function getLeadColumns(
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title={t("leads.table.columns.ref")}
+          title={t("leads.table.columns.client_account")}
         />
       ),
-      meta: { label: t("leads.table.columns.ref") },
+      meta: { label: t("leads.table.columns.client_account") },
       size: 120,
     },
 
@@ -166,6 +170,18 @@ export function getLeadColumns(
           title={t("leads.table.columns.email")}
         />
       ),
+      cell: ({ row }) => {
+        const email = row.getValue<string>("email");
+        const verified = row.original.email_verified;
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="truncate">{email ?? "—"}</span>
+            {verified === true && (
+              <BadgeCheck className="size-4 shrink-0 text-green-600" />
+            )}
+          </div>
+        );
+      },
       meta: { label: t("leads.table.columns.email") },
       size: 200,
     },
@@ -269,7 +285,10 @@ export function getLeadColumns(
           title={t("leads.table.columns.current_software")}
         />
       ),
-      meta: { label: t("leads.table.columns.current_software") },
+      meta: {
+        label: t("leads.table.columns.current_software"),
+        className: "hidden lg:table-cell",
+      },
       size: 160,
     },
     {
@@ -281,7 +300,10 @@ export function getLeadColumns(
           title={t("leads.table.columns.website_url")}
         />
       ),
-      meta: { label: t("leads.table.columns.website_url") },
+      meta: {
+        label: t("leads.table.columns.website_url"),
+        className: "hidden lg:table-cell",
+      },
       size: 200,
     },
     {
@@ -311,7 +333,10 @@ export function getLeadColumns(
         const lead = row.original;
         return `${lead.country?.flag_emoji ?? ""} ${lead.country_code ?? "—"}`;
       },
-      meta: { label: t("leads.table.columns.country") },
+      meta: {
+        label: t("leads.table.columns.country"),
+        className: "hidden lg:table-cell",
+      },
       size: 100,
     },
     {
@@ -323,7 +348,10 @@ export function getLeadColumns(
           title={t("leads.table.columns.city")}
         />
       ),
-      meta: { label: t("leads.table.columns.city") },
+      meta: {
+        label: t("leads.table.columns.city"),
+        className: "hidden lg:table-cell",
+      },
       size: 120,
     },
 
@@ -566,7 +594,13 @@ export function getLeadColumns(
           title={t("leads.table.columns.gdpr_consent")}
         />
       ),
-      cell: ({ row }) => formatBoolean(row.original.gdpr_consent),
+      cell: ({ row }) => {
+        const v = row.original.gdpr_consent;
+        if (v === true)
+          return <CheckCircle2 className="size-4 text-green-600" />;
+        if (v === false) return <XCircle className="size-4 text-red-500" />;
+        return <Minus className="text-muted-foreground size-4" />;
+      },
       meta: { label: t("leads.table.columns.gdpr_consent") },
       size: 80,
     },
@@ -607,7 +641,10 @@ export function getLeadColumns(
         />
       ),
       cell: ({ row }) => formatDate(row.getValue<string>("created_at")),
-      meta: { label: t("leads.table.columns.created") },
+      meta: {
+        label: t("leads.table.columns.created"),
+        className: "hidden md:table-cell",
+      },
       size: 150,
     },
     {
@@ -803,7 +840,10 @@ export function getLeadColumns(
           title={t("leads.table.columns.updated_by")}
         />
       ),
-      meta: { label: t("leads.table.columns.updated_by") },
+      meta: {
+        label: t("leads.table.columns.updated_by"),
+        className: "hidden md:table-cell",
+      },
       size: 100,
     },
 
@@ -899,7 +939,10 @@ export function getLeadColumns(
         />
       ),
       cell: ({ row }) => formatDate(row.original.booking_slot_at),
-      meta: { label: t("leads.table.columns.booking_slot_at") },
+      meta: {
+        label: t("leads.table.columns.booking_slot_at"),
+        className: "hidden md:table-cell",
+      },
       size: 150,
     },
     {
@@ -955,7 +998,10 @@ export function getLeadColumns(
         />
       ),
       cell: ({ row }) => formatBoolean(row.original.wizard_completed),
-      meta: { label: t("leads.table.columns.wizard_completed") },
+      meta: {
+        label: t("leads.table.columns.wizard_completed"),
+        className: "hidden md:table-cell",
+      },
       size: 80,
     },
 
@@ -1160,7 +1206,10 @@ export function getLeadColumns(
         />
       ),
       cell: ({ row }) => formatBoolean(row.original.callback_requested),
-      meta: { label: t("leads.table.columns.callback_requested") },
+      meta: {
+        label: t("leads.table.columns.callback_requested"),
+        className: "hidden md:table-cell",
+      },
       size: 80,
     },
     {
@@ -1173,7 +1222,10 @@ export function getLeadColumns(
         />
       ),
       cell: ({ row }) => formatDate(row.original.callback_requested_at),
-      meta: { label: t("leads.table.columns.callback_requested_at") },
+      meta: {
+        label: t("leads.table.columns.callback_requested_at"),
+        className: "hidden md:table-cell",
+      },
       size: 150,
     },
     {

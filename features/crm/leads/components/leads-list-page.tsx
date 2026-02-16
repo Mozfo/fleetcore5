@@ -22,7 +22,11 @@ import { LeadsCreateDialog } from "./leads-create-dialog";
 import { LeadsEditDrawer } from "./leads-edit-drawer";
 import { useLeadsTable } from "../hooks/use-leads-table";
 
-export function LeadsListPage() {
+interface LeadsListPageProps {
+  onTotalChange?: (total: number) => void;
+}
+
+export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
   const { t } = useTranslation("crm");
   const { statuses, isLoading: statusesLoading } = useLeadStatuses();
   const [createOpen, setCreateOpen] = React.useState(false);
@@ -47,7 +51,14 @@ export function LeadsListPage() {
     [t, statuses]
   );
 
-  const { table, isLoading, isError, total } = useLeadsTable({ columns });
+  const { table, isLoading, isError, total } = useLeadsTable({
+    columns,
+    savedColumnVisibility: preferences.columnVisibility,
+  });
+
+  React.useEffect(() => {
+    onTotalChange?.(total);
+  }, [total, onTotalChange]);
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
