@@ -466,6 +466,17 @@
       "expanded": {
         "no_notes": "No notes"
       },
+      "insight": {
+        "callback_overdue": "Callback overdue {{days}}d",
+        "meeting_missed": "Meeting missed",
+        "meeting_soon": "Meeting in {{hours}}h",
+        "lead_hot": "Hot lead",
+        "lead_cold": "Cold lead",
+        "inactive": "Inactive {{days}}d",
+        "not_contacted": "New, not contacted",
+        "overdue": "Overdue",
+        "missed": "Missed"
+      },
       "select_all": "Select all",
       "no_results": "No leads found",
       "no_results_desc": "Try adjusting your filters or create a new lead"

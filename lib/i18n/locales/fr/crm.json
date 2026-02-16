@@ -466,6 +466,17 @@
       "expanded": {
         "no_notes": "Aucune note"
       },
+      "insight": {
+        "callback_overdue": "Rappel en retard {{days}}j",
+        "meeting_missed": "RDV manqué",
+        "meeting_soon": "RDV dans {{hours}}h",
+        "lead_hot": "Lead chaud",
+        "lead_cold": "Lead froid",
+        "inactive": "Inactif {{days}}j",
+        "not_contacted": "Nouveau, pas contacté",
+        "overdue": "En retard",
+        "missed": "Manqué"
+      },
       "select_all": "Tout sélectionner",
       "no_results": "Aucun lead trouvé",
       "no_results_desc": "Essayez d'ajuster vos filtres ou créez un nouveau lead"

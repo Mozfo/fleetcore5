@@ -27,6 +27,8 @@ interface DataTableProps<TData> extends React.ComponentProps<"div"> {
   actionBar?: React.ReactNode;
   density?: TableDensity;
   renderExpandedRow?: (row: Row<TData>) => React.ReactNode;
+  /** Optional per-row className (e.g. border-left indicator). */
+  getRowClassName?: (row: Row<TData>) => string | undefined;
 }
 
 const densityCellClasses: Record<TableDensity, string> = {
@@ -47,6 +49,7 @@ export function DataTable<TData>({
   children,
   density = "normal",
   renderExpandedRow,
+  getRowClassName,
 }: DataTableProps<TData>) {
   // ── Scroll container ref (for virtualizer) ──────────────────────
   const [scrollElement, setScrollElement] = React.useState<HTMLElement | null>(
@@ -116,7 +119,10 @@ export function DataTable<TData>({
     <React.Fragment key={row.id}>
       <TableRow
         data-state={row.getIsSelected() && "selected"}
-        className={cn(row.getIsPinned() && "bg-muted/50")}
+        className={cn(
+          row.getIsPinned() && "bg-muted/50",
+          getRowClassName?.(row)
+        )}
       >
         {row.getVisibleCells().map((cell) => {
           const pinStyles = getCommonPinningStyles({

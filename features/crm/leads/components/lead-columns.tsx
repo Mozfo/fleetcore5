@@ -27,10 +27,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/ui/table/data-table-column-header";
+import { cn } from "@/lib/utils";
 import type { Option } from "@/types/data-table";
 import type { Lead, LeadStatusConfig } from "../types/lead.types";
+import {
+  STATUS_COLOR_MAP,
+  STAGE_COLOR_MAP,
+  PRIORITY_COLOR_MAP,
+  getScoreDotColor,
+  getScoreBarColor,
+  getScoreColor,
+  isCallbackOverdue,
+  isMeetingMissed,
+} from "../lib/lead-insight";
 
-type TranslationFn = (key: string) => string;
+type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -156,8 +167,31 @@ export function getLeadColumns(
           title={t("leads.table.columns.client_account")}
         />
       ),
+      cell: ({ row }) => {
+        const lead = row.original;
+        const dotColor = getScoreDotColor(lead.qualification_score);
+        const scoreTitle =
+          lead.qualification_score !== null &&
+          lead.qualification_score !== undefined
+            ? `${t("leads.table.columns.score")}: ${lead.qualification_score}/100`
+            : undefined;
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium">{lead.lead_code ?? "—"}</span>
+            {dotColor && (
+              <span
+                title={scoreTitle}
+                className={cn(
+                  "inline-block size-2 shrink-0 rounded-full",
+                  dotColor
+                )}
+              />
+            )}
+          </div>
+        );
+      },
       meta: { label: t("leads.table.columns.client_account") },
-      size: 120,
+      size: 200,
     },
 
     // ── Contact information ───────────────────────────────────────────
@@ -368,15 +402,16 @@ export function getLeadColumns(
       cell: ({ row }) => {
         const value = row.getValue<string>("status");
         const config = statuses.find((s) => s.value === value);
+        const colors = STATUS_COLOR_MAP[value];
         return (
           <Badge
             variant="outline"
-            style={{ borderColor: config?.color, color: config?.color }}
+            className={cn(
+              "border-transparent",
+              colors?.bg ?? "bg-gray-100 dark:bg-gray-800",
+              colors?.text ?? "text-gray-700 dark:text-gray-300"
+            )}
           >
-            <span
-              className="size-1.5 rounded-full"
-              style={{ backgroundColor: config?.color }}
-            />
             {config?.label_en ?? value}
           </Badge>
         );
@@ -387,7 +422,7 @@ export function getLeadColumns(
         variant: "multiSelect",
         options: statusOptions,
       },
-      size: 120,
+      size: 150,
     },
     {
       id: "lead_stage",
@@ -398,8 +433,26 @@ export function getLeadColumns(
           title={t("leads.table.columns.stage")}
         />
       ),
+      cell: ({ row }) => {
+        const value = row.getValue<string | null>("lead_stage");
+        if (!value) return "—";
+        const colors = STAGE_COLOR_MAP[value];
+        const label = t(`leads.card.stage.${value}`, { defaultValue: value });
+        return (
+          <Badge
+            variant="outline"
+            className={cn(
+              "border-transparent",
+              colors?.bg ?? "bg-gray-100 dark:bg-gray-800",
+              colors?.text ?? "text-gray-600 dark:text-gray-400"
+            )}
+          >
+            {label}
+          </Badge>
+        );
+      },
       meta: { label: t("leads.table.columns.stage") },
-      size: 140,
+      size: 160,
     },
     {
       id: "priority",
@@ -410,6 +463,26 @@ export function getLeadColumns(
           title={t("leads.table.columns.priority")}
         />
       ),
+      cell: ({ row }) => {
+        const value = row.getValue<string | null>("priority");
+        if (!value) return "—";
+        const colors = PRIORITY_COLOR_MAP[value];
+        const label = t(`leads.card.priority.${value}`, {
+          defaultValue: value,
+        });
+        return (
+          <Badge
+            variant="outline"
+            className={cn(
+              "border-transparent",
+              colors?.bg ?? "bg-gray-100 dark:bg-gray-800",
+              colors?.text ?? "text-gray-600 dark:text-gray-400"
+            )}
+          >
+            {label}
+          </Badge>
+        );
+      },
       enableColumnFilter: true,
       meta: {
         label: t("leads.table.columns.priority"),
@@ -458,8 +531,26 @@ export function getLeadColumns(
           title={t("leads.table.columns.score")}
         />
       ),
+      cell: ({ row }) => {
+        const score = row.original.qualification_score;
+        if (score === null || score === undefined) return "—";
+        const barColor = getScoreBarColor(score);
+        return (
+          <div className="flex items-center gap-2">
+            <div className="bg-muted h-2 w-16 overflow-hidden rounded-full">
+              <div
+                className={cn("h-full rounded-full", barColor)}
+                style={{ width: `${Math.min(score, 100)}%` }}
+              />
+            </div>
+            <span className={cn("text-xs font-medium", getScoreColor(score))}>
+              {score}
+            </span>
+          </div>
+        );
+      },
       meta: { label: t("leads.table.columns.score") },
-      size: 80,
+      size: 120,
     },
     {
       id: "scoring",
@@ -938,12 +1029,28 @@ export function getLeadColumns(
           title={t("leads.table.columns.booking_slot_at")}
         />
       ),
-      cell: ({ row }) => formatDate(row.original.booking_slot_at),
+      cell: ({ row }) => {
+        const lead = row.original;
+        const missed = isMeetingMissed(lead);
+        return (
+          <div className="flex items-center gap-1.5">
+            <span>{formatDate(lead.booking_slot_at)}</span>
+            {missed && (
+              <Badge
+                variant="outline"
+                className="border-transparent bg-red-100 px-1 py-0 text-[10px] text-red-700 dark:bg-red-900 dark:text-red-300"
+              >
+                {t("leads.table.insight.missed")}
+              </Badge>
+            )}
+          </div>
+        );
+      },
       meta: {
         label: t("leads.table.columns.booking_slot_at"),
         className: "hidden md:table-cell",
       },
-      size: 150,
+      size: 180,
     },
     {
       id: "booking_confirmed_at",
@@ -1221,12 +1328,28 @@ export function getLeadColumns(
           title={t("leads.table.columns.callback_requested_at")}
         />
       ),
-      cell: ({ row }) => formatDate(row.original.callback_requested_at),
+      cell: ({ row }) => {
+        const lead = row.original;
+        const overdue = isCallbackOverdue(lead);
+        return (
+          <div className="flex items-center gap-1.5">
+            <span>{formatDate(lead.callback_requested_at)}</span>
+            {overdue && (
+              <Badge
+                variant="outline"
+                className="border-transparent bg-red-100 px-1 py-0 text-[10px] text-red-700 dark:bg-red-900 dark:text-red-300"
+              >
+                {t("leads.table.insight.overdue")}
+              </Badge>
+            )}
+          </div>
+        );
+      },
       meta: {
         label: t("leads.table.columns.callback_requested_at"),
         className: "hidden md:table-cell",
       },
-      size: 150,
+      size: 180,
     },
     {
       id: "callback_completed_at",

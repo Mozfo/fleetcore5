@@ -21,6 +21,7 @@ import { LeadExpandedRow } from "./lead-expanded-row";
 import { LeadsCreateDialog } from "./leads-create-dialog";
 import { LeadsEditDrawer } from "./leads-edit-drawer";
 import { useLeadsTable } from "../hooks/use-leads-table";
+import { computeRowIndicator } from "../lib/lead-insight";
 
 interface LeadsListPageProps {
   onTotalChange?: (total: number) => void;
@@ -94,6 +95,7 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
       table={table}
       density={density}
       renderExpandedRow={(row) => <LeadExpandedRow lead={row.original} />}
+      getRowClassName={(row) => computeRowIndicator(row.original)}
       actionBar={
         <BulkActionsBar
           selectedCount={selectedCount}
