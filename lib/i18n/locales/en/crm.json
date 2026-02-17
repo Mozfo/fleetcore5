@@ -107,6 +107,8 @@
         "wizard_completed": "Wizard completed",
         "booking_date": "Booking Date"
       },
+      "from": "From",
+      "to": "To",
       "boolean": {
         "yes": "Yes",
         "no": "No"

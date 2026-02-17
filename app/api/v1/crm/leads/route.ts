@@ -27,6 +27,65 @@ import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
+// ── Security: Allowed sort fields (must match DataTable sortable columns) ────
+const ALLOWED_SORT_FIELDS = new Set([
+  "id",
+  "lead_code",
+  "email",
+  "first_name",
+  "last_name",
+  "phone",
+  "company_name",
+  "industry",
+  "company_size",
+  "fleet_size",
+  "current_software",
+  "website_url",
+  "linkedin_url",
+  "country_code",
+  "city",
+  "status",
+  "lead_stage",
+  "priority",
+  "fit_score",
+  "engagement_score",
+  "qualification_score",
+  "source",
+  "source_id",
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "assigned_to",
+  "gdpr_consent",
+  "consent_at",
+  "consent_ip",
+  "created_at",
+  "updated_at",
+  "qualified_date",
+  "converted_date",
+  "next_action_date",
+  "last_activity_at",
+  "stage_entered_at",
+  "booking_slot_at",
+  "booking_confirmed_at",
+  "wizard_completed",
+  "email_verified",
+  "callback_requested",
+  "callback_requested_at",
+  "callback_completed_at",
+  "disqualified_at",
+  "disqualification_reason",
+  "loss_reason_code",
+  "competitor_name",
+  "detected_country_code",
+  "language",
+  "converted_at",
+  "attendance_confirmed",
+  "attendance_confirmed_at",
+  "deleted_at",
+  "created_by",
+]);
+
 /**
  * POST /api/v1/crm/leads
  * Create a new lead with automatic scoring and assignment
@@ -288,43 +347,160 @@ export async function GET(request: NextRequest) {
     // STEP 2: Parse query parameters
     const { searchParams } = new URL(request.url);
 
-    // Filters
-    const status = searchParams.get("status") || undefined;
-    const lead_stage = searchParams.get("lead_stage") || undefined;
+    // Helper: parse CSV string into array or undefined
+    const csvParam = (key: string): string[] | undefined => {
+      const val = searchParams.get(key);
+      return val ? val.split(",").filter(Boolean) : undefined;
+    };
+    const intParam = (key: string): number | undefined => {
+      const val = searchParams.get(key);
+      return val ? parseInt(val) : undefined;
+    };
+    const dateParam = (key: string): Date | undefined => {
+      const val = searchParams.get(key);
+      if (!val) return undefined;
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? undefined : d;
+    };
+    const boolParam = (key: string): boolean | undefined => {
+      const val = searchParams.get(key);
+      if (val === "true") return true;
+      if (val === "false") return false;
+      return undefined;
+    };
+
+    // CSV multi-select filters
+    const status = csvParam("status");
+    const lead_stage = csvParam("lead_stage");
+    const priority = csvParam("priority");
+    const source = csvParam("source");
+    const fleet_size = csvParam("fleet_size");
+    const language = csvParam("language");
+    const industry = csvParam("industry");
+    const country_code = csvParam("country_code");
+    const loss_reason_code = csvParam("loss_reason_code");
+    const disqualification_reason = csvParam("disqualification_reason");
+    const platforms_used = csvParam("platforms_used");
     const assigned_to = searchParams.get("assigned_to") || undefined;
-    const country_code = searchParams.get("country_code") || undefined;
-    const minScoreParam = searchParams.get("min_score");
-    const min_score = minScoreParam ? parseInt(minScoreParam) : undefined;
+
+    // Search
     const search = searchParams.get("search") || undefined;
 
-    // Cold leads filters
-    const inactiveMonthsParam = searchParams.get("inactive_months");
-    const inactive_months = inactiveMonthsParam
-      ? parseInt(inactiveMonthsParam)
-      : undefined;
+    // Range filters (min/max)
+    const min_qualification_score = intParam("min_qualification_score");
+    const max_qualification_score = intParam("max_qualification_score");
+    const min_fit_score = intParam("min_fit_score");
+    const max_fit_score = intParam("max_fit_score");
+    const min_engagement_score = intParam("min_engagement_score");
+    const max_engagement_score = intParam("max_engagement_score");
+
+    // Date range filters
+    const last_activity_at_gte = dateParam("min_last_activity_at");
+    const last_activity_at_lte = dateParam("max_last_activity_at");
+    const created_at_gte = dateParam("min_created_at");
+    const created_at_lte = dateParam("max_created_at");
+    const next_action_date_gte = dateParam("min_next_action_date");
+    const next_action_date_lte = dateParam("max_next_action_date");
+    const booking_slot_at_gte = dateParam("min_booking_slot_at");
+    const booking_slot_at_lte = dateParam("max_booking_slot_at");
+
+    // Boolean filters
+    const email_verified = boolParam("email_verified");
+    const callback_requested = boolParam("callback_requested");
+    const gdpr_consent = boolParam("gdpr_consent");
+    const attendance_confirmed = boolParam("attendance_confirmed");
+    const wizard_completed = boolParam("wizard_completed");
+
+    // Legacy cold leads filters
+    const inactive_months = intParam("inactive_months");
     const include_cold = searchParams.get("include_cold") === "true";
 
     // Pagination
     const page = parseInt(searchParams.get("page") || "1");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 100);
 
-    // Sorting
-    const sort = searchParams.get("sort") || "created_at";
-    const order = (searchParams.get("order") || "desc") as "asc" | "desc";
+    // Sorting (validated against whitelist)
+    const rawSort = searchParams.get("sort") || "created_at";
+    const sort = ALLOWED_SORT_FIELDS.has(rawSort) ? rawSort : "created_at";
+    const rawOrder = searchParams.get("order") || "desc";
+    const order: "asc" | "desc" = rawOrder === "asc" ? "asc" : "desc";
 
     // STEP 4: Build where clause
     const where: Record<string, unknown> = {
       deleted_at: null, // Exclude soft-deleted
     };
 
-    // Apply filters
-    if (status) where.status = status;
-    if (lead_stage) where.lead_stage = lead_stage;
+    // CSV multi-select → Prisma { in: [...] }
+    if (status) where.status = { in: status };
+    if (lead_stage) where.lead_stage = { in: lead_stage };
+    if (priority) where.priority = { in: priority };
+    if (source) where.source = { in: source };
+    if (fleet_size) where.fleet_size = { in: fleet_size };
+    if (language) where.language = { in: language };
+    if (industry) where.industry = { in: industry };
+    if (country_code) where.country_code = { in: country_code };
+    if (loss_reason_code) where.loss_reason_code = { in: loss_reason_code };
+    if (disqualification_reason)
+      where.disqualification_reason = { in: disqualification_reason };
+    if (platforms_used) where.platforms_used = { hasSome: platforms_used };
     if (assigned_to) where.assigned_to = assigned_to;
-    if (country_code) where.country_code = country_code;
-    if (min_score !== undefined) {
-      where.qualification_score = { gte: min_score };
-    }
+
+    // Range filters → Prisma { gte, lte }
+    const scoreWhere: Record<string, number> = {};
+    if (min_qualification_score !== undefined)
+      scoreWhere.gte = min_qualification_score;
+    if (max_qualification_score !== undefined)
+      scoreWhere.lte = max_qualification_score;
+    if (Object.keys(scoreWhere).length > 0)
+      where.qualification_score = scoreWhere;
+
+    const fitWhere: Record<string, number> = {};
+    if (min_fit_score !== undefined) fitWhere.gte = min_fit_score;
+    if (max_fit_score !== undefined) fitWhere.lte = max_fit_score;
+    if (Object.keys(fitWhere).length > 0) where.fit_score = fitWhere;
+
+    const engWhere: Record<string, number> = {};
+    if (min_engagement_score !== undefined) engWhere.gte = min_engagement_score;
+    if (max_engagement_score !== undefined) engWhere.lte = max_engagement_score;
+    if (Object.keys(engWhere).length > 0) where.engagement_score = engWhere;
+
+    // Date range filters
+    const buildDateRange = (
+      gte?: Date,
+      lte?: Date
+    ): Record<string, Date> | undefined => {
+      const r: Record<string, Date> = {};
+      if (gte) r.gte = gte;
+      if (lte) r.lte = lte;
+      return Object.keys(r).length > 0 ? r : undefined;
+    };
+    const lastActivityRange = buildDateRange(
+      last_activity_at_gte,
+      last_activity_at_lte
+    );
+    if (lastActivityRange) where.last_activity_at = lastActivityRange;
+    const createdAtRange = buildDateRange(created_at_gte, created_at_lte);
+    if (createdAtRange) where.created_at = createdAtRange;
+    const nextActionRange = buildDateRange(
+      next_action_date_gte,
+      next_action_date_lte
+    );
+    if (nextActionRange) where.next_action_date = nextActionRange;
+    const bookingRange = buildDateRange(
+      booking_slot_at_gte,
+      booking_slot_at_lte
+    );
+    if (bookingRange) where.booking_slot_at = bookingRange;
+
+    // Boolean filters
+    if (email_verified !== undefined) where.email_verified = email_verified;
+    if (callback_requested !== undefined)
+      where.callback_requested = callback_requested;
+    if (gdpr_consent !== undefined) where.gdpr_consent = gdpr_consent;
+    if (attendance_confirmed !== undefined)
+      where.attendance_confirmed = attendance_confirmed;
+    if (wizard_completed !== undefined)
+      where.wizard_completed = wizard_completed;
 
     // Search across multiple fields
     if (search) {
@@ -333,12 +509,12 @@ export async function GET(request: NextRequest) {
         { company_name: { contains: search, mode: "insensitive" } },
         { first_name: { contains: search, mode: "insensitive" } },
         { last_name: { contains: search, mode: "insensitive" } },
+        { lead_code: { contains: search, mode: "insensitive" } },
       ];
     }
 
-    // Cold leads filters
+    // Legacy cold leads filters
     if (include_cold) {
-      // Include only cold leads: lost/disqualified OR inactive for X months
       const coldThreshold = new Date();
       coldThreshold.setMonth(coldThreshold.getMonth() - (inactive_months || 6));
       where.OR = [
@@ -346,7 +522,6 @@ export async function GET(request: NextRequest) {
         { updated_at: { lt: coldThreshold } },
       ];
     } else if (inactive_months) {
-      // Filter by inactivity only
       const coldThreshold = new Date();
       coldThreshold.setMonth(coldThreshold.getMonth() - inactive_months);
       where.updated_at = { lt: coldThreshold };

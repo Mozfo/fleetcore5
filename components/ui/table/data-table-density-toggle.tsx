@@ -1,5 +1,8 @@
 "use client";
 
+import { SlidersHorizontal } from "lucide-react";
+import { useTranslation } from "react-i18next";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { TableDensity } from "@/components/ui/table/data-table";
-import { SlidersHorizontal } from "lucide-react";
 
 interface DataTableDensityToggleProps {
   density: TableDensity;
@@ -21,6 +23,8 @@ export function DataTableDensityToggle({
   density,
   onDensityChange,
 }: DataTableDensityToggleProps) {
+  const { t } = useTranslation("common");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -29,15 +33,19 @@ export function DataTableDensityToggle({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Row Density</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("table.density_label")}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={density}
           onValueChange={(v) => onDensityChange(v as TableDensity)}
         >
-          <DropdownMenuRadioItem value="compact">Compact</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="normal">Normal</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="compact">
+            {t("table.density_compact")}
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="normal">
+            {t("table.density_normal")}
+          </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="comfortable">
-            Comfortable
+            {t("table.density_comfortable")}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>

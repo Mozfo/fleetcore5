@@ -82,6 +82,107 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   recovery_notification_clicked_at: false,
 };
 
+// ── Sidebar filter parsers (shared with sidebar component) ───────────────
+
+/**
+ * nuqs parsers for sidebar-only filters.
+ * These are READ by the hook (for Refine data-fetching) and
+ * READ+WRITTEN by the sidebar component (for UI).
+ * nuqs deduplicates across multiple useQueryStates calls.
+ */
+export const SIDEBAR_FILTER_PARSERS = {
+  // Multi-select (CSV → Prisma IN)
+  lead_stage: parseAsArrayOf(parseAsString, ","),
+  source: parseAsArrayOf(parseAsString, ","),
+  fleet_size: parseAsArrayOf(parseAsString, ","),
+  language: parseAsArrayOf(parseAsString, ","),
+  industry: parseAsArrayOf(parseAsString, ","),
+  country_code: parseAsArrayOf(parseAsString, ","),
+  loss_reason_code: parseAsArrayOf(parseAsString, ","),
+  disqualification_reason: parseAsArrayOf(parseAsString, ","),
+  platforms_used: parseAsArrayOf(parseAsString, ","),
+  // Range (min/max → Prisma gte/lte)
+  min_qualification_score: parseAsInteger,
+  max_qualification_score: parseAsInteger,
+  min_fit_score: parseAsInteger,
+  max_fit_score: parseAsInteger,
+  min_engagement_score: parseAsInteger,
+  max_engagement_score: parseAsInteger,
+  // Date range (ISO strings → Prisma gte/lte)
+  min_last_activity_at: parseAsString,
+  max_last_activity_at: parseAsString,
+  min_created_at: parseAsString,
+  max_created_at: parseAsString,
+  min_next_action_date: parseAsString,
+  max_next_action_date: parseAsString,
+  min_booking_slot_at: parseAsString,
+  max_booking_slot_at: parseAsString,
+  // Boolean (string "true"/"false" → Prisma eq)
+  email_verified: parseAsString,
+  callback_requested: parseAsString,
+  gdpr_consent: parseAsString,
+  attendance_confirmed: parseAsString,
+  wizard_completed: parseAsString,
+} as const;
+
+export type SidebarFilterValues = {
+  [K in keyof typeof SIDEBAR_FILTER_PARSERS]: ReturnType<
+    (typeof SIDEBAR_FILTER_PARSERS)[K]["parseServerSide"]
+  >;
+};
+
+/**
+ * Convert sidebar filter values (from nuqs) into CrudFilter[] for Refine.
+ * Uses the same operator conventions as refine-mappers.ts.
+ */
+function sidebarToCrudFilters(
+  values: Record<string, string | string[] | number | null>
+): CrudFilter[] {
+  const filters: CrudFilter[] = [];
+
+  for (const [key, value] of Object.entries(values)) {
+    if (value === null || value === undefined) continue;
+
+    // Multi-select arrays → "in" operator
+    if (Array.isArray(value) && value.length > 0) {
+      filters.push({ field: key, operator: "in", value });
+      continue;
+    }
+
+    // Range params: min_X → { field: X, operator: gte }
+    if (key.startsWith("min_")) {
+      const field = key.slice(4); // strip "min_"
+      if (typeof value === "number") {
+        filters.push({ field, operator: "gte", value });
+      } else if (typeof value === "string" && value) {
+        filters.push({ field, operator: "gte", value });
+      }
+      continue;
+    }
+
+    // Range params: max_X → { field: X, operator: lte }
+    if (key.startsWith("max_")) {
+      const field = key.slice(4); // strip "max_"
+      if (typeof value === "number") {
+        filters.push({ field, operator: "lte", value });
+      } else if (typeof value === "string" && value) {
+        filters.push({ field, operator: "lte", value });
+      }
+      continue;
+    }
+
+    // Boolean string → "eq" operator
+    if (value === "true" || value === "false") {
+      filters.push({ field: key, operator: "eq", value });
+      continue;
+    }
+  }
+
+  return filters;
+}
+
+// ── Hook ─────────────────────────────────────────────────────────────────
+
 interface UseLeadsTableProps {
   columns: ColumnDef<Lead>[];
   initialPageSize?: number;
@@ -119,8 +220,8 @@ export function useLeadsTable({
     [sorting]
   );
 
-  // Build filter parsers from filterable columns (mirrors useDataTable logic)
-  const filterParsers = React.useMemo(() => {
+  // ── Column filters (toolbar: status, priority, company_name) ──────────
+  const columnFilterParsers = React.useMemo(() => {
     return columns
       .filter((c) => c.enableColumnFilter)
       .reduce<Record<string, Parser<string> | Parser<string[]>>>((acc, col) => {
@@ -131,10 +232,10 @@ export function useLeadsTable({
       }, {});
   }, [columns]);
 
-  const [filterValues] = useQueryStates(filterParsers);
+  const [columnFilterValues] = useQueryStates(columnFilterParsers);
 
-  const filters = React.useMemo<CrudFilter[]>(() => {
-    return Object.entries(filterValues).reduce<CrudFilter[]>(
+  const columnFilters = React.useMemo<CrudFilter[]>(() => {
+    return Object.entries(columnFilterValues).reduce<CrudFilter[]>(
       (acc, [key, value]) => {
         if (value === null || value === undefined) return acc;
         if (Array.isArray(value) && value.length > 0) {
@@ -146,7 +247,21 @@ export function useLeadsTable({
       },
       []
     );
-  }, [filterValues]);
+  }, [columnFilterValues]);
+
+  // ── Sidebar filters (all additional filter categories) ────────────────
+  const [sidebarValues] = useQueryStates(SIDEBAR_FILTER_PARSERS);
+
+  const sidebarFilters = React.useMemo<CrudFilter[]>(
+    () => sidebarToCrudFilters(sidebarValues),
+    [sidebarValues]
+  );
+
+  // ── Merge all filters ─────────────────────────────────────────────────
+  const filters = React.useMemo<CrudFilter[]>(
+    () => [...columnFilters, ...sidebarFilters],
+    [columnFilters, sidebarFilters]
+  );
 
   // ── Refine data fetching ──────────────────────────────────────────────
   const { query, result } = useList<Lead>({

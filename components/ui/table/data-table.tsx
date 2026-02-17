@@ -4,8 +4,9 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import * as React from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import * as React from "react";
+import { useTranslation } from "react-i18next";
 
 import { DataTablePagination } from "@/components/ui/table/data-table-pagination";
 import {
@@ -51,6 +52,8 @@ export function DataTable<TData>({
   renderExpandedRow,
   getRowClassName,
 }: DataTableProps<TData>) {
+  const { t } = useTranslation("common");
+
   // ── Scroll container ref (for virtualizer) ──────────────────────
   const [scrollElement, setScrollElement] = React.useState<HTMLElement | null>(
     null
@@ -304,7 +307,7 @@ export function DataTable<TData>({
                 ) : (
                   <TableRow>
                     <TableCell colSpan={colCount} className="h-24 text-center">
-                      No results.
+                      {t("table.no_results")}
                     </TableCell>
                   </TableRow>
                 )}

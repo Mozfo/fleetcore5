@@ -107,6 +107,8 @@
         "wizard_completed": "Wizard complété",
         "booking_date": "Date de démo"
       },
+      "from": "Du",
+      "to": "Au",
       "boolean": {
         "yes": "Oui",
         "no": "Non"
