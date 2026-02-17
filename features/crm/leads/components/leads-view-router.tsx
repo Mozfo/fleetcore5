@@ -4,26 +4,14 @@ import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import PageContainer from "@/components/layout/page-container";
-import { LeadsPageClient } from "@/components/crm/leads/LeadsPageClient";
 import { ViewToggle, type ViewMode } from "@/components/crm/leads/ViewToggle";
 
 import { LeadsListPage } from "./leads-list-page";
+import { LeadsKanbanPage } from "./leads-kanban-page";
 
 const VIEW_MODE_STORAGE_KEY = "crm_leads_view";
 
-interface LeadsViewRouterProps {
-  allLeads: Parameters<typeof LeadsPageClient>[0]["allLeads"];
-  countries: Parameters<typeof LeadsPageClient>[0]["countries"];
-  owners: Parameters<typeof LeadsPageClient>[0]["owners"];
-  initialFilters: Parameters<typeof LeadsPageClient>[0]["initialFilters"];
-}
-
-export function LeadsViewRouter({
-  allLeads,
-  countries,
-  owners,
-  initialFilters,
-}: LeadsViewRouterProps) {
+export function LeadsViewRouter() {
   const { t } = useTranslation("crm");
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [total, setTotal] = useState<number | null>(null);
@@ -51,13 +39,17 @@ export function LeadsViewRouter({
 
   if (viewMode === "kanban") {
     return (
-      <LeadsPageClient
-        allLeads={allLeads}
-        countries={countries}
-        owners={owners}
-        initialFilters={initialFilters}
-        onViewModeChange={handleViewModeChange}
-      />
+      <PageContainer
+        pageTitle={t("leads.title")}
+        pageDescription={t("leads.page_description", {
+          defaultValue: "Manage your leads pipeline",
+        })}
+        pageHeaderAction={
+          <ViewToggle value={viewMode} onChange={handleViewModeChange} />
+        }
+      >
+        <LeadsKanbanPage />
+      </PageContainer>
     );
   }
 
