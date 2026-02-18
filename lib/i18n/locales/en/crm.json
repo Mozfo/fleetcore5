@@ -254,8 +254,27 @@
         "reactivate_callback": "Request Callback",
         "reactivate_callback_desc": "Schedule a callback with the lead",
         "reactivate_demo": "Schedule Demo",
-        "reactivate_demo_desc": "Book a new product demonstration"
+        "reactivate_demo_desc": "Book a new product demonstration",
+        "section_title": "Status change: {{from}} \u2192 {{to}}",
+        "confirming": "Confirming transition...",
+        "auto_confirm_message": "This transition will be applied automatically."
       }
+    },
+    "step_actions": {
+      "section_title": "Next Steps",
+      "book_demo": "Book a Demo",
+      "send_quotation": "Send Quotation",
+      "not_interested": "Not Interested",
+      "move_nurturing": "Move to Nurturing",
+      "reactivate_callback": "Reactivate — Callback",
+      "reactivate_demo": "Reactivate — Demo",
+      "coming_soon": "Coming soon",
+      "reason_placeholder": "Add a note (optional)...",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "confirming": "Confirming...",
+      "success": "Status updated successfully",
+      "error": "Failed to update status"
     },
     "modal": {
       "title_create": "Create New Lead",

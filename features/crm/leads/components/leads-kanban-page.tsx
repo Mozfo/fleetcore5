@@ -3,6 +3,7 @@
 import { Filter } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { useParams, useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,25 +12,34 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { LeadDrawer } from "@/components/crm/leads/LeadDrawer";
 import { cn } from "@/lib/utils";
 import { useTablePreferences } from "@/hooks/use-table-preferences";
+import { useSalesOwners } from "@/lib/hooks/useSalesOwners";
 
 import { LeadsFilterSidebar } from "./leads-filter-sidebar";
 import { LeadsKanbanBoardComponent } from "./leads-kanban-board";
 import { LeadsCreateDialog } from "./leads-create-dialog";
-import { LeadsEditDrawer } from "./leads-edit-drawer";
+import type { Lead } from "../types/lead.types";
 import {
-  CallbackTransitionModal,
-  DemoTransitionModal,
-  LostToNurturingModal,
-  NurturingReactivationModal,
-} from "./transition-modals";
-import { useLeadsKanban } from "../hooks/use-leads-kanban";
+  useLeadsKanban,
+  type PendingTransition,
+} from "../hooks/use-leads-kanban";
+
+// ── Drawer state ────────────────────────────────────────────────────
+
+interface DrawerState {
+  lead: Lead;
+  transition: PendingTransition | null;
+}
 
 // ── Component ───────────────────────────────────────────────────────
 
 export function LeadsKanbanPage() {
   const { t } = useTranslation("crm");
+  const router = useRouter();
+  const params = useParams();
+  const locale = (params.locale as string) || "en";
 
   // Table preferences (sidebar persistence)
   const { preferences, save: savePreferences } = useTablePreferences("leads");
@@ -38,7 +48,9 @@ export function LeadsKanbanPage() {
   );
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
   const [createOpen, setCreateOpen] = React.useState(false);
-  const [editLeadId, setEditLeadId] = React.useState<string | null>(null);
+  const [drawerState, setDrawerState] = React.useState<DrawerState | null>(
+    null
+  );
 
   const handleSidebarToggle = React.useCallback(() => {
     setSidebarOpen((prev) => {
@@ -47,6 +59,9 @@ export function LeadsKanbanPage() {
       return next;
     });
   }, [savePreferences]);
+
+  // Sales owners for assignment dropdown
+  const { owners } = useSalesOwners();
 
   // Kanban hook
   const {
@@ -59,62 +74,54 @@ export function LeadsKanbanPage() {
     confirmTransition,
   } = useLeadsKanban();
 
-  // Determine which transition modal to show based on source status
-  const transitionModalType = React.useMemo(() => {
-    if (!pendingTransition) return null;
-    const { fromStatus, toStatus } = pendingTransition;
+  // Helper: find lead by ID across all columns
+  const findLeadById = React.useCallback(
+    (leadId: string): Lead | undefined => {
+      for (const status of columnOrder) {
+        const found = columns[status]?.find((l) => l.id === leadId);
+        if (found) return found;
+      }
+      return undefined;
+    },
+    [columns, columnOrder]
+  );
 
-    if (fromStatus === "callback_requested") return "callback";
-    if (fromStatus === "demo") return "demo";
-    if (fromStatus === "lost" && toStatus === "nurturing")
-      return "lost_to_nurturing";
-    if (fromStatus === "nurturing") return "nurturing_reactivation";
-    if (fromStatus === "proposal_sent") return "proposal_sent";
+  // Open drawer on card click (view mode, no transition)
+  const handleViewLead = React.useCallback(
+    (leadId: string) => {
+      const lead = findLeadById(leadId);
+      if (lead) setDrawerState({ lead, transition: null });
+    },
+    [findLeadById]
+  );
 
-    return null;
+  // Open drawer on drag & drop transition
+  React.useEffect(() => {
+    if (pendingTransition) {
+      setDrawerState({
+        lead: pendingTransition.lead,
+        transition: pendingTransition,
+      });
+    }
   }, [pendingTransition]);
 
-  // For proposal_sent transitions, execute directly (no modal per spec)
-  React.useEffect(() => {
-    if (transitionModalType === "proposal_sent" && pendingTransition) {
-      // proposal_sent transitions are automatic per spec
-      // In the kanban, allow direct move to lost/nurturing/converted
-      void import("@/lib/actions/crm/lead.actions").then(
-        ({ updateLeadStatusAction }) => {
-          void import("sonner").then(({ toast }) => {
-            void updateLeadStatusAction(
-              pendingTransition.leadId,
-              pendingTransition.toStatus,
-              {
-                lossReasonCode:
-                  pendingTransition.toStatus === "lost"
-                    ? "proposal_rejected"
-                    : undefined,
-                nurturingReasonCode:
-                  pendingTransition.toStatus === "nurturing"
-                    ? "proposal_no_response"
-                    : undefined,
-              }
-            ).then((result) => {
-              if (result.success) {
-                toast.success(t("leads.kanban.transition.success"));
-                confirmTransition();
-              } else {
-                toast.error(result.error || t("leads.kanban.transition.error"));
-                cancelTransition();
-              }
-            });
-          });
-        }
-      );
-    }
-  }, [
-    transitionModalType,
-    pendingTransition,
-    confirmTransition,
-    cancelTransition,
-    t,
-  ]);
+  // Close drawer handler
+  const handleDrawerClose = React.useCallback(() => {
+    if (drawerState?.transition) cancelTransition();
+    setDrawerState(null);
+  }, [drawerState?.transition, cancelTransition]);
+
+  // Transition confirmed
+  const handleTransitionComplete = React.useCallback(() => {
+    confirmTransition();
+    setDrawerState(null);
+  }, [confirmTransition]);
+
+  // Transition cancelled
+  const handleTransitionCancel = React.useCallback(() => {
+    cancelTransition();
+    setDrawerState(null);
+  }, [cancelTransition]);
 
   return (
     <div className="flex min-h-0 flex-1 gap-4 p-4">
@@ -169,45 +176,24 @@ export function LeadsKanbanPage() {
           columnOrder={columnOrder}
           isLoading={isLoading}
           onColumnsChange={handleColumnsChange}
-          onView={(id) => setEditLeadId(id)}
-          onEdit={(id) => setEditLeadId(id)}
+          onView={handleViewLead}
+          onEdit={handleViewLead}
         />
       </div>
 
       {/* Dialogs */}
       <LeadsCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <LeadsEditDrawer
-        open={editLeadId !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditLeadId(null);
-        }}
-        leadId={editLeadId}
-      />
 
-      {/* Transition Modals */}
-      <CallbackTransitionModal
-        open={transitionModalType === "callback"}
-        lead={pendingTransition?.lead ?? null}
-        onClose={cancelTransition}
-        onConfirm={confirmTransition}
-      />
-      <DemoTransitionModal
-        open={transitionModalType === "demo"}
-        lead={pendingTransition?.lead ?? null}
-        onClose={cancelTransition}
-        onConfirm={confirmTransition}
-      />
-      <LostToNurturingModal
-        open={transitionModalType === "lost_to_nurturing"}
-        lead={pendingTransition?.lead ?? null}
-        onClose={cancelTransition}
-        onConfirm={confirmTransition}
-      />
-      <NurturingReactivationModal
-        open={transitionModalType === "nurturing_reactivation"}
-        lead={pendingTransition?.lead ?? null}
-        onClose={cancelTransition}
-        onConfirm={confirmTransition}
+      {/* Lead Drawer (replaces both edit drawer and transition modals) */}
+      <LeadDrawer
+        lead={drawerState?.lead ?? null}
+        isOpen={drawerState !== null}
+        onClose={handleDrawerClose}
+        onOpenFullPage={(id) => router.push(`/${locale}/crm/leads/${id}`)}
+        owners={owners}
+        transition={drawerState?.transition ?? null}
+        onTransitionComplete={handleTransitionComplete}
+        onTransitionCancel={handleTransitionCancel}
       />
     </div>
   );

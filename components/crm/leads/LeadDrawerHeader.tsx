@@ -46,19 +46,6 @@ function getCompanyInitials(companyName: string | null): string {
 }
 
 /**
- * Get score color based on value
- */
-function getScoreColor(score: number | null): string {
-  if (score === null)
-    return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
-  if (score < 40)
-    return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-  if (score < 70)
-    return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
-  return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-}
-
-/**
  * Get priority badge variant
  */
 function getPriorityVariant(
@@ -143,20 +130,6 @@ export function LeadDrawerHeader({
           </Badge>
         </motion.div>
 
-        {/* Score Badge */}
-        <motion.div variants={badgeVariants}>
-          <Badge
-            className={cn(
-              "text-xs font-medium",
-              getScoreColor(lead.qualification_score)
-            )}
-          >
-            {lead.qualification_score !== null
-              ? `${lead.qualification_score}/100`
-              : "—"}
-          </Badge>
-        </motion.div>
-
         {/* Priority Badge */}
         {lead.priority && (
           <motion.div variants={badgeVariants}>
@@ -181,7 +154,7 @@ export function LeadDrawerHeader({
                 "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
             )}
           >
-            {t(`leads.columns.${lead.status}`)}
+            {t(`leads.status.${lead.status}`)}
           </Badge>
         </motion.div>
       </motion.div>

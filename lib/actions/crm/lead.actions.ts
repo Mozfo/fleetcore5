@@ -29,11 +29,12 @@ import type { LeadStatus } from "@/types/crm";
 const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // Schema de validation pour status update (Kanban)
-// V6.3: 8 statuts (removed demo_scheduled, qualified, demo_completed)
+// V6.6: 9 statuts (added callback_requested)
 const UpdateStatusSchema = z.object({
   leadId: z.string().uuid("Invalid lead ID"),
   status: z.enum([
     "new",
+    "callback_requested",
     "demo",
     "proposal_sent",
     "payment_pending",

@@ -1,7 +1,7 @@
 "use client";
 
-import { memo, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { memo } from "react";
+import { useParams } from "next/navigation";
 import { AlertTriangle, Car, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -105,16 +105,10 @@ export const LeadsKanbanCard = memo(
     const { t } = useTranslation("crm");
     const params = useParams();
     const locale = (params.locale as string) || "en";
-    const router = useRouter();
     const { getLabel: getStageLabel } = useLeadStages();
 
     const score = lead.qualification_score;
     const overdueDays = getOverdueDays(lead);
-
-    // Double-click → navigate to lead detail page
-    const handleDoubleClick = useCallback(() => {
-      router.push(`/${locale}/crm/leads/${lead.id}`);
-    }, [router, locale, lead.id]);
 
     return (
       <KanbanItem value={lead.id} asHandle>
@@ -128,7 +122,7 @@ export const LeadsKanbanCard = memo(
           onDelete={() => onDelete?.(lead.id)}
         >
           <Card
-            onDoubleClick={handleDoubleClick}
+            onClick={() => onView?.(lead.id)}
             className={cn(
               "bg-background cursor-grab border p-3 shadow-sm transition-shadow hover:shadow-md",
               overdueDays !== null && "ring-2 ring-red-500/50"
