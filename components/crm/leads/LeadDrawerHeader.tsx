@@ -104,7 +104,7 @@ export function LeadDrawerHeader({
           <button
             type="button"
             onClick={handleCopyCode}
-            className="text-muted-foreground hover:text-primary rounded p-1 transition-colors"
+            className="text-muted-foreground hover:text-primary cursor-pointer rounded p-1 transition-colors"
             title={t("leads.drawer.actions.copy")}
           >
             <Copy className="h-4 w-4" />

@@ -85,8 +85,8 @@ export function InlineActivityForm({
   };
 
   return (
-    <div className="border-border border-l-primary bg-primary/5 space-y-3 rounded-lg border border-l-4 p-4">
-      <h4 className="text-primary text-xs font-semibold tracking-wider uppercase">
+    <div className="border-border border-l-foreground/20 space-y-3 rounded-lg border border-l-4 p-4">
+      <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
         {t("leads.inline_activity.section_title")}
       </h4>
 
@@ -98,9 +98,9 @@ export function InlineActivityForm({
             type="button"
             onClick={() => setActivityType(id)}
             className={cn(
-              "flex items-center justify-center rounded-md p-2 text-sm transition-colors",
+              "flex cursor-pointer items-center justify-center rounded-md p-2 text-sm transition-colors",
               activityType === id
-                ? "bg-primary text-primary-foreground"
+                ? "bg-foreground text-background"
                 : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
             title={t(`leads.timeline.types.${id}`)}

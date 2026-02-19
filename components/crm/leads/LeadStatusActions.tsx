@@ -253,17 +253,46 @@ export function LeadStatusActions({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingTransition?.toStatus]);
 
-  // ── Force Cal.com UI config after mount (workaround for #9577) ─────
+  // ── Cal.com embed: UI config + booking event listener ──────────────
   useEffect(() => {
     if (!showCalEmbed) return;
+    let dismissed = false;
+
     void (async () => {
       const cal = await getCalApi({ namespace: "fleetcore-demo" });
+
+      // Workaround for #9577 — force hideEventTypeDetails via "ui" API
       cal("ui", {
         hideEventTypeDetails: true,
         layout: "week_view",
       });
+
+      // Listen for successful booking → update status + auto-close
+      cal("on", {
+        action: "bookingSuccessfulV2",
+        callback: () => {
+          if (dismissed) return;
+          dismissed = true;
+
+          // Transition lead to "demo" status
+          void updateLeadStatusAction(lead.id, "demo", {
+            reasonDetail: "Demo booked via Cal.com",
+          }).then((result) => {
+            if (result.success) {
+              toast.success(t("leads.step_actions.success"));
+              void invalidate({ resource: "leads", invalidates: ["list"] });
+            }
+          });
+
+          // Auto-dismiss Cal embed after 3 seconds
+          setTimeout(() => {
+            onShowCalEmbed?.(false);
+            onStatusChanged();
+          }, 3000);
+        },
+      });
     })();
-  }, [showCalEmbed]);
+  }, [showCalEmbed, lead.id, t, invalidate, onShowCalEmbed, onStatusChanged]);
 
   // ── Handle drag confirm (TransitionActionSection logic) ────────────
 
@@ -599,7 +628,7 @@ export function LeadStatusActions({
                 onClick={() => handleActionClick(action)}
                 disabled={action.isDisabled || isSubmitting}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg border-2 px-4 py-3 text-left text-sm font-medium transition-all",
+                  "flex w-full cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 text-left text-sm font-medium transition-all",
                   action.isDisabled
                     ? "border-muted bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60"
                     : isSelected
