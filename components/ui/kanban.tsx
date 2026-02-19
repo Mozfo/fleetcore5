@@ -680,7 +680,7 @@ const KanbanBoard = React.forwardRef<HTMLDivElement, KanbanBoardProps>(
             {...boardProps}
             ref={forwardedRef}
             className={cn(
-              "flex gap-4",
+              "flex size-full gap-4",
               context.orientation === "horizontal" ? "flex-row" : "flex-col",
               className
             )}
@@ -820,7 +820,7 @@ const KanbanColumn = React.forwardRef<HTMLDivElement, KanbanColumnProps>(
             ref={composedRef}
             style={composedStyle}
             className={cn(
-              "bg-muted flex flex-col gap-2 rounded-lg p-2.5",
+              "bg-muted flex size-full flex-col gap-2 rounded-lg p-2.5",
               {
                 "touch-none select-none": asHandle,
                 "cursor-default": context.flatCursor || disabled,

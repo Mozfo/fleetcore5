@@ -10,12 +10,12 @@ import {
   Column as KanbanColumn,
   Overlay as KanbanOverlay,
 } from "@/components/ui/kanban";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
+import { getStatusConfig } from "@/lib/config/pipeline-status";
 import { cn } from "@/lib/utils";
 import type { Lead } from "../types/lead.types";
-import { LeadsKanbanCard, STATUS_DOT_COLOR } from "./leads-kanban-card";
+import { LeadsKanbanCard } from "./leads-kanban-card";
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -53,33 +53,34 @@ export function LeadsKanbanBoardComponent({
       onValueChange={onColumnsChange}
       getItemValue={(lead: Lead) => lead.id}
     >
-      <KanbanBoard className="gap-3 pb-4">
+      <KanbanBoard className="flex w-full gap-2 pb-4">
         {columnOrder.map((status) => {
           const leads = columns[status] ?? [];
-          const dotColor = STATUS_DOT_COLOR[status] ?? "bg-gray-400";
 
           return (
             <KanbanColumn
               key={status}
               value={status}
-              className="min-w-[160px] flex-1"
+              className="bg-accent flex-1 p-1.5"
               disabled
             >
               {/* Column header */}
-              <div className="mb-2 flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <div className={cn("size-2.5 rounded-full", dotColor)} />
-                  <span className="text-sm font-semibold">
-                    {getLabel(status, locale)}
-                  </span>
-                  <Badge variant="secondary" className="text-xs">
-                    {leads.length}
-                  </Badge>
-                </div>
+              <div
+                className={cn(
+                  "flex items-center justify-between rounded-md px-3 py-1.5",
+                  getStatusConfig(status).bgMedium
+                )}
+              >
+                <span className="text-foreground text-sm font-semibold">
+                  {getLabel(status, locale)}
+                </span>
+                <span className="text-foreground/60 text-sm font-medium">
+                  {leads.length}
+                </span>
               </div>
 
               {/* Cards */}
-              <div className="flex flex-col gap-2 p-0.5">
+              <div className="flex flex-col gap-2">
                 {leads.map((lead) => (
                   <LeadsKanbanCard
                     key={lead.id}
@@ -89,7 +90,7 @@ export function LeadsKanbanBoardComponent({
                   />
                 ))}
                 {leads.length === 0 && (
-                  <div className="text-muted-foreground flex h-20 items-center justify-center rounded-md border border-dashed text-xs">
+                  <div className="text-muted-foreground flex flex-col justify-center gap-4 pt-4 text-center text-sm">
                     {t("leads.kanban.empty_column")}
                   </div>
                 )}
@@ -114,19 +115,18 @@ export function LeadsKanbanBoardComponent({
 
 function KanbanSkeleton() {
   return (
-    <div className="flex gap-3 pb-4">
+    <div className="flex gap-2 pb-4">
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="bg-muted flex min-w-[160px] flex-1 flex-col gap-2 rounded-lg p-2.5"
+          className="bg-accent flex flex-1 flex-col gap-2 rounded-lg p-1.5"
         >
-          <div className="mb-2 flex items-center gap-2 px-1">
-            <Skeleton className="size-2.5 rounded-full" />
+          <div className="mb-2 flex items-center justify-between px-1">
             <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-5 w-8 rounded-full" />
+            <Skeleton className="h-4 w-6" />
           </div>
           {Array.from({ length: 3 }).map((_, j) => (
-            <Skeleton key={j} className="h-32 w-full rounded-md" />
+            <Skeleton key={j} className="h-40 w-full rounded-xl" />
           ))}
         </div>
       ))}

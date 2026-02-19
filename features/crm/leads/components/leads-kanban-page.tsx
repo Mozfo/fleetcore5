@@ -13,7 +13,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { LeadDrawer } from "@/components/crm/leads/LeadDrawer";
-import { cn } from "@/lib/utils";
 import { useTablePreferences } from "@/hooks/use-table-preferences";
 import { useSalesOwners } from "@/lib/hooks/useSalesOwners";
 
@@ -124,18 +123,15 @@ export function LeadsKanbanPage() {
   }, [cancelTransition]);
 
   return (
-    <div className="flex min-h-0 flex-1 gap-4 p-4">
+    <div className="flex min-h-0 flex-1 gap-4">
       {/* Desktop sidebar */}
-      <aside
-        className={cn(
-          "hidden shrink-0 md:block",
-          sidebarOpen ? "w-64" : "w-0 overflow-hidden"
-        )}
-      >
-        <div className="bg-card sticky top-0 h-[calc(100vh-12rem)] overflow-hidden rounded-lg border shadow-sm">
-          <LeadsFilterSidebar />
-        </div>
-      </aside>
+      {sidebarOpen && (
+        <aside className="hidden w-64 shrink-0 md:block">
+          <div className="bg-card sticky top-0 h-[calc(100vh-12rem)] overflow-hidden rounded-lg border shadow-sm">
+            <LeadsFilterSidebar />
+          </div>
+        </aside>
+      )}
 
       {/* Mobile sheet */}
       <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>

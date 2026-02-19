@@ -225,7 +225,7 @@
     },
     "kanban": {
       "empty_column": "No leads in this stage",
-      "overdue_days": "Overdue — {{count}} days without callback",
+      "overdue_days": "Overdue — {{count}}d",
       "transition": {
         "success": "Lead status updated successfully",
         "error": "Failed to update lead status",
