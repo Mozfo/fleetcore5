@@ -177,7 +177,9 @@ export function getLeadColumns(
             : undefined;
         return (
           <div className="flex items-center gap-1.5">
-            <span className="font-medium">{lead.lead_code ?? "—"}</span>
+            <span className="text-primary font-mono font-medium">
+              {lead.lead_code ?? "—"}
+            </span>
             {dotColor && (
               <span
                 title={scoreTitle}

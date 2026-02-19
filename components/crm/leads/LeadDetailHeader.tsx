@@ -25,6 +25,7 @@ import {
   Target,
   TrendingUp,
   Flag,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,8 +36,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { Lead, LeadStatus } from "@/types/crm";
+import { getStatusBadgeColor } from "@/lib/utils/status-colors";
+import type { Lead } from "@/types/crm";
 import { LeadSearchCommand } from "./LeadSearchCommand";
 
 interface LeadNavigation {
@@ -59,32 +62,7 @@ interface LeadDetailHeaderProps {
   navigation: LeadNavigation;
 }
 
-// Status colors and labels
-const statusConfig: Record<
-  LeadStatus,
-  { bg: string; text: string; label: string }
-> = {
-  new: {
-    bg: "bg-blue-100 dark:bg-blue-900/30",
-    text: "text-blue-700 dark:text-blue-300",
-    label: "New",
-  },
-  working: {
-    bg: "bg-amber-100 dark:bg-amber-900/30",
-    text: "text-amber-700 dark:text-amber-300",
-    label: "Working",
-  },
-  qualified: {
-    bg: "bg-emerald-100 dark:bg-emerald-900/30",
-    text: "text-emerald-700 dark:text-emerald-300",
-    label: "Qualified",
-  },
-  lost: {
-    bg: "bg-gray-100 dark:bg-gray-800",
-    text: "text-gray-600 dark:text-gray-400",
-    label: "Lost",
-  },
-};
+// Status colors now from centralized mapping (lib/utils/status-colors.ts)
 
 // Get company initials for avatar
 function getCompanyInitials(companyName: string | null): string {
@@ -99,26 +77,23 @@ function getCompanyInitials(companyName: string | null): string {
 
 // Score badge color based on value
 function getScoreColor(score: number | null): string {
-  if (score === null)
-    return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
-  if (score >= 70)
-    return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300";
-  if (score >= 40)
-    return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300";
-  return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+  if (score === null) return "bg-muted text-muted-foreground";
+  if (score >= 70) return "bg-status-converted/20 text-status-converted";
+  if (score >= 40) return "bg-status-proposal/20 text-status-proposal";
+  return "bg-status-lost/20 text-status-lost";
 }
 
 // Priority badge color
 function getPriorityColor(priority: string | null): string {
   switch (priority) {
     case "urgent":
-      return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+      return "bg-destructive/20 text-destructive";
     case "high":
-      return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300";
+      return "bg-status-proposal/20 text-status-proposal";
     case "medium":
-      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300";
+      return "bg-status-proposal/10 text-status-proposal";
     default:
-      return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
+      return "bg-muted text-muted-foreground";
   }
 }
 
@@ -141,7 +116,16 @@ export function LeadDetailHeader({
   const contactName = `${lead.first_name || ""} ${lead.last_name || ""}`.trim();
   const companyName =
     lead.company_name || t("leads.drawer.empty.unknown_company");
-  const status = statusConfig[lead.status] || statusConfig.new;
+
+  const handleCopyCode = async () => {
+    if (!lead.lead_code) return;
+    try {
+      await navigator.clipboard.writeText(lead.lead_code);
+      toast.success(`${lead.lead_code} ${t("leads.drawer.actions.copied")}`);
+    } catch {
+      toast.error(t("leads.drawer.actions.copy_failed"));
+    }
+  };
 
   // Navigation handlers
   const goToPrev = () => {
@@ -172,7 +156,7 @@ export function LeadDetailHeader({
   };
 
   return (
-    <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
+    <header className="border-border bg-background shrink-0 border-b px-6 py-4">
       {/* Top Bar: Back button + Navigation */}
       <div className="mb-3 flex items-center justify-between">
         {/* Left: Back */}
@@ -182,7 +166,7 @@ export function LeadDetailHeader({
             variant="ghost"
             size="sm"
             onClick={goBack}
-            className="h-8 gap-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            className="text-muted-foreground hover:text-foreground h-8 gap-1.5"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">
@@ -197,7 +181,7 @@ export function LeadDetailHeader({
           <LeadSearchCommand locale={locale} />
 
           {/* Position Indicator */}
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-muted-foreground text-sm">
             {navigation.currentPosition} / {navigation.totalCount}
           </span>
 
@@ -229,17 +213,34 @@ export function LeadDetailHeader({
 
       {/* Main Header Row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        {/* Left: Avatar + Info (B2B Company-First Design) */}
+        {/* Left: Avatar + Info (Lead Code FIRST, then B2B Company-First) */}
         <div className="flex items-start gap-4">
           {/* Avatar with Company Initials */}
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-bold text-white shadow-lg">
+          <div className="bg-primary text-primary-foreground flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-lg font-bold shadow-lg">
             {getCompanyInitials(lead.company_name)}
           </div>
 
           <div className="min-w-0">
+            {/* Lead Code — FIRST, prominent */}
+            {lead.lead_code && (
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-primary font-mono text-base font-semibold">
+                  {lead.lead_code}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="text-muted-foreground hover:text-primary rounded p-0.5 transition-colors"
+                  title={t("leads.drawer.actions.copy")}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Company Name (H1) + Country Flag */}
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-xl font-semibold text-gray-900 dark:text-white">
+              <h1 className="text-foreground truncate text-xl font-semibold">
                 {companyName}
               </h1>
               {lead.country?.flag_emoji && (
@@ -250,7 +251,7 @@ export function LeadDetailHeader({
             </div>
 
             {/* Contact Info (Secondary) */}
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               {contactName && (
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
@@ -265,7 +266,7 @@ export function LeadDetailHeader({
               )}
               {lead.assigned_to && (
                 <>
-                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                  <span className="text-muted-foreground/50">•</span>
                   <span>
                     {lead.assigned_to.first_name} {lead.assigned_to.last_name}
                   </span>
@@ -275,12 +276,11 @@ export function LeadDetailHeader({
 
             {/* Badges Row: Status, Stage, Score, Priority */}
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              {/* Status Badge */}
+              {/* Status Badge — centralized colors */}
               <span
                 className={cn(
                   "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  status.bg,
-                  status.text
+                  getStatusBadgeColor(lead.status)
                 )}
               >
                 {t(`leads.status.${lead.status}`)}
@@ -288,7 +288,7 @@ export function LeadDetailHeader({
 
               {/* Stage Badge */}
               {lead.lead_stage && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                <span className="bg-status-nurturing/20 text-status-nurturing inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium">
                   <Target className="h-3 w-3" />
                   {t(`leads.card.stage.${lead.lead_stage}`)}
                 </span>
@@ -338,7 +338,7 @@ export function LeadDetailHeader({
                 size="sm"
                 onClick={onSave}
                 disabled={isSaving}
-                className="bg-blue-600 text-white hover:bg-blue-700"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isSaving ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -418,8 +418,8 @@ export function LeadDetailHeader({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className={cn(
-                      "text-red-600 focus:text-red-600 dark:text-red-400",
-                      showDeleteConfirm && "bg-red-50 dark:bg-red-950"
+                      "text-destructive focus:text-destructive",
+                      showDeleteConfirm && "bg-destructive/10"
                     )}
                     onClick={handleDeleteClick}
                   >

@@ -43,6 +43,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { useTranslation } from "react-i18next";
 import { useParams, useRouter } from "next/navigation";
 import { useLeadStages } from "@/lib/hooks/useLeadStages";
+import { getStatusConfig } from "@/lib/config/pipeline-status";
 import { LeadTimeline } from "./LeadTimeline";
 import type { Lead } from "@/types/crm";
 
@@ -61,19 +62,7 @@ interface LeadWorkspaceDialogProps {
   onStatusChange?: (leadId: string, status: string) => void;
 }
 
-// Status badge vivid colors (Salesforce Cosmos)
-const STATUS_BADGE_CLASSES: Record<string, string> = {
-  new: "bg-blue-600 text-white border-blue-600",
-  email_verified: "bg-cyan-600 text-white border-cyan-600",
-  callback_requested: "bg-blue-500 text-white border-blue-500",
-  demo: "bg-indigo-600 text-white border-indigo-600",
-  proposal_sent: "bg-amber-500 text-white border-amber-500",
-  payment_pending: "bg-orange-500 text-white border-orange-500",
-  converted: "bg-green-600 text-white border-green-600",
-  lost: "bg-red-600 text-white border-red-600",
-  nurturing: "bg-teal-500 text-white border-teal-500",
-  disqualified: "bg-gray-500 text-white border-gray-500",
-};
+// Status badge classes from pipeline config (vivid solid bg + white text)
 
 function formatTimeAgo(isoDate: string): string {
   const now = new Date();
@@ -124,8 +113,8 @@ export function LeadWorkspaceDialog({
   if (!lead) return null;
 
   const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(" ");
-  const statusBadgeClass =
-    STATUS_BADGE_CLASSES[lead.status] || STATUS_BADGE_CLASSES.new;
+  const statusCfg = getStatusConfig(lead.status);
+  const statusBadgeClass = `${statusCfg.bg} text-white ${statusCfg.border}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -136,7 +125,7 @@ export function LeadWorkspaceDialog({
         </VisuallyHidden.Root>
 
         {/* ========== HEADER (48px) ========== */}
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 px-4">
+        <div className="border-border flex h-12 shrink-0 items-center justify-between border-b px-4">
           {/* Left: Close + Info */}
           <div className="flex min-w-0 items-center gap-3">
             <Button
@@ -149,14 +138,14 @@ export function LeadWorkspaceDialog({
             </Button>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="truncate text-sm font-semibold text-gray-900">
+                <span className="text-foreground truncate text-sm font-semibold">
                   {lead.company_name || "Unknown"}
                 </span>
                 {lead.country?.flag_emoji && (
                   <span className="text-sm">{lead.country.flag_emoji}</span>
                 )}
               </div>
-              <p className="truncate text-xs text-gray-500">
+              <p className="text-muted-foreground truncate text-xs">
                 {fullName}
                 {lead.phone && ` \u00B7 ${lead.phone}`}
                 {lead.email && ` \u00B7 ${lead.email}`}
@@ -215,14 +204,14 @@ export function LeadWorkspaceDialog({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => onDisqualify?.(lead.id)}
-                  className="text-orange-600 focus:text-orange-600"
+                  className="text-status-proposal focus:text-status-proposal"
                 >
                   <Ban className="mr-2 h-4 w-4" />
                   {t("leads.drawer.actions.disqualify")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => onDelete?.(lead.id)}
-                  className="text-red-600 focus:text-red-600"
+                  className="text-destructive focus:text-destructive"
                 >
                   <Trash className="mr-2 h-4 w-4" />
                   {t("leads.drawer.actions.delete")}
@@ -235,11 +224,11 @@ export function LeadWorkspaceDialog({
         {/* ========== BODY (2 columns) ========== */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Left Column - 60% */}
-          <div className="w-3/5 space-y-3 overflow-y-auto border-r border-gray-200 p-4">
+          <div className="border-border w-3/5 space-y-3 overflow-y-auto border-r p-4">
             {/* Qualification Section */}
-            <section className="rounded-md border border-gray-200">
-              <div className="border-b border-gray-200 bg-gray-50 px-3 py-2">
-                <h3 className="text-xs font-semibold tracking-wide text-gray-700 uppercase">
+            <section className="border-border rounded-md border">
+              <div className="border-border bg-muted/50 border-b px-3 py-2">
+                <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
                   {t("leads.drawer.sections.scoring", {
                     defaultValue: "Qualification",
                   })}
@@ -249,7 +238,7 @@ export function LeadWorkspaceDialog({
                 {lead.qualification_score !== null && (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-500">Score</span>
+                      <span className="text-muted-foreground">Score</span>
                       <span className="font-medium">
                         {lead.qualification_score}/100
                       </span>
@@ -262,16 +251,18 @@ export function LeadWorkspaceDialog({
                 )}
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <span className="text-xs text-gray-500">Stage</span>
-                    <p className="font-medium text-gray-900">
+                    <span className="text-muted-foreground text-xs">Stage</span>
+                    <p className="text-foreground font-medium">
                       {lead.lead_stage
                         ? getStageLabel(lead.lead_stage, locale)
                         : "—"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500">Priority</span>
-                    <p className="font-medium text-gray-900">
+                    <span className="text-muted-foreground text-xs">
+                      Priority
+                    </span>
+                    <p className="text-foreground font-medium">
                       {lead.priority
                         ? t(`leads.card.priority.${lead.priority}`)
                         : "—"}
@@ -282,9 +273,9 @@ export function LeadWorkspaceDialog({
             </section>
 
             {/* Company Info Section */}
-            <section className="rounded-md border border-gray-200">
-              <div className="border-b border-gray-200 bg-gray-50 px-3 py-2">
-                <h3 className="text-xs font-semibold tracking-wide text-gray-700 uppercase">
+            <section className="border-border rounded-md border">
+              <div className="border-border bg-muted/50 border-b px-3 py-2">
+                <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
                   {t("leads.drawer.sections.company", {
                     defaultValue: "Company",
                   })}
@@ -292,39 +283,39 @@ export function LeadWorkspaceDialog({
               </div>
               <div className="p-3">
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  <dt className="flex items-center gap-1 text-gray-500">
+                  <dt className="text-muted-foreground flex items-center gap-1">
                     <Building2 className="h-3 w-3" /> Company
                   </dt>
-                  <dd className="font-medium text-gray-900">
+                  <dd className="text-foreground font-medium">
                     {lead.company_name || "—"}
                   </dd>
 
-                  <dt className="flex items-center gap-1 text-gray-500">
+                  <dt className="text-muted-foreground flex items-center gap-1">
                     <MapPin className="h-3 w-3" /> Country
                   </dt>
-                  <dd className="font-medium text-gray-900">
+                  <dd className="text-foreground font-medium">
                     {lead.country?.flag_emoji}{" "}
                     {lead.country?.country_name_en || lead.country_code || "—"}
                   </dd>
 
-                  <dt className="flex items-center gap-1 text-gray-500">
+                  <dt className="text-muted-foreground flex items-center gap-1">
                     <Car className="h-3 w-3" /> Fleet size
                   </dt>
-                  <dd className="font-medium text-gray-900">
+                  <dd className="text-foreground font-medium">
                     {lead.fleet_size || "—"}
                   </dd>
 
-                  <dt className="flex items-center gap-1 text-gray-500">
+                  <dt className="text-muted-foreground flex items-center gap-1">
                     <Clock className="h-3 w-3" /> Created
                   </dt>
-                  <dd className="font-medium text-gray-900">
+                  <dd className="text-foreground font-medium">
                     {new Date(lead.created_at).toLocaleDateString()}
                   </dd>
 
                   {lead.source && (
                     <>
-                      <dt className="text-gray-500">Source</dt>
-                      <dd className="font-medium text-gray-900">
+                      <dt className="text-muted-foreground">Source</dt>
+                      <dd className="text-foreground font-medium">
                         {lead.source}
                       </dd>
                     </>
@@ -334,9 +325,9 @@ export function LeadWorkspaceDialog({
             </section>
 
             {/* Timeline Section */}
-            <section className="rounded-md border border-gray-200">
-              <div className="border-b border-gray-200 bg-gray-50 px-3 py-2">
-                <h3 className="text-xs font-semibold tracking-wide text-gray-700 uppercase">
+            <section className="border-border rounded-md border">
+              <div className="border-border bg-muted/50 border-b px-3 py-2">
+                <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
                   Timeline
                 </h3>
               </div>
@@ -349,15 +340,15 @@ export function LeadWorkspaceDialog({
           {/* Right Column - 40% */}
           <div className="w-2/5 space-y-3 overflow-y-auto p-4">
             {/* Status & Actions Section */}
-            <section className="rounded-md border border-gray-200">
-              <div className="border-b border-gray-200 bg-gray-50 px-3 py-2">
-                <h3 className="text-xs font-semibold tracking-wide text-gray-700 uppercase">
+            <section className="border-border rounded-md border">
+              <div className="border-border bg-muted/50 border-b px-3 py-2">
+                <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
                   Status
                 </h3>
               </div>
               <div className="space-y-3 p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Current</span>
+                  <span className="text-muted-foreground text-sm">Current</span>
                   <Badge
                     variant="outline"
                     className={`text-xs ${statusBadgeClass}`}
@@ -387,7 +378,7 @@ export function LeadWorkspaceDialog({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 w-full text-xs text-orange-600"
+                    className="text-status-proposal h-7 w-full text-xs"
                     onClick={() => onDisqualify?.(lead.id)}
                   >
                     <Ban className="mr-1 h-3 w-3" />
@@ -396,7 +387,7 @@ export function LeadWorkspaceDialog({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 w-full text-xs text-red-600"
+                    className="text-destructive h-7 w-full text-xs"
                     onClick={() => onDelete?.(lead.id)}
                   >
                     <Trash className="mr-1 h-3 w-3" />
@@ -405,8 +396,10 @@ export function LeadWorkspaceDialog({
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Assigned to</span>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-muted-foreground text-sm">
+                    Assigned to
+                  </span>
+                  <span className="text-foreground text-sm font-medium">
                     {lead.assigned_to
                       ? `${lead.assigned_to.first_name} ${lead.assigned_to.last_name || ""}`
                       : "Unassigned"}
@@ -416,9 +409,9 @@ export function LeadWorkspaceDialog({
             </section>
 
             {/* Quick Contact Section */}
-            <section className="rounded-md border border-gray-200">
-              <div className="border-b border-gray-200 bg-gray-50 px-3 py-2">
-                <h3 className="text-xs font-semibold tracking-wide text-gray-700 uppercase">
+            <section className="border-border rounded-md border">
+              <div className="border-border bg-muted/50 border-b px-3 py-2">
+                <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
                   Quick Contact
                 </h3>
               </div>
@@ -449,7 +442,7 @@ export function LeadWorkspaceDialog({
                     </Button>
                   )}
                 </div>
-                <div className="space-y-1 text-xs text-gray-500">
+                <div className="text-muted-foreground space-y-1 text-xs">
                   {lead.email && (
                     <p className="flex items-center gap-1">
                       <Mail className="h-3 w-3" /> {lead.email}
@@ -461,7 +454,7 @@ export function LeadWorkspaceDialog({
                     </p>
                   )}
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-muted-foreground/70 text-xs">
                   Last updated:{" "}
                   {lead.updated_at ? formatTimeAgo(lead.updated_at) : "—"}
                 </p>
@@ -469,30 +462,30 @@ export function LeadWorkspaceDialog({
             </section>
 
             {/* Assignment Section */}
-            <section className="rounded-md border border-gray-200">
-              <div className="border-b border-gray-200 bg-gray-50 px-3 py-2">
-                <h3 className="text-xs font-semibold tracking-wide text-gray-700 uppercase">
+            <section className="border-border rounded-md border">
+              <div className="border-border bg-muted/50 border-b px-3 py-2">
+                <h3 className="text-foreground text-xs font-semibold tracking-wide uppercase">
                   Details
                 </h3>
               </div>
               <div className="space-y-2 p-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">
+                  <span className="text-muted-foreground">
                     <User className="mr-1 inline h-3 w-3" />
                     Contact
                   </span>
-                  <span className="font-medium text-gray-900">
+                  <span className="text-foreground font-medium">
                     {fullName || "—"}
                   </span>
                 </div>
                 {lead.linkedin_url && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">LinkedIn</span>
+                    <span className="text-muted-foreground">LinkedIn</span>
                     <a
                       href={lead.linkedin_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       <ExternalLink className="inline h-3 w-3" /> Profile
                     </a>
@@ -500,19 +493,19 @@ export function LeadWorkspaceDialog({
                 )}
                 {lead.website_url && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Website</span>
+                    <span className="text-muted-foreground">Website</span>
                     <a
                       href={lead.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       <ExternalLink className="inline h-3 w-3" /> Visit
                     </a>
                   </div>
                 )}
                 {lead.qualification_notes && (
-                  <div className="mt-2 rounded border border-gray-100 bg-gray-50 p-2 text-xs text-gray-700">
+                  <div className="border-border bg-muted/50 text-foreground mt-2 rounded border p-2 text-xs">
                     {lead.qualification_notes}
                   </div>
                 )}

@@ -274,7 +274,11 @@
       "confirm": "Confirmer",
       "confirming": "Confirmation...",
       "success": "Statut mis à jour avec succès",
-      "error": "Échec de la mise à jour du statut"
+      "error": "Échec de la mise à jour du statut",
+      "book_demo_hint": "Ouvre Cal.com dans un nouvel onglet",
+      "not_interested_hint": "Marquer comme perdu ou mettre en nurturing",
+      "nurturing_toggle": "Mettre en nurturing à la place",
+      "drag_banner": "Changement de statut : {{from}} → {{to}}"
     },
     "modal": {
       "title_create": "Créer un nouveau lead",
@@ -732,6 +736,15 @@
         "error": "Échec de l'ajout"
       }
     },
+    "inline_activity": {
+      "section_title": "Rapport d'activité",
+      "submit": "Enregistrer",
+      "submitting": "Enregistrement...",
+      "success": "Activité enregistrée",
+      "error": "Échec de l'enregistrement",
+      "different_phone": "Numéro de tél. différent",
+      "different_email": "Adresse email différente"
+    },
     "scores": {
       "fit": "Score d'adéquation",
       "engagement": "Engagement",
@@ -916,12 +929,12 @@
       "description": "Disqualifier {{name}} du pipeline commercial.",
       "reasonLabel": "Raison de disqualification",
       "reasons": {
-        "fantasy_email": "Email fantaisiste",
-        "competitor": "Concurrent",
-        "no_response": "Sans réponse",
-        "wrong_market": "Mauvais marché",
-        "student_test": "Étudiant / Test",
+        "not_fleet_operator": "N'est pas un opérateur de flotte",
+        "fleet_too_small": "Flotte trop petite",
+        "country_not_supported": "Pays non couvert",
         "duplicate": "Doublon",
+        "no_response": "Sans réponse",
+        "competitor": "Concurrent",
         "other": "Autre"
       },
       "commentLabel": "Commentaire (optionnel)",

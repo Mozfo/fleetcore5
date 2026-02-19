@@ -274,7 +274,11 @@
       "confirm": "Confirm",
       "confirming": "Confirming...",
       "success": "Status updated successfully",
-      "error": "Failed to update status"
+      "error": "Failed to update status",
+      "book_demo_hint": "Opens Cal.com in a new tab",
+      "not_interested_hint": "Mark as lost or move to nurturing",
+      "nurturing_toggle": "Move to Nurturing instead",
+      "drag_banner": "Status change: {{from}} → {{to}}"
     },
     "modal": {
       "title_create": "Create New Lead",
@@ -732,6 +736,15 @@
         "error": "Failed to add activity"
       }
     },
+    "inline_activity": {
+      "section_title": "Activity Report",
+      "submit": "Save Activity",
+      "submitting": "Saving...",
+      "success": "Activity recorded",
+      "error": "Failed to save activity",
+      "different_phone": "Different phone number",
+      "different_email": "Different email address"
+    },
     "scores": {
       "fit": "Fit Score",
       "engagement": "Engagement",
@@ -916,12 +929,12 @@
       "description": "Disqualify {{name}} from the sales pipeline.",
       "reasonLabel": "Reason for disqualification",
       "reasons": {
-        "fantasy_email": "Fantasy email",
-        "competitor": "Competitor",
-        "no_response": "No response",
-        "wrong_market": "Wrong market",
-        "student_test": "Student / Test",
+        "not_fleet_operator": "Not a fleet operator",
+        "fleet_too_small": "Fleet too small",
+        "country_not_supported": "Country not supported",
         "duplicate": "Duplicate",
+        "no_response": "No response",
+        "competitor": "Competitor",
         "other": "Other"
       },
       "commentLabel": "Comment (optional)",

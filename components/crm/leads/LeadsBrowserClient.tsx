@@ -44,7 +44,8 @@ import { CPTQualificationModal } from "./CPTQualificationModal";
 import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
-import type { Lead, LeadStatus } from "@/types/crm";
+import { getStatusConfig } from "@/lib/config/pipeline-status";
+import type { Lead } from "@/types/crm";
 
 interface LeadsBrowserClientProps {
   leads: Lead[];
@@ -52,25 +53,7 @@ interface LeadsBrowserClientProps {
   locale: "en" | "fr";
 }
 
-// Status colors
-const statusConfig: Record<LeadStatus, { bg: string; text: string }> = {
-  new: {
-    bg: "bg-blue-100 dark:bg-blue-900/30",
-    text: "text-blue-700 dark:text-blue-300",
-  },
-  working: {
-    bg: "bg-amber-100 dark:bg-amber-900/30",
-    text: "text-amber-700 dark:text-amber-300",
-  },
-  qualified: {
-    bg: "bg-emerald-100 dark:bg-emerald-900/30",
-    text: "text-emerald-700 dark:text-emerald-300",
-  },
-  lost: {
-    bg: "bg-gray-100 dark:bg-gray-800",
-    text: "text-gray-600 dark:text-gray-400",
-  },
-};
+// Status colors — delegated to pipeline-status config
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -142,10 +125,10 @@ export function LeadsBrowserClient({
     return leads.find((lead) => lead.id === selectedLeadId) || null;
   }, [leads, selectedLeadId]);
 
-  // Get status color
+  // Get status color from pipeline config
   const getStatusColor = (status: string) => {
-    const config = statusConfig[status] || statusConfig.new;
-    return config;
+    const cfg = getStatusConfig(status);
+    return { bg: cfg.bgMedium, text: cfg.text };
   };
 
   // Handle lead selection - simple and reliable
@@ -344,11 +327,11 @@ export function LeadsBrowserClient({
   return (
     <div className="flex h-full">
       {/* Left Panel - Master List */}
-      <div className="flex w-72 flex-col border-r border-gray-200 bg-white lg:w-80 dark:border-gray-800 dark:bg-gray-950">
+      <div className="border-border bg-background flex w-72 flex-col border-r lg:w-80">
         {/* Search Header */}
-        <div className="border-b border-gray-200 p-3 dark:border-gray-800">
+        <div className="border-border border-b p-3">
           <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <input
               ref={inputRef}
               type="text"
@@ -356,18 +339,18 @@ export function LeadsBrowserClient({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={t("leads.search.placeholder_short")}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-8 pl-9 text-sm transition-colors outline-none focus:border-blue-500 focus:bg-white dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500 dark:focus:bg-gray-950"
+              className="border-input bg-muted focus:border-primary focus:bg-background w-full rounded-lg border py-2 pr-8 pl-9 text-sm transition-colors outline-none"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
-          <div className="mt-1.5 text-xs text-gray-500">
+          <div className="text-muted-foreground mt-1.5 text-xs">
             {filteredLeads.length}{" "}
             {filteredLeads.length === 1 ? "lead" : "leads"}
           </div>
@@ -377,8 +360,8 @@ export function LeadsBrowserClient({
         <div ref={listRef} className="flex-1 overflow-y-auto">
           {filteredLeads.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-6 text-center">
-              <Search className="mb-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
-              <p className="text-sm text-gray-500">
+              <Search className="text-muted-foreground/50 mb-2 h-8 w-8" />
+              <p className="text-muted-foreground text-sm">
                 {t("leads.search.no_results")}
               </p>
             </div>
@@ -392,24 +375,24 @@ export function LeadsBrowserClient({
                   data-index={index}
                   onClick={() => handleSelectLead(lead.id)}
                   className={cn(
-                    "w-full border-b border-gray-100 px-3 py-2.5 text-left transition-colors dark:border-gray-800",
+                    "border-border/50 w-full border-b px-3 py-2.5 text-left transition-colors",
                     selectedLeadId === lead.id
-                      ? "bg-blue-50 dark:bg-blue-900/20"
+                      ? "bg-primary/10"
                       : highlightedIndex === index
-                        ? "bg-gray-50 dark:bg-gray-900"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-900"
+                        ? "bg-accent"
+                        : "hover:bg-accent"
                   )}
                 >
                   <div className="flex items-start gap-2.5">
                     {/* Company Icon */}
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                      <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <div className="bg-primary/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                      <Building2 className="text-primary h-4 w-4" />
                     </div>
 
                     {/* Content */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                        <span className="text-foreground truncate text-sm font-medium">
                           {lead.company_name ||
                             t("leads.drawer.empty.unknown_company")}
                         </span>
@@ -419,7 +402,7 @@ export function LeadsBrowserClient({
                           </span>
                         )}
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-muted-foreground mt-0.5 truncate text-xs">
                         {lead.first_name} {lead.last_name}
                       </p>
                       <div className="mt-1.5 flex items-center gap-1.5">
@@ -432,7 +415,7 @@ export function LeadsBrowserClient({
                         >
                           {t(`leads.status.${lead.status}`)}
                         </span>
-                        <span className="text-[10px] text-gray-400">
+                        <span className="text-muted-foreground text-[10px]">
                           {formatRelativeTime(lead.created_at)}
                         </span>
                       </div>
@@ -441,8 +424,8 @@ export function LeadsBrowserClient({
                     {/* Arrow */}
                     <ChevronRight
                       className={cn(
-                        "mt-1 h-4 w-4 shrink-0 text-gray-300 transition-colors",
-                        selectedLeadId === lead.id && "text-blue-500"
+                        "text-muted-foreground/50 mt-1 h-4 w-4 shrink-0 transition-colors",
+                        selectedLeadId === lead.id && "text-primary"
                       )}
                     />
                   </div>
@@ -454,20 +437,20 @@ export function LeadsBrowserClient({
       </div>
 
       {/* Right Panel - FULL Detail View */}
-      <div className="flex flex-1 flex-col overflow-hidden bg-gray-50 dark:bg-gray-950">
+      <div className="bg-muted/50 flex flex-1 flex-col overflow-hidden">
         {selectedLead ? (
           <>
             {/* Header with Edit Controls */}
-            <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
+            <header className="border-border bg-background shrink-0 border-b px-6 py-4">
               <div className="flex items-center justify-between">
                 {/* Left: Company + Contact Info */}
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                    <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+                    <Building2 className="text-primary h-6 w-6" />
                   </div>
                   <div>
                     <div className="flex items-center gap-3">
-                      <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      <h1 className="text-foreground text-xl font-semibold">
                         {selectedLead.company_name ||
                           t("leads.drawer.empty.unknown_company")}
                       </h1>
@@ -481,7 +464,7 @@ export function LeadsBrowserClient({
                         {t(`leads.status.${selectedLead.status}`)}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-muted-foreground mt-0.5 flex items-center gap-3 text-sm">
                       <span className="flex items-center gap-1">
                         <User className="h-3.5 w-3.5" />
                         {selectedLead.first_name} {selectedLead.last_name}
@@ -513,7 +496,7 @@ export function LeadsBrowserClient({
                         size="sm"
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-blue-600 text-white hover:bg-blue-700"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         {isSaving ? (
                           <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -589,7 +572,7 @@ export function LeadsBrowserClient({
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600 dark:text-red-400"
+                            className="text-destructive focus:text-destructive"
                             onClick={handleDeleteClick}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -637,16 +620,16 @@ export function LeadsBrowserClient({
         ) : (
           // Empty State
           <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800">
-              <Search className="h-8 w-8 text-gray-400" />
+            <div className="bg-muted mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
+              <Search className="text-muted-foreground h-8 w-8" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            <h3 className="text-foreground text-lg font-medium">
               {t("leads.search.title")}
             </h3>
-            <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-muted-foreground mt-2 max-w-sm text-sm">
               {t("leads.search.start_typing")}
             </p>
-            <div className="mt-4 text-xs text-gray-400">
+            <div className="text-muted-foreground/70 mt-4 text-xs">
               {t("leads.search.hint_navigate")} •{" "}
               {t("leads.search.hint_select")}
             </div>

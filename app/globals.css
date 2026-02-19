@@ -118,6 +118,14 @@
   --shadow-fc-sm: var(--fc-shadow-sm);
   --shadow-fc-md: var(--fc-shadow-md);
   --shadow-fc-lg: var(--fc-shadow-lg);
+
+  /* --- Pipeline Status Colors (Option C — fixed semantic) --- */
+  --color-status-callback: var(--status-callback);
+  --color-status-demo: var(--status-demo);
+  --color-status-proposal: var(--status-proposal);
+  --color-status-converted: var(--status-converted);
+  --color-status-lost: var(--status-lost);
+  --color-status-nurturing: var(--status-nurturing);
 }
 
 :root {
@@ -267,6 +275,14 @@
   /* FC Transitions */
   --fc-transition-fast: 150ms ease;
   --fc-transition-normal: 200ms ease;
+
+  /* Pipeline Status Colors (OKLCH — fixed semantic, Option C) */
+  --status-callback: oklch(0.55 0.17 280);
+  --status-demo: oklch(0.55 0.2 250);
+  --status-proposal: oklch(0.65 0.18 55);
+  --status-converted: oklch(0.55 0.15 152);
+  --status-lost: oklch(0.55 0.22 27);
+  --status-nurturing: oklch(0.58 0.18 320);
 }
 
 .dark {
@@ -302,6 +318,14 @@
   --sidebar-accent-foreground: var(--base-200);
   --sidebar-border: var(--base-800);
   --sidebar-ring: var(--primary-400);
+
+  /* Pipeline Status Colors — dark mode (higher lightness) */
+  --status-callback: oklch(0.75 0.14 280);
+  --status-demo: oklch(0.75 0.16 250);
+  --status-proposal: oklch(0.78 0.14 55);
+  --status-converted: oklch(0.72 0.13 152);
+  --status-lost: oklch(0.72 0.18 27);
+  --status-nurturing: oklch(0.75 0.14 320);
 }
 
 * {

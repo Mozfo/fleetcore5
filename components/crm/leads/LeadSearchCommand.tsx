@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Search, Loader2, Building2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getStatusBadgeColor } from "@/lib/utils/status-colors";
 
 interface LeadSearchResult {
   id: string;
@@ -132,29 +133,8 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
     router.push(`/${locale}/crm/leads/${leadId}`);
   };
 
-  // V6.3: 8 statuts
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "new":
-        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
-      case "demo":
-        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
-      case "proposal_sent":
-        return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300";
-      case "payment_pending":
-        return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300";
-      case "converted":
-        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
-      case "lost":
-        return "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400";
-      case "nurturing":
-        return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300";
-      case "disqualified":
-        return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
-      default:
-        return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
-    }
-  };
+  // Status colors from centralized mapping
+  const getStatusColor = getStatusBadgeColor;
 
   const showDropdown = isOpen && (query.length > 0 || results.length > 0);
 
@@ -162,7 +142,7 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
     <div ref={containerRef} className="relative">
       {/* Inline Search Input */}
       <div className="relative">
-        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <input
           ref={inputRef}
           type="text"
@@ -174,7 +154,7 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          className="h-8 w-48 rounded-md border border-gray-200 bg-gray-50 pr-8 pl-9 text-sm transition-all outline-none placeholder:text-gray-400 focus:w-64 focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-800 dark:placeholder:text-gray-500 dark:focus:border-blue-600 dark:focus:bg-gray-900 dark:focus:ring-blue-900/30"
+          className="border-input bg-muted placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:ring-primary/20 h-8 w-48 rounded-md border pr-8 pl-9 text-sm transition-all outline-none focus:w-64 focus:ring-2"
         />
         {query && (
           <button
@@ -183,13 +163,13 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
               setResults([]);
               inputRef.current?.focus();
             }}
-            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
         {!query && (
-          <kbd className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-gray-200 bg-white px-1 font-mono text-[10px] text-gray-400 select-none sm:flex dark:border-gray-600 dark:bg-gray-700">
+          <kbd className="border-border bg-background text-muted-foreground pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 items-center gap-0.5 rounded border px-1 font-mono text-[10px] select-none sm:flex">
             <span>⌘</span>K
           </kbd>
         )}
@@ -197,10 +177,10 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
 
       {/* Dropdown Results */}
       {showDropdown && (
-        <div className="absolute top-full right-0 z-50 mt-1 w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+        <div className="border-border bg-popover absolute top-full right-0 z-50 mt-1 w-80 overflow-hidden rounded-lg border shadow-lg">
           {isLoading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+              <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
             </div>
           ) : results.length > 0 ? (
             <div className="max-h-[320px] overflow-y-auto p-1">
@@ -211,20 +191,26 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
                   className={cn(
                     "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors",
                     index === selectedIndex
-                      ? "bg-blue-50 dark:bg-blue-900/20"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                      ? "bg-primary/10"
+                      : "hover:bg-accent"
                   )}
                 >
                   {/* Avatar */}
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
+                  <div className="bg-primary text-primary-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
                     {(lead.first_name ?? "").charAt(0)}
                     {(lead.last_name ?? "").charAt(0)}
                   </div>
 
                   {/* Info */}
                   <div className="min-w-0 flex-1">
+                    {/* Lead code — first line, prominent */}
+                    {lead.lead_code && (
+                      <span className="text-primary font-mono text-xs font-medium">
+                        {lead.lead_code}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                      <span className="text-foreground truncate text-sm font-medium">
                         {lead.first_name ?? ""} {lead.last_name ?? ""}
                       </span>
                       <span
@@ -236,7 +222,7 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
                         {lead.status}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-muted-foreground flex items-center gap-2 text-xs">
                       {lead.company_name && (
                         <span className="flex items-center gap-1 truncate">
                           <Building2 className="h-3 w-3" />
@@ -252,18 +238,18 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
               ))}
             </div>
           ) : query.length >= 2 ? (
-            <div className="py-6 text-center text-sm text-gray-500">
+            <div className="text-muted-foreground py-6 text-center text-sm">
               {t("leads.search.no_results")}
             </div>
           ) : query.length > 0 ? (
-            <div className="py-6 text-center text-sm text-gray-500">
+            <div className="text-muted-foreground py-6 text-center text-sm">
               {t("leads.search.min_chars")}
             </div>
           ) : null}
 
           {/* Keyboard hint */}
           {results.length > 0 && (
-            <div className="border-t border-gray-100 px-3 py-2 text-[11px] text-gray-400 dark:border-gray-800">
+            <div className="border-border text-muted-foreground/70 border-t px-3 py-2 text-[11px]">
               <span className="mr-3">↑↓ navigate</span>
               <span>↵ select</span>
             </div>

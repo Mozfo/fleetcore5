@@ -1,26 +1,17 @@
 /**
- * LeadDrawer - Centered popup for lead quick view
+ * LeadDrawer - 2-column workstation popup for lead quick view
  *
- * Opens on lead click (single click = popup, double click = full page)
- * Supports read-only mode and edit mode (F1-B).
+ * LEFT (w-2/5): Consultable info during a call (header, contact, company, etc.)
+ * RIGHT (w-3/5): Actions + Timeline (inline activity form, status actions, timeline)
  *
- * Uses Dialog (centered, fade+scale) instead of side drawer.
- * Uses dynamic lead stages from crm_settings via useLeadStages hook.
+ * Uses Dialog (centered, fade+scale). Supports read-only and edit mode.
  */
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import {
-  Pencil,
-  ArrowRightCircle,
-  Ban,
-  Trash,
-  CheckCircle,
-  X,
-  Loader2,
-} from "lucide-react";
+import { Pencil, Ban, Trash, CheckCircle, X, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -45,19 +36,17 @@ import {
   MessageSection,
   TimelineSection,
 } from "./LeadDrawerSections";
-import { CPTQualificationModal } from "./CPTQualificationModal";
-import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
+import { InlineActivityForm } from "./InlineActivityForm";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { DisqualifyLeadModal } from "./DisqualifyLeadModal";
+import { LeadStatusActions } from "./LeadStatusActions";
 import { drawerContainerVariants } from "@/lib/animations/drawer-variants";
 import {
   updateLeadAction,
   type UpdateLeadData,
 } from "@/lib/actions/crm/lead.actions";
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
-import { useLeadStages } from "@/lib/hooks/useLeadStages";
-import { TransitionActionSection } from "./TransitionActionSection";
-import { LeadStatusActions } from "./LeadStatusActions";
+import { usePermission } from "@/lib/hooks/usePermission";
 import type { Lead } from "@/types/crm";
 import type { PendingTransition } from "@/features/crm/leads/hooks/use-leads-kanban";
 
@@ -69,7 +58,11 @@ interface LeadDrawerProps {
   onOpenFullPage?: (id: string) => void;
   onLeadUpdated?: (updatedLead: Lead) => void;
   isLoading?: boolean;
-  owners?: Array<{ id: string; first_name: string; last_name: string | null }>;
+  owners?: Array<{
+    id: string;
+    first_name: string;
+    last_name: string | null;
+  }>;
   transition?: PendingTransition | null;
   onTransitionComplete?: () => void;
   onTransitionCancel?: () => void;
@@ -81,7 +74,6 @@ interface LeadDrawerProps {
 function DrawerSkeleton() {
   return (
     <div className="space-y-6 py-4">
-      {/* Header skeleton */}
       <div className="flex items-start gap-4">
         <Skeleton className="h-14 w-14 rounded-full" />
         <div className="flex-1 space-y-2">
@@ -89,17 +81,12 @@ function DrawerSkeleton() {
           <Skeleton className="h-4 w-32" />
         </div>
       </div>
-
-      {/* Badges skeleton */}
       <div className="flex gap-2">
         <Skeleton className="h-5 w-16 rounded-full" />
         <Skeleton className="h-5 w-20 rounded-full" />
         <Skeleton className="h-5 w-14 rounded-full" />
       </div>
-
       <Separator />
-
-      {/* Sections skeleton */}
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="space-y-3">
           <Skeleton className="h-4 w-24" />
@@ -127,60 +114,45 @@ export function LeadDrawer({
   onTransitionCancel,
 }: LeadDrawerProps) {
   const { t } = useTranslation("crm");
+  const { can } = usePermission();
 
-  // Load stages dynamically from crm_settings
-  const { stages } = useLeadStages();
-
-  // ============================================================================
-  // F1-B: Edit Mode States
-  // ============================================================================
+  // ── Edit Mode States ─────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
   const [editedLead, setEditedLead] = useState<Partial<Lead>>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // G2: Qualify Modal State
-  const [isQualifyModalOpen, setIsQualifyModalOpen] = useState(false);
+  // ── State ────────────────────────────────────────────────────────────
   const [currentLead, setCurrentLead] = useState<Lead | null>(lead);
-
-  // G3: Convert Modal State
-  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
-
-  // T12: Disqualify Modal State
   const [isDisqualifyModalOpen, setIsDisqualifyModalOpen] = useState(false);
-
-  // G4: Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Timeline refresh counter — incremented by InlineActivityForm
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Reset states when lead changes or popup closes
   useEffect(() => {
     setIsEditing(false);
     setEditedLead({});
     setIsSaving(false);
-    setIsQualifyModalOpen(false);
-    setIsConvertModalOpen(false);
     setIsDisqualifyModalOpen(false);
     setIsDeleteModalOpen(false);
     setIsDeleting(false);
     setCurrentLead(lead);
   }, [lead?.id, isOpen, lead]);
 
-  // Handle field change in edit mode
+  // ── Edit mode handlers ───────────────────────────────────────────────
+
   const handleFieldChange = useCallback(
     (field: string, value: string | null) => {
-      setEditedLead((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
+      setEditedLead((prev) => ({ ...prev, [field]: value }));
     },
     []
   );
 
-  // Handle save
   const handleSave = useCallback(async () => {
     if (!lead) return;
 
-    // Check if there are changes
     if (Object.keys(editedLead).length === 0) {
       setIsEditing(false);
       return;
@@ -188,10 +160,8 @@ export function LeadDrawer({
 
     setIsSaving(true);
     try {
-      // Prepare data for server action
       const updateData: UpdateLeadData = {};
 
-      // Only include fields that were actually edited
       if (editedLead.first_name !== undefined)
         updateData.first_name = editedLead.first_name || undefined;
       if (editedLead.last_name !== undefined)
@@ -214,7 +184,6 @@ export function LeadDrawer({
         updateData.message = editedLead.message || null;
       if (editedLead.assigned_to_id !== undefined)
         updateData.assigned_to_id = editedLead.assigned_to_id || null;
-      // Handle next_action_date - convert string to Date
       if (editedLead.next_action_date !== undefined) {
         updateData.next_action_date = editedLead.next_action_date
           ? new Date(editedLead.next_action_date as unknown as string)
@@ -227,8 +196,6 @@ export function LeadDrawer({
         toast.success(t("leads.drawer.save_success"));
         setIsEditing(false);
         setEditedLead({});
-
-        // Notify parent of update
         if (onLeadUpdated && result.lead) {
           onLeadUpdated(result.lead as unknown as Lead);
         }
@@ -242,49 +209,21 @@ export function LeadDrawer({
     }
   }, [lead, editedLead, onLeadUpdated, t]);
 
-  // Handle cancel
   const handleCancel = useCallback(() => {
     setIsEditing(false);
     setEditedLead({});
   }, []);
 
-  // Handle enter edit mode
   const handleEdit = useCallback(() => {
     setIsEditing(true);
   }, []);
 
-  // G2: Handle qualify
-  const handleQualify = useCallback(() => {
-    setIsQualifyModalOpen(true);
-  }, []);
+  // ── Disqualify handlers ──────────────────────────────────────────────
 
-  // G2: Handle qualify success (CPT framework)
-  const handleQualifySuccess = useCallback(() => {
-    if (lead) {
-      onLeadUpdated?.(lead);
-    }
-  }, [lead, onLeadUpdated]);
-
-  // G3: Handle convert
-  const handleConvert = useCallback(() => {
-    setIsConvertModalOpen(true);
-  }, []);
-
-  // G3: Handle convert success
-  const handleConvertSuccess = useCallback(
-    (result: { lead: Lead; opportunity: Record<string, unknown> }) => {
-      setCurrentLead(result.lead);
-      onLeadUpdated?.(result.lead);
-    },
-    [onLeadUpdated]
-  );
-
-  // T12: Handle disqualify
   const handleDisqualify = useCallback(() => {
     setIsDisqualifyModalOpen(true);
   }, []);
 
-  // T12: Handle disqualify success
   const handleDisqualifySuccess = useCallback(() => {
     setIsDisqualifyModalOpen(false);
     onClose();
@@ -293,12 +232,12 @@ export function LeadDrawer({
     }
   }, [lead, onClose, onLeadUpdated]);
 
-  // G4: Handle delete - open modal
+  // ── Delete handlers ──────────────────────────────────────────────────
+
   const handleDelete = useCallback(() => {
     setIsDeleteModalOpen(true);
   }, []);
 
-  // G4: Handle delete confirmation
   const handleDeleteConfirm = useCallback(
     async (reason: string, permanentDelete: boolean) => {
       if (!lead) return;
@@ -330,7 +269,8 @@ export function LeadDrawer({
     [lead, onClose, onDelete, t]
   );
 
-  // Determine if GDPR section should be shown
+  // ── GDPR ─────────────────────────────────────────────────────────────
+
   const EU_COUNTRY_CODES = [
     "FR",
     "DE",
@@ -366,29 +306,8 @@ export function LeadDrawer({
       EU_COUNTRY_CODES.includes(lead.country_code?.toUpperCase() || ""))
     : false;
 
-  // Determine button states based on dynamic stages
-  const lastQualifyStageIndex = useMemo(() => {
-    const oppIndex = stages.findIndex((s) => s.value === "opportunity");
-    return oppIndex > 0 ? oppIndex - 1 : stages.length - 2;
-  }, [stages]);
+  // ── Handle close ─────────────────────────────────────────────────────
 
-  const canQualify = useMemo(() => {
-    if (!currentLead?.lead_stage) return true;
-    const currentIndex = stages.findIndex(
-      (s) => s.value === currentLead.lead_stage
-    );
-    return currentIndex < lastQualifyStageIndex;
-  }, [currentLead?.lead_stage, stages, lastQualifyStageIndex]);
-
-  const canConvert = useMemo(() => {
-    if (!currentLead?.lead_stage) return false;
-    const currentIndex = stages.findIndex(
-      (s) => s.value === currentLead.lead_stage
-    );
-    return currentIndex === lastQualifyStageIndex;
-  }, [currentLead?.lead_stage, stages, lastQualifyStageIndex]);
-
-  // Handle close: also cancel transition if active
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
@@ -405,9 +324,9 @@ export function LeadDrawer({
         <DialogContent
           data-testid="lead-drawer"
           showCloseIcon
-          className="flex max-h-[85vh] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+          className="flex max-h-[90vh] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl"
         >
-          {/* Accessibility: Hidden title for screen readers */}
+          {/* Accessibility */}
           <VisuallyHidden.Root>
             <DialogTitle>
               {lead
@@ -420,86 +339,114 @@ export function LeadDrawer({
             </DialogDescription>
           </VisuallyHidden.Root>
 
-          {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto px-6 py-5">
+          {/* 2-column content area */}
+          <div className="flex min-h-0 flex-1">
             {isLoading ? (
-              <DrawerSkeleton />
+              <div className="flex-1 px-6 py-5">
+                <DrawerSkeleton />
+              </div>
             ) : lead ? (
-              <motion.div
-                variants={drawerContainerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="space-y-6"
-              >
-                {/* Transition section (appears when drag & drop transition is pending) */}
-                {transition && (
-                  <>
-                    <TransitionActionSection
+              <>
+                {/* ── LEFT COLUMN (w-2/5) — Info sections ── */}
+                <div className="w-2/5 overflow-y-auto border-r px-5 py-5">
+                  <motion.div
+                    variants={drawerContainerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="space-y-6"
+                  >
+                    <LeadDrawerHeader
                       lead={lead}
-                      transition={transition}
-                      onConfirm={() => onTransitionComplete?.()}
-                      onCancel={() => onTransitionCancel?.()}
+                      onOpenFullPage={
+                        onOpenFullPage
+                          ? () => onOpenFullPage(lead.id)
+                          : undefined
+                      }
                     />
                     <Separator />
-                  </>
-                )}
+                    <ContactSection
+                      lead={lead}
+                      isEditing={isEditing}
+                      editedLead={editedLead}
+                      onFieldChange={handleFieldChange}
+                    />
+                    <CompanySection
+                      lead={lead}
+                      isEditing={isEditing}
+                      editedLead={editedLead}
+                      onFieldChange={handleFieldChange}
+                    />
+                    <AssignmentSection
+                      lead={lead}
+                      isEditing={isEditing}
+                      editedLead={editedLead}
+                      onFieldChange={handleFieldChange}
+                      owners={owners}
+                    />
+                    <LocationSection lead={lead} />
+                    <SourceSection lead={lead} />
+                    <GdprSection lead={lead} visible={showGdprSection} />
+                    <NotesSection lead={lead} />
+                    <MessageSection
+                      lead={lead}
+                      isEditing={isEditing}
+                      editedLead={editedLead}
+                      onFieldChange={handleFieldChange}
+                    />
+                  </motion.div>
+                </div>
 
-                {/* Header */}
-                <LeadDrawerHeader
-                  lead={lead}
-                  onOpenFullPage={
-                    onOpenFullPage ? () => onOpenFullPage(lead.id) : undefined
-                  }
-                />
+                {/* ── RIGHT COLUMN (w-3/5) — Actions + Timeline ── */}
+                <div className="w-3/5 overflow-y-auto px-5 py-5">
+                  <motion.div
+                    variants={drawerContainerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="space-y-6"
+                  >
+                    {/* Inline Activity Form */}
+                    <InlineActivityForm
+                      leadId={lead.id}
+                      leadEmail={lead.email}
+                      leadPhone={lead.phone}
+                      onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
+                    />
 
-                <Separator />
+                    <Separator />
 
-                {/* Step Actions (always visible, based on current status) */}
-                {!transition && (
-                  <LeadStatusActions lead={lead} onStatusChanged={onClose} />
-                )}
+                    {/* Step Actions (manual + drag & drop) */}
+                    <LeadStatusActions
+                      lead={lead}
+                      onStatusChanged={() => {
+                        if (transition) {
+                          onTransitionComplete?.();
+                        }
+                        onClose();
+                      }}
+                      pendingTransition={transition}
+                      onTransitionCancel={onTransitionCancel}
+                    />
 
-                {/* Sections - Assignment en haut pour accès rapide */}
-                <AssignmentSection
-                  lead={lead}
-                  isEditing={isEditing}
-                  editedLead={editedLead}
-                  onFieldChange={handleFieldChange}
-                  owners={owners}
-                />
-                <ContactSection
-                  lead={lead}
-                  isEditing={isEditing}
-                  editedLead={editedLead}
-                  onFieldChange={handleFieldChange}
-                />
-                <CompanySection
-                  lead={lead}
-                  isEditing={isEditing}
-                  editedLead={editedLead}
-                  onFieldChange={handleFieldChange}
-                />
-                <LocationSection lead={lead} />
-                <SourceSection lead={lead} />
-                <GdprSection lead={lead} visible={showGdprSection} />
-                <NotesSection lead={lead} />
-                <TimelineSection lead={lead} />
-                <MessageSection
-                  lead={lead}
-                  isEditing={isEditing}
-                  editedLead={editedLead}
-                  onFieldChange={handleFieldChange}
-                />
-              </motion.div>
+                    <Separator />
+
+                    {/* Timeline */}
+                    <TimelineSection
+                      lead={lead}
+                      hideAddButton={true}
+                      refreshTrigger={refreshTrigger}
+                    />
+                  </motion.div>
+                </div>
+              </>
             ) : null}
           </div>
 
           {/* Footer with action buttons */}
           {lead && !isLoading && (
-            <div className="border-t px-6 py-4">
+            <div className="bg-muted/50 border-t px-6 py-4">
               {isEditing ? (
-                // Edit mode: Save/Cancel buttons
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -531,7 +478,6 @@ export function LeadDrawer({
                   </Button>
                 </div>
               ) : (
-                // Read mode: Action buttons
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
@@ -545,42 +491,24 @@ export function LeadDrawer({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-2"
-                    onClick={handleQualify}
-                    disabled={!canQualify}
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    {t("leads.drawer.actions.qualify")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={handleConvert}
-                    disabled={!canConvert}
-                  >
-                    <ArrowRightCircle className="h-4 w-4" />
-                    {t("leads.drawer.actions.convert")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
                     className="gap-2 text-orange-600 hover:bg-orange-50 hover:text-orange-600"
                     onClick={handleDisqualify}
                   >
                     <Ban className="h-4 w-4" />
                     {t("leads.drawer.actions.disqualify")}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="drawer-delete-button"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
-                    onClick={handleDelete}
-                  >
-                    <Trash className="h-4 w-4" />
-                    {t("leads.drawer.actions.delete")}
-                  </Button>
+                  {can("lead.delete") && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid="drawer-delete-button"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
+                      onClick={handleDelete}
+                    >
+                      <Trash className="h-4 w-4" />
+                      {t("leads.drawer.actions.delete")}
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -589,24 +517,6 @@ export function LeadDrawer({
       </Dialog>
 
       {/* Sub-modals rendered outside Dialog to avoid nested portal issues */}
-      {currentLead && (
-        <CPTQualificationModal
-          lead={currentLead}
-          isOpen={isQualifyModalOpen}
-          onClose={() => setIsQualifyModalOpen(false)}
-          onSuccess={handleQualifySuccess}
-        />
-      )}
-
-      {currentLead && (
-        <ConvertToOpportunityModal
-          lead={currentLead}
-          isOpen={isConvertModalOpen}
-          onClose={() => setIsConvertModalOpen(false)}
-          onSuccess={handleConvertSuccess}
-        />
-      )}
-
       {currentLead && (
         <DisqualifyLeadModal
           isOpen={isDisqualifyModalOpen}

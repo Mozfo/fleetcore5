@@ -17,6 +17,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { useLeadStages } from "@/lib/hooks/useLeadStages";
 import { FCBadge } from "@/components/fc";
+import { getStatusBorderLeft } from "@/lib/utils/status-colors";
 import type { Lead, LeadStatus } from "@/types/crm";
 import { LeadContextMenu } from "./LeadContextMenu";
 
@@ -41,19 +42,7 @@ const STATUS_VARIANT: Record<string, BadgeVariant> = {
   disqualified: "default",
 };
 
-// Map lead status → left border color (Salesforce-style colored left accent)
-const STATUS_BORDER_COLOR: Record<string, string> = {
-  new: "border-l-blue-500",
-  email_verified: "border-l-sky-400",
-  callback_requested: "border-l-amber-500",
-  demo: "border-l-sky-500",
-  proposal_sent: "border-l-purple-500",
-  payment_pending: "border-l-orange-500",
-  converted: "border-l-green-500",
-  lost: "border-l-red-500",
-  nurturing: "border-l-teal-500",
-  disqualified: "border-l-gray-400",
-};
+// Left border color now comes from centralized STATUS_BORDER_LEFT
 
 interface KanbanCardProps {
   lead: Lead;
@@ -179,17 +168,24 @@ export const KanbanCard = memo(
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
           className={cn(
-            "border-fc-border-light cursor-grab rounded-r-lg border border-l-[3px] bg-white p-2.5 shadow-sm dark:border-gray-700 dark:bg-gray-900",
+            "border-border bg-card cursor-grab rounded-r-lg border border-l-[3px] p-2.5 shadow-sm",
             "transition-all duration-150",
             "hover:shadow-md",
-            STATUS_BORDER_COLOR[lead.status] || "border-l-gray-400",
+            getStatusBorderLeft(lead.status),
             showDraggingState &&
-              "ring-fc-primary-500 cursor-grabbing opacity-60 shadow-lg ring-1"
+              "ring-primary cursor-grabbing opacity-60 shadow-lg ring-1"
           )}
         >
+          {/* Line 0: Lead Code — FIRST, prominent */}
+          {lead.lead_code && (
+            <p className="text-primary truncate font-mono text-xs font-medium">
+              {lead.lead_code}
+            </p>
+          )}
+
           {/* Line 1: Company + Flag */}
-          <div className="flex items-center justify-between gap-1.5">
-            <h4 className="text-fc-text-primary truncate text-[13px] font-bold dark:text-white">
+          <div className="mt-0.5 flex items-center justify-between gap-1.5">
+            <h4 className="text-foreground truncate text-[13px] font-bold">
               {lead.company_name || "Unknown Company"}
             </h4>
             {lead.country?.flag_emoji && (
@@ -204,13 +200,13 @@ export const KanbanCard = memo(
 
           {/* Line 2: Contact name */}
           {(lead.first_name || lead.last_name) && (
-            <p className="text-fc-text-muted mt-0.5 truncate text-[11px] dark:text-gray-400">
+            <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
               {lead.first_name || ""} {lead.last_name || ""}
             </p>
           )}
 
           {/* Line 3: Metrics (fleet + score + stage) */}
-          <div className="text-fc-text-muted mt-1.5 flex items-center gap-2 text-[11px] dark:text-gray-500">
+          <div className="text-muted-foreground mt-1.5 flex items-center gap-2 text-[11px]">
             {lead.fleet_size && (
               <span className="inline-flex items-center gap-0.5">
                 <Car className="h-3 w-3" />
@@ -222,10 +218,10 @@ export const KanbanCard = memo(
                 className={cn(
                   "inline-flex items-center rounded px-1 py-px text-[10px] font-bold",
                   score >= 70
-                    ? "bg-fc-success-50 text-fc-success-600"
+                    ? "bg-status-converted/20 text-status-converted"
                     : score >= 40
-                      ? "bg-fc-warning-50 text-fc-warning-600"
-                      : "bg-fc-neutral-50 text-fc-neutral-500"
+                      ? "bg-status-proposal/20 text-status-proposal"
+                      : "bg-muted text-muted-foreground"
                 )}
               >
                 {score}
@@ -253,14 +249,14 @@ export const KanbanCard = memo(
             <div className="flex items-center gap-1.5">
               {lead.assigned_to && (
                 <div
-                  className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-600 text-[9px] font-medium text-white"
+                  className="bg-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-medium text-white"
                   title={`${lead.assigned_to.first_name} ${lead.assigned_to.last_name || ""}`}
                 >
                   {getInitials(lead.assigned_to)}
                 </div>
               )}
             </div>
-            <span className="text-fc-text-muted text-[10px]">
+            <span className="text-muted-foreground text-[10px]">
               {formatTimeAgo(lead.created_at, t)}
             </span>
           </div>

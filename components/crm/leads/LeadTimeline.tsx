@@ -14,6 +14,8 @@ interface LeadTimelineProps {
   leadId: string;
   leadEmail?: string | null;
   leadPhone?: string | null;
+  refreshTrigger?: number;
+  hideAddButton?: boolean;
 }
 
 function formatDateGroup(
@@ -66,6 +68,8 @@ export function LeadTimeline({
   leadId,
   leadEmail,
   leadPhone,
+  refreshTrigger,
+  hideAddButton,
 }: LeadTimelineProps) {
   const { t } = useTranslation("crm");
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -110,6 +114,14 @@ export function LeadTimeline({
     void loadActivities();
   }, [loadActivities]);
 
+  // Reload when refreshTrigger changes (e.g. after InlineActivityForm submit)
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      void loadActivities();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger]);
+
   const loadMore = () => {
     if (!isLoadingMore && hasMore) {
       void loadActivities(activities.length, true);
@@ -144,24 +156,28 @@ export function LeadTimeline({
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {t("leads.timeline.empty_description")}
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4"
-            onClick={() => setIsAddModalOpen(true)}
-          >
-            <Plus className="mr-1.5 h-4 w-4" />
-            {t("leads.timeline.add_first")}
-          </Button>
+          {!hideAddButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={() => setIsAddModalOpen(true)}
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              {t("leads.timeline.add_first")}
+            </Button>
+          )}
         </div>
-        <AddActivityModal
-          leadId={leadId}
-          leadEmail={leadEmail}
-          leadPhone={leadPhone}
-          open={isAddModalOpen}
-          onOpenChange={setIsAddModalOpen}
-          onSuccess={() => void loadActivities()}
-        />
+        {!hideAddButton && (
+          <AddActivityModal
+            leadId={leadId}
+            leadEmail={leadEmail}
+            leadPhone={leadPhone}
+            open={isAddModalOpen}
+            onOpenChange={setIsAddModalOpen}
+            onSuccess={() => void loadActivities()}
+          />
+        )}
       </>
     );
   }
@@ -169,16 +185,18 @@ export function LeadTimeline({
   return (
     <>
       {/* Add Activity Button */}
-      <div className="mb-4 flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsAddModalOpen(true)}
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          {t("leads.timeline.add_activity")}
-        </Button>
-      </div>
+      {!hideAddButton && (
+        <div className="mb-4 flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            {t("leads.timeline.add_activity")}
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-6">
         {Object.entries(groupedActivities).map(([dateKey, dayActivities]) => (
@@ -221,14 +239,16 @@ export function LeadTimeline({
         )}
       </div>
 
-      <AddActivityModal
-        leadId={leadId}
-        leadEmail={leadEmail}
-        leadPhone={leadPhone}
-        open={isAddModalOpen}
-        onOpenChange={setIsAddModalOpen}
-        onSuccess={() => void loadActivities()}
-      />
+      {!hideAddButton && (
+        <AddActivityModal
+          leadId={leadId}
+          leadEmail={leadEmail}
+          leadPhone={leadPhone}
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+          onSuccess={() => void loadActivities()}
+        />
+      )}
     </>
   );
 }

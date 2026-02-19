@@ -29,14 +29,7 @@ import {
   kanbanContainerVariants,
   kanbanItemVariants,
 } from "@/lib/animations/kanban-variants";
-
-// Phase color mapping (V6.6: 4 phases)
-const PHASE_COLORS: Record<string, string> = {
-  contact: "amber",
-  demo: "blue",
-  proposal: "purple",
-  finalized: "green",
-};
+import { getPhaseConfig } from "@/lib/config/pipeline-status";
 
 // Status → FCBadge variant mapping (V6.6: 10 statuts)
 type BadgeVariant =
@@ -109,11 +102,10 @@ function StatusDropZone({
       className={cn(
         "rounded-fc-md transition-all duration-200",
         leads.length === 0 ? "min-h-[40px]" : "min-h-[60px]",
-        isOver &&
-          "bg-fc-primary-50/50 ring-fc-primary-500 ring-2 dark:bg-blue-900/20",
+        isOver && "bg-primary/10 ring-primary ring-2",
         leads.length === 0 &&
           !isOver &&
-          "border-fc-border-light border border-dashed opacity-60 dark:border-gray-700"
+          "border-border border border-dashed opacity-60"
       )}
     >
       {/* Status header */}
@@ -121,9 +113,7 @@ function StatusDropZone({
         <FCBadge variant={badgeVariant} size="sm">
           {statusLabel}
         </FCBadge>
-        <span className="text-fc-text-muted text-xs dark:text-gray-400">
-          {leads.length}
-        </span>
+        <span className="text-muted-foreground text-xs">{leads.length}</span>
       </div>
 
       {/* Cards or drop indicator */}
@@ -135,7 +125,7 @@ function StatusDropZone({
       >
         {leads.length === 0
           ? isOver && (
-              <div className="border-fc-primary-500 text-fc-primary-500 flex items-center justify-center rounded border-2 border-dashed py-3 text-xs font-medium dark:text-blue-400">
+              <div className="border-primary text-primary flex items-center justify-center rounded border-2 border-dashed py-3 text-xs font-medium">
                 Drop here
               </div>
             )
@@ -177,47 +167,8 @@ export const KanbanPhaseColumn = memo(
     // Get phase label from i18n
     const phaseLabel = t(`leads.phases.${column.phase.id}`);
 
-    // Phase color
-    const phaseColor = PHASE_COLORS[column.phase.id] || "gray";
-
-    // Phase header colors (Salesforce-style: tinted bg + thick left border)
-    const phaseHeaderStyles: Record<
-      string,
-      { borderColor: string; bgTint: string; countBg: string }
-    > = {
-      amber: {
-        borderColor: "border-l-amber-500",
-        bgTint: "bg-amber-50/80 dark:bg-amber-900/15",
-        countBg: "bg-amber-500",
-      },
-      blue: {
-        borderColor: "border-l-blue-500",
-        bgTint: "bg-blue-50/80 dark:bg-blue-900/15",
-        countBg: "bg-blue-500",
-      },
-      green: {
-        borderColor: "border-l-green-500",
-        bgTint: "bg-green-50/80 dark:bg-green-900/15",
-        countBg: "bg-green-500",
-      },
-      purple: {
-        borderColor: "border-l-purple-500",
-        bgTint: "bg-purple-50/80 dark:bg-purple-900/15",
-        countBg: "bg-purple-500",
-      },
-      orange: {
-        borderColor: "border-l-orange-500",
-        bgTint: "bg-orange-50/80 dark:bg-orange-900/15",
-        countBg: "bg-orange-500",
-      },
-      gray: {
-        borderColor: "border-l-gray-500",
-        bgTint: "bg-gray-50/80 dark:bg-gray-900/15",
-        countBg: "bg-gray-500",
-      },
-    };
-
-    const headerStyle = phaseHeaderStyles[phaseColor] || phaseHeaderStyles.gray;
+    // Phase header colors from pipeline-status config
+    const phaseCfg = getPhaseConfig(column.phase.id);
 
     // Calculate average score for this phase's leads
     const phaseLeads = column.leads;
@@ -235,25 +186,24 @@ export const KanbanPhaseColumn = memo(
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-fc-lg border-fc-border-light bg-fc-bg-card/50 flex h-full flex-col border dark:border-gray-700 dark:bg-gray-800/50"
+        className="rounded-fc-lg border-border bg-card/50 flex h-full flex-col border"
       >
         {/* Phase Header - Salesforce Lightning style (60px, tinted, left border) */}
         <div
           className={cn(
-            "sticky top-0 z-10 rounded-t-lg border-b border-l-4 px-3 py-3 backdrop-blur-sm",
-            "border-fc-border-light dark:border-b-gray-800",
-            headerStyle.borderColor,
-            headerStyle.bgTint
+            "border-border sticky top-0 z-10 rounded-t-lg border-b border-l-4 px-3 py-3 backdrop-blur-sm",
+            phaseCfg.borderLeft,
+            phaseCfg.bgSubtle
           )}
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-fc-text-primary text-sm font-bold tracking-wide uppercase dark:text-gray-200">
+            <h3 className="text-sm font-bold tracking-wide uppercase">
               {phaseLabel}
             </h3>
             <span
               className={cn(
                 "inline-flex min-w-[28px] items-center justify-center rounded-full px-2 text-xs font-bold text-white",
-                headerStyle.countBg
+                phaseCfg.bg
               )}
               style={{ height: 24 }}
             >
@@ -261,11 +211,9 @@ export const KanbanPhaseColumn = memo(
             </span>
           </div>
           {avgScore !== null && (
-            <p className="text-fc-text-muted mt-1 text-[11px] dark:text-gray-400">
+            <p className="text-muted-foreground mt-1 text-[11px]">
               {t("leads.stats.avg_score", { defaultValue: "Avg Score" })}:{" "}
-              <span className="text-fc-text-primary font-semibold dark:text-gray-200">
-                {avgScore}
-              </span>
+              <span className="text-foreground font-semibold">{avgScore}</span>
             </p>
           )}
         </div>

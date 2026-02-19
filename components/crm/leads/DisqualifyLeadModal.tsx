@@ -25,12 +25,12 @@ import { toast } from "sonner";
 import type { Lead } from "@/types/crm";
 
 const DISQUALIFICATION_REASONS = [
-  "fantasy_email",
-  "competitor",
-  "no_response",
-  "wrong_market",
-  "student_test",
+  "not_fleet_operator",
+  "fleet_too_small",
+  "country_not_supported",
   "duplicate",
+  "no_response",
+  "competitor",
   "other",
 ] as const;
 

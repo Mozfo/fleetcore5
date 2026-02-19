@@ -55,6 +55,8 @@ interface DrawerSectionProps {
   title: string;
   children: React.ReactNode;
   visible?: boolean;
+  iconColor?: string;
+  borderAccent?: string;
 }
 
 export function DrawerSection({
@@ -62,16 +64,23 @@ export function DrawerSection({
   title,
   children,
   visible = true,
+  iconColor,
+  borderAccent,
 }: DrawerSectionProps) {
   if (!visible) return null;
 
   return (
     <motion.div variants={drawerSectionVariants} className="space-y-3">
       <div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
-        <Icon className="h-4 w-4" />
+        <Icon className={cn("h-4 w-4", iconColor)} />
         <span>{title}</span>
       </div>
-      <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50">
+      <div
+        className={cn(
+          "border-border bg-card space-y-3 rounded-lg border p-4",
+          borderAccent && `border-l-4 ${borderAccent}`
+        )}
+      >
         {children}
       </div>
       <Separator className="mt-4" />
@@ -123,7 +132,7 @@ export function InfoRow({
                   key={i}
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
+                  className="hover:bg-primary/10 hover:text-primary h-7 w-7 transition-colors"
                   asChild
                 >
                   <a href={action.href} title={action.label}>
@@ -137,7 +146,7 @@ export function InfoRow({
                 key={i}
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
+                className="hover:bg-primary/10 hover:text-primary h-7 w-7 transition-colors"
                 onClick={action.onClick}
                 title={action.label}
               >
@@ -163,9 +172,9 @@ export function ScoreBar({ label, value, max, color }: ScoreBarProps) {
   const displayValue = value !== null ? value : "—";
 
   const colorClasses = {
-    blue: "bg-blue-500",
-    green: "bg-green-500",
-    orange: "bg-orange-500",
+    blue: "bg-primary",
+    green: "bg-status-converted",
+    orange: "bg-status-proposal",
   };
 
   return (
@@ -177,7 +186,7 @@ export function ScoreBar({ label, value, max, color }: ScoreBarProps) {
           {value !== null && `/${max}`}
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+      <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
         <motion.div
           className={cn("h-full rounded-full", colorClasses[color])}
           variants={scoreBarVariants}
@@ -330,7 +339,12 @@ export function ContactSection({
   // In edit mode, show editable fields
   if (isEditing) {
     return (
-      <DrawerSection icon={Mail} title={t("leads.drawer.sections.contact")}>
+      <DrawerSection
+        icon={Mail}
+        title={t("leads.drawer.sections.contact")}
+        iconColor="text-primary"
+        borderAccent="border-l-primary"
+      >
         <EditableInfoRow
           label={t("leads.modal.first_name")}
           field="first_name"
@@ -373,7 +387,12 @@ export function ContactSection({
 
   // Read mode
   return (
-    <DrawerSection icon={Mail} title={t("leads.drawer.sections.contact")}>
+    <DrawerSection
+      icon={Mail}
+      title={t("leads.drawer.sections.contact")}
+      iconColor="text-primary"
+      borderAccent="border-l-primary"
+    >
       <InfoRow
         label={t("leads.drawer.fields.email")}
         value={email}
@@ -446,6 +465,8 @@ export function CompanySection({
       <DrawerSection
         icon={Building2}
         title={t("leads.drawer.sections.company")}
+        iconColor="text-chart-2"
+        borderAccent="border-l-chart-2"
       >
         <EditableInfoRow
           label={t("leads.drawer.fields.company_name")}
@@ -493,7 +514,12 @@ export function CompanySection({
 
   // Read mode
   return (
-    <DrawerSection icon={Building2} title={t("leads.drawer.sections.company")}>
+    <DrawerSection
+      icon={Building2}
+      title={t("leads.drawer.sections.company")}
+      iconColor="text-chart-2"
+      borderAccent="border-l-chart-2"
+    >
       <InfoRow
         label={t("leads.drawer.fields.company_name")}
         value={lead.company_name}
@@ -562,7 +588,12 @@ export function LocationSection({ lead }: SectionProps) {
   if (!lead.city && !lead.country) return null;
 
   return (
-    <DrawerSection icon={MapPin} title={t("leads.drawer.sections.location")}>
+    <DrawerSection
+      icon={MapPin}
+      title={t("leads.drawer.sections.location")}
+      iconColor="text-chart-4"
+      borderAccent="border-l-chart-4"
+    >
       {lead.country && (
         <InfoRow
           label={t("leads.drawer.fields.country")}
@@ -589,7 +620,12 @@ export function SourceSection({ lead }: SectionProps) {
     return null;
 
   return (
-    <DrawerSection icon={Megaphone} title={t("leads.drawer.sections.source")}>
+    <DrawerSection
+      icon={Megaphone}
+      title={t("leads.drawer.sections.source")}
+      iconColor="text-status-nurturing"
+      borderAccent="border-l-status-nurturing"
+    >
       {lead.source && (
         <InfoRow label={t("leads.drawer.fields.source")} value={lead.source} />
       )}
@@ -621,7 +657,12 @@ export function NotesSection({ lead }: SectionProps) {
   if (!lead.qualification_notes) return null;
 
   return (
-    <DrawerSection icon={FileText} title={t("leads.drawer.sections.notes")}>
+    <DrawerSection
+      icon={FileText}
+      title={t("leads.drawer.sections.notes")}
+      iconColor="text-status-proposal"
+      borderAccent="border-l-status-proposal"
+    >
       <p className="text-muted-foreground text-sm whitespace-pre-wrap">
         {lead.qualification_notes}
       </p>
@@ -633,7 +674,12 @@ export function ScoringSection({ lead }: SectionProps) {
   const { t } = useTranslation("crm");
 
   return (
-    <DrawerSection icon={BarChart3} title={t("leads.drawer.sections.scoring")}>
+    <DrawerSection
+      icon={BarChart3}
+      title={t("leads.drawer.sections.scoring")}
+      iconColor="text-chart-3"
+      borderAccent="border-l-chart-3"
+    >
       <ScoreBar
         label={t("leads.drawer.fields.fit_score")}
         value={lead.fit_score}
@@ -720,7 +766,12 @@ export function AssignmentSection({
   // In edit mode, show editable fields
   if (isEditing) {
     return (
-      <DrawerSection icon={User} title={t("leads.drawer.sections.assignment")}>
+      <DrawerSection
+        icon={User}
+        title={t("leads.drawer.sections.assignment")}
+        iconColor="text-status-converted"
+        borderAccent="border-l-status-converted"
+      >
         <EditableInfoRow
           label={t("leads.table.columns.priority")}
           field="priority"
@@ -769,7 +820,12 @@ export function AssignmentSection({
 
   // Read mode
   return (
-    <DrawerSection icon={User} title={t("leads.drawer.sections.assignment")}>
+    <DrawerSection
+      icon={User}
+      title={t("leads.drawer.sections.assignment")}
+      iconColor="text-status-converted"
+      borderAccent="border-l-status-converted"
+    >
       {lead.priority && (
         <InfoRow
           label={t("leads.table.columns.priority")}
@@ -825,7 +881,12 @@ export function GdprSection({ lead, visible }: GdprSectionProps) {
   };
 
   return (
-    <DrawerSection icon={Shield} title={t("leads.drawer.sections.gdpr")}>
+    <DrawerSection
+      icon={Shield}
+      title={t("leads.drawer.sections.gdpr")}
+      iconColor="text-status-converted"
+      borderAccent="border-l-status-converted"
+    >
       <InfoRow label={t("leads.drawer.fields.consent")} value={consentStatus} />
       {lead.consent_at && (
         <InfoRow
@@ -857,6 +918,8 @@ export function MessageSection({
       <DrawerSection
         icon={MessageSquare}
         title={t("leads.drawer.sections.message")}
+        iconColor="text-chart-1"
+        borderAccent="border-l-chart-1"
       >
         <EditableInfoRow
           label={t("leads.modal.message")}
@@ -880,6 +943,7 @@ export function MessageSection({
     <DrawerSection
       icon={MessageSquare}
       title={t("leads.drawer.sections.message")}
+      iconColor="text-chart-1"
     >
       <p className="text-muted-foreground text-sm whitespace-pre-wrap">
         {lead.message}
@@ -888,15 +952,26 @@ export function MessageSection({
   );
 }
 
-export function TimelineSection({ lead }: SectionProps) {
+export function TimelineSection({
+  lead,
+  refreshTrigger,
+  hideAddButton,
+}: SectionProps & { refreshTrigger?: number; hideAddButton?: boolean }) {
   const { t } = useTranslation("crm");
 
   return (
-    <DrawerSection icon={Clock} title={t("leads.drawer.sections.timeline")}>
+    <DrawerSection
+      icon={Clock}
+      title={t("leads.drawer.sections.timeline")}
+      iconColor="text-status-callback"
+      borderAccent="border-l-status-callback"
+    >
       <LeadTimeline
         leadId={lead.id}
         leadEmail={lead.email}
         leadPhone={lead.phone}
+        refreshTrigger={refreshTrigger}
+        hideAddButton={hideAddButton}
       />
     </DrawerSection>
   );

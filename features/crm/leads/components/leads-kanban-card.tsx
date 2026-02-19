@@ -10,6 +10,7 @@ import { Item as KanbanItem } from "@/components/ui/kanban";
 import { FCBadge } from "@/components/fc";
 import { useLeadStages } from "@/lib/hooks/useLeadStages";
 import { cn } from "@/lib/utils";
+import { getStatusConfig } from "@/lib/config/pipeline-status";
 import { LeadContextMenu } from "@/components/crm/leads/LeadContextMenu";
 import type { Lead, LeadStatus } from "../types/lead.types";
 
@@ -32,15 +33,15 @@ const STATUS_VARIANT: Record<string, BadgeVariant> = {
   nurturing: "info",
 };
 
-// ── Status → color dot mapping ──────────────────────────────────────
+// ── Status → color dot mapping (from pipeline config) ───────────────
 
 const STATUS_DOT_COLOR: Record<string, string> = {
-  callback_requested: "bg-amber-500",
-  demo: "bg-blue-500",
-  proposal_sent: "bg-orange-500",
-  converted: "bg-green-500",
-  lost: "bg-red-500",
-  nurturing: "bg-purple-500",
+  callback_requested: getStatusConfig("callback_requested").bg,
+  demo: getStatusConfig("demo").bg,
+  proposal_sent: getStatusConfig("proposal_sent").bg,
+  converted: getStatusConfig("converted").bg,
+  lost: getStatusConfig("lost").bg,
+  nurturing: getStatusConfig("nurturing").bg,
 };
 
 // ── Utilities ───────────────────────────────────────────────────────
@@ -125,19 +126,26 @@ export const LeadsKanbanCard = memo(
             onClick={() => onView?.(lead.id)}
             className={cn(
               "bg-background cursor-grab border p-3 shadow-sm transition-shadow hover:shadow-md",
-              overdueDays !== null && "ring-2 ring-red-500/50"
+              overdueDays !== null && "ring-destructive/50 ring-2"
             )}
           >
             {/* Overdue Indicator */}
             {overdueDays !== null && (
-              <div className="mb-1.5 flex items-center gap-1 text-[10px] font-medium text-red-600 dark:text-red-400">
+              <div className="text-destructive mb-1.5 flex items-center gap-1 text-[10px] font-medium">
                 <AlertTriangle className="size-3" />
                 {t("leads.kanban.overdue_days", { count: overdueDays })}
               </div>
             )}
 
+            {/* Line 0: Lead Code — FIRST, prominent */}
+            {lead.lead_code && (
+              <p className="text-primary truncate font-mono text-xs font-medium">
+                {lead.lead_code}
+              </p>
+            )}
+
             {/* Line 1: Company + Flag */}
-            <div className="flex items-center justify-between gap-1.5">
+            <div className="mt-0.5 flex items-center justify-between gap-1.5">
               <h4 className="truncate text-sm font-semibold">
                 {lead.company_name || "Unknown Company"}
               </h4>
@@ -171,10 +179,10 @@ export const LeadsKanbanCard = memo(
                   className={cn(
                     "inline-flex items-center rounded px-1 py-px text-[10px] font-bold",
                     score >= 70
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      ? "bg-status-converted/20 text-status-converted"
                       : score >= 40
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                        ? "bg-status-proposal/20 text-status-proposal"
+                        : "bg-muted text-muted-foreground"
                   )}
                 >
                   {score}
