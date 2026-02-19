@@ -130,6 +130,9 @@ export function LeadDrawer({
   // Timeline refresh counter — incremented by InlineActivityForm
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Cal.com inline embed state — lifted from LeadStatusActions
+  const [showCalEmbed, setShowCalEmbed] = useState(false);
+
   // Reset states when lead changes or popup closes
   useEffect(() => {
     setIsEditing(false);
@@ -138,6 +141,7 @@ export function LeadDrawer({
     setIsDisqualifyModalOpen(false);
     setIsDeleteModalOpen(false);
     setIsDeleting(false);
+    setShowCalEmbed(false);
     setCurrentLead(lead);
   }, [lead?.id, isOpen, lead]);
 
@@ -416,7 +420,7 @@ export function LeadDrawer({
 
                     <Separator />
 
-                    {/* Step Actions (manual + drag & drop) */}
+                    {/* Step Actions (manual + drag & drop + Cal embed) */}
                     <LeadStatusActions
                       lead={lead}
                       onStatusChanged={() => {
@@ -427,6 +431,8 @@ export function LeadDrawer({
                       }}
                       pendingTransition={transition}
                       onTransitionCancel={onTransitionCancel}
+                      showCalEmbed={showCalEmbed}
+                      onShowCalEmbed={setShowCalEmbed}
                     />
 
                     <Separator />

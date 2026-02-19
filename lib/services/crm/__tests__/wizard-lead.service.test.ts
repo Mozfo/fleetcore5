@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import type { crm_leads } from "@prisma/client";
-import {
-  WizardLeadService,
-  WIZARD_LEAD_CONSTANTS,
-} from "../wizard-lead.service";
+import { WizardLeadService } from "../wizard-lead.service";
 
 // Mock prisma
 vi.mock("@/lib/prisma", () => ({
@@ -74,7 +71,7 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     priority: "medium",
     consent_ip: null,
     last_activity_at: null,
-    provider_id: WIZARD_LEAD_CONSTANTS.DEFAULT_PROVIDER_ID,
+    provider_id: "default-provider-id",
     // V5: Closing columns
     stage_entered_at: now,
     loss_reason_code: null,
@@ -180,7 +177,7 @@ describe("WizardLeadService", () => {
           country_code: mockCountryCode,
           status: "new",
           email_verified: false,
-          provider_id: WIZARD_LEAD_CONSTANTS.DEFAULT_PROVIDER_ID,
+          provider_id: "default-provider-id",
           wizard_completed: false,
         }),
       });

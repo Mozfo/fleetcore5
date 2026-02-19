@@ -27,9 +27,9 @@ import {
   ThumbsDown,
   RotateCcw,
   Loader2,
-  ExternalLink,
   ArrowRightCircle,
 } from "lucide-react";
+import Cal, { getCalApi } from "@calcom/embed-react";
 import { toast } from "sonner";
 import { useInvalidate } from "@refinedev/core";
 
@@ -199,6 +199,8 @@ interface LeadStatusActionsProps {
   onStatusChanged: () => void;
   pendingTransition?: PendingTransition | null;
   onTransitionCancel?: () => void;
+  showCalEmbed?: boolean;
+  onShowCalEmbed?: (show: boolean) => void;
 }
 
 export function LeadStatusActions({
@@ -206,6 +208,8 @@ export function LeadStatusActions({
   onStatusChanged,
   pendingTransition,
   onTransitionCancel,
+  showCalEmbed,
+  onShowCalEmbed,
 }: LeadStatusActionsProps) {
   const { t } = useTranslation("crm");
   const params = useParams();
@@ -248,6 +252,18 @@ export function LeadStatusActions({
     }, 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingTransition?.toStatus]);
+
+  // ── Force Cal.com UI config after mount (workaround for #9577) ─────
+  useEffect(() => {
+    if (!showCalEmbed) return;
+    void (async () => {
+      const cal = await getCalApi({ namespace: "fleetcore-demo" });
+      cal("ui", {
+        hideEventTypeDetails: true,
+        layout: "week_view",
+      });
+    })();
+  }, [showCalEmbed]);
 
   // ── Handle drag confirm (TransitionActionSection logic) ────────────
 
@@ -301,12 +317,7 @@ export function LeadStatusActions({
     if (action.isDisabled) return;
 
     if (action.isExternal) {
-      const slug = CALCOM_SLUGS[locale] || CALCOM_SLUGS.en;
-      const url = new URL(`${CALCOM_ORIGIN}/${slug}`);
-      if (lead.email) url.searchParams.set("email", lead.email);
-      const name = [lead.first_name, lead.last_name].filter(Boolean).join(" ");
-      if (name) url.searchParams.set("name", name);
-      window.open(url.toString(), "_blank", "noopener,noreferrer");
+      onShowCalEmbed?.(true);
       return;
     }
 
@@ -521,6 +532,45 @@ export function LeadStatusActions({
     );
   }
 
+  // ── Cal.com inline embed mode ─────────────────────────────────────
+
+  if (showCalEmbed) {
+    const slug = CALCOM_SLUGS[locale] || CALCOM_SLUGS.en;
+    const guestName = [lead.first_name, lead.last_name]
+      .filter(Boolean)
+      .join(" ");
+
+    return (
+      <div ref={containerRef} className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-foreground text-xs font-semibold tracking-wider uppercase">
+            {t("leads.step_actions.book_demo")}
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onShowCalEmbed?.(false)}
+          >
+            {t("leads.step_actions.cancel")}
+          </Button>
+        </div>
+        <Cal
+          namespace="fleetcore-demo"
+          calLink={slug}
+          calOrigin={CALCOM_ORIGIN}
+          embedJsUrl={`${CALCOM_ORIGIN}/embed/embed.js`}
+          config={{
+            theme: "light",
+            locale,
+            ...(guestName && { name: guestName }),
+            ...(lead.email && { email: lead.email }),
+          }}
+          style={{ width: "100%", height: "100%", overflow: "auto" }}
+        />
+      </div>
+    );
+  }
+
   // ── Normal mode: manual step actions ───────────────────────────────
 
   if (actions.length === 0) return null;
@@ -573,9 +623,6 @@ export function LeadStatusActions({
                     </p>
                   )}
                 </span>
-                {action.isExternal && (
-                  <ExternalLink className="text-muted-foreground size-3.5" />
-                )}
               </button>
 
               {/* Expanded sub-fields (ml-8 indent) */}
