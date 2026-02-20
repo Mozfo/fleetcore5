@@ -11,7 +11,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Pencil, Ban, Trash, CheckCircle, X, Loader2 } from "lucide-react";
+import {
+  Pencil,
+  Ban,
+  Trash,
+  CheckCircle,
+  X,
+  Loader2,
+  CalendarCheck,
+  Clock,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -39,12 +48,14 @@ import {
 import { InlineActivityForm } from "./InlineActivityForm";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { DisqualifyLeadModal } from "./DisqualifyLeadModal";
-import { LeadStatusActions } from "./LeadStatusActions";
+import { LeadStatusActions, type BookingData } from "./LeadStatusActions";
 import { drawerContainerVariants } from "@/lib/animations/drawer-variants";
 import {
   updateLeadAction,
+  updateLeadStatusAction,
   type UpdateLeadData,
 } from "@/lib/actions/crm/lead.actions";
+import { useInvalidate } from "@refinedev/core";
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
 import { usePermission } from "@/lib/hooks/usePermission";
 import type { Lead } from "@/types/crm";
@@ -115,6 +126,7 @@ export function LeadDrawer({
 }: LeadDrawerProps) {
   const { t } = useTranslation("crm");
   const { can } = usePermission();
+  const invalidate = useInvalidate();
 
   // ── Edit Mode States ─────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
@@ -132,6 +144,7 @@ export function LeadDrawer({
 
   // Cal.com inline embed state — lifted from LeadStatusActions
   const [showCalEmbed, setShowCalEmbed] = useState(false);
+  const [bookingData, setBookingData] = useState<BookingData | null>(null);
 
   // Reset states when lead changes or popup closes
   useEffect(() => {
@@ -142,6 +155,7 @@ export function LeadDrawer({
     setIsDeleteModalOpen(false);
     setIsDeleting(false);
     setShowCalEmbed(false);
+    setBookingData(null);
     setCurrentLead(lead);
   }, [lead?.id, isOpen, lead]);
 
@@ -221,6 +235,33 @@ export function LeadDrawer({
   const handleEdit = useCallback(() => {
     setIsEditing(true);
   }, []);
+
+  // ── Booking success handler ──────────────────────────────────────────
+
+  const handleBookingSuccess = useCallback(
+    (data: BookingData) => {
+      // Store booking data for display
+      setBookingData(data);
+
+      // Update lead status to "demo" immediately
+      void updateLeadStatusAction(lead?.id ?? "", "demo", {
+        reasonDetail: "Demo booked via Cal.com",
+      }).then((result) => {
+        if (result.success) {
+          toast.success(t("leads.step_actions.success"));
+          // Update local lead to reflect new status without page reload
+          if (lead) {
+            const updatedLead = { ...lead, status: "demo" };
+            setCurrentLead(updatedLead);
+            onLeadUpdated?.(updatedLead);
+          }
+          // Invalidate kanban list so cards update in background
+          void invalidate({ resource: "leads", invalidates: ["list"] });
+        }
+      });
+    },
+    [lead, t, invalidate, onLeadUpdated]
+  );
 
   // ── Disqualify handlers ──────────────────────────────────────────────
 
@@ -420,9 +461,52 @@ export function LeadDrawer({
 
                     <Separator />
 
+                    {/* Booking confirmation — shown after Cal.com booking */}
+                    {bookingData && (
+                      <>
+                        <div className="bg-accent/50 space-y-2 rounded-lg border p-4">
+                          <div className="flex items-center gap-2">
+                            <CalendarCheck className="text-foreground size-4" />
+                            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
+                              {t(
+                                "leads.step_actions.booking_confirmed",
+                                "Démo planifiée"
+                              )}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="text-muted-foreground size-3.5" />
+                            <span>
+                              {new Date(
+                                bookingData.startTime
+                              ).toLocaleDateString(undefined, {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                              {" — "}
+                              {new Date(
+                                bookingData.startTime
+                              ).toLocaleTimeString(undefined, {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                              {" - "}
+                              {new Date(bookingData.endTime).toLocaleTimeString(
+                                undefined,
+                                { hour: "2-digit", minute: "2-digit" }
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+
                     {/* Step Actions (manual + drag & drop + Cal embed) */}
                     <LeadStatusActions
-                      lead={lead}
+                      lead={currentLead || lead}
                       onStatusChanged={() => {
                         if (transition) {
                           onTransitionComplete?.();
@@ -433,6 +517,7 @@ export function LeadDrawer({
                       onTransitionCancel={onTransitionCancel}
                       showCalEmbed={showCalEmbed}
                       onShowCalEmbed={setShowCalEmbed}
+                      onBookingSuccess={handleBookingSuccess}
                     />
 
                     <Separator />

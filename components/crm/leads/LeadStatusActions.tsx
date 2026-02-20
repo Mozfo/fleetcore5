@@ -194,6 +194,12 @@ const AUTO_CONFIRM_STATUSES = new Set(["converted", "callback_requested"]);
 
 // ── Component ─────────────────────────────────────────────────────────
 
+export interface BookingData {
+  startTime: string;
+  endTime: string;
+  title: string;
+}
+
 interface LeadStatusActionsProps {
   lead: Lead;
   onStatusChanged: () => void;
@@ -201,6 +207,7 @@ interface LeadStatusActionsProps {
   onTransitionCancel?: () => void;
   showCalEmbed?: boolean;
   onShowCalEmbed?: (show: boolean) => void;
+  onBookingSuccess?: (data: BookingData) => void;
 }
 
 export function LeadStatusActions({
@@ -210,6 +217,7 @@ export function LeadStatusActions({
   onTransitionCancel,
   showCalEmbed,
   onShowCalEmbed,
+  onBookingSuccess,
 }: LeadStatusActionsProps) {
   const { t } = useTranslation("crm");
   const params = useParams();
@@ -267,32 +275,25 @@ export function LeadStatusActions({
         layout: "week_view",
       });
 
-      // Listen for successful booking → update status + auto-close
+      // Listen for successful booking → bubble up to parent
       cal("on", {
         action: "bookingSuccessfulV2",
-        callback: () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        callback: (e: any) => {
           if (dismissed) return;
           dismissed = true;
-
-          // Transition lead to "demo" status
-          void updateLeadStatusAction(lead.id, "demo", {
-            reasonDetail: "Demo booked via Cal.com",
-          }).then((result) => {
-            if (result.success) {
-              toast.success(t("leads.step_actions.success"));
-              void invalidate({ resource: "leads", invalidates: ["list"] });
-            }
-          });
 
           // Auto-dismiss Cal embed after 3 seconds
           setTimeout(() => {
             onShowCalEmbed?.(false);
-            onStatusChanged();
           }, 3000);
+
+          // Bubble booking data to parent (LeadDrawer handles status update + UI)
+          onBookingSuccess?.(e.detail.data);
         },
       });
     })();
-  }, [showCalEmbed, lead.id, t, invalidate, onShowCalEmbed, onStatusChanged]);
+  }, [showCalEmbed, onShowCalEmbed, onBookingSuccess]);
 
   // ── Handle drag confirm (TransitionActionSection logic) ────────────
 
