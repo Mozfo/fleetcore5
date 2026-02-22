@@ -10,6 +10,7 @@
 
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins/organization";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
@@ -216,10 +217,12 @@ export const auth = betterAuth({
 
   plugins: [
     organization({
+      teams: { enabled: true },
       schema: {
         session: {
           fields: {
             activeOrganizationId: "active_organization_id",
+            activeTeamId: "active_team_id",
           },
         },
         organization: {
@@ -243,6 +246,23 @@ export const auth = betterAuth({
             expiresAt: "expires_at",
             createdAt: "created_at",
             inviterId: "inviter_id",
+            teamId: "team_id",
+          },
+        },
+        team: {
+          modelName: "auth_team",
+          fields: {
+            organizationId: "organization_id",
+            createdAt: "created_at",
+            updatedAt: "updated_at",
+          },
+        },
+        teamMember: {
+          modelName: "auth_team_member",
+          fields: {
+            teamId: "team_id",
+            userId: "user_id",
+            createdAt: "created_at",
           },
         },
       },
@@ -254,6 +274,21 @@ export const auth = betterAuth({
           subject: "You've been invited to FleetCore",
           html: `<p>You've been invited to join FleetCore. <a href="${inviteUrl}">Accept invitation</a></p>`,
         });
+      },
+    }),
+    admin({
+      schema: {
+        user: {
+          fields: {
+            banReason: "ban_reason",
+            banExpires: "ban_expires",
+          },
+        },
+        session: {
+          fields: {
+            impersonatedBy: "impersonated_by",
+          },
+        },
       },
     }),
     nextCookies(), // MUST be last plugin

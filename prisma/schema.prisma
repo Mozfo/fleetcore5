@@ -6818,17 +6818,22 @@ model crm_blacklist {
 // ── Better Auth tables (auth_* prefix, snake_case) ──────────────────────────
 
 model auth_user {
-  id             String            @id
+  id             String             @id
   name           String
   email          String
-  email_verified Boolean           @default(false)
+  email_verified Boolean            @default(false)
   image          String?
-  created_at     DateTime          @default(now())
-  updated_at     DateTime          @default(now())
+  created_at     DateTime           @default(now())
+  updated_at     DateTime           @default(now())
+  role           String?            @default("user")
+  banned         Boolean?           @default(false)
+  ban_reason     String?
+  ban_expires    DateTime?
   sessions       auth_session[]
   accounts       auth_account[]
   members        auth_member[]
   invitations    auth_invitation[]
+  team_members   auth_team_member[]
 
   @@unique([email], map: "auth_user_email_unique")
   @@map("auth_user")
@@ -6845,6 +6850,8 @@ model auth_session {
   user_id                String
   user                   auth_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
   active_organization_id String?
+  impersonated_by        String?
+  active_team_id         String?
 
   @@unique([token], map: "auth_session_token_unique")
   @@index([user_id], map: "idx_auth_session_user_id")
@@ -6892,6 +6899,7 @@ model auth_organization {
   metadata    String?
   members     auth_member[]
   invitations auth_invitation[]
+  teams       auth_team[]
 
   @@unique([slug], map: "auth_organization_slug_unique")
   @@map("auth_organization")
@@ -6912,16 +6920,18 @@ model auth_member {
 }
 
 model auth_invitation {
-  id              String            @id
+  id              String             @id
   organization_id String
-  organization    auth_organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  organization    auth_organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   email           String
   role            String?
-  status          String            @default("pending")
+  status          String             @default("pending")
   expires_at      DateTime
-  created_at      DateTime          @default(now())
+  created_at      DateTime           @default(now())
   inviter_id      String
-  user            auth_user         @relation(fields: [inviter_id], references: [id], onDelete: Cascade)
+  user            auth_user          @relation(fields: [inviter_id], references: [id], onDelete: Cascade)
+  team_id         String?
+  team            auth_team?         @relation(fields: [team_id], references: [id], onDelete: SetNull)
 
   @@index([organization_id], map: "idx_auth_invitation_organization_id")
   @@index([email], map: "idx_auth_invitation_email")
@@ -6936,4 +6946,31 @@ model auth_rate_limit {
 
   @@unique([key], map: "auth_rate_limit_key_unique")
   @@map("auth_rate_limit")
+}
+
+model auth_team {
+  id              String             @id
+  name            String
+  organization_id String
+  organization    auth_organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  created_at      DateTime           @default(now())
+  updated_at      DateTime?
+  members         auth_team_member[]
+  invitations     auth_invitation[]
+
+  @@index([organization_id], map: "idx_auth_team_organization_id")
+  @@map("auth_team")
+}
+
+model auth_team_member {
+  id         String    @id
+  team_id    String
+  team       auth_team @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  user_id    String
+  user       auth_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at DateTime? @default(now())
+
+  @@index([team_id], map: "idx_auth_team_member_team_id")
+  @@index([user_id], map: "idx_auth_team_member_user_id")
+  @@map("auth_team_member")
 }
