@@ -13,7 +13,14 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
+
+// Edge-compatible session cookie check (replaces better-auth/cookies which
+// pulls Node.js-only transitive deps like db/schema, crypto/jwt, hmac)
+const SESSION_COOKIE_NAME = "better-auth.session_token";
+
+function getSessionCookie(req: NextRequest): string | null {
+  return req.cookies.get(SESSION_COOKIE_NAME)?.value ?? null;
+}
 
 // ── Rate limiting (in-memory, 100 req/min by IP) ────────────────────────────
 
