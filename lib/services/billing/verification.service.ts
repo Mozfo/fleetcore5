@@ -255,7 +255,7 @@ export class VerificationService {
             organizationId: tenant.clerk_organization_id,
             email: input.admin_email,
             name: input.admin_name,
-            role: "admin",
+            role: "org:provider_admin",
           });
 
           if (inviteResult.success) {

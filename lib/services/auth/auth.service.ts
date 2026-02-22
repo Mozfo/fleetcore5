@@ -18,6 +18,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import type { OrgRole } from "@/lib/config/permissions";
 
 // ===== TYPES & INTERFACES =====
 
@@ -52,7 +53,7 @@ export interface InviteAdminInput {
   organizationId: string;
   email: string;
   name?: string;
-  role?: "admin" | "member";
+  role?: OrgRole;
   /** ID of the user creating the invitation. Falls back to org owner. */
   inviterId?: string;
 }
@@ -164,7 +165,7 @@ export class AuthService {
    * callback configured in lib/auth.ts.
    */
   async inviteAdmin(input: InviteAdminInput): Promise<InviteAdminResult> {
-    const { organizationId, email, role = "admin" } = input;
+    const { organizationId, email, role = "org:adm_admin" } = input;
 
     logger.info(
       { organizationId, email, role },
@@ -182,7 +183,7 @@ export class AuthService {
       let inviterId = input.inviterId;
       if (!inviterId) {
         const owner = await prisma.auth_member.findFirst({
-          where: { organization_id: organizationId, role: "owner" },
+          where: { organization_id: organizationId, role: "org:adm_admin" },
           select: { user_id: true },
         });
         inviterId = owner?.user_id ?? organizationId; // last-resort fallback
