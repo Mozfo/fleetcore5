@@ -109,7 +109,7 @@ model flt_drivers {
   adm_tenants             adm_tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 }
 
-// Phase 0.3: Clerk Sync & Audit tables
+// Phase 0.3: Audit tables
 model adm_invitations {
   id                      String                @id @default(cuid())
   tenant_id               String
