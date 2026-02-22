@@ -365,6 +365,7 @@ describe("LeadCreationService", () => {
           // V6.6: Recovery notification
           recovery_notification_sent_at: null,
           recovery_notification_clicked_at: null,
+          whatsapp_number: null,
         };
         return lead;
       }

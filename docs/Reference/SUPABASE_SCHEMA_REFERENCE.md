@@ -1,15 +1,17 @@
 # FleetCore5 - Supabase Database Schema Reference
 
-**Last Updated:** 2025-12-22
+**Last Updated:** 2026-02-22
 
 **Database:** PostgreSQL on Supabase
-**Total Tables:** 124
+**Total Tables:** 141
 
 ## Table Count by Module
 
 - **adm\_**: 17 tables
-- **bil\_**: 17 tables
-- **crm\_**: 13 tables
+- **auth\_**: 10 tables
+- **bil\_**: 15 tables
+- **clt\_**: 5 tables
+- **crm\_**: 17 tables
 - **dir\_**: 15 tables
 - **doc\_**: 4 tables
 - **fin\_**: 11 tables
@@ -26,28 +28,30 @@
 ## Table of Contents
 
 1. [Administration Module (adm\_)](#administration-module-adm_)
-2. [Billing Module (bil\_)](#billing-module-bil_)
-3. [CRM Module (crm\_)](#crm-module-crm_)
-4. [Directory Module (dir\_)](#directory-module-dir_)
-5. [Document Module (doc\_)](#document-module-doc_)
-6. [Finance Module (fin\_)](#finance-module-fin_)
-7. [Fleet Module (flt\_)](#fleet-module-flt_)
-8. [HQ Module (hq\_)](#hq-module-hq_)
-9. [Revenue Module (rev\_)](#revenue-module-rev_)
-10. [Rider/Driver Module (rid\_)](#riderdriver-module-rid_)
-11. [Schedule Module (sch\_)](#schedule-module-sch_)
-12. [Stripe Module (stripe\_)](#stripe-module-stripe_)
-13. [Support Module (sup\_)](#support-module-sup_)
-14. [Transport Module (trp\_)](#transport-module-trp_)
-15. [Views (v\_)](#views-v_)
-16. [Enum Types](#enum-types)
-17. [Foreign Key Relationships](#foreign-key-relationships)
+2. [Auth Module (auth\_)](#auth-module-auth_)
+3. [Billing Module (bil\_)](#billing-module-bil_)
+4. [Client Module (clt\_)](#client-module-clt_)
+5. [CRM Module (crm\_)](#crm-module-crm_)
+6. [Directory Module (dir\_)](#directory-module-dir_)
+7. [Document Module (doc\_)](#document-module-doc_)
+8. [Finance Module (fin\_)](#finance-module-fin_)
+9. [Fleet Module (flt\_)](#fleet-module-flt_)
+10. [HQ Module (hq\_)](#hq-module-hq_)
+11. [Revenue Module (rev\_)](#revenue-module-rev_)
+12. [Rider/Driver Module (rid\_)](#riderdriver-module-rid_)
+13. [Schedule Module (sch\_)](#schedule-module-sch_)
+14. [Stripe Module (stripe\_)](#stripe-module-stripe_)
+15. [Support Module (sup\_)](#support-module-sup_)
+16. [Transport Module (trp\_)](#transport-module-trp_)
+17. [Views (v\_)](#views-v_)
+18. [Enum Types](#enum-types)
+19. [Foreign Key Relationships](#foreign-key-relationships)
 
 ## Administration Module (adm\_)
 
 ### adm_audit_logs
 
-**Row Count:** ~67
+**Row Count:** ~62
 
 | Column          | Type           | Nullable | Default                         |
 | --------------- | -------------- | -------- | ------------------------------- |
@@ -132,7 +136,7 @@
 
 ### adm_member_roles
 
-**Row Count:** ~2
+**Row Count:** ~0
 
 | Column            | Type           | Nullable | Default              |
 | ----------------- | -------------- | -------- | -------------------- |
@@ -186,61 +190,9 @@
 
 - `adm_member_sessions_token_hash_key`: (token_hash)
 
-### adm_members
-
-**Row Count:** ~59
-
-| Column                   | Type           | Nullable | Default                          |
-| ------------------------ | -------------- | -------- | -------------------------------- |
-| id                       | `uuid`         | NO       | `uuid_generate_v4()`             |
-| tenant_id                | `uuid`         | NO       | -                                |
-| email                    | `USER-DEFINED` | NO       | -                                |
-| clerk_user_id            | `varchar`      | NO       | -                                |
-| first_name               | `varchar`      | YES      | -                                |
-| last_name                | `varchar`      | YES      | -                                |
-| phone                    | `varchar`      | NO       | -                                |
-| role                     | `varchar`      | NO       | `'member'::character varying...` |
-| last_login_at            | `timestamptz`  | YES      | -                                |
-| metadata                 | `jsonb`        | NO       | `'{}'::jsonb`                    |
-| status                   | `varchar`      | NO       | `'active'::character varying...` |
-| created_at               | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              |
-| created_by               | `uuid`         | YES      | -                                |
-| updated_at               | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              |
-| updated_by               | `uuid`         | YES      | -                                |
-| deleted_at               | `timestamptz`  | YES      | -                                |
-| deleted_by               | `uuid`         | YES      | -                                |
-| deletion_reason          | `text`         | YES      | -                                |
-| email_verified_at        | `timestamptz`  | YES      | -                                |
-| two_factor_enabled       | `boolean`      | NO       | `false`                          |
-| two_factor_secret        | `text`         | YES      | -                                |
-| password_changed_at      | `timestamptz`  | YES      | -                                |
-| failed_login_attempts    | `integer`      | NO       | `0`                              |
-| locked_until             | `timestamptz`  | YES      | -                                |
-| default_role_id          | `uuid`         | YES      | -                                |
-| preferred_language       | `varchar`      | YES      | -                                |
-| notification_preferences | `jsonb`        | YES      | -                                |
-
-**Indexes:**
-
-- `adm_members_clerk_user_id_idx`: (clerk_user_id)
-- `adm_members_created_by_idx`: (created_by)
-- `adm_members_deleted_at_idx`: (deleted_at)
-- `adm_members_email_idx`: (email)
-- `adm_members_last_login_at_idx`: (last_login_at)
-- `adm_members_metadata_gin`: (metadata)
-- `adm_members_status_active_idx`: (status)
-- `adm_members_tenant_clerk_uq`: (tenant_id, clerk_user_id)
-- `adm_members_tenant_email_uq`: (tenant_id, email)
-- `adm_members_tenant_id_idx`: (tenant_id)
-- `adm_members_updated_by_idx`: (updated_by)
-- `idx_adm_members_email`: (email)
-- `idx_adm_members_role`: (default_role_id)
-- `idx_adm_members_tenant`: (tenant_id)
-- `idx_adm_members_tenant_status`: (tenant_id, status)
-
 ### adm_notification_logs
 
-**Row Count:** ~392
+**Row Count:** ~502
 
 | Column          | Type           | Nullable | Default                          |
 | --------------- | -------------- | -------- | -------------------------------- |
@@ -294,7 +246,7 @@
 
 ### adm_notification_queue
 
-**Row Count:** ~13
+**Row Count:** ~118
 
 | Column            | Type           | Nullable | Default                         |
 | ----------------- | -------------- | -------- | ------------------------------- |
@@ -331,6 +283,25 @@
 - `idx_adm_notification_queue_status`: (status)
 - `idx_adm_notification_queue_template`: (template_code)
 
+### adm_provider_countries
+
+**Row Count:** ~2
+
+| Column       | Type          | Nullable | Default              |
+| ------------ | ------------- | -------- | -------------------- |
+| id           | `uuid`        | NO       | `uuid_generate_v4()` |
+| provider_id  | `uuid`        | NO       | -                    |
+| country_code | `character`   | NO       | -                    |
+| is_primary   | `boolean`     | NO       | `false`              |
+| created_at   | `timestamptz` | NO       | `now()`              |
+
+**Indexes:**
+
+- `idx_apc_country`: (country_code)
+- `idx_apc_one_primary_per_provider`: (provider_id)
+- `idx_apc_provider`: (provider_id)
+- `uq_apc_country`: (country_code)
+
 ### adm_provider_employees
 
 **Row Count:** ~5
@@ -338,7 +309,6 @@
 | Column           | Type          | Nullable | Default                          |
 | ---------------- | ------------- | -------- | -------------------------------- |
 | id               | `uuid`        | NO       | `uuid_generate_v4()`             |
-| clerk_user_id    | `varchar`     | NO       | -                                |
 | email            | `varchar`     | NO       | -                                |
 | department       | `varchar`     | YES      | -                                |
 | title            | `varchar`     | YES      | -                                |
@@ -356,10 +326,10 @@
 | first_name       | `varchar`     | NO       | -                                |
 | last_name        | `varchar`     | YES      | -                                |
 | provider_id      | `uuid`        | YES      | -                                |
+| auth_user_id     | `text`        | YES      | -                                |
 
 **Indexes:**
 
-- `adm_provider_employees_clerk_user_id_uq`: (clerk_user_id)
 - `adm_provider_employees_created_by_idx`: (created_by)
 - `adm_provider_employees_deleted_at_idx`: (deleted_at)
 - `adm_provider_employees_email_uq`: (email)
@@ -372,7 +342,7 @@
 
 ### adm_providers
 
-**Row Count:** ~3
+**Row Count:** ~4
 
 | Column          | Type          | Nullable | Default                          |
 | --------------- | ------------- | -------- | -------------------------------- |
@@ -391,6 +361,7 @@
 | deleted_at      | `timestamptz` | YES      | -                                |
 | deleted_by      | `uuid`        | YES      | -                                |
 | deletion_reason | `text`        | YES      | -                                |
+| is_headquarters | `boolean`     | NO       | `false`                          |
 
 **CHECK Constraints:**
 
@@ -401,6 +372,7 @@
 - `adm_providers_code_unique`: (code)
 - `idx_adm_providers_code`: (code)
 - `idx_adm_providers_country`: (country_code)
+- `idx_adm_providers_headquarters`: (is_headquarters)
 - `idx_adm_providers_internal`: (is_internal)
 - `idx_adm_providers_status`: (status)
 
@@ -546,37 +518,242 @@
 
 **Row Count:** ~19
 
-| Column                  | Type           | Nullable | Default                             |
-| ----------------------- | -------------- | -------- | ----------------------------------- |
-| id                      | `uuid`         | NO       | `uuid_generate_v4()`                |
-| name                    | `text`         | NO       | -                                   |
-| country_code            | `varchar`      | NO       | -                                   |
-| clerk_organization_id   | `text`         | YES      | -                                   |
-| vat_rate                | `numeric`      | YES      | -                                   |
-| default_currency        | `character`    | NO       | `'EUR'::character varying...`       |
-| timezone                | `text`         | NO       | `'Europe/Paris'::character vary...` |
-| created_at              | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`                 |
-| updated_at              | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`                 |
-| deleted_at              | `timestamptz`  | YES      | -                                   |
-| subdomain               | `varchar`      | YES      | -                                   |
-| status                  | `USER-DEFINED` | NO       | `'trialing'::tenant_status`         |
-| onboarding_completed_at | `timestamptz`  | YES      | -                                   |
-| trial_ends_at           | `timestamptz`  | YES      | -                                   |
-| next_invoice_date       | `date`         | YES      | -                                   |
-| primary_contact_email   | `varchar`      | YES      | -                                   |
-| primary_contact_phone   | `varchar`      | YES      | -                                   |
-| billing_email           | `varchar`      | YES      | -                                   |
-| tenant_code             | `varchar`      | YES      | -                                   |
+| Column                        | Type           | Nullable | Default                             |
+| ----------------------------- | -------------- | -------- | ----------------------------------- |
+| id                            | `uuid`         | NO       | `uuid_generate_v4()`                |
+| name                          | `text`         | NO       | -                                   |
+| country_code                  | `varchar`      | NO       | -                                   |
+| auth_organization_id          | `text`         | YES      | -                                   |
+| vat_rate                      | `numeric`      | YES      | -                                   |
+| default_currency              | `character`    | NO       | `'EUR'::character varying...`       |
+| timezone                      | `text`         | NO       | `'Europe/Paris'::character vary...` |
+| created_at                    | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`                 |
+| updated_at                    | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`                 |
+| deleted_at                    | `timestamptz`  | YES      | -                                   |
+| subdomain                     | `varchar`      | YES      | -                                   |
+| status                        | `USER-DEFINED` | NO       | `'trialing'::tenant_status`         |
+| onboarding_completed_at       | `timestamptz`  | YES      | -                                   |
+| trial_ends_at                 | `timestamptz`  | YES      | -                                   |
+| next_invoice_date             | `date`         | YES      | -                                   |
+| primary_contact_email         | `varchar`      | YES      | -                                   |
+| primary_contact_phone         | `varchar`      | YES      | -                                   |
+| billing_email                 | `varchar`      | YES      | -                                   |
+| tenant_code                   | `varchar`      | YES      | -                                   |
+| stripe_customer_id            | `varchar`      | YES      | -                                   |
+| stripe_subscription_id        | `varchar`      | YES      | -                                   |
+| verification_token            | `varchar`      | YES      | -                                   |
+| verification_token_expires_at | `timestamptz`  | YES      | -                                   |
+| verification_completed_at     | `timestamptz`  | YES      | -                                   |
+| admin_name                    | `varchar`      | YES      | -                                   |
+| admin_email                   | `varchar`      | YES      | -                                   |
+| admin_invited_at              | `timestamptz`  | YES      | -                                   |
+| cgi_accepted_at               | `timestamptz`  | YES      | -                                   |
+| cgi_accepted_ip               | `varchar`      | YES      | -                                   |
+| cgi_version                   | `varchar`      | YES      | -                                   |
 
 **Indexes:**
 
-- `adm_tenants_clerk_org_unique`: (clerk_organization_id)
-- `adm_tenants_clerk_organization_id_idx`: (clerk_organization_id)
+- `adm_tenants_auth_org_unique`: (auth_organization_id)
+- `adm_tenants_auth_organization_id_idx`: (auth_organization_id)
 - `adm_tenants_country_code_idx`: (country_code)
 - `adm_tenants_default_currency_idx`: (default_currency)
 - `adm_tenants_deleted_at_idx`: (deleted_at)
 - `adm_tenants_subdomain_key`: (subdomain)
+- `idx_adm_tenants_pending_verification`: (verification_token_expires_at)
+- `idx_adm_tenants_stripe_customer`: (stripe_customer_id)
+- `idx_adm_tenants_stripe_subscription`: (stripe_subscription_id)
 - `idx_adm_tenants_tenant_code`: (tenant_code)
+- `idx_adm_tenants_verification_token`: (verification_token)
+
+## Auth Module (auth\_)
+
+### auth_account
+
+**Row Count:** ~2
+
+| Column                   | Type          | Nullable | Default             |
+| ------------------------ | ------------- | -------- | ------------------- |
+| id                       | `text`        | NO       | `gen_random_uuid()` |
+| account_id               | `text`        | NO       | -                   |
+| provider_id              | `text`        | NO       | -                   |
+| user_id                  | `text`        | NO       | -                   |
+| access_token             | `text`        | YES      | -                   |
+| refresh_token            | `text`        | YES      | -                   |
+| id_token                 | `text`        | YES      | -                   |
+| access_token_expires_at  | `timestamptz` | YES      | -                   |
+| refresh_token_expires_at | `timestamptz` | YES      | -                   |
+| scope                    | `text`        | YES      | -                   |
+| password                 | `text`        | YES      | -                   |
+| created_at               | `timestamptz` | NO       | `now()`             |
+| updated_at               | `timestamptz` | NO       | `now()`             |
+
+**Indexes:**
+
+- `idx_auth_account_user_id`: (user_id)
+
+### auth_invitation
+
+**Row Count:** ~2
+
+| Column          | Type          | Nullable | Default             |
+| --------------- | ------------- | -------- | ------------------- |
+| id              | `text`        | NO       | `gen_random_uuid()` |
+| organization_id | `text`        | NO       | -                   |
+| email           | `text`        | NO       | -                   |
+| role            | `text`        | YES      | -                   |
+| status          | `text`        | NO       | `'pending'::text`   |
+| expires_at      | `timestamptz` | NO       | -                   |
+| created_at      | `timestamptz` | NO       | `now()`             |
+| inviter_id      | `text`        | NO       | -                   |
+| team_id         | `text`        | YES      | -                   |
+
+**Indexes:**
+
+- `idx_auth_invitation_email`: (email)
+- `idx_auth_invitation_organization_id`: (organization_id)
+
+### auth_member
+
+**Row Count:** ~3
+
+| Column          | Type          | Nullable | Default             |
+| --------------- | ------------- | -------- | ------------------- |
+| id              | `text`        | NO       | `gen_random_uuid()` |
+| organization_id | `text`        | NO       | -                   |
+| user_id         | `text`        | NO       | -                   |
+| role            | `text`        | NO       | `'member'::text`    |
+| created_at      | `timestamptz` | NO       | `now()`             |
+
+**Indexes:**
+
+- `idx_auth_member_organization_id`: (organization_id)
+- `idx_auth_member_user_id`: (user_id)
+
+### auth_organization
+
+**Row Count:** ~1
+
+| Column     | Type          | Nullable | Default             |
+| ---------- | ------------- | -------- | ------------------- |
+| id         | `text`        | NO       | `gen_random_uuid()` |
+| name       | `text`        | NO       | -                   |
+| slug       | `text`        | NO       | -                   |
+| logo       | `text`        | YES      | -                   |
+| created_at | `timestamptz` | NO       | `now()`             |
+| metadata   | `text`        | YES      | -                   |
+
+**Indexes:**
+
+- `auth_organization_slug_unique`: (slug)
+
+### auth_rate_limit
+
+**Row Count:** ~10
+
+| Column       | Type      | Nullable | Default             |
+| ------------ | --------- | -------- | ------------------- |
+| id           | `text`    | NO       | `gen_random_uuid()` |
+| key          | `text`    | NO       | -                   |
+| count        | `integer` | NO       | -                   |
+| last_request | `bigint`  | NO       | `now()`             |
+
+**Indexes:**
+
+- `auth_rate_limit_key_unique`: (key)
+
+### auth_session
+
+**Row Count:** ~3
+
+| Column                 | Type          | Nullable | Default             |
+| ---------------------- | ------------- | -------- | ------------------- |
+| id                     | `text`        | NO       | `gen_random_uuid()` |
+| expires_at             | `timestamptz` | NO       | -                   |
+| token                  | `text`        | NO       | -                   |
+| created_at             | `timestamptz` | NO       | `now()`             |
+| updated_at             | `timestamptz` | NO       | `now()`             |
+| ip_address             | `text`        | YES      | -                   |
+| user_agent             | `text`        | YES      | -                   |
+| user_id                | `text`        | NO       | -                   |
+| active_organization_id | `text`        | YES      | -                   |
+| impersonated_by        | `text`        | YES      | -                   |
+| active_team_id         | `text`        | YES      | -                   |
+
+**Indexes:**
+
+- `auth_session_token_unique`: (token)
+- `idx_auth_session_user_id`: (user_id)
+
+### auth_team
+
+**Row Count:** ~0
+
+| Column          | Type          | Nullable | Default |
+| --------------- | ------------- | -------- | ------- |
+| id              | `text`        | NO       | -       |
+| name            | `text`        | NO       | -       |
+| organization_id | `text`        | NO       | -       |
+| created_at      | `timestamptz` | NO       | `now()` |
+| updated_at      | `timestamptz` | YES      | -       |
+
+**Indexes:**
+
+- `idx_auth_team_organization_id`: (organization_id)
+
+### auth_team_member
+
+**Row Count:** ~0
+
+| Column     | Type          | Nullable | Default |
+| ---------- | ------------- | -------- | ------- |
+| id         | `text`        | NO       | -       |
+| team_id    | `text`        | NO       | -       |
+| user_id    | `text`        | NO       | -       |
+| created_at | `timestamptz` | YES      | `now()` |
+
+**Indexes:**
+
+- `idx_auth_team_member_team_id`: (team_id)
+- `idx_auth_team_member_user_id`: (user_id)
+
+### auth_user
+
+**Row Count:** ~3
+
+| Column         | Type          | Nullable | Default             |
+| -------------- | ------------- | -------- | ------------------- |
+| id             | `text`        | NO       | `gen_random_uuid()` |
+| name           | `text`        | NO       | -                   |
+| email          | `text`        | NO       | -                   |
+| email_verified | `boolean`     | NO       | `false`             |
+| image          | `text`        | YES      | -                   |
+| created_at     | `timestamptz` | NO       | `now()`             |
+| updated_at     | `timestamptz` | NO       | `now()`             |
+| role           | `text`        | YES      | `'user'::text`      |
+| banned         | `boolean`     | YES      | `false`             |
+| ban_reason     | `text`        | YES      | -                   |
+| ban_expires    | `timestamptz` | YES      | -                   |
+
+**Indexes:**
+
+- `auth_user_email_unique`: (email)
+
+### auth_verification
+
+**Row Count:** ~1
+
+| Column     | Type          | Nullable | Default             |
+| ---------- | ------------- | -------- | ------------------- |
+| id         | `text`        | NO       | `gen_random_uuid()` |
+| identifier | `text`        | NO       | -                   |
+| value      | `text`        | NO       | -                   |
+| expires_at | `timestamptz` | NO       | -                   |
+| created_at | `timestamptz` | NO       | `now()`             |
+| updated_at | `timestamptz` | NO       | `now()`             |
+
+**Indexes:**
+
+- `idx_auth_verification_identifier`: (identifier)
 
 ## Billing Module (bil\_)
 
@@ -675,7 +852,7 @@
 
 ### bil_billing_plans
 
-**Row Count:** ~0
+**Row Count:** ~3
 
 | Column                   | Type           | Nullable | Default                     |
 | ------------------------ | -------------- | -------- | --------------------------- |
@@ -786,8 +963,8 @@
 
 **CHECK Constraints:**
 
-- `chk_approval_role_valid`: ((approval_role)::text = ANY ((ARRAY['sales_manager'::character varying, 'director'::character varyi...
 - `chk_approval_role_valid`: ((approval_role IS NULL) OR ((approval_role)::text = ANY ((ARRAY['sales_manager'::character varying,...
+- `chk_approval_role_valid`: ((approval_role)::text = ANY ((ARRAY['sales_manager'::character varying, 'director'::character varyi...
 - `chk_bil_offer_rules_description_translations_jsonb`: ((description_translations IS NULL) OR (jsonb_typeof(description_translations) = 'object'::text))
 - `chk_bil_offer_rules_name_translations_jsonb`: (jsonb_typeof(name_translations) = 'object'::text)
 - `chk_effective_dates`: ((effective_from IS NULL) OR (effective_to IS NULL) OR (effective_from <= effective_to))
@@ -964,6 +1141,35 @@
 - `idx_bil_services_type`: (service_type)
 - `uq_bil_services_code_provider`: (code, provider_id)
 
+### bil_settings
+
+**Row Count:** ~2
+
+| Column         | Type          | Nullable | Default                          |
+| -------------- | ------------- | -------- | -------------------------------- |
+| id             | `uuid`        | NO       | `gen_random_uuid()`              |
+| setting_key    | `varchar`     | NO       | -                                |
+| setting_value  | `jsonb`       | NO       | -                                |
+| category       | `varchar`     | NO       | -                                |
+| data_type      | `varchar`     | NO       | `'object'::character varying...` |
+| display_label  | `varchar`     | YES      | -                                |
+| schema_version | `varchar`     | YES      | `'1.0'::character varying...`    |
+| is_system      | `boolean`     | NO       | `false`                          |
+| is_active      | `boolean`     | NO       | `true`                           |
+| description    | `text`        | YES      | -                                |
+| provider_id    | `uuid`        | YES      | -                                |
+| created_at     | `timestamptz` | YES      | `now()`                          |
+| updated_at     | `timestamptz` | YES      | `now()`                          |
+
+**Indexes:**
+
+- `bil_settings_setting_key_provider_id_key`: (setting_key, provider_id)
+- `idx_bil_settings_active`: (is_active)
+- `idx_bil_settings_category`: (category)
+- `idx_bil_settings_key`: (setting_key)
+- `idx_bil_settings_key_global`: (setting_key)
+- `idx_bil_settings_provider`: (provider_id)
+
 ### bil_subscription_schedule_phases
 
 **Row Count:** ~0
@@ -1051,149 +1257,6 @@
 - `idx_bil_schedules_stripe_subscription_id`: (stripe_subscription_id)
 - `idx_bil_schedules_tenant_id`: (tenant_id)
 
-### bil_tenant_invoice_lines
-
-**Row Count:** ~0
-
-| Column          | Type           | Nullable | Default              |
-| --------------- | -------------- | -------- | -------------------- |
-| id              | `uuid`         | NO       | `uuid_generate_v4()` |
-| invoice_id      | `uuid`         | NO       | -                    |
-| description     | `text`         | NO       | -                    |
-| amount          | `numeric`      | NO       | `0`                  |
-| quantity        | `numeric`      | NO       | `1`                  |
-| metadata        | `jsonb`        | NO       | `'{}'::jsonb`        |
-| created_at      | `timestamptz`  | NO       | `now()`              |
-| created_by      | `uuid`         | YES      | -                    |
-| updated_at      | `timestamptz`  | NO       | `now()`              |
-| updated_by      | `uuid`         | YES      | -                    |
-| deleted_at      | `timestamptz`  | YES      | -                    |
-| deleted_by      | `uuid`         | YES      | -                    |
-| deletion_reason | `text`         | YES      | -                    |
-| line_type       | `USER-DEFINED` | YES      | -                    |
-| unit_price      | `numeric`      | YES      | -                    |
-| tax_rate        | `numeric`      | YES      | -                    |
-| tax_amount      | `numeric`      | YES      | -                    |
-| discount_amount | `numeric`      | YES      | -                    |
-| source_type     | `USER-DEFINED` | YES      | -                    |
-| source_id       | `uuid`         | YES      | -                    |
-
-**CHECK Constraints:**
-
-- `bil_tenant_invoice_lines_amount_check`: (amount >= (0)::numeric)
-- `bil_tenant_invoice_lines_quantity_check`: (quantity > (0)::numeric)
-
-**Indexes:**
-
-- `bil_tenant_invoice_lines_created_by_idx`: (created_by)
-- `bil_tenant_invoice_lines_deleted_at_idx`: (deleted_at)
-- `bil_tenant_invoice_lines_description_idx`: (description)
-- `bil_tenant_invoice_lines_invoice_id_description_unique`: (invoice_id, description)
-- `bil_tenant_invoice_lines_invoice_id_idx`: (invoice_id)
-- `bil_tenant_invoice_lines_metadata_idx`: (metadata)
-- `bil_tenant_invoice_lines_updated_by_idx`: (updated_by)
-
-### bil_tenant_invoices
-
-**Row Count:** ~0
-
-| Column            | Type           | Nullable | Default              |
-| ----------------- | -------------- | -------- | -------------------- |
-| id                | `uuid`         | NO       | `uuid_generate_v4()` |
-| tenant_id         | `uuid`         | NO       | -                    |
-| invoice_number    | `text`         | NO       | -                    |
-| invoice_date      | `date`         | NO       | -                    |
-| due_date          | `date`         | NO       | -                    |
-| total_amount      | `numeric`      | NO       | `0`                  |
-| currency          | `varchar`      | NO       | -                    |
-| metadata          | `jsonb`        | NO       | `'{}'::jsonb`        |
-| created_at        | `timestamptz`  | NO       | `now()`              |
-| created_by        | `uuid`         | YES      | -                    |
-| updated_at        | `timestamptz`  | NO       | `now()`              |
-| updated_by        | `uuid`         | YES      | -                    |
-| deleted_at        | `timestamptz`  | YES      | -                    |
-| deleted_by        | `uuid`         | YES      | -                    |
-| deletion_reason   | `text`         | YES      | -                    |
-| subscription_id   | `uuid`         | YES      | -                    |
-| period_start      | `timestamptz`  | YES      | -                    |
-| period_end        | `timestamptz`  | YES      | -                    |
-| paid_at           | `timestamptz`  | YES      | -                    |
-| subtotal          | `numeric`      | YES      | -                    |
-| tax_rate          | `numeric`      | YES      | -                    |
-| tax_amount        | `numeric`      | YES      | -                    |
-| amount_paid       | `numeric`      | YES      | `0`                  |
-| amount_due        | `numeric`      | YES      | `0`                  |
-| status            | `USER-DEFINED` | YES      | -                    |
-| stripe_invoice_id | `varchar`      | YES      | -                    |
-| document_url      | `text`         | YES      | -                    |
-
-**CHECK Constraints:**
-
-- `bil_tenant_invoices_due_date_check`: (due_date >= invoice_date)
-- `bil_tenant_invoices_total_amount_check`: (total_amount >= (0)::numeric)
-
-**Indexes:**
-
-- `bil_tenant_invoices_created_by_idx`: (created_by)
-- `bil_tenant_invoices_deleted_at_idx`: (deleted_at)
-- `bil_tenant_invoices_due_date_idx`: (due_date)
-- `bil_tenant_invoices_invoice_date_idx`: (invoice_date)
-- `bil_tenant_invoices_invoice_number_idx`: (invoice_number)
-- `bil_tenant_invoices_metadata_idx`: (metadata)
-- `bil_tenant_invoices_tenant_id_idx`: (tenant_id)
-- `bil_tenant_invoices_tenant_id_invoice_number_key`: (tenant_id, invoice_number)
-- `bil_tenant_invoices_updated_by_idx`: (updated_by)
-
-### bil_tenant_subscriptions
-
-**Row Count:** ~0
-
-| Column                   | Type           | Nullable | Default                     |
-| ------------------------ | -------------- | -------- | --------------------------- |
-| id                       | `uuid`         | NO       | `uuid_generate_v4()`        |
-| tenant_id                | `uuid`         | NO       | -                           |
-| plan_id                  | `uuid`         | NO       | -                           |
-| subscription_start       | `date`         | NO       | -                           |
-| subscription_end         | `date`         | YES      | -                           |
-| metadata                 | `jsonb`        | NO       | `'{}'::jsonb`               |
-| created_at               | `timestamptz`  | NO       | `now()`                     |
-| created_by               | `uuid`         | YES      | -                           |
-| updated_at               | `timestamptz`  | NO       | `now()`                     |
-| updated_by               | `uuid`         | YES      | -                           |
-| deleted_at               | `timestamptz`  | YES      | -                           |
-| deleted_by               | `uuid`         | YES      | -                           |
-| deletion_reason          | `text`         | YES      | -                           |
-| previous_plan_id         | `uuid`         | YES      | -                           |
-| plan_version             | `integer`      | YES      | -                           |
-| payment_method_id        | `uuid`         | YES      | -                           |
-| billing_cycle            | `USER-DEFINED` | YES      | `'month'::billing_interval` |
-| current_period_start     | `timestamptz`  | YES      | -                           |
-| current_period_end       | `timestamptz`  | YES      | -                           |
-| trial_end                | `timestamptz`  | YES      | -                           |
-| status                   | `USER-DEFINED` | YES      | -                           |
-| cancel_at_period_end     | `boolean`      | YES      | `true`                      |
-| auto_renew               | `boolean`      | YES      | `true`                      |
-| provider                 | `varchar`      | YES      | -                           |
-| provider_subscription_id | `text`         | YES      | -                           |
-| provider_customer_id     | `text`         | YES      | -                           |
-
-**CHECK Constraints:**
-
-- `bil_tenant_subscriptions_subscription_end_check`: ((subscription_end IS NULL) OR (subscription_end >= subscription_start))
-
-**Indexes:**
-
-- `bil_tenant_subscriptions_created_by_idx`: (created_by)
-- `bil_tenant_subscriptions_deleted_at_idx`: (deleted_at)
-- `bil_tenant_subscriptions_metadata_idx`: (metadata)
-- `bil_tenant_subscriptions_plan_id_idx`: (plan_id)
-- `bil_tenant_subscriptions_subscription_end_idx`: (subscription_end)
-- `bil_tenant_subscriptions_subscription_start_idx`: (subscription_start)
-- `bil_tenant_subscriptions_tenant_id_idx`: (tenant_id)
-- `bil_tenant_subscriptions_tenant_id_plan_id_key`: (tenant_id, plan_id)
-- `bil_tenant_subscriptions_updated_by_idx`: (updated_by)
-- `idx_bil_tenant_subscriptions_tenant`: (tenant_id)
-
 ### bil_tenant_usage_metrics
 
 **Row Count:** ~0
@@ -1257,7 +1320,280 @@
 - `chk_bil_usage_metric_types_description_translations_type`: ((description_translations IS NULL) OR (jsonb_typeof(description_translations) = 'object'::text))
 - `chk_bil_usage_metric_types_name_translations_type`: (jsonb_typeof(name_translations) = 'object'::text)
 
+## Client Module (clt\_)
+
+### clt_invoice_lines
+
+**Row Count:** ~0
+
+| Column          | Type           | Nullable | Default              |
+| --------------- | -------------- | -------- | -------------------- |
+| id              | `uuid`         | NO       | `uuid_generate_v4()` |
+| invoice_id      | `uuid`         | NO       | -                    |
+| description     | `text`         | NO       | -                    |
+| amount          | `numeric`      | NO       | `0`                  |
+| quantity        | `numeric`      | NO       | `1`                  |
+| metadata        | `jsonb`        | NO       | `'{}'::jsonb`        |
+| created_at      | `timestamptz`  | NO       | `now()`              |
+| created_by      | `uuid`         | YES      | -                    |
+| updated_at      | `timestamptz`  | NO       | `now()`              |
+| updated_by      | `uuid`         | YES      | -                    |
+| deleted_at      | `timestamptz`  | YES      | -                    |
+| deleted_by      | `uuid`         | YES      | -                    |
+| deletion_reason | `text`         | YES      | -                    |
+| line_type       | `USER-DEFINED` | YES      | -                    |
+| unit_price      | `numeric`      | YES      | -                    |
+| tax_rate        | `numeric`      | YES      | -                    |
+| tax_amount      | `numeric`      | YES      | -                    |
+| discount_amount | `numeric`      | YES      | -                    |
+| source_type     | `USER-DEFINED` | YES      | -                    |
+| source_id       | `uuid`         | YES      | -                    |
+
+**CHECK Constraints:**
+
+- `bil_tenant_invoice_lines_amount_check`: (amount >= (0)::numeric)
+- `bil_tenant_invoice_lines_quantity_check`: (quantity > (0)::numeric)
+
+**Indexes:**
+
+- `bil_tenant_invoice_lines_created_by_idx`: (created_by)
+- `bil_tenant_invoice_lines_deleted_at_idx`: (deleted_at)
+- `bil_tenant_invoice_lines_description_idx`: (description)
+- `bil_tenant_invoice_lines_invoice_id_description_unique`: (invoice_id, description)
+- `bil_tenant_invoice_lines_invoice_id_idx`: (invoice_id)
+- `bil_tenant_invoice_lines_metadata_idx`: (metadata)
+- `bil_tenant_invoice_lines_updated_by_idx`: (updated_by)
+
+### clt_invoices
+
+**Row Count:** ~0
+
+| Column            | Type           | Nullable | Default              |
+| ----------------- | -------------- | -------- | -------------------- |
+| id                | `uuid`         | NO       | `uuid_generate_v4()` |
+| tenant_id         | `uuid`         | NO       | -                    |
+| invoice_number    | `text`         | NO       | -                    |
+| invoice_date      | `date`         | NO       | -                    |
+| due_date          | `date`         | NO       | -                    |
+| total_amount      | `numeric`      | NO       | `0`                  |
+| currency          | `varchar`      | NO       | -                    |
+| metadata          | `jsonb`        | NO       | `'{}'::jsonb`        |
+| created_at        | `timestamptz`  | NO       | `now()`              |
+| created_by        | `uuid`         | YES      | -                    |
+| updated_at        | `timestamptz`  | NO       | `now()`              |
+| updated_by        | `uuid`         | YES      | -                    |
+| deleted_at        | `timestamptz`  | YES      | -                    |
+| deleted_by        | `uuid`         | YES      | -                    |
+| deletion_reason   | `text`         | YES      | -                    |
+| subscription_id   | `uuid`         | YES      | -                    |
+| period_start      | `timestamptz`  | YES      | -                    |
+| period_end        | `timestamptz`  | YES      | -                    |
+| paid_at           | `timestamptz`  | YES      | -                    |
+| subtotal          | `numeric`      | YES      | -                    |
+| tax_rate          | `numeric`      | YES      | -                    |
+| tax_amount        | `numeric`      | YES      | -                    |
+| amount_paid       | `numeric`      | YES      | `0`                  |
+| amount_due        | `numeric`      | YES      | `0`                  |
+| status            | `USER-DEFINED` | YES      | -                    |
+| stripe_invoice_id | `varchar`      | YES      | -                    |
+| document_url      | `text`         | YES      | -                    |
+
+**CHECK Constraints:**
+
+- `bil_tenant_invoices_due_date_check`: (due_date >= invoice_date)
+- `bil_tenant_invoices_total_amount_check`: (total_amount >= (0)::numeric)
+
+**Indexes:**
+
+- `bil_tenant_invoices_created_by_idx`: (created_by)
+- `bil_tenant_invoices_deleted_at_idx`: (deleted_at)
+- `bil_tenant_invoices_due_date_idx`: (due_date)
+- `bil_tenant_invoices_invoice_date_idx`: (invoice_date)
+- `bil_tenant_invoices_invoice_number_idx`: (invoice_number)
+- `bil_tenant_invoices_metadata_idx`: (metadata)
+- `bil_tenant_invoices_tenant_id_idx`: (tenant_id)
+- `bil_tenant_invoices_tenant_id_invoice_number_key`: (tenant_id, invoice_number)
+- `bil_tenant_invoices_updated_by_idx`: (updated_by)
+
+### clt_masterdata
+
+**Row Count:** ~0
+
+| Column                | Type          | Nullable | Default             |
+| --------------------- | ------------- | -------- | ------------------- |
+| id                    | `uuid`        | NO       | `gen_random_uuid()` |
+| tenant_id             | `uuid`        | NO       | -                   |
+| origin_lead_code      | `varchar`     | YES      | -                   |
+| origin_lead_id        | `uuid`        | YES      | -                   |
+| company_name          | `varchar`     | NO       | -                   |
+| legal_name            | `varchar`     | YES      | -                   |
+| tax_id                | `varchar`     | YES      | -                   |
+| billing_email         | `varchar`     | YES      | -                   |
+| billing_address       | `jsonb`       | YES      | -                   |
+| primary_contact_name  | `varchar`     | YES      | -                   |
+| primary_contact_email | `varchar`     | YES      | -                   |
+| primary_contact_phone | `varchar`     | YES      | -                   |
+| segment               | `varchar`     | YES      | -                   |
+| onboarded_at          | `timestamptz` | YES      | -                   |
+| churned_at            | `timestamptz` | YES      | -                   |
+| churn_reason          | `varchar`     | YES      | -                   |
+| metadata              | `jsonb`       | YES      | `'{}'::jsonb`       |
+| created_at            | `timestamptz` | YES      | `now()`             |
+| updated_at            | `timestamptz` | YES      | `now()`             |
+| deleted_at            | `timestamptz` | YES      | -                   |
+| created_by            | `uuid`        | YES      | -                   |
+| updated_by            | `uuid`        | YES      | -                   |
+| deleted_by            | `uuid`        | YES      | -                   |
+| client_code           | `varchar`     | YES      | -                   |
+
+**CHECK Constraints:**
+
+- `clt_masterdata_segment_check`: ((segment)::text = ANY ((ARRAY['segment_1'::character varying, 'segment_2'::character varying, 'segm...
+
+**Indexes:**
+
+- `clt_masterdata_tenant_id_key`: (tenant_id)
+- `idx_clt_masterdata_client_code`: (client_code)
+- `idx_clt_masterdata_deleted_at`: (deleted_at)
+- `idx_clt_masterdata_origin_lead`: (origin_lead_id)
+- `idx_clt_masterdata_segment`: (segment)
+
+### clt_members
+
+**Row Count:** ~1
+
+| Column                   | Type           | Nullable | Default                          |
+| ------------------------ | -------------- | -------- | -------------------------------- |
+| id                       | `uuid`         | NO       | `uuid_generate_v4()`             |
+| tenant_id                | `uuid`         | NO       | -                                |
+| email                    | `USER-DEFINED` | NO       | -                                |
+| first_name               | `varchar`      | YES      | -                                |
+| last_name                | `varchar`      | YES      | -                                |
+| phone                    | `varchar`      | NO       | -                                |
+| role                     | `varchar`      | NO       | `'member'::character varying...` |
+| last_login_at            | `timestamptz`  | YES      | -                                |
+| metadata                 | `jsonb`        | NO       | `'{}'::jsonb`                    |
+| status                   | `varchar`      | NO       | `'active'::character varying...` |
+| created_at               | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              |
+| created_by               | `uuid`         | YES      | -                                |
+| updated_at               | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              |
+| updated_by               | `uuid`         | YES      | -                                |
+| deleted_at               | `timestamptz`  | YES      | -                                |
+| deleted_by               | `uuid`         | YES      | -                                |
+| deletion_reason          | `text`         | YES      | -                                |
+| email_verified_at        | `timestamptz`  | YES      | -                                |
+| two_factor_enabled       | `boolean`      | NO       | `false`                          |
+| two_factor_secret        | `text`         | YES      | -                                |
+| password_changed_at      | `timestamptz`  | YES      | -                                |
+| failed_login_attempts    | `integer`      | NO       | `0`                              |
+| locked_until             | `timestamptz`  | YES      | -                                |
+| default_role_id          | `uuid`         | YES      | -                                |
+| preferred_language       | `varchar`      | YES      | -                                |
+| notification_preferences | `jsonb`        | YES      | -                                |
+| auth_user_id             | `text`         | YES      | -                                |
+
+**Indexes:**
+
+- `adm_members_created_by_idx`: (created_by)
+- `adm_members_deleted_at_idx`: (deleted_at)
+- `adm_members_email_idx`: (email)
+- `adm_members_last_login_at_idx`: (last_login_at)
+- `adm_members_metadata_gin`: (metadata)
+- `adm_members_status_active_idx`: (status)
+- `adm_members_tenant_email_uq`: (tenant_id, email)
+- `adm_members_tenant_id_idx`: (tenant_id)
+- `adm_members_updated_by_idx`: (updated_by)
+- `idx_adm_members_tenant`: (tenant_id)
+- `idx_adm_members_tenant_status`: (tenant_id, status)
+- `idx_clt_members_email`: (email)
+- `idx_clt_members_role`: (default_role_id)
+
+### clt_subscriptions
+
+**Row Count:** ~0
+
+| Column                   | Type           | Nullable | Default                     |
+| ------------------------ | -------------- | -------- | --------------------------- |
+| id                       | `uuid`         | NO       | `uuid_generate_v4()`        |
+| tenant_id                | `uuid`         | NO       | -                           |
+| plan_id                  | `uuid`         | NO       | -                           |
+| subscription_start       | `date`         | NO       | -                           |
+| subscription_end         | `date`         | YES      | -                           |
+| metadata                 | `jsonb`        | NO       | `'{}'::jsonb`               |
+| created_at               | `timestamptz`  | NO       | `now()`                     |
+| created_by               | `uuid`         | YES      | -                           |
+| updated_at               | `timestamptz`  | NO       | `now()`                     |
+| updated_by               | `uuid`         | YES      | -                           |
+| deleted_at               | `timestamptz`  | YES      | -                           |
+| deleted_by               | `uuid`         | YES      | -                           |
+| deletion_reason          | `text`         | YES      | -                           |
+| previous_plan_id         | `uuid`         | YES      | -                           |
+| plan_version             | `integer`      | YES      | -                           |
+| payment_method_id        | `uuid`         | YES      | -                           |
+| billing_cycle            | `USER-DEFINED` | YES      | `'month'::billing_interval` |
+| current_period_start     | `timestamptz`  | YES      | -                           |
+| current_period_end       | `timestamptz`  | YES      | -                           |
+| trial_end                | `timestamptz`  | YES      | -                           |
+| status                   | `USER-DEFINED` | YES      | -                           |
+| cancel_at_period_end     | `boolean`      | YES      | `true`                      |
+| auto_renew               | `boolean`      | YES      | `true`                      |
+| provider                 | `varchar`      | YES      | -                           |
+| provider_subscription_id | `text`         | YES      | -                           |
+| provider_customer_id     | `text`         | YES      | -                           |
+
+**CHECK Constraints:**
+
+- `bil_tenant_subscriptions_subscription_end_check`: ((subscription_end IS NULL) OR (subscription_end >= subscription_start))
+
+**Indexes:**
+
+- `bil_tenant_subscriptions_created_by_idx`: (created_by)
+- `bil_tenant_subscriptions_deleted_at_idx`: (deleted_at)
+- `bil_tenant_subscriptions_metadata_idx`: (metadata)
+- `bil_tenant_subscriptions_plan_id_idx`: (plan_id)
+- `bil_tenant_subscriptions_subscription_end_idx`: (subscription_end)
+- `bil_tenant_subscriptions_subscription_start_idx`: (subscription_start)
+- `bil_tenant_subscriptions_tenant_id_idx`: (tenant_id)
+- `bil_tenant_subscriptions_tenant_id_plan_id_key`: (tenant_id, plan_id)
+- `bil_tenant_subscriptions_updated_by_idx`: (updated_by)
+- `idx_bil_tenant_subscriptions_tenant`: (tenant_id)
+
 ## CRM Module (crm\_)
+
+### crm_activities
+
+**Row Count:** ~9
+
+| Column           | Type          | Nullable | Default             |
+| ---------------- | ------------- | -------- | ------------------- |
+| id               | `uuid`        | NO       | `gen_random_uuid()` |
+| lead_id          | `uuid`        | YES      | -                   |
+| opportunity_id   | `uuid`        | YES      | -                   |
+| provider_id      | `uuid`        | NO       | -                   |
+| activity_type    | `varchar`     | NO       | -                   |
+| subject          | `varchar`     | NO       | -                   |
+| description      | `text`        | YES      | -                   |
+| activity_date    | `timestamptz` | NO       | `now()`             |
+| duration_minutes | `integer`     | YES      | -                   |
+| outcome          | `varchar`     | YES      | -                   |
+| is_completed     | `boolean`     | YES      | `false`             |
+| completed_at     | `timestamptz` | YES      | -                   |
+| created_by       | `uuid`        | YES      | -                   |
+| created_at       | `timestamptz` | YES      | `now()`             |
+| updated_at       | `timestamptz` | YES      | `now()`             |
+
+**CHECK Constraints:**
+
+- `chk_entity_link`: ((lead_id IS NOT NULL) OR (opportunity_id IS NOT NULL))
+- `crm_activities_activity_type_check`: ((activity_type)::text = ANY ((ARRAY['call'::character varying, 'email'::character varying, 'note'::...
+
+**Indexes:**
+
+- `idx_activities_date`: (activity_date DESC)
+- `idx_activities_lead`: (lead_id)
+- `idx_activities_opportunity`: (opportunity_id)
+- `idx_activities_provider`: (provider_id)
+- `idx_activities_type`: (activity_type)
 
 ### crm_addresses
 
@@ -1338,6 +1674,29 @@
 - `idx_crm_agreements_provider_id`: (provider_id)
 - `idx_crm_agreements_status`: (status)
 
+### crm_blacklist
+
+**Row Count:** ~0
+
+| Column           | Type          | Nullable | Default             |
+| ---------------- | ------------- | -------- | ------------------- |
+| id               | `uuid`        | NO       | `gen_random_uuid()` |
+| provider_id      | `uuid`        | NO       | -                   |
+| email            | `varchar`     | NO       | -                   |
+| reason           | `varchar`     | NO       | -                   |
+| reason_comment   | `text`        | YES      | -                   |
+| original_lead_id | `uuid`        | YES      | -                   |
+| blacklisted_by   | `uuid`        | YES      | -                   |
+| blacklisted_at   | `timestamptz` | YES      | `now()`             |
+| removed_at       | `timestamptz` | YES      | -                   |
+| removed_by       | `uuid`        | YES      | -                   |
+
+**Indexes:**
+
+- `idx_crm_blacklist_email`: (email)
+- `idx_crm_blacklist_provider`: (provider_id)
+- `uq_blacklist_email_provider`: (email, provider_id)
+
 ### crm_countries
 
 **Row Count:** ~30
@@ -1361,6 +1720,10 @@
 | country_gdpr           | `boolean`     | NO       | `false`                      |
 | is_system              | `boolean`     | NO       | `true`                       |
 | provider_id            | `uuid`        | YES      | -                            |
+| phone_prefix           | `varchar`     | YES      | -                            |
+| phone_example          | `varchar`     | YES      | -                            |
+| phone_min_digits       | `integer`     | YES      | `8`                          |
+| phone_max_digits       | `integer`     | YES      | `12`                         |
 
 **CHECK Constraints:**
 
@@ -1380,7 +1743,7 @@
 
 ### crm_lead_activities
 
-**Row Count:** ~5
+**Row Count:** ~13
 
 | Column            | Type          | Nullable | Default             |
 | ----------------- | ------------- | -------- | ------------------- |
@@ -1432,116 +1795,183 @@
 
 ### crm_leads
 
-**Row Count:** ~50+
-**Total Columns:** 71
+**Row Count:** ~30
 
-| Column                          | Type           | Nullable | Default                          | Version |
-| ------------------------------- | -------------- | -------- | -------------------------------- | ------- |
-| id                              | `uuid`         | NO       | `uuid_generate_v4()`             | V1      |
-| email                           | `text`         | NO       | -                                | V1      |
-| phone                           | `text`         | YES      | -                                | V1      |
-| source                          | `text`         | YES      | -                                | V1      |
-| status                          | `text`         | NO       | `'new'::text`                    | V1      |
-| message                         | `text`         | YES      | -                                | V1      |
-| created_at                      | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              | V1      |
-| updated_at                      | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              | V1      |
-| country_code                    | `character(2)` | YES      | -                                | V1      |
-| fleet_size                      | `varchar(50)`  | YES      | -                                | V1      |
-| current_software                | `varchar(255)` | YES      | -                                | V1      |
-| assigned_to                     | `uuid`         | YES      | -                                | V1      |
-| qualification_score             | `integer`      | YES      | -                                | V1      |
-| qualification_notes             | `text`         | YES      | -                                | V1      |
-| qualified_date                  | `timestamptz`  | YES      | -                                | V1      |
-| converted_date                  | `timestamptz`  | YES      | -                                | V1      |
-| utm_source                      | `varchar(255)` | YES      | -                                | V1      |
-| utm_medium                      | `varchar(255)` | YES      | -                                | V1      |
-| utm_campaign                    | `varchar(255)` | YES      | -                                | V1      |
-| metadata                        | `jsonb`        | YES      | `'{}'::jsonb`                    | V1      |
-| created_by                      | `uuid`         | YES      | -                                | V1      |
-| updated_by                      | `uuid`         | YES      | -                                | V1      |
-| deleted_at                      | `timestamptz`  | YES      | -                                | V1      |
-| deleted_by                      | `uuid`         | YES      | -                                | V1      |
-| deletion_reason                 | `text`         | YES      | -                                | V1      |
-| lead_code                       | `varchar(50)`  | YES      | -                                | V2      |
-| first_name                      | `text`         | YES      | -                                | V2      |
-| last_name                       | `text`         | YES      | -                                | V2      |
-| company_name                    | `text`         | YES      | -                                | V2      |
-| industry                        | `text`         | YES      | -                                | V2      |
-| company_size                    | `integer`      | YES      | -                                | V2      |
-| website_url                     | `text`         | YES      | -                                | V2      |
-| linkedin_url                    | `text`         | YES      | -                                | V2      |
-| city                            | `text`         | YES      | -                                | V2      |
-| lead_stage                      | `lead_stage`   | YES      | -                                | V2      |
-| fit_score                       | `numeric(5,2)` | YES      | -                                | V2      |
-| engagement_score                | `numeric(5,2)` | YES      | -                                | V2      |
-| scoring                         | `jsonb`        | YES      | -                                | V2      |
-| gdpr_consent                    | `boolean`      | YES      | -                                | V3      |
-| consent_at                      | `timestamptz`  | YES      | -                                | V3      |
-| source_id                       | `uuid`         | YES      | -                                | V3      |
-| opportunity_id                  | `uuid`         | YES      | -                                | V3      |
-| next_action_date                | `timestamptz`  | YES      | -                                | V3      |
-| priority                        | `varchar(20)`  | YES      | `'medium'`                       | V3      |
-| consent_ip                      | `varchar(45)`  | YES      | -                                | V3      |
-| last_activity_at                | `timestamptz`  | YES      | -                                | V4      |
-| provider_id                     | `uuid`         | YES      | -                                | V4      |
-| stage_entered_at                | `timestamptz`  | YES      | `now()`                          | V5      |
-| loss_reason_code                | `varchar(50)`  | YES      | -                                | V5      |
-| loss_reason_detail              | `text`         | YES      | -                                | V5      |
-| competitor_name                 | `varchar(100)` | YES      | -                                | V5      |
-| booking_slot_at                 | `timestamptz`  | YES      | -                                | V6.2    |
-| booking_confirmed_at            | `timestamptz`  | YES      | -                                | V6.2    |
-| booking_calcom_uid              | `varchar(100)` | YES      | -                                | V6.2    |
-| platforms_used                  | `text[]`       | YES      | -                                | V6.2    |
-| wizard_completed                | `boolean`      | YES      | `false`                          | V6.2    |
-| tenant_id                       | `uuid`         | YES      | -                                | V6.2    |
-| converted_at                    | `timestamptz`  | YES      | -                                | V6.2    |
-| stripe_checkout_session_id      | `varchar(255)` | YES      | -                                | V6.2.1  |
-| stripe_payment_link_url         | `text`         | YES      | -                                | V6.2.1  |
-| payment_link_created_at         | `timestamptz`  | YES      | -                                | V6.2.1  |
-| payment_link_expires_at         | `timestamptz`  | YES      | -                                | V6.2.1  |
-| email_verified                  | `boolean`      | NO       | `false`                          | V6.2.2  |
-| email_verification_code         | `varchar(255)` | YES      | -                                | V6.2.2  |
-| email_verification_expires_at   | `timestamptz`  | YES      | -                                | V6.2.2  |
-| email_verification_attempts     | `integer`      | NO       | `0`                              | V6.2.2  |
-| confirmation_token              | `varchar(255)` | YES      | -                                | V6.2.6  |
-| attendance_confirmed            | `boolean`      | NO       | `false`                          | V6.2.6  |
-| attendance_confirmed_at         | `timestamptz`  | YES      | -                                | V6.2.6  |
-| j1_reminder_sent_at             | `timestamptz`  | YES      | -                                | V6.2.6  |
-| reschedule_token                | `varchar(8)`   | YES      | -                                | V6.3.3  |
+| Column                           | Type           | Nullable | Default                          |
+| -------------------------------- | -------------- | -------- | -------------------------------- |
+| id                               | `uuid`         | NO       | `uuid_generate_v4()`             |
+| email                            | `text`         | NO       | -                                |
+| phone                            | `text`         | YES      | -                                |
+| source                           | `text`         | YES      | -                                |
+| status                           | `text`         | NO       | `'new'::text`                    |
+| message                          | `text`         | YES      | -                                |
+| created_at                       | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              |
+| updated_at                       | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`              |
+| country_code                     | `character`    | YES      | -                                |
+| fleet_size                       | `varchar`      | YES      | -                                |
+| current_software                 | `varchar`      | YES      | -                                |
+| assigned_to                      | `uuid`         | YES      | -                                |
+| qualification_score              | `integer`      | YES      | -                                |
+| qualification_notes              | `text`         | YES      | -                                |
+| qualified_date                   | `timestamptz`  | YES      | -                                |
+| converted_date                   | `timestamptz`  | YES      | -                                |
+| utm_source                       | `varchar`      | YES      | -                                |
+| utm_medium                       | `varchar`      | YES      | -                                |
+| utm_campaign                     | `varchar`      | YES      | -                                |
+| metadata                         | `jsonb`        | YES      | `'{}'::jsonb`                    |
+| created_by                       | `uuid`         | YES      | -                                |
+| updated_by                       | `uuid`         | YES      | -                                |
+| deleted_at                       | `timestamptz`  | YES      | -                                |
+| deleted_by                       | `uuid`         | YES      | -                                |
+| deletion_reason                  | `text`         | YES      | -                                |
+| lead_code                        | `varchar`      | YES      | -                                |
+| first_name                       | `text`         | YES      | -                                |
+| last_name                        | `text`         | YES      | -                                |
+| company_name                     | `text`         | YES      | -                                |
+| industry                         | `text`         | YES      | -                                |
+| company_size                     | `integer`      | YES      | -                                |
+| website_url                      | `text`         | YES      | -                                |
+| linkedin_url                     | `text`         | YES      | -                                |
+| city                             | `text`         | YES      | -                                |
+| lead_stage                       | `USER-DEFINED` | YES      | -                                |
+| fit_score                        | `numeric`      | YES      | -                                |
+| engagement_score                 | `numeric`      | YES      | -                                |
+| scoring                          | `jsonb`        | YES      | -                                |
+| gdpr_consent                     | `boolean`      | YES      | -                                |
+| consent_at                       | `timestamptz`  | YES      | -                                |
+| source_id                        | `uuid`         | YES      | -                                |
+| opportunity_id                   | `uuid`         | YES      | -                                |
+| next_action_date                 | `timestamptz`  | YES      | -                                |
+| priority                         | `varchar`      | YES      | `'medium'::character varying...` |
+| consent_ip                       | `varchar`      | YES      | -                                |
+| last_activity_at                 | `timestamptz`  | YES      | -                                |
+| provider_id                      | `uuid`         | YES      | -                                |
+| stage_entered_at                 | `timestamptz`  | YES      | `now()`                          |
+| loss_reason_code                 | `varchar`      | YES      | -                                |
+| loss_reason_detail               | `text`         | YES      | -                                |
+| competitor_name                  | `varchar`      | YES      | -                                |
+| booking_slot_at                  | `timestamptz`  | YES      | -                                |
+| booking_confirmed_at             | `timestamptz`  | YES      | -                                |
+| booking_calcom_uid               | `varchar`      | YES      | -                                |
+| platforms_used                   | `_text`        | YES      | -                                |
+| wizard_completed                 | `boolean`      | YES      | `false`                          |
+| tenant_id                        | `uuid`         | YES      | -                                |
+| converted_at                     | `timestamptz`  | YES      | -                                |
+| stripe_checkout_session_id       | `varchar`      | YES      | -                                |
+| stripe_payment_link_url          | `text`         | YES      | -                                |
+| payment_link_created_at          | `timestamptz`  | YES      | -                                |
+| payment_link_expires_at          | `timestamptz`  | YES      | -                                |
+| email_verified                   | `boolean`      | NO       | `false`                          |
+| email_verification_code          | `varchar`      | YES      | -                                |
+| email_verification_expires_at    | `timestamptz`  | YES      | -                                |
+| email_verification_attempts      | `integer`      | NO       | `0`                              |
+| confirmation_token               | `varchar`      | YES      | -                                |
+| attendance_confirmed             | `boolean`      | YES      | `false`                          |
+| attendance_confirmed_at          | `timestamptz`  | YES      | -                                |
+| j1_reminder_sent_at              | `timestamptz`  | YES      | -                                |
+| reschedule_token                 | `varchar`      | YES      | -                                |
+| detected_country_code            | `varchar`      | YES      | -                                |
+| ip_address                       | `varchar`      | YES      | -                                |
+| language                         | `varchar`      | YES      | `'en'::character varying...`     |
+| callback_requested               | `boolean`      | YES      | `false`                          |
+| callback_requested_at            | `timestamptz`  | YES      | -                                |
+| callback_completed_at            | `timestamptz`  | YES      | -                                |
+| callback_notes                   | `text`         | YES      | -                                |
+| disqualified_at                  | `timestamptz`  | YES      | -                                |
+| disqualification_reason          | `varchar`      | YES      | -                                |
+| disqualification_comment         | `text`         | YES      | -                                |
+| disqualified_by                  | `uuid`         | YES      | -                                |
+| recovery_notification_sent_at    | `timestamptz`  | YES      | -                                |
+| recovery_notification_clicked_at | `timestamptz`  | YES      | -                                |
+| whatsapp_number                  | `varchar`      | YES      | -                                |
 
 **CHECK Constraints:**
 
 - `crm_leads_source_check`: ((source IS NULL) OR (source = ANY (ARRAY['web'::text, 'referral'::text, 'event'::text])))
-- `crm_leads_status_check`: (status = ANY (ARRAY['new'::text, 'demo_scheduled'::text, 'qualified'::text, 'demo_completed'::text, 'proposal_sent'::text, 'payment_pending'::text, 'converted'::text, 'lost'::text, 'nurturing'::text, 'disqualified'::text]))
+- `crm_leads_status_check`: (status = ANY (ARRAY['new'::text, 'email_verified'::text, 'callback_requested'::text, 'demo'::text, ...
 
 **Indexes:**
 
-- `crm_leads_pkey`: PRIMARY KEY (id)
-- `crm_leads_lead_code_key`: UNIQUE (lead_code)
-- `crm_leads_reschedule_token_key`: UNIQUE (reschedule_token)
+- `crm_leads_assigned_to_idx`: (assigned_to)
+- `crm_leads_country_code_idx`: (country_code)
 - `crm_leads_created_at_idx`: (created_at DESC)
 - `crm_leads_deleted_at_idx`: (deleted_at)
+- `crm_leads_email_unique_active`: (email)
+- `crm_leads_lead_code_key`: (lead_code)
+- `crm_leads_notes_gin`: (to_tsvector('english'::regconfig, COALESCE(message, ''::text)
+- `crm_leads_reschedule_token_unique`: (reschedule_token)
 - `crm_leads_status_idx`: (status)
 - `idx_crm_leads_assigned_to`: (assigned_to)
+- `idx_crm_leads_booking_calcom_uid`: (booking_calcom_uid)
+- `idx_crm_leads_booking_slot`: (booking_slot_at)
+- `idx_crm_leads_callback`: (callback_requested, callback_requested_at)
+- `idx_crm_leads_confirmation_token`: (confirmation_token)
 - `idx_crm_leads_country_code`: (country_code)
+- `idx_crm_leads_detected_country`: (detected_country_code)
+- `idx_crm_leads_disqualified`: (status)
+- `idx_crm_leads_disqualified_by`: (disqualified_by)
+- `idx_crm_leads_email_verification`: (email, email_verified)
+- `idx_crm_leads_ip_address`: (ip_address)
+- `idx_crm_leads_j1_reminder`: (booking_slot_at, j1_reminder_sent_at)
+- `idx_crm_leads_language`: (language)
 - `idx_crm_leads_last_activity_at`: (last_activity_at)
 - `idx_crm_leads_lead_stage`: (lead_stage)
-- `idx_crm_leads_metadata`: GIN (metadata)
-- `idx_crm_leads_qualification_score`: (qualification_score)
-- `idx_crm_leads_status_stage_deleted`: (deleted_at, status, lead_stage)
-- `idx_crm_leads_updated_at`: (updated_at)
-- `idx_crm_leads_stage_entered`: (stage_entered_at DESC)
 - `idx_crm_leads_loss_reason`: (loss_reason_code)
-- `idx_crm_leads_booking_slot`: (booking_slot_at)
-- `idx_crm_leads_booking_calcom_uid`: (booking_calcom_uid)
-- `idx_crm_leads_wizard_completed`: (wizard_completed)
-- `idx_crm_leads_tenant`: (tenant_id)
-- `idx_crm_leads_email_verification`: (email, email_verified)
+- `idx_crm_leads_metadata`: (metadata)
+- `idx_crm_leads_payment_link_expires`: (payment_link_expires_at)
+- `idx_crm_leads_payment_pending`: (status, payment_link_expires_at)
+- `idx_crm_leads_priority`: (priority)
+- `idx_crm_leads_provider_id`: (provider_id)
+- `idx_crm_leads_qualification_score`: (qualification_score)
 - `idx_crm_leads_reschedule_token`: (reschedule_token)
+- `idx_crm_leads_stage_entered`: (stage_entered_at DESC)
+- `idx_crm_leads_status_stage_deleted`: (deleted_at, status, lead_stage)
+- `idx_crm_leads_status_v5`: (status)
+- `idx_crm_leads_stripe_checkout`: (stripe_checkout_session_id)
+- `idx_crm_leads_tenant`: (tenant_id)
+- `idx_crm_leads_updated_at`: (updated_at)
+- `idx_crm_leads_wizard_completed`: (wizard_completed)
+
+### crm_nurturing
+
+**Row Count:** ~1
+
+| Column                  | Type          | Nullable | Default                      |
+| ----------------------- | ------------- | -------- | ---------------------------- |
+| id                      | `uuid`        | NO       | `gen_random_uuid()`          |
+| provider_id             | `uuid`        | NO       | -                            |
+| email                   | `varchar`     | NO       | -                            |
+| country_code            | `varchar`     | NO       | -                            |
+| email_verified_at       | `timestamptz` | NO       | -                            |
+| language                | `varchar`     | YES      | `'en'::character varying...` |
+| resume_token            | `varchar`     | YES      | -                            |
+| resume_token_expires_at | `timestamptz` | YES      | -                            |
+| nurturing_step          | `integer`     | YES      | `0`                          |
+| last_nurturing_at       | `timestamptz` | YES      | -                            |
+| nurturing_clicked_at    | `timestamptz` | YES      | -                            |
+| original_lead_id        | `uuid`        | YES      | -                            |
+| archived_at             | `timestamptz` | YES      | -                            |
+| source                  | `varchar`     | YES      | -                            |
+| utm_source              | `varchar`     | YES      | -                            |
+| utm_medium              | `varchar`     | YES      | -                            |
+| utm_campaign            | `varchar`     | YES      | -                            |
+| ip_address              | `varchar`     | YES      | -                            |
+| detected_country_code   | `varchar`     | YES      | -                            |
+| created_at              | `timestamptz` | YES      | `now()`                      |
+| updated_at              | `timestamptz` | YES      | `now()`                      |
+
+**Indexes:**
+
+- `crm_nurturing_resume_token_key`: (resume_token)
+- `idx_crm_nurturing_email`: (email)
+- `idx_crm_nurturing_nurturing`: (nurturing_step, last_nurturing_at)
+- `idx_crm_nurturing_provider`: (provider_id)
+- `idx_crm_nurturing_resume_token`: (resume_token)
+- `uq_nurturing_email_provider`: (email, provider_id)
 
 ### crm_opportunities
 
-**Row Count:** ~8
+**Row Count:** ~11
 
 | Column              | Type           | Nullable | Default                      |
 | ------------------- | -------------- | -------- | ---------------------------- |
@@ -1803,7 +2233,7 @@
 | quote_code               | `varchar`      | NO       | -                           |
 | quote_version            | `integer`      | NO       | `1`                         |
 | parent_quote_id          | `uuid`         | YES      | -                           |
-| opportunity_id           | `uuid`         | NO       | -                           |
+| opportunity_id           | `uuid`         | YES      | -                           |
 | status                   | `USER-DEFINED` | NO       | `'draft'::quote_status`     |
 | valid_from               | `date`         | NO       | `CURRENT_DATE...`           |
 | valid_until              | `date`         | NO       | -                           |
@@ -1844,9 +2274,23 @@
 | discount_amount          | `numeric`      | YES      | `0`                         |
 | tax_amount               | `numeric`      | YES      | `0`                         |
 | total_value              | `numeric`      | YES      | `0`                         |
+| lead_id                  | `uuid`         | YES      | -                           |
+| free_months              | `integer`      | YES      | `0`                         |
+| free_vehicles_count      | `integer`      | YES      | `0`                         |
+| free_vehicles_ratio      | `varchar`      | YES      | -                           |
+| unit_price_override      | `numeric`      | YES      | -                           |
+| unit_price_approved_by   | `uuid`         | YES      | -                           |
+| unit_price_approved_at   | `timestamptz`  | YES      | -                           |
+| escalation_required      | `boolean`      | YES      | `false`                     |
+| escalation_status        | `varchar`      | YES      | -                           |
+| escalated_at             | `timestamptz`  | YES      | -                           |
+| escalation_decided_at    | `timestamptz`  | YES      | -                           |
+| escalation_decided_by    | `uuid`         | YES      | -                           |
 
 **CHECK Constraints:**
 
+- `chk_quote_parent`: ((lead_id IS NOT NULL) OR (opportunity_id IS NOT NULL))
+- `crm_quotes_lead_or_opportunity_xor`: (((lead_id IS NOT NULL) AND (opportunity_id IS NULL)) OR ((lead_id IS NULL) AND (opportunity_id IS N...
 - `crm_quotes_positive_subtotal`: (subtotal >= (0)::numeric)
 - `crm_quotes_valid_date_range`: (valid_until > valid_from)
 
@@ -1855,6 +2299,7 @@
 - `crm_quotes_quote_reference_key`: (quote_reference)
 - `idx_crm_quotes_created_at`: (created_at DESC)
 - `idx_crm_quotes_created_by`: (created_by)
+- `idx_crm_quotes_lead_id`: (lead_id)
 - `idx_crm_quotes_opportunity_id`: (opportunity_id)
 - `idx_crm_quotes_parent_quote_id`: (parent_quote_id)
 - `idx_crm_quotes_provider_id`: (provider_id)
@@ -1864,7 +2309,7 @@
 
 ### crm_settings
 
-**Row Count:** ~12
+**Row Count:** ~20
 
 | Column            | Type          | Nullable | Default             |
 | ----------------- | ------------- | -------- | ------------------- |
@@ -1913,48 +2358,38 @@
 
 ### crm_waitlist
 
-**Row Count:** ~100+
-**Version:** V6.3
+**Row Count:** ~10
 
-Table pour la gestion des inscriptions en liste d'attente pour les pays non-opérationnels.
-
-| Column                | Type           | Nullable | Default             |
-| --------------------- | -------------- | -------- | ------------------- |
-| id                    | `uuid`         | NO       | `gen_random_uuid()` |
-| short_token           | `varchar(8)`   | YES      | -                   |
-| email                 | `varchar(255)` | NO       | -                   |
-| country_code          | `varchar(2)`   | NO       | -                   |
-| fleet_size            | `varchar(20)`  | YES      | -                   |
-| detected_country_code | `varchar(2)`   | YES      | -                   |
-| ip_address            | `varchar(45)`  | YES      | -                   |
-| marketing_consent     | `boolean`      | NO       | `true`              |
-| gdpr_consent          | `boolean`      | YES      | -                   |
-| gdpr_consent_at       | `timestamptz`  | YES      | -                   |
-| gdpr_consent_ip       | `varchar(45)`  | YES      | -                   |
-| honeypot_triggered    | `boolean`      | NO       | `false`             |
-| source                | `varchar(50)`  | NO       | `'wizard'`          |
-| locale                | `varchar(5)`   | NO       | `'en'`              |
-| utm_source            | `varchar(100)` | YES      | -                   |
-| utm_medium            | `varchar(100)` | YES      | -                   |
-| utm_campaign          | `varchar(100)` | YES      | -                   |
-| created_at            | `timestamptz`  | NO       | `now()`             |
-| notified_at           | `timestamptz`  | YES      | -                   |
-
-**UNIQUE Constraints:**
-
-- `crm_waitlist_short_token_key`: UNIQUE (short_token)
-- `crm_waitlist_email_country_unique`: UNIQUE (email, country_code)
-
-**Foreign Keys:**
-
-- `fk_crm_waitlist_country`: country_code → crm_countries(country_code)
+| Column                | Type          | Nullable | Default                          |
+| --------------------- | ------------- | -------- | -------------------------------- |
+| id                    | `uuid`        | NO       | `gen_random_uuid()`              |
+| email                 | `varchar`     | NO       | -                                |
+| country_code          | `varchar`     | NO       | -                                |
+| fleet_size            | `varchar`     | YES      | -                                |
+| detected_country_code | `varchar`     | YES      | -                                |
+| ip_address            | `varchar`     | YES      | -                                |
+| marketing_consent     | `boolean`     | NO       | `true`                           |
+| gdpr_consent          | `boolean`     | YES      | -                                |
+| gdpr_consent_at       | `timestamptz` | YES      | -                                |
+| gdpr_consent_ip       | `varchar`     | YES      | -                                |
+| honeypot_triggered    | `boolean`     | YES      | `false`                          |
+| source                | `varchar`     | YES      | `'wizard'::character varying...` |
+| locale                | `varchar`     | YES      | `'en'::character varying...`     |
+| utm_source            | `varchar`     | YES      | -                                |
+| utm_medium            | `varchar`     | YES      | -                                |
+| utm_campaign          | `varchar`     | YES      | -                                |
+| created_at            | `timestamptz` | NO       | `now()`                          |
+| notified_at           | `timestamptz` | YES      | -                                |
+| short_token           | `varchar`     | YES      | -                                |
 
 **Indexes:**
 
+- `crm_waitlist_email_country_unique`: (email, country_code)
+- `crm_waitlist_short_token_unique`: (short_token)
 - `idx_crm_waitlist_country`: (country_code)
-- `idx_crm_waitlist_fleet`: (fleet_size)
 - `idx_crm_waitlist_created`: (created_at)
 - `idx_crm_waitlist_email`: (email)
+- `idx_crm_waitlist_fleet`: (fleet_size)
 - `idx_crm_waitlist_short_token`: (short_token)
 
 ## Directory Module (dir\_)
@@ -2186,7 +2621,7 @@ Table pour la gestion des inscriptions en liste d'attente pour les pays non-opé
 
 ### dir_notification_templates
 
-**Row Count:** ~13
+**Row Count:** ~20
 
 | Column               | Type           | Nullable | Default                      |
 | -------------------- | -------------- | -------- | ---------------------------- |
@@ -3561,93 +3996,87 @@ Table pour la gestion des inscriptions en liste d'attente pour les pays non-opé
 
 ## HQ Module (hq\_)
 
-### hq_pricing_rules
-
-**Row Count:** ~10
-
-Règles HQ de négociation par taille de flotte (niveau plateforme). Définit les % de remise maximum autorisés par segment de flotte et par pays.
-
-| Column                   | Type           | Nullable | Default             |
-| ------------------------ | -------------- | -------- | ------------------- |
-| id                       | `uuid`         | NO       | `gen_random_uuid()` |
-| country_code             | `varchar(2)`   | YES      | -                   |
-| code                     | `varchar(50)`  | NO       | -                   |
-| name_translations        | `jsonb`        | NO       | -                   |
-| description_translations | `jsonb`        | YES      | -                   |
-| fleet_size_min           | `integer`      | NO       | -                   |
-| fleet_size_max           | `integer`      | YES      | -                   |
-| max_discount_percent     | `numeric(5,2)` | NO       | `0`                 |
-| requires_approval        | `boolean`      | NO       | `false`             |
-| approval_role            | `varchar(50)`  | YES      | -                   |
-| is_active                | `boolean`      | NO       | `true`              |
-| valid_from               | `date`         | YES      | -                   |
-| valid_until              | `date`         | YES      | -                   |
-| display_order            | `integer`      | NO       | `0`                 |
-| created_at               | `timestamptz`  | NO       | `now()`             |
-| updated_at               | `timestamptz`  | NO       | `now()`             |
-
-**Indexes:**
-
-- `hq_pricing_rules_pkey`: (id)
-- `hq_pricing_rules_code_key`: (code) UNIQUE
-- `idx_hq_pricing_country`: (country_code)
-- `idx_hq_pricing_active`: (is_active) WHERE is_active = true
-- `idx_hq_pricing_fleet`: (fleet_size_min, fleet_size_max)
-
-**Check Constraints:**
-
-- `chk_hq_pricing_name`: jsonb_typeof(name_translations) = 'object'
-- `chk_hq_pricing_desc`: description_translations IS NULL OR jsonb_typeof(description_translations) = 'object'
-- `chk_hq_pricing_discount`: max_discount_percent >= 0 AND max_discount_percent <= 100
-- `chk_hq_pricing_fleet`: fleet_size_min >= 0 AND (fleet_size_max IS NULL OR fleet_size_max >= fleet_size_min)
-- `chk_hq_pricing_approval`: requires_approval = false OR approval_role IS NOT NULL
-
 ### hq_offer_rules
 
 **Row Count:** ~11
 
-Offres promotionnelles HQ (trial, referral, promo, seasonal). Gère les tunnels d'acquisition (self-service avec CB vs qualification requise).
+| Column                   | Type          | Nullable | Default             |
+| ------------------------ | ------------- | -------- | ------------------- |
+| id                       | `uuid`        | NO       | `gen_random_uuid()` |
+| country_code             | `varchar`     | YES      | -                   |
+| offer_type               | `varchar`     | NO       | -                   |
+| code                     | `varchar`     | NO       | -                   |
+| name_translations        | `jsonb`       | NO       | -                   |
+| description_translations | `jsonb`       | YES      | -                   |
+| free_months              | `integer`     | YES      | -                   |
+| referrer_free_months     | `integer`     | YES      | -                   |
+| referee_free_months      | `integer`     | YES      | -                   |
+| discount_percent         | `numeric`     | YES      | -                   |
+| requires_payment_method  | `boolean`     | NO       | `false`             |
+| requires_qualification   | `boolean`     | NO       | `false`             |
+| max_uses_total           | `integer`     | YES      | -                   |
+| max_uses_per_user        | `integer`     | YES      | -                   |
+| fleet_size_min           | `integer`     | YES      | -                   |
+| fleet_size_max           | `integer`     | YES      | -                   |
+| is_active                | `boolean`     | NO       | `true`              |
+| valid_from               | `date`        | YES      | -                   |
+| valid_until              | `date`        | YES      | -                   |
+| display_order            | `integer`     | NO       | `0`                 |
+| created_at               | `timestamptz` | NO       | `now()`             |
+| updated_at               | `timestamptz` | NO       | `now()`             |
 
-| Column                   | Type           | Nullable | Default             |
-| ------------------------ | -------------- | -------- | ------------------- |
-| id                       | `uuid`         | NO       | `gen_random_uuid()` |
-| country_code             | `varchar(2)`   | YES      | -                   |
-| offer_type               | `varchar(20)`  | NO       | -                   |
-| code                     | `varchar(50)`  | NO       | -                   |
-| name_translations        | `jsonb`        | NO       | -                   |
-| description_translations | `jsonb`        | YES      | -                   |
-| free_months              | `integer`      | YES      | -                   |
-| referrer_free_months     | `integer`      | YES      | -                   |
-| referee_free_months      | `integer`      | YES      | -                   |
-| discount_percent         | `numeric(5,2)` | YES      | -                   |
-| requires_payment_method  | `boolean`      | NO       | `false`             |
-| requires_qualification   | `boolean`      | NO       | `false`             |
-| max_uses_total           | `integer`      | YES      | -                   |
-| max_uses_per_user        | `integer`      | YES      | -                   |
-| fleet_size_min           | `integer`      | YES      | -                   |
-| fleet_size_max           | `integer`      | YES      | -                   |
-| is_active                | `boolean`      | NO       | `true`              |
-| valid_from               | `date`         | YES      | -                   |
-| valid_until              | `date`         | YES      | -                   |
-| display_order            | `integer`      | NO       | `0`                 |
-| created_at               | `timestamptz`  | NO       | `now()`             |
-| updated_at               | `timestamptz`  | NO       | `now()`             |
+**CHECK Constraints:**
+
+- `chk_hq_offer_desc`: ((description_translations IS NULL) OR (jsonb_typeof(description_translations) = 'object'::text))
+- `chk_hq_offer_discount`: ((discount_percent IS NULL) OR ((discount_percent >= (0)::numeric) AND (discount_percent <= (100)::n...
+- `chk_hq_offer_fleet`: ((fleet_size_min IS NULL) OR (fleet_size_max IS NULL) OR (fleet_size_max >= fleet_size_min))
+- `chk_hq_offer_name`: (jsonb_typeof(name_translations) = 'object'::text)
+- `chk_hq_offer_type`: ((offer_type)::text = ANY ((ARRAY['trial'::character varying, 'referral'::character varying, 'promo'...
 
 **Indexes:**
 
-- `hq_offer_rules_pkey`: (id)
-- `hq_offer_rules_code_key`: (code) UNIQUE
+- `hq_offer_rules_code_key`: (code)
+- `idx_hq_offer_active`: (is_active)
 - `idx_hq_offer_country`: (country_code)
 - `idx_hq_offer_type`: (offer_type)
-- `idx_hq_offer_active`: (is_active) WHERE is_active = true
 
-**Check Constraints:**
+### hq_pricing_rules
 
-- `chk_hq_offer_name`: jsonb_typeof(name_translations) = 'object'
-- `chk_hq_offer_desc`: description_translations IS NULL OR jsonb_typeof(description_translations) = 'object'
-- `chk_hq_offer_type`: offer_type IN ('trial', 'referral', 'promo', 'seasonal')
-- `chk_hq_offer_discount`: discount_percent IS NULL OR (discount_percent >= 0 AND discount_percent <= 100)
-- `chk_hq_offer_fleet`: fleet_size_min IS NULL OR fleet_size_max IS NULL OR fleet_size_max >= fleet_size_min
+**Row Count:** ~10
+
+| Column                   | Type          | Nullable | Default             |
+| ------------------------ | ------------- | -------- | ------------------- |
+| id                       | `uuid`        | NO       | `gen_random_uuid()` |
+| country_code             | `varchar`     | YES      | -                   |
+| code                     | `varchar`     | NO       | -                   |
+| name_translations        | `jsonb`       | NO       | -                   |
+| description_translations | `jsonb`       | YES      | -                   |
+| fleet_size_min           | `integer`     | NO       | -                   |
+| fleet_size_max           | `integer`     | YES      | -                   |
+| max_discount_percent     | `numeric`     | NO       | `0`                 |
+| requires_approval        | `boolean`     | NO       | `false`             |
+| approval_role            | `varchar`     | YES      | -                   |
+| is_active                | `boolean`     | NO       | `true`              |
+| valid_from               | `date`        | YES      | -                   |
+| valid_until              | `date`        | YES      | -                   |
+| display_order            | `integer`     | NO       | `0`                 |
+| created_at               | `timestamptz` | NO       | `now()`             |
+| updated_at               | `timestamptz` | NO       | `now()`             |
+
+**CHECK Constraints:**
+
+- `chk_hq_pricing_approval`: ((requires_approval = false) OR (approval_role IS NOT NULL))
+- `chk_hq_pricing_desc`: ((description_translations IS NULL) OR (jsonb_typeof(description_translations) = 'object'::text))
+- `chk_hq_pricing_discount`: ((max_discount_percent >= (0)::numeric) AND (max_discount_percent <= (100)::numeric))
+- `chk_hq_pricing_fleet`: ((fleet_size_min >= 0) AND ((fleet_size_max IS NULL) OR (fleet_size_max >= fleet_size_min)))
+- `chk_hq_pricing_name`: (jsonb_typeof(name_translations) = 'object'::text)
+
+**Indexes:**
+
+- `hq_pricing_rules_code_key`: (code)
+- `idx_hq_pricing_active`: (is_active)
+- `idx_hq_pricing_country`: (country_code)
+- `idx_hq_pricing_fleet`: (fleet_size_min, fleet_size_max)
 
 ## Revenue Module (rev\_)
 

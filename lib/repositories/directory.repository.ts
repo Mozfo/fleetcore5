@@ -348,18 +348,14 @@ export class DirectoryRepository {
    */
   async createPlatform(data: {
     code: string;
-    name: string;
     name_translations: Record<string, string>;
-    description?: string;
     description_translations?: Record<string, string>;
     api_config?: Record<string, unknown>;
   }): Promise<Platform> {
     return await this.prisma.dir_platforms.create({
       data: {
         code: data.code,
-        name: data.name,
         name_translations: data.name_translations,
-        description: data.description,
         description_translations: data.description_translations,
         api_config: data.api_config ? (data.api_config as never) : undefined,
       },
@@ -445,9 +441,7 @@ export class DirectoryRepository {
   async createVehicleClass(data: {
     country_code: string;
     code: string;
-    name: string;
     name_translations: Record<string, string>;
-    description?: string;
     description_translations?: Record<string, string>;
     max_age?: number;
   }): Promise<VehicleClass> {
@@ -455,9 +449,7 @@ export class DirectoryRepository {
       data: {
         country_code: data.country_code,
         code: data.code,
-        name: data.name,
         name_translations: data.name_translations,
-        description: data.description,
         description_translations: data.description_translations ?? {},
         max_age: data.max_age || null,
       },

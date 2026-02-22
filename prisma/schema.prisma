@@ -167,9 +167,6 @@ model clt_members {
   m7im7no                   adm_tenant_vehicle_classes[]   @relation("M_bke6r4")
   mmhaxgt                   adm_tenant_vehicle_classes[]   @relation("M_tgsq3j")
   mrhx8v                   adm_tenant_vehicle_classes[]   @relation("M_juibnn")
-  menv9j6                                             crm_contracts[]                @relation("M_2ejw59")
-  mfc1vlb                                             crm_contracts[]                @relation("M_weh19q")
-  m6dr4mn                                             crm_contracts[]                @relation("M_aoo11s")
   mpbrkx0                                    crm_opportunities[]            @relation("M_ibz5tf")
   mp0iu8u                                     crm_opportunities[]            @relation("M_ds7hn1")
   mg0o2lt                                     crm_opportunities[]            @relation("M_r8zf7m")
@@ -450,10 +447,6 @@ model adm_provider_employees {
   e4rh01h      bil_tenant_usage_metrics[]    @relation("E_c29c7q")
   e2ezcyk      bil_tenant_usage_metrics[]    @relation("E_j8pp7r")
   eaoaxj2      bil_tenant_usage_metrics[]    @relation("E_ri19s9")
-  emsbw60                           crm_contracts[]               @relation("E_8gunbt")
-  en4z4k3                            crm_contracts[]               @relation("E_lb473o")
-  efyirk2                            crm_contracts[]               @relation("E_e4nu3n")
-  e7p76zk                            crm_contracts[]               @relation("E_5vc9j5")
   e2uoxrz                                   crm_leads[]                   @relation("E_q6cosq")
   eoha4x3                                    crm_leads[]                   @relation("E_y5okea")
   ehatrx2                                    crm_leads[]                   @relation("E_toz4kt")
@@ -630,6 +623,18 @@ model adm_providers {
   @@index([status], map: "idx_adm_providers_status")
 }
 
+model adm_provider_countries {
+  id           String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  provider_id  String      @db.Uuid
+  country_code String      @db.Char(2)
+  is_primary   Boolean     @default(false)
+  created_at   DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@index([country_code], map: "idx_apc_country")
+  @@index([provider_id], map: "idx_apc_provider")
+  @@unique([country_code], map: "uq_apc_country")
+}
+
 model adm_role_permissions {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   role_id    String    @db.Uuid
@@ -656,8 +661,6 @@ model adm_role_versions {
 model adm_roles {
   id                                                 String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id                                          String                 @db.Uuid
-  name                                               String                 @db.VarChar(100)
-  description                                        String?
   permissions                                        Json                   @default("{}")
   status                                             String                 @default("active") @db.VarChar(50)
   created_at                                         DateTime               @default(now()) @db.Timestamptz(6)
@@ -730,8 +733,6 @@ model adm_tenant_vehicle_classes {
   id                                                             String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id                                                      String               @db.Uuid
   code                                                           String               @db.VarChar(50)
-  name                                                           String               @db.VarChar(100)
-  description                                                    String?
   criteria                                                       Json?
   based_on_class_id                                              String?              @db.Uuid
   status                                                         lifecycle_status     @default(active)
@@ -802,7 +803,6 @@ model adm_tenants {
   clt_invoices          clt_invoices[]
   clt_subscriptions     clt_subscriptions[]
   bil_tenant_usage_metrics     bil_tenant_usage_metrics[]
-  crm_contracts                crm_contracts[]
   dir_car_makes                dir_car_makes[]
   dir_car_models               dir_car_models[]
   dir_maintenance_types        dir_maintenance_types[]
@@ -912,7 +912,6 @@ model clt_masterdata {
 model bil_billing_plans {
   id                                                                                    String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   plan_name                                                                             String
-  description                                                                           String?
   monthly_fee                                                                           Decimal                    @default(0) @db.Decimal(14, 2)
   annual_fee                                                                            Decimal                    @default(0) @db.Decimal(14, 2)
   currency                                                                              String                     @db.VarChar(3)
@@ -926,8 +925,6 @@ model bil_billing_plans {
   deleted_by                                                                            String?                    @db.Uuid
   deletion_reason                                                                       String?
   plan_code                                                                             String?                    @db.VarChar(100)
-  price_monthly                                                                         Decimal?                   @db.Decimal(18, 2)
-  price_yearly                                                                          Decimal?                   @db.Decimal(18, 2)
   vat_rate                                                                              Decimal?                   @db.Decimal(5, 2)
   max_vehicles                                                                          Int?
   max_drivers                                                                           Int?
@@ -944,7 +941,6 @@ model bil_billing_plans {
   bil_promotions                                                                        bil_promotions[]
   xg6p2jq          clt_subscriptions[] @relation("X_wagae5")
   xm8l72q clt_subscriptions[] @relation("X_6s6mwl")
-  crm_contracts                                                                         crm_contracts[]
   crm_opportunities                                                                     crm_opportunities[]
   // Quote-to-Cash relations
   bil_amendments_new_plan                                                               bil_amendments[]           @relation("bil_amendments_new_plan")
@@ -1020,7 +1016,6 @@ model bil_promotion_usage {
 model bil_promotions {
   id                     String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   code                   String                  @unique @db.VarChar(50)
-  description            String?
   discount_type          promotion_discount_type
   discount_value         Decimal                 @db.Decimal(10, 2)
   currency               String?                 @db.Char(3)
@@ -1165,7 +1160,6 @@ model clt_subscriptions {
   bil_payment_methods                                                                bil_payment_methods?       @relation(fields: [payment_method_id], references: [id], onUpdate: NoAction, map: "fk_bil_subscriptions_payment_method")
   xxnqpvc     bil_billing_plans?         @relation("X_6s6mwl", fields: [previous_plan_id], references: [id], onUpdate: NoAction, map: "fk_bil_subscriptions_previous_plan")
   bil_tenant_usage_metrics                                                           bil_tenant_usage_metrics[]
-  crm_contracts                                                                      crm_contracts[]
   // Quote-to-Cash relations
   bil_amendments                                                                     bil_amendments[]
   crm_orders                                                                         crm_orders[]
@@ -1225,9 +1219,7 @@ model bil_tenant_usage_metrics {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model bil_usage_metric_types {
   id                       String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name                     String                     @unique @db.VarChar(50)
   unit                     String                     @db.VarChar(20)
-  description              String?
   aggregation_method       aggregation_method
   created_at               DateTime                   @default(now()) @db.Timestamptz(6)
   name_translations        Json
@@ -1549,7 +1541,6 @@ model crm_addresses {
   is_default    Boolean         @default(false)
   created_at    DateTime        @default(now()) @db.Timestamptz(6)
   provider_id   String?         @db.Uuid
-  crm_contracts crm_contracts[]
   adm_providers adm_providers?  @relation("crm_addresses_provider", fields: [provider_id], references: [id], map: "fk_crm_addresses_provider")
   // Quote-to-Cash relations
   crm_orders    crm_orders[]    @relation("crm_orders_billing_address")
@@ -1886,75 +1877,6 @@ model crm_agreements {
   @@index([provider_envelope_id], map: "idx_crm_agreements_provider_envelope_id")
 }
 
-/// DEPRECATED: crm_contracts - this table no longer exists in DB, replaced by crm_orders
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model crm_contracts {
-  id                                                                       String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  lead_id                                                                  String                    @db.Uuid
-  contract_reference                                                       String
-  contract_date                                                            DateTime                  @db.Date
-  effective_date                                                           DateTime                  @db.Date
-  expiry_date                                                              DateTime?                 @db.Date
-  total_value                                                              Decimal                   @db.Decimal(18, 2)
-  currency                                                                 String                    @db.VarChar(3)
-  status                                                                   String                    @default("active")
-  metadata                                                                 Json                      @default("{}")
-  created_at                                                               DateTime                  @default(now()) @db.Timestamptz(6)
-  created_by                                                               String?                   @db.Uuid
-  updated_at                                                               DateTime                  @default(now()) @db.Timestamptz(6)
-  updated_by                                                               String?                   @db.Uuid
-  deleted_at                                                               DateTime?                 @db.Timestamptz(6)
-  deleted_by                                                               String?                   @db.Uuid
-  deletion_reason                                                          String?
-  opportunity_id                                                           String?                   @db.Uuid
-  contract_code                                                            String?                   @unique
-  signature_date                                                           DateTime?                 @db.Date
-  expiration_date                                                          DateTime?                 @db.Date
-  vat_rate                                                                 Decimal?                  @db.Decimal(5, 2)
-  renewal_type                                                             renewal_type?
-  auto_renew                                                               Boolean?                  @default(false)
-  renewal_date                                                             DateTime?                 @db.Date
-  notice_period_days                                                       Int?
-  renewed_from_contract_id                                                 String?                   @db.Uuid
-  tenant_id                                                                String                    @db.Uuid
-  plan_id                                                                  String?                   @db.Uuid
-  subscription_id                                                          String?                   @db.Uuid
-  company_name                                                             String?
-  contact_name                                                             String?
-  contact_email                                                            String?                   @db.Citext
-  contact_phone                                                            String?                   @db.VarChar(50)
-  billing_address_id                                                       String?                   @db.Uuid
-  version_number                                                           Int?                      @default(1)
-  document_url                                                             String?
-  notes                                                                    String?
-  approved_by                                                              String?                   @db.Uuid
-  mbnoypv                        clt_members?              @relation("M_2ejw59", fields: [created_by], references: [id])
-  mtdhy4s                        clt_members?              @relation("M_weh19q", fields: [deleted_by], references: [id])
-  xk2h2yo        crm_opportunities?        @relation("X_3eys29", fields: [opportunity_id], references: [id], onUpdate: NoAction)
-  mjxt3me                        clt_members?              @relation("M_aoo11s", fields: [updated_by], references: [id])
-  el3qno4 adm_provider_employees?   @relation("E_8gunbt", fields: [approved_by], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_approved_by")
-  crm_addresses                                                            crm_addresses?            @relation(fields: [billing_address_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_billing_address")
-  eeecazd  adm_provider_employees?   @relation("E_lb473o", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_created_by")
-  elksnze  adm_provider_employees?   @relation("E_e4nu3n", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_deleted_by")
-  crm_leads                                                                crm_leads                 @relation(fields: [lead_id], references: [id], onDelete: SetNull, map: "fk_crm_contracts_lead")
-  bil_billing_plans                                                        bil_billing_plans?        @relation(fields: [plan_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_plan")
-  crm_contracts                                                            crm_contracts?            @relation("crm_contractsTocrm_contracts", fields: [renewed_from_contract_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_renewed_from")
-  other_crm_contracts                                                      crm_contracts[]           @relation("crm_contractsTocrm_contracts")
-  clt_subscriptions                                                 clt_subscriptions? @relation(fields: [subscription_id], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_subscription")
-  adm_tenants                                                              adm_tenants               @relation(fields: [tenant_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_crm_contracts_tenant")
-  etu48jw  adm_provider_employees?   @relation("E_5vc9j5", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_crm_contracts_updated_by")
-  xko9dx7           crm_opportunities[]       @relation("X_5vsr2s")
-
-  @@index([lead_id], map: "crm_contracts_client_id_idx")
-  @@index([contract_date])
-  @@index([created_by])
-  @@index([deleted_at])
-  @@index([effective_date])
-  @@index([expiry_date])
-  @@index([metadata], type: Gin)
-  @@index([updated_by])
-}
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -2128,9 +2050,9 @@ model crm_leads {
   // V6.6: Recovery notification (1h après email_verified sans complétion)
   recovery_notification_sent_at                                        DateTime?               @db.Timestamptz(6)
   recovery_notification_clicked_at                                     DateTime?               @db.Timestamptz(6)
+  whatsapp_number                                                      String?                 @db.VarChar(50)
   // Relations
   crm_activities                                                       crm_activities[]
-  crm_contracts                                                        crm_contracts[]
   crm_lead_activities                                                  crm_lead_activities[]
   eu1f9qh adm_provider_employees? @relation("E_q6cosq", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_crm_leads_assigned_to")
   adm_providers                                                        adm_providers?          @relation("crm_leads_provider", fields: [provider_id], references: [id], map: "fk_crm_leads_provider")
@@ -2220,7 +2142,6 @@ model crm_opportunities {
   max_days_in_stage                                                            Int?                          @default(14)
   provider_id                                                                  String?                       @db.Uuid
   crm_activities                                                               crm_activities[]
-  x5nbuj4                crm_contracts[]               @relation("X_3eys29")
   adm_providers                                                                adm_providers?                @relation("crm_opportunities_provider", fields: [provider_id], references: [id], map: "fk_crm_opportunities_provider")
   xqh1y8s                        crm_leads[]                   @relation("X_wp88t7")
   mfiaerr                       clt_members?                  @relation("M_ibz5tf", fields: [assigned_to], references: [id])
@@ -2229,7 +2150,6 @@ model crm_opportunities {
   xva1wvf                               crm_leads                     @relation("X_giac7o", fields: [lead_id], references: [id], onDelete: Cascade)
   mkdn2e2                        clt_members?                  @relation("M_m2bmjk", fields: [updated_by], references: [id])
   esbu38v adm_provider_employees?       @relation("E_2fdy1w", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_assigned_to")
-  xpgrakr                   crm_contracts?                @relation("X_5vsr2s", fields: [contract_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_contract")
   eqtkd3  adm_provider_employees?       @relation("E_hry82s", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_created_by")
   e6fmsmy  adm_provider_employees?       @relation("E_alhv2r", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_deleted_by")
   e4efrw0    adm_provider_employees?       @relation("E_b2k0n1", fields: [owner_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_owner")
@@ -2529,7 +2449,6 @@ model dir_fine_types {
   id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   jurisdiction      String              @db.Char(2)
   code              String              @db.VarChar(50)
-  description       String
   min_amount        Decimal             @db.Decimal(14, 2)
   max_amount        Decimal             @db.Decimal(14, 2)
   points            Int?
@@ -2548,7 +2467,6 @@ model dir_maintenance_types {
   id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                 String                      @db.Uuid
   code                      String                      @db.VarChar(50)
-  label                     String                      @db.VarChar(255)
   category                  maintenance_category
   default_frequency_km      Int?
   default_frequency_months  Int?
@@ -2556,7 +2474,6 @@ model dir_maintenance_types {
   estimated_cost_range      Json?
   is_mandatory              Boolean?                    @default(false)
   requires_vehicle_stoppage Boolean?                    @default(true)
-  description               String?
   metadata                  Json?
   created_at                DateTime                    @default(now()) @db.Timestamptz(6)
   updated_at                DateTime                    @default(now()) @db.Timestamptz(6)
@@ -2609,8 +2526,6 @@ model dir_notification_templates {
 model dir_ownership_types {
   id                                                                            String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code                                                                          String                  @unique @db.VarChar(50)
-  name                                                                          String                  @db.VarChar(100)
-  description                                                                   String?
   requires_owner                                                                Boolean?                @default(false)
   allows_leasing                                                                Boolean?                @default(false)
   depreciation                                                                  Boolean?                @default(true)
@@ -2669,12 +2584,10 @@ model dir_platform_configs {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model dir_platforms {
   id                                                                      String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name                                                                    String                     @unique(map: "dir_platforms_name_uq")
   api_config                                                              Json?
   created_at                                                              DateTime                   @default(now()) @db.Timestamptz(6)
   updated_at                                                              DateTime                   @default(now()) @db.Timestamptz(6)
   code                                                                    String                     @db.VarChar(50)
-  description                                                             String?
   logo_url                                                                String?
   provider_category                                                       String?                    @db.VarChar(50)
   supported_countries                                                     Json?
@@ -2725,7 +2638,6 @@ model dir_toll_gates {
 
 model dir_transaction_statuses {
   code                     String             @id @db.VarChar(30)
-  description              String
   created_at               DateTime           @default(now()) @db.Timestamptz(6)
   description_translations Json
   fin_transactions         fin_transactions[]
@@ -2733,7 +2645,6 @@ model dir_transaction_statuses {
 
 model dir_transaction_types {
   code                     String             @id @db.VarChar(30)
-  description              String
   created_at               DateTime           @default(now()) @db.Timestamptz(6)
   description_translations Json
   fin_transactions         fin_transactions[]
@@ -2743,8 +2654,6 @@ model dir_transaction_types {
 model dir_vehicle_classes {
   id                                                                                        String                       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   country_code                                                                              String                       @db.Char(2)
-  name                                                                                      String
-  description                                                                               String?
   max_age                                                                                   Int?
   created_at                                                                                DateTime                     @default(now()) @db.Timestamptz(6)
   updated_at                                                                                DateTime                     @default(now()) @db.Timestamptz(6)
@@ -2779,7 +2688,6 @@ model dir_vehicle_classes {
   ebb4ydp             adm_provider_employees?      @relation("E_iqbg74", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dir_vehicle_classes_updated_by")
   flt_vehicles                                                                              flt_vehicles[]
 
-  @@unique([country_code, name], map: "dir_vehicle_classes_country_name_uq")
   @@index([country_code])
   @@index([created_at])
   @@index([updated_at])
@@ -2788,8 +2696,6 @@ model dir_vehicle_classes {
 model dir_vehicle_statuses {
   id                                                                             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code                                                                           String                  @unique @db.VarChar(50)
-  name                                                                           String                  @db.VarChar(100)
-  description                                                                    String?
   color                                                                          String?                 @db.VarChar(7)
   allowed_transitions                                                            Json?
   requires_approval                                                              Boolean?                @default(false)
@@ -2822,8 +2728,6 @@ model dir_vehicle_statuses {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model doc_document_types {
   code                                                                         String                  @id @db.VarChar(50)
-  name                                                                         String
-  description                                                                  String?
   requires_expiry                                                              Boolean                 @default(false)
   default_validity_days                                                        Int?
   requires_verification                                                        Boolean                 @default(true)
@@ -2928,7 +2832,6 @@ model doc_documents {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model doc_entity_types {
   code                                                                       String                  @id @db.VarChar(50)
-  description                                                                String
   table_name                                                                 String                  @db.VarChar(100)
   is_active                                                                  Boolean                 @default(true)
   display_order                                                              Int                     @default(0)
@@ -2948,8 +2851,6 @@ model doc_entity_types {
 
 model fin_account_types {
   code                     String         @id
-  label                    String
-  description              String?
   created_at               DateTime       @default(now()) @db.Timestamptz(6)
   updated_at               DateTime       @default(now()) @db.Timestamptz(6)
   label_translations       Json
@@ -3115,8 +3016,6 @@ model fin_driver_payments {
 
 model fin_payment_batch_statuses {
   code                       String                       @id
-  label                      String
-  description                String?
   created_at                 DateTime                     @default(now()) @db.Timestamptz(6)
   label_translations         Json
   description_translations   Json?
@@ -3125,8 +3024,6 @@ model fin_payment_batch_statuses {
 
 model fin_payment_statuses {
   code                     String                @id
-  label                    String
-  description              String?
   created_at               DateTime              @default(now()) @db.Timestamptz(6)
   label_translations       Json
   description_translations Json?
@@ -3257,8 +3154,6 @@ model fin_traffic_fines {
 model fin_transaction_categories {
   id                               String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code                             String                       @unique @db.VarChar(50)
-  name                             String
-  description                      String?
   category_type                    transaction_category_type
   parent_category_id               String?                      @db.Uuid
   is_active                        Boolean                      @default(true)
@@ -3389,8 +3284,6 @@ model flt_vehicle_equipments {
   tenant_id                                                                        String                   @db.Uuid
   vehicle_id                                                                       String                   @db.Uuid
   equipment_type                                                                   String                   @db.VarChar(50)
-  name                                                                             String                   @db.VarChar(100)
-  description                                                                      String?
   serial_number                                                                    String?                  @db.VarChar(100)
   provided_date                                                                    DateTime                 @db.Date
   return_date                                                                      DateTime?                @db.Date
@@ -4409,7 +4302,6 @@ model rid_driver_training {
   provider_id                                               String?                 @db.Uuid
   provider_contact                                          String?                 @db.VarChar(255)
   provider_location                                         String?
-  description                                               String?
   duration_hours                                            Decimal?                @db.Decimal(5, 2)
   total_sessions                                            Int?                    @default(1)
   sessions_completed                                        Int?                    @default(0)
@@ -4596,7 +4488,6 @@ model sch_goal_types {
   id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id          String            @db.Uuid
   code               String            @db.VarChar(50)
-  label              String            @db.VarChar(255)
   category           goal_category
   unit               String            @db.VarChar(50)
   calculation_method String?
@@ -4770,7 +4661,6 @@ model sch_shift_types {
   id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id       String       @db.Uuid
   code            String       @db.VarChar(50)
-  label           String       @db.VarChar(255)
   pay_multiplier  Decimal      @db.Decimal(4, 2)
   color_code      String?      @db.VarChar(20)
   is_active       Boolean?     @default(true)
@@ -4885,7 +4775,6 @@ model sch_task_types {
   id                       String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                String         @db.Uuid
   code                     String         @db.VarChar(50)
-  label                    String         @db.VarChar(255)
   category                 task_category
   default_priority         task_priority?
   default_duration_minutes Int?
@@ -4993,7 +4882,6 @@ model sch_tasks {
 model sup_canned_responses {
   id                     String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id              String                 @db.Uuid
-  title                  String                 @db.VarChar(255)
   content                String
   category               String?                @db.VarChar(100)
   language               String                 @db.VarChar(10)
@@ -5052,9 +4940,7 @@ model sup_customer_feedback {
 model sup_ticket_categories {
   id                                                                              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                                                                       String                  @db.Uuid
-  name                                                                            String                  @db.VarChar(100)
   slug                                                                            String                  @db.VarChar(100)
-  description                                                                     String?
   parent_category_id                                                              String?                 @db.Uuid
   default_priority                                                                ticket_priority?
   default_assigned_team                                                           String?                 @db.VarChar(100)
