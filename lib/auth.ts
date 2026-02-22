@@ -147,6 +147,50 @@ export const auth = betterAuth({
     },
     session: {
       create: {
+        before: async (session) => {
+          try {
+            const memberships = await prisma.auth_member.findMany({
+              where: { user_id: session.userId },
+              select: {
+                organization_id: true,
+                organization: {
+                  select: { metadata: true },
+                },
+              },
+            });
+
+            if (memberships.length === 0) {
+              return;
+            }
+
+            // Prioritize HQ org (is_headquarters: true in metadata)
+            let targetOrgId = memberships[0].organization_id;
+
+            for (const m of memberships) {
+              const raw = m.organization?.metadata;
+              if (raw) {
+                try {
+                  const meta = JSON.parse(raw) as Record<string, unknown>;
+                  if (meta?.is_headquarters === true) {
+                    targetOrgId = m.organization_id;
+                    break;
+                  }
+                } catch {
+                  // Invalid JSON metadata — skip
+                }
+              }
+            }
+
+            return {
+              data: {
+                ...session,
+                activeOrganizationId: targetOrgId,
+              },
+            };
+          } catch {
+            // Never crash login — session created without org if hook fails
+          }
+        },
         after: async (session) => {
           try {
             await prisma.adm_audit_logs.create({
