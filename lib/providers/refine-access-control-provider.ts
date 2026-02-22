@@ -10,7 +10,7 @@ import {
 /**
  * Factory that creates a Refine AccessControlProvider.
  *
- * Receives a getter function for the current OrgRole (from Clerk).
+ * Receives a getter function for the current OrgRole (from auth session).
  * Uses FleetCore's existing hasPermission() — no duplication.
  */
 export function createAccessControlProvider(

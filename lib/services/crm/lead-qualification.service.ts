@@ -223,7 +223,7 @@ export class LeadQualificationService {
    *
    * @param leadId - Lead UUID
    * @param cpt - CPT qualification input
-   * @param performedBy - Clerk user_id who performed the qualification
+   * @param performedBy - auth user_id who performed the qualification
    * @returns QualificationResult with score, recommendation, and status_updated flag
    */
   async qualifyLead(

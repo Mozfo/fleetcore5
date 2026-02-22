@@ -49,7 +49,7 @@ export interface AuditLogOptions {
   snapshot?: Prisma.InputJsonValue | null;
   changes?: Prisma.InputJsonValue | null;
   performedBy?: string | null;
-  performedByClerkId?: string | null;
+  performedByAuthId?: string | null;
   ipAddress?: string | null;
   userAgent?: string | null;
   reason?: string | null;
@@ -107,7 +107,7 @@ export async function auditLog(options: AuditLogOptions): Promise<void> {
             snapshot: options.snapshot,
             reason: options.reason,
             metadata: options.metadata,
-            performedByClerkId: options.performedByClerkId,
+            performedByAuthId: options.performedByAuthId,
           }) ?? undefined,
       },
     });
@@ -176,7 +176,7 @@ export function captureChanges(
 export function buildChangesJSON(
   options: Pick<
     AuditLogOptions,
-    "changes" | "snapshot" | "reason" | "metadata" | "performedByClerkId"
+    "changes" | "snapshot" | "reason" | "metadata" | "performedByAuthId"
   >
 ): Prisma.InputJsonValue | null {
   const result: Record<string, unknown> = {};
@@ -206,12 +206,12 @@ export function buildChangesJSON(
     result._audit_metadata = options.metadata;
   }
 
-  // 5. Add performedByClerkId with _audit_ prefix
+  // 5. Add performedByAuthId with _audit_ prefix
   if (
-    options.performedByClerkId !== null &&
-    options.performedByClerkId !== undefined
+    options.performedByAuthId !== null &&
+    options.performedByAuthId !== undefined
   ) {
-    result._audit_clerk_id = options.performedByClerkId;
+    result._audit_auth_id = options.performedByAuthId;
   }
 
   // 6. Return null if no data (column is nullable)

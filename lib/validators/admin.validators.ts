@@ -24,14 +24,14 @@ import { z } from "zod";
  * Tenant creation validation schema
  *
  * Validates all required fields for creating a new tenant (organization).
- * Enforces strict validation for slug (kebab-case), Clerk org ID format,
+ * Enforces strict validation for slug (kebab-case), auth org ID format,
  * and resource limits (max members, max vehicles).
  *
  * @example
  * const tenant = {
  *   name: "Acme Logistics",
  *   slug: "acme-logistics",
- *   clerk_organization_id: "org_2abcdef123456",
+ *   auth_organization_id: "550e8400-e29b-41d4-a716-446655440000",
  *   country_code: "FR",
  *   default_currency: "EUR",
  *   timezone: "Europe/Paris",
@@ -56,10 +56,10 @@ export const TenantCreateSchema = z.object({
     .min(3, "Le slug doit contenir au moins 3 caractères")
     .max(50, "Le slug ne peut pas dépasser 50 caractères"),
 
-  clerk_organization_id: z
+  auth_organization_id: z
     .string()
-    .min(1, "L'ID de l'organisation Clerk est requis")
-    .startsWith("org_", "L'ID Clerk doit commencer par 'org_'"),
+    .uuid("L'ID de l'organisation doit être un UUID valide")
+    .optional(),
 
   country_code: z
     .string()

@@ -6,9 +6,7 @@
  * (adm_tenants, clt_members, adm_provider_employees) whose primary keys
  * differ from the auth session IDs.
  *
- * Transition: queries use OR clauses to match both auth_user_id (Better Auth)
- * and clerk_user_id (legacy). DB column references to clerk_* are tolerated
- * until Phase 6 column rename.
+ * Queries match auth_user_id (Better Auth) on provider employees and members.
  *
  * @module lib/utils/audit-resolver
  */
@@ -47,7 +45,7 @@ export async function resolveTenantId(
 ): Promise<TenantLookupResult | null> {
   try {
     const tenant = await db.adm_tenants.findFirst({
-      where: { clerk_organization_id: orgId },
+      where: { auth_organization_id: orgId },
       select: { id: true, name: true },
     });
 
@@ -60,7 +58,7 @@ export async function resolveTenantId(
 
 /**
  * Resolve user ID to clt_members UUID.
- * Tries auth_user_id first (Better Auth), falls back to clerk_user_id (transition).
+ * Resolves auth_user_id (Better Auth) to the member record.
  *
  * @param userId - User ID from auth session
  * @param tenantId - Optional tenant UUID to scope the search
@@ -73,7 +71,7 @@ export async function resolveMemberId(
   try {
     const member = await db.clt_members.findFirst({
       where: {
-        OR: [{ auth_user_id: userId }, { clerk_user_id: userId }],
+        auth_user_id: userId,
         ...(tenantId ? { tenant_id: tenantId } : {}),
         deleted_at: null,
         status: "active",
@@ -90,7 +88,7 @@ export async function resolveMemberId(
 
 /**
  * Resolve user ID to adm_provider_employees UUID.
- * Tries auth_user_id first (Better Auth), falls back to clerk_user_id (transition).
+ * Resolves auth_user_id (Better Auth) to the employee record.
  *
  * @param userId - User ID from auth session
  * @returns Employee record or null
@@ -101,7 +99,7 @@ export async function resolveEmployeeId(
   try {
     const employee = await db.adm_provider_employees.findFirst({
       where: {
-        OR: [{ auth_user_id: userId }, { clerk_user_id: userId }],
+        auth_user_id: userId,
         deleted_at: null,
       },
       select: { id: true, email: true },

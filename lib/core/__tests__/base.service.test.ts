@@ -79,20 +79,20 @@ class TestService extends BaseService<TestEntity> {
     id: string,
     tenantId: string,
     memberId: string,
-    clerkUserId?: string,
+    authUserId?: string,
     reason?: string
   ) {
-    return this.softDelete(id, tenantId, memberId, clerkUserId, reason);
+    return this.softDelete(id, tenantId, memberId, authUserId, reason);
   }
 
   public testRestore(
     id: string,
     tenantId: string,
     memberId: string,
-    clerkUserId?: string,
+    authUserId?: string,
     reason?: string
   ) {
-    return this.restore(id, tenantId, memberId, clerkUserId, reason);
+    return this.restore(id, tenantId, memberId, authUserId, reason);
   }
 }
 
@@ -267,7 +267,7 @@ describe("BaseService", () => {
         action: "delete",
         entityId: "entity-1",
         memberId: "member-1",
-        clerkUserId: "clerk-1",
+        authUserId: "auth-user-1",
         reason: "Test reason",
       });
 
@@ -277,7 +277,7 @@ describe("BaseService", () => {
         entityType: "driver", // from getEntityType()
         entityId: "entity-1",
         performedBy: "member-1",
-        performedByClerkId: "clerk-1",
+        performedByAuthId: "auth-user-1",
         changes: null,
         snapshot: null,
         reason: "Test reason",
@@ -312,7 +312,7 @@ describe("BaseService", () => {
         "entity-1",
         "tenant-1",
         "member-1",
-        "clerk-1",
+        "auth-user-1",
         "Test reason"
       );
 
@@ -338,14 +338,14 @@ describe("BaseService", () => {
       );
     });
 
-    it("should handle optional clerkUserId and reason", async () => {
+    it("should handle optional authUserId and reason", async () => {
       const { auditLog } = await import("@/lib/audit");
 
       await service.testSoftDelete("entity-1", "tenant-1", "member-1");
 
       expect(auditLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          performedByClerkId: undefined,
+          performedByAuthId: undefined,
           reason: undefined,
         })
       );
@@ -411,7 +411,7 @@ describe("BaseService", () => {
         "entity-1",
         "tenant-1",
         "member-1",
-        "clerk-1",
+        "auth-user-1",
         "Recovery requested"
       );
 

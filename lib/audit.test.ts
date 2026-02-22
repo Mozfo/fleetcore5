@@ -43,14 +43,14 @@ describe("buildChangesJSON()", () => {
     });
   });
 
-  // Test 5: PerformedByClerkId should be stored with _audit_clerk_id prefix
-  it("should store performedByClerkId with _audit_clerk_id prefix", () => {
+  // Test 5: PerformedByAuthId should be stored with _audit_auth_id prefix
+  it("should store performedByAuthId with _audit_auth_id prefix", () => {
     const result = buildChangesJSON({
-      performedByClerkId: "user_2abc123xyz",
+      performedByAuthId: "user_2abc123xyz",
     }) as Record<string, unknown>;
 
     expect(result).toBeDefined();
-    expect(result._audit_clerk_id).toBe("user_2abc123xyz");
+    expect(result._audit_auth_id).toBe("user_2abc123xyz");
   });
 
   // Test 6: Should merge domain changes with audit metadata
@@ -110,7 +110,7 @@ describe("buildChangesJSON()", () => {
       reason: undefined,
       metadata: undefined,
       snapshot: undefined,
-      performedByClerkId: undefined,
+      performedByAuthId: undefined,
     });
 
     expect(result).toBeNull();
@@ -158,14 +158,14 @@ describe("buildChangesJSON()", () => {
       snapshot: { id: "123", name: "Test" },
       reason: "Migration",
       metadata: { tool: "script", version: "2.0" },
-      performedByClerkId: "user_admin",
+      performedByAuthId: "user_admin",
     }) as Record<string, unknown>;
 
     expect(result).toBeDefined();
     expect(result._audit_snapshot).toEqual({ id: "123", name: "Test" });
     expect(result._audit_reason).toBe("Migration");
     expect(result._audit_metadata).toEqual({ tool: "script", version: "2.0" });
-    expect(result._audit_clerk_id).toBe("user_admin");
+    expect(result._audit_auth_id).toBe("user_admin");
   });
 
   // Test 13: Should not conflict with _audit_ prefix in domain data

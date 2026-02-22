@@ -140,7 +140,7 @@ describeIntegration("NotificationService Integration Tests", () => {
       data: {
         tenant_id: testTenantId,
         email: "integration-test@fleetcore.app",
-        clerk_user_id: "test_clerk_user_integration",
+        auth_user_id: "test_auth_user_integration",
         phone: "+33600000001",
         first_name: "Integration",
         last_name: "Test",
@@ -226,7 +226,7 @@ describeIntegration("NotificationService Integration Tests", () => {
         data: {
           tenant_id: testTenantId,
           email: "no-lang@test.com",
-          clerk_user_id: "test_clerk_user_no_lang",
+          auth_user_id: "test_auth_user_no_lang",
           phone: "+33600000002",
           first_name: "No",
           last_name: "Lang",

@@ -3,7 +3,7 @@
  * Quote list and creation operations (GET, POST)
  *
  * Thin route layer that delegates to Server Actions.
- * Auth handled by actions via Clerk auth().
+ * Auth handled by actions via auth session.
  *
  * @module app/api/v1/crm/quotes
  */

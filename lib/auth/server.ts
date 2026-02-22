@@ -2,10 +2,8 @@
  * Better Auth -- Server Wrappers
  *
  * Centralized auth functions for all server-side code.
- * Replaces direct Clerk imports (@clerk/nextjs/server).
- *
  * Every server action, API route, and server component
- * imports from here -- never directly from @clerk/* or better-auth.
+ * imports from here -- never directly from better-auth.
  *
  * @module lib/auth/server
  */
@@ -52,7 +50,7 @@ export interface ProviderContext {
 /**
  * Get the current authenticated session.
  *
- * Replaces: `const { userId, orgId } = await auth()` from Clerk.
+ * Replaces: `const { userId, orgId } = await auth()`.
  * Returns null if not authenticated (no throw).
  */
 export async function getSession(): Promise<AuthSession | null> {
@@ -159,7 +157,7 @@ export async function requireCrmAuth(): Promise<CrmAuthSession> {
 /**
  * Get the current user (without requiring auth).
  *
- * Replaces: `currentUser()` from Clerk (5 occurrences).
+ * Replaces: `currentUser()` (previously called in 5 places).
  * Returns null if not authenticated.
  */
 export async function getCurrentUser() {
@@ -173,7 +171,7 @@ export async function getCurrentUser() {
  * Get provider context for the current user.
  *
  * Looks up the authenticated user in adm_provider_employees
- * using auth_user_id (Better Auth) with fallback to clerk_user_id (transition).
+ * using auth_user_id (Better Auth).
  *
  * Replaces: getProviderContext() from lib/utils/provider-context.ts
  */
@@ -190,7 +188,7 @@ export async function getProviderContext(): Promise<ProviderContext> {
 
   const employee = await prisma.adm_provider_employees.findFirst({
     where: {
-      OR: [{ auth_user_id: session.userId }, { clerk_user_id: session.userId }],
+      auth_user_id: session.userId,
       status: "active",
       deleted_at: null,
     },

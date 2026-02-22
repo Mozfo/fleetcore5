@@ -4,7 +4,7 @@
  * Architecture:
  * - Permissions are module:action pairs (e.g., "crm:view", "fleet:edit")
  * - Roles are mapped to sets of permissions
- * - orgRole from Clerk determines which permissions a user has
+ * - orgRole from auth session determines which permissions a user has
  */
 
 // Available actions for each module
@@ -24,9 +24,9 @@ export type ModuleKey =
 // Permission string format: "module:action"
 export type Permission = `${ModuleKey}:${PermissionAction}`;
 
-// Clerk organization roles
+// Organization roles
 export type OrgRole =
-  | "org:admin" // Clerk default admin
+  | "org:admin" // default admin
   | "org:adm_admin" // FleetCore super admin
   | "org:adm_commercial" // FleetCore commercial (CRM access)
   | "org:adm_support" // FleetCore support
@@ -102,7 +102,7 @@ export const ROLE_PERMISSIONS: Record<OrgRole, Permission[]> = {
     "analytics:view",
   ],
 
-  // Clerk default admin (treat as adm_admin for compatibility)
+  // default admin (treat as adm_admin for compatibility)
   "org:admin": [
     "dashboard:view",
     "dashboard:edit",

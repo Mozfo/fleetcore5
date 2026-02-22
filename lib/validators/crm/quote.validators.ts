@@ -625,7 +625,7 @@ export const RejectQuoteSchema = z.object({
  * Schema for accepting a quote via public token
  *
  * Used when a prospect accepts a quote from the public view page.
- * No Clerk authentication required - token provides access.
+ * No authentication required - token provides access.
  *
  * @example
  * ```typescript
@@ -660,7 +660,7 @@ export const AcceptQuoteByTokenSchema = z.object({
  * Schema for rejecting a quote via public token
  *
  * Used when a prospect rejects a quote from the public view page.
- * No Clerk authentication required - token provides access.
+ * No authentication required - token provides access.
  *
  * @example
  * ```typescript

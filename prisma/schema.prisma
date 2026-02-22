@@ -116,7 +116,6 @@ model clt_members {
   id                                                                                              String                         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id                                                                                       String                         @db.Uuid
   email                                                                                           String                         @db.Citext
-  clerk_user_id                                                                                   String                         @db.VarChar(255)
   auth_user_id                                                                                    String?
   first_name                                                                                      String?                        @db.VarChar(100)
   last_name                                                                                       String?                        @db.VarChar(100)
@@ -309,7 +308,6 @@ model clt_members {
   crm_orders_updated                                                                              crm_orders[]                   @relation("M_ji7x2u")
   crm_orders_deleted                                                                              crm_orders[]                   @relation("M_tt34oc")
 
-  @@index([clerk_user_id])
   @@index([created_by])
   @@index([deleted_at])
   @@index([email])
@@ -403,7 +401,6 @@ model adm_notification_queue {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model adm_provider_employees {
   id                                                                                        String                        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clerk_user_id                                                                             String                        @db.VarChar(255)
   auth_user_id                                                                              String?
   email                                                                                     String                        @db.VarChar(255)
   department                                                                                String?                       @db.VarChar(50)
@@ -589,6 +586,7 @@ model adm_providers {
   name                   String                   @db.VarChar(200)
   country_code           String?                  @db.Char(2)
   is_internal            Boolean                  @default(true)
+  is_headquarters        Boolean                  @default(false)
   settings               Json                     @default("{}")
   metadata               Json                     @default("{}")
   status                 String                   @default("active") @db.VarChar(50)
@@ -759,7 +757,7 @@ model adm_tenants {
   id                           String                         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   name                         String
   country_code                 String                         @db.VarChar(2)
-  clerk_organization_id        String?                        @unique(map: "adm_tenants_clerk_org_unique")
+  auth_organization_id         String?                        @unique(map: "adm_tenants_auth_org_unique") @db.Uuid
   vat_rate                     Decimal?                       @db.Decimal(5, 2)
   default_currency             String                         @default("EUR") @db.Char(3)
   timezone                     String                         @default("Europe/Paris")
@@ -861,7 +859,7 @@ model adm_tenants {
   // V6.2-3: Module CLT - relation 1:1 avec clt_masterdata
   clt_masterdata               clt_masterdata?
 
-  @@index([clerk_organization_id])
+  @@index([auth_organization_id])
   @@index([country_code])
   @@index([default_currency])
   @@index([deleted_at])

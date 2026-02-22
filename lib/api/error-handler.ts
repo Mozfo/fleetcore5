@@ -236,13 +236,13 @@ export enum ErrorCode {
  */
 export interface ErrorContext {
   /**
-   * Tenant ID (Clerk orgId) for multi-tenant isolation
+   * Tenant ID (auth orgId) for multi-tenant isolation
    * Used for filtering logs and debugging tenant-specific issues
    */
   tenantId?: string;
 
   /**
-   * User ID (Clerk userId) who triggered the error
+   * User ID (auth userId) who triggered the error
    * Used for user-specific debugging and audit trails
    */
   userId?: string;

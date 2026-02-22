@@ -50,7 +50,7 @@ export interface CreatePaymentLinkInput {
   leadId: string;
   planCode: string; // "starter", "pro", "premium"
   billingCycle: "monthly" | "yearly";
-  performedBy: string; // Clerk user_id du commercial
+  performedBy: string; // Auth user_id du commercial
 }
 
 /**
@@ -107,7 +107,7 @@ interface BillingPlan {
  *   leadId: "uuid",
  *   planCode: "starter",
  *   billingCycle: "monthly",
- *   performedBy: "clerk_user_id",
+ *   performedBy: "auth_user_id",
  * });
  *
  * if (result.success) {

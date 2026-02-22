@@ -67,7 +67,7 @@ describe("Provider Context Utilities", () => {
       expect(result).toBeNull();
       expect(prisma.adm_provider_employees.findFirst).toHaveBeenCalledWith({
         where: {
-          OR: [{ auth_user_id: "user_123" }, { clerk_user_id: "user_123" }],
+          auth_user_id: "user_123",
           status: "active",
           deleted_at: null,
         },

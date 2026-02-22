@@ -102,7 +102,7 @@ const ALLOWED_SORT_FIELDS = new Set([
  *
  * @example
  * POST /api/v1/crm/leads
- * Headers: { Authorization: "Bearer <clerk-token>" }
+ * Headers: { Authorization: "Bearer <session-token>" }
  * Body: {
  *   "email": "ceo@bigfleet.ae",
  *   "fleet_size": "500+",

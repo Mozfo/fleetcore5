@@ -48,7 +48,7 @@ async function validateSQL() {
         has_reason: boolean;
         has_metadata: boolean;
         has_snapshot: boolean;
-        has_clerk_id: boolean;
+        has_auth_id: boolean;
       }>
     >`
       SELECT
@@ -57,7 +57,7 @@ async function validateSQL() {
         changes ? '_audit_reason' as has_reason,
         changes ? '_audit_metadata' as has_metadata,
         changes ? '_audit_snapshot' as has_snapshot,
-        changes ? '_audit_clerk_id' as has_clerk_id
+        changes ? '_audit_auth_id' as has_auth_id
       FROM adm_audit_logs
       WHERE changes IS NOT NULL
         AND tenant_id = '550e8400-e29b-41d4-a716-446655440001'::uuid
@@ -74,7 +74,7 @@ async function validateSQL() {
           hasReason: row.has_reason,
           hasMetadata: row.has_metadata,
           hasSnapshot: row.has_snapshot,
-          hasClerkId: row.has_clerk_id,
+          hasAuthId: row.has_auth_id,
         },
         `Prefix check ${i + 1}`
       );

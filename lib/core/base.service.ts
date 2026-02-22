@@ -261,7 +261,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    * @param options.action - Action performed (create, update, delete, restore, etc.)
    * @param options.entityId - ID of the entity affected
    * @param options.memberId - Member who performed the action (clt_members.id)
-   * @param options.clerkUserId - Optional Clerk user ID for correlation
+   * @param options.authUserId - Optional auth user ID for correlation
    * @param options.changes - Optional object with before/after values
    * @param options.snapshot - Optional full entity snapshot
    * @param options.reason - Optional human-readable reason
@@ -274,7 +274,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    *   action: 'update',
    *   entityId: driver.id,
    *   memberId: 'member-456',
-   *   clerkUserId: 'user_abc',
+   *   authUserId: 'user_abc',
    *   changes: {
    *     status: { old: 'inactive', new: 'active' },
    *     license_expiry: { old: '2024-01-01', new: '2025-01-01' }
@@ -299,7 +299,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
     action: AuditAction;
     entityId: string;
     memberId: string;
-    clerkUserId?: string;
+    authUserId?: string;
     changes?: Record<string, unknown>;
     snapshot?: Record<string, unknown>;
     reason?: string;
@@ -310,7 +310,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
       entityType: this.getEntityType(),
       entityId: options.entityId,
       performedBy: options.memberId,
-      performedByClerkId: options.clerkUserId,
+      performedByAuthId: options.authUserId,
       changes: options.changes ? serializeForAudit(options.changes) : null,
       snapshot: options.snapshot ? serializeForAudit(options.snapshot) : null,
       reason: options.reason,
@@ -334,7 +334,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    * @param data - Entity data to create
    * @param tenantId - Tenant ID for multi-tenant isolation
    * @param memberId - Member performing the creation (clt_members.id)
-   * @param clerkUserId - Optional Clerk user ID for audit trail
+   * @param authUserId - Optional auth user ID for audit trail
    * @returns Created entity with typed fields
    *
    * @example
@@ -360,7 +360,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
     data: TData,
     tenantId: string,
     memberId: string,
-    clerkUserId?: string
+    authUserId?: string
   ): Promise<T> {
     // 1. Create via repository (data layer)
     const entity = await this.getRepository().create(
@@ -375,7 +375,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
       action: "create",
       entityId: (entity as { id: string }).id,
       memberId,
-      clerkUserId,
+      authUserId,
       snapshot: entity as Record<string, unknown>,
     });
 
@@ -402,7 +402,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    * @param data - Partial update data
    * @param tenantId - Tenant ID for multi-tenant isolation
    * @param memberId - Member performing the update (clt_members.id)
-   * @param clerkUserId - Optional Clerk user ID for audit trail
+   * @param authUserId - Optional auth user ID for audit trail
    * @returns Updated entity with typed fields
    *
    * @example
@@ -428,7 +428,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
     data: TData,
     tenantId: string,
     memberId: string,
-    clerkUserId?: string
+    authUserId?: string
   ): Promise<T> {
     // 1. Fetch old entity state for diff calculation
     const oldEntity = await this.getRepository().findById(id, tenantId);
@@ -461,7 +461,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
       action: "update",
       entityId: id,
       memberId,
-      clerkUserId,
+      authUserId,
       changes: Object.keys(changes).length > 0 ? changes : undefined,
     });
 
@@ -481,7 +481,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    * @param id - Entity ID to soft delete
    * @param tenantId - Tenant ID for multi-tenant isolation
    * @param memberId - Member performing the deletion (clt_members.id)
-   * @param clerkUserId - Optional Clerk user ID for audit trail
+   * @param authUserId - Optional auth user ID for audit trail
    * @param reason - Optional deletion reason (stored in deletion_reason column)
    *
    * @example
@@ -497,12 +497,12 @@ export abstract class BaseService<T = Record<string, unknown>> {
    *
    * @example
    * ```typescript
-   * // With Clerk user tracking
+   * // With auth user tracking
    * await this.softDelete(
    *   leadId,
    *   tenant.id,
    *   member.id,
-   *   clerkUser.id,
+   *   authUser.id,
    *   'Duplicate entry'
    * )
    * ```
@@ -511,7 +511,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
     id: string,
     tenantId: string,
     memberId: string,
-    clerkUserId?: string,
+    authUserId?: string,
     reason?: string
   ): Promise<void> {
     // 1. Soft delete via repository (data layer)
@@ -524,7 +524,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
       action: "delete",
       entityId: id,
       memberId,
-      clerkUserId,
+      authUserId,
       reason,
     });
   }
@@ -543,7 +543,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    * @param id - Entity ID to restore
    * @param tenantId - Tenant ID for multi-tenant isolation
    * @param memberId - Member performing the restoration (clt_members.id)
-   * @param clerkUserId - Optional Clerk user ID for audit trail
+   * @param authUserId - Optional auth user ID for audit trail
    * @param reason - Optional restoration reason (for audit trail)
    * @returns Restored entity with typed fields
    *
@@ -569,12 +569,12 @@ export abstract class BaseService<T = Record<string, unknown>> {
    *
    * @example
    * ```typescript
-   * // Restore with Clerk user
+   * // Restore with auth user
    * const restoredLead = await this.restore(
    *   'lead-123',
    *   tenant.id,
    *   member.id,
-   *   clerkUser.id,
+   *   authUser.id,
    *   'Customer re-engaged'
    * )
    * console.log(restoredLead.deleted_at) // null
@@ -584,7 +584,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
     id: string,
     tenantId: string,
     memberId: string,
-    clerkUserId?: string,
+    authUserId?: string,
     reason?: string
   ): Promise<T> {
     // 1. Restore via repository (data layer)
@@ -597,7 +597,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
       action: "restore",
       entityId: id,
       memberId,
-      clerkUserId,
+      authUserId,
       reason,
     });
 

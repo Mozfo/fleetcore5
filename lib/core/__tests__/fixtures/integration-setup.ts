@@ -113,7 +113,7 @@ async function seedTestData(): Promise<void> {
       id: TEST_DATA.ACTIVE_TENANT_ID,
       name: "Test Active Tenant",
       status: "active",
-      clerk_organization_id: "org_test_active",
+      auth_organization_id: "550e8400-e29b-41d4-a716-446655440099",
     },
   });
 
@@ -134,11 +134,11 @@ async function seedTestData(): Promise<void> {
       id: TEST_DATA.MEMBER_ID,
       tenant_id: TEST_DATA.ACTIVE_TENANT_ID,
       email: "test@example.com",
-      clerk_user_id: "user_test123",
+      auth_user_id: "user_test123",
     },
   });
 
-  // Phase 0.3: Seed role for ClerkSync tests
+  // Phase 0.3: Seed role for auth sync tests
   await testPrisma.adm_roles.upsert({
     where: { id: TEST_DATA.ROLE_ID },
     update: {},

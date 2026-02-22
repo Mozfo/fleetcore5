@@ -230,7 +230,7 @@ export class VerificationService {
         select: {
           id: true,
           tenant_code: true,
-          clerk_organization_id: true,
+          auth_organization_id: true,
         },
       });
 
@@ -249,10 +249,10 @@ export class VerificationService {
       // Step 4: Invite admin via AuthService
       let adminInvitationSent = false;
 
-      if (tenant.clerk_organization_id) {
+      if (tenant.auth_organization_id) {
         try {
           const inviteResult = await authService.inviteAdmin({
-            organizationId: tenant.clerk_organization_id,
+            organizationId: tenant.auth_organization_id,
             email: input.admin_email,
             name: input.admin_name,
             role: "org:provider_admin",

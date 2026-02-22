@@ -54,7 +54,7 @@ const mockTenantValid = {
   verification_token: mockToken,
   verification_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
   verification_completed_at: null,
-  clerk_organization_id: "org_auth_123",
+  auth_organization_id: "org_auth_123",
 };
 
 const mockTenantExpired = {
@@ -236,7 +236,7 @@ describe("VerificationService", () => {
         organizationId: "org_auth_123",
         email: "admin@testcompany.com",
         name: "John Doe",
-        role: "admin",
+        role: "org:provider_admin",
       });
       expect(result.adminInvitationSent).toBe(true);
     });
@@ -272,7 +272,7 @@ describe("VerificationService", () => {
     it("should skip invitation if no organization ID", async () => {
       vi.mocked(prisma.adm_tenants.findUnique).mockResolvedValue({
         ...mockTenantValid,
-        clerk_organization_id: null,
+        auth_organization_id: null,
       } as never);
 
       const result = await service.submitVerification(

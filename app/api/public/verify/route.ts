@@ -12,7 +12,7 @@
  * POST /api/public/verify
  *   - Processes verification form submission
  *   - Updates tenant with company details and admin info
- *   - Sends admin invitation via Clerk
+ *   - Sends admin invitation via auth service
  *   - Tracks CGI/CGU acceptance
  *
  * @module app/api/public/verify/route

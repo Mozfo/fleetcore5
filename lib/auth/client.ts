@@ -4,9 +4,7 @@
  * Better Auth -- Client Wrappers
  *
  * Centralized auth hooks for all client-side code.
- * Replaces direct Clerk imports (@clerk/nextjs).
- *
- * Every client component imports from here -- never from @clerk/* or better-auth/react.
+ * Every client component imports from here -- never from better-auth/react directly.
  *
  * @module lib/auth/client
  */
@@ -18,11 +16,10 @@ import { authClient } from "@/lib/auth-client";
 /**
  * Get the current user.
  *
- * Replaces: `useUser()` from @clerk/nextjs (5 occurrences).
- * Returns Clerk-compatible shape for minimal downstream changes.
+ * Get the current user with profile details.
  *
- * Clerk shape preserved:
- * - `user.fullName` (from Better Auth `user.name`)
+ * Shape:
+ * - `user.fullName` (from `user.name`)
  * - `user.primaryEmailAddress.emailAddress` (from `user.email`)
  * - `user.imageUrl` (from `user.image`)
  */
@@ -30,7 +27,7 @@ export function useUser() {
   const session = authClient.useSession();
   const user = session.data?.user ?? null;
 
-  // Split name into first/last for Clerk-compatible shape
+  // Split name into first/last
   const nameParts = user?.name?.split(" ") ?? [];
   const firstName = nameParts[0] ?? null;
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null;
@@ -57,7 +54,7 @@ export function useUser() {
 /**
  * Get auth state (userId, orgId, orgRole, signOut).
  *
- * Replaces: `useAuth()` from @clerk/nextjs (2 occurrences).
+ * Get auth state (userId, orgId, orgRole, signOut).
  */
 export function useAuth() {
   const session = authClient.useSession();
@@ -78,9 +75,8 @@ export function useAuth() {
 /**
  * Get the active organization and current user's membership.
  *
- * Replaces: `useOrganization()` from @clerk/nextjs (2 occurrences).
- * Returns { organization, membership, isLoaded } for compatibility
- * with useHasPermission.ts which reads `membership.role`.
+ * Returns { organization, membership, isLoaded }.
+ * useHasPermission.ts reads `membership.role`.
  */
 export function useActiveOrganization() {
   const activeOrg = authClient.useActiveOrganization();
@@ -110,8 +106,7 @@ export function useActiveOrganization() {
 /**
  * List organizations the current user belongs to.
  *
- * Replaces: `useOrganizationList()` from @clerk/nextjs (2 occurrences).
- * Clerk returns { organizationList: [{ organization }], setActive }.
+ * Returns { organizationList: [{ organization }], setActive }.
  */
 export function useListOrganizations() {
   const orgs = authClient.useListOrganizations();
@@ -134,7 +129,7 @@ export function useListOrganizations() {
 /**
  * Simple sign-out hook.
  *
- * Replaces: direct signOut calls from Clerk.
+ * Replaces: direct signOut calls from the previous auth provider.
  */
 export function useSignOut() {
   return {

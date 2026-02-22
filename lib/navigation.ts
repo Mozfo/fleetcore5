@@ -85,7 +85,7 @@ export function getLocaleFromPathname(pathname: string): Locale {
 }
 
 /**
- * Constructs absolute localized URL for Clerk components
+ * Constructs absolute localized URL for auth components
  * Requires NEXT_PUBLIC_APP_URL environment variable in production
  *
  * @param path - Path without locale (e.g., "dashboard", "/")

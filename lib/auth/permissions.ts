@@ -15,7 +15,7 @@ export interface PermissionCheckResult {
  * Check if user has specific permission
  * Queries adm_member_roles -> adm_roles -> checks permissions JSONB field
  *
- * @param userId - Clerk user ID (from x-user-id header)
+ * @param userId - Auth user ID (from x-user-id header)
  * @param tenantId - Tenant ID (from x-tenant-id header)
  * @param requiredPermission - Permission to check (e.g., 'manage_directory', 'admin')
  * @returns Permission check result with hasPermission flag and isGlobalAdmin flag
@@ -26,10 +26,10 @@ export async function hasPermission(
   requiredPermission: string
 ): Promise<PermissionCheckResult> {
   try {
-    // 1. Get member by clerk_user_id
+    // 1. Get member by auth_user_id
     const member = await prisma.clt_members.findFirst({
       where: {
-        clerk_user_id: userId,
+        auth_user_id: userId,
         tenant_id: tenantId,
         deleted_at: null,
         status: "active",
@@ -134,14 +134,14 @@ export async function hasPermission(
  * Check if user is a provider employee (FleetCore internal user)
  * Provider employees have access to global data (tenant_id = NULL)
  *
- * @param userId - Clerk user ID
+ * @param userId - Auth user ID
  * @returns True if user is provider employee
  */
 export async function isProviderEmployee(userId: string): Promise<boolean> {
   try {
     const employee = await prisma.adm_provider_employees.findFirst({
       where: {
-        clerk_user_id: userId,
+        auth_user_id: userId,
         status: "active",
         deleted_at: null,
       },

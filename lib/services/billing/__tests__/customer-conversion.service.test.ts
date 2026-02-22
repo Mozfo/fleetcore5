@@ -521,13 +521,13 @@ describe("CustomerConversionService", () => {
       );
     });
 
-    it("should update tenant with organization ID (stored in clerk_organization_id column)", async () => {
+    it("should update tenant with organization ID (stored in auth_organization_id column)", async () => {
       await service.convertLeadToCustomer(mockCheckoutSession);
 
       expect(prisma.adm_tenants.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "tenant-uuid-123" },
-          data: { clerk_organization_id: "org_auth_123" },
+          data: { auth_organization_id: "org_auth_123" },
         })
       );
     });

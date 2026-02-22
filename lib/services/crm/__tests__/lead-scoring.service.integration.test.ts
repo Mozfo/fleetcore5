@@ -59,7 +59,7 @@ describeIntegration("LeadScoringService Integration Tests", () => {
         email: `test-scoring-${Date.now()}@fleetcore.test`,
         first_name: "Test",
         last_name: "Employee",
-        clerk_user_id: `test_clerk_${Date.now()}`,
+        auth_user_id: `test_auth_${Date.now()}`,
         status: "active",
         provider_id: testProviderId,
       },

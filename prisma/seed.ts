@@ -20,7 +20,7 @@ async function main() {
       country_code: "AE",
       default_currency: "EUR",
       timezone: "UTC",
-      clerk_organization_id: null,
+      auth_organization_id: null,
     },
   });
 
@@ -32,7 +32,6 @@ async function main() {
       id: "00000000-0000-0000-0000-000000000001",
       tenant_id: systemTenant.id,
       email: "system@fleetcore.internal",
-      clerk_user_id: "system",
       first_name: "System",
       last_name: "Automated",
       phone: "+00000000000",
@@ -62,7 +61,7 @@ async function main() {
       default_currency: "AED",
       vat_rate: 5.0,
       timezone: "Asia/Dubai",
-      clerk_organization_id: null,
+      auth_organization_id: null,
     },
   });
 
@@ -76,7 +75,7 @@ async function main() {
       default_currency: "EUR",
       vat_rate: 20.0,
       timezone: "Europe/Paris",
-      clerk_organization_id: null,
+      auth_organization_id: null,
     },
   });
 
@@ -93,7 +92,7 @@ async function main() {
     create: {
       id: "660e8400-e29b-41d4-a716-446655440001",
       tenant_id: dubaiOrg.id,
-      clerk_user_id: "user_clerk_dubai_admin_placeholder",
+
       email: "admin@dubaifleet.ae",
       phone: "+971501234567", // V2: phone is now required (NOT NULL)
       first_name: "Ahmed",
@@ -112,7 +111,7 @@ async function main() {
     create: {
       id: "660e8400-e29b-41d4-a716-446655440002",
       tenant_id: parisOrg.id,
-      clerk_user_id: "user_clerk_paris_admin_placeholder",
+
       email: "admin@parisvtc.fr",
       phone: "+33612345678", // V2: phone is now required (NOT NULL)
       first_name: "Marie",
@@ -157,7 +156,7 @@ async function main() {
     {
       id: "990e8400-e29b-41d4-a716-446655440001",
       provider_id: fleetcoreProvider.id,
-      clerk_user_id: "sales_uae_placeholder",
+
       first_name: "Karim",
       last_name: "Al-Rashid",
       email: "karim.alrashid@fleetcore.com",
@@ -169,7 +168,7 @@ async function main() {
     {
       id: "990e8400-e29b-41d4-a716-446655440002",
       provider_id: fleetcoreProvider.id,
-      clerk_user_id: "sales_france_placeholder",
+
       first_name: "Marie",
       last_name: "Dubois",
       email: "marie.dubois@fleetcore.com",
@@ -181,7 +180,7 @@ async function main() {
     {
       id: "990e8400-e29b-41d4-a716-446655440003",
       provider_id: fleetcoreProvider.id,
-      clerk_user_id: "sales_ksa_placeholder",
+
       first_name: "Faisal",
       last_name: "Al-Otaibi",
       email: "faisal.alotaibi@fleetcore.com",

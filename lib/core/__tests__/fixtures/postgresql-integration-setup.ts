@@ -212,38 +212,38 @@ export class PostgresContainerManager {
 
     // Create SYSTEM tenant (required for SYSTEM_USER foreign key)
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_tenants (id, name, country_code, status, clerk_organization_id)
-      VALUES (${SYSTEM_TENANT_ID}::uuid, 'System', 'FR', 'active', 'org_system')
+      INSERT INTO adm_tenants (id, name, country_code, status, auth_organization_id)
+      VALUES (${SYSTEM_TENANT_ID}::uuid, 'System', 'FR', 'active', ${SYSTEM_TENANT_ID}::uuid)
     `;
 
     // Create SYSTEM user (used for all automated operations - audit trail best practice)
     await this.prismaClient.$executeRaw`
-      INSERT INTO clt_members (id, tenant_id, email, clerk_user_id, phone)
-      VALUES (${SYSTEM_USER_ID}::uuid, ${SYSTEM_TENANT_ID}::uuid, 'system@fleetcore.internal', 'user_system', '+33000000000')
+      INSERT INTO clt_members (id, tenant_id, email, auth_user_id, phone)
+      VALUES (${SYSTEM_USER_ID}::uuid, ${SYSTEM_TENANT_ID}::uuid, 'system@fleetcore.internal', ${SYSTEM_USER_ID}::uuid, '+33000000000')
     `;
 
     // Create SYSTEM provider employee (used for tenant lifecycle events)
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_provider_employees (id, clerk_user_id, first_name, last_name, email, status)
-      VALUES (${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, 'user_system_employee', 'System', NULL, 'system@fleetcore.internal', 'active')
+      INSERT INTO adm_provider_employees (id, auth_user_id, first_name, last_name, email, status)
+      VALUES (${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, ${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, 'System', NULL, 'system@fleetcore.internal', 'active')
     `;
 
     // Create test tenant
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_tenants (id, name, country_code, status, clerk_organization_id)
-      VALUES (${TEST_DATA.ACTIVE_TENANT_ID}::uuid, 'Test Active Tenant', 'FR', 'active', 'org_test_active')
+      INSERT INTO adm_tenants (id, name, country_code, status, auth_organization_id)
+      VALUES (${TEST_DATA.ACTIVE_TENANT_ID}::uuid, 'Test Active Tenant', 'FR', 'active', ${TEST_DATA.ACTIVE_TENANT_ID}::uuid)
     `;
 
     // Create test provider employee (required for sent_by in invitations)
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_provider_employees (id, clerk_user_id, first_name, last_name, email, status)
-      VALUES (${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, 'user_admin_test', 'Test', 'Admin', 'admin@fleetcore.com', 'active')
+      INSERT INTO adm_provider_employees (id, auth_user_id, first_name, last_name, email, status)
+      VALUES (${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, ${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, 'Test', 'Admin', 'admin@fleetcore.com', 'active')
     `;
 
     // Create test member
     await this.prismaClient.$executeRaw`
-      INSERT INTO clt_members (id, tenant_id, email, clerk_user_id, phone)
-      VALUES (${TEST_DATA.MEMBER_ID}::uuid, ${TEST_DATA.ACTIVE_TENANT_ID}::uuid, 'test@example.com', 'user_test123', '+33612345678')
+      INSERT INTO clt_members (id, tenant_id, email, auth_user_id, phone)
+      VALUES (${TEST_DATA.MEMBER_ID}::uuid, ${TEST_DATA.ACTIVE_TENANT_ID}::uuid, 'test@example.com', ${TEST_DATA.MEMBER_ID}::uuid, '+33612345678')
     `;
 
     // Create test role

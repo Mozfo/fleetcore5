@@ -24,7 +24,7 @@ describe("TenantCreateSchema", () => {
     const validData = {
       name: "Acme Logistics",
       slug: "acme-logistics",
-      clerk_organization_id: "org_2abcdef123456",
+      auth_organization_id: "550e8400-e29b-41d4-a716-446655440000",
       country_code: "fr",
       default_currency: "eur",
       timezone: "Europe/Paris",
@@ -44,7 +44,7 @@ describe("TenantCreateSchema", () => {
     const invalidData = {
       name: "AB", // Too short
       slug: "Acme Logistics", // Not kebab-case
-      clerk_organization_id: "invalid_id", // Doesn't start with org_
+      auth_organization_id: "invalid_id", // Not a valid UUID
       country_code: "FRANCE", // Too long
       default_currency: "EURO", // Wrong length
       timezone: "AB", // Too short

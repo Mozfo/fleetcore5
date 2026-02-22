@@ -54,7 +54,7 @@ export async function getCurrentProviderId(): Promise<string | null> {
 
   const employee = await prisma.adm_provider_employees.findFirst({
     where: {
-      OR: [{ auth_user_id: session.userId }, { clerk_user_id: session.userId }],
+      auth_user_id: session.userId,
       status: "active",
       deleted_at: null,
     },
@@ -95,7 +95,7 @@ export async function getProviderContext(): Promise<ProviderContext> {
 
   const employee = await prisma.adm_provider_employees.findFirst({
     where: {
-      OR: [{ auth_user_id: session.userId }, { clerk_user_id: session.userId }],
+      auth_user_id: session.userId,
       status: "active",
       deleted_at: null,
     },

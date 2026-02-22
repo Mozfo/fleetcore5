@@ -333,10 +333,10 @@ export class CustomerConversionService {
         if (orgResult.success && orgResult.organizationId) {
           authOrgId = orgResult.organizationId;
 
-          // Update tenant with auth org ID (stored in clerk_organization_id column)
+          // Update tenant with auth org ID (stored in auth_organization_id column)
           await prisma.adm_tenants.update({
             where: { id: result.tenant.id },
-            data: { clerk_organization_id: authOrgId },
+            data: { auth_organization_id: authOrgId },
           });
 
           logger.info(

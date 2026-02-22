@@ -169,7 +169,7 @@ export function withProviderContext(providerId: string | null) {
  * Get a Prisma client with provider context from current session
  *
  * Convenience function that:
- * 1. Gets current user's provider_id from Clerk session
+ * 1. Gets current user's provider_id from auth session
  * 2. Returns extended Prisma client with RLS context
  *
  * Use this in API routes and Server Actions for automatic
@@ -213,7 +213,7 @@ export async function getPrismaWithProvider(): Promise<PrismaClientWithProvider>
  *
  * Use this when you need to specify the provider_id explicitly,
  * for example in cron jobs or background tasks that don't have
- * a Clerk session.
+ * an auth session.
  *
  * @param providerId - Provider UUID or null for global access
  * @returns Extended Prisma client with provider RLS context

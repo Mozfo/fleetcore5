@@ -262,7 +262,7 @@ export class NotificationService extends BaseService {
    * 1. clt_members.preferred_language (for tenant members)
    * 2. adm_provider_employees.preferred_locale (for FleetCore employees without tenant)
    *
-   * @param userId - User UUID (can be member ID or clerk_user_id for employees)
+   * @param userId - User UUID (can be member ID or auth_user_id for employees)
    * @returns Locale string or null if not configured
    *
    * @private
@@ -282,7 +282,7 @@ export class NotificationService extends BaseService {
 
       // Fallback: Check adm_provider_employees (FleetCore staff without tenant)
       const employee = await this.prisma.adm_provider_employees.findFirst({
-        where: { clerk_user_id: userId },
+        where: { auth_user_id: userId },
         select: { preferred_locale: true },
       });
 

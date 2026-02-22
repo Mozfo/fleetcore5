@@ -32,7 +32,7 @@ model adm_tenants {
   name                    String
   subdomain               String?               @unique
   status                  String                @default("trialing") // active, suspended, trialing, canceled, cancelled
-  clerk_organization_id   String?               @unique
+  auth_organization_id    String?               @unique
   country_code            String                @default("FR")
   default_currency        String                @default("EUR")
   created_at              DateTime              @default(now())
@@ -49,7 +49,7 @@ model adm_tenants {
 model clt_members {
   id                      String                @id @default(cuid())
   tenant_id               String
-  clerk_user_id           String?               @unique
+  auth_user_id            String?               @unique
   email                   String
   phone                   String                @default("")
   first_name              String?
@@ -84,7 +84,7 @@ model adm_audit_logs {
   ip_address              String?
   user_agent              String?
   session_id              String?
-  clerk_user_id           String?
+  auth_user_id            String?
   adm_tenants             adm_tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   clt_members             clt_members?          @relation(fields: [member_id], references: [id])
 }

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * UserMenu — Dropdown user menu replacing Clerk's <UserButton>.
+ * UserMenu — custom user menu dropdown.
  *
  * Displays avatar (or initials fallback), name, email, and sign-out action.
  * Uses Better Auth client wrapper (lib/auth/client).

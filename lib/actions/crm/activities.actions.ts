@@ -259,7 +259,7 @@ export async function createActivityAction(
     // 7. Get current employee ID for created_by (dual-ID for transition)
     const employee = await db.adm_provider_employees.findFirst({
       where: {
-        OR: [{ auth_user_id: userId }, { clerk_user_id: userId }],
+        auth_user_id: userId,
         ...buildProviderFilter(providerId),
         deleted_at: null,
       },

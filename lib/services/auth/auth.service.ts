@@ -2,8 +2,6 @@
  * Auth Service - V7.0.0
  * Better Auth Organization management
  *
- * Replaces ClerkService (lib/services/clerk/clerk.service.ts).
- *
  * This service handles:
  * - Creating organizations via Better Auth admin API
  * - Inviting admin users to organizations

@@ -122,20 +122,20 @@ class TestDriverService extends BaseService<TestDriver> {
     id: string,
     tenantId: string,
     memberId: string,
-    clerkUserId?: string,
+    authUserId?: string,
     reason?: string
   ): Promise<void> {
-    return this.softDelete(id, tenantId, memberId, clerkUserId, reason);
+    return this.softDelete(id, tenantId, memberId, authUserId, reason);
   }
 
   public async testRestore(
     id: string,
     tenantId: string,
     memberId: string,
-    clerkUserId?: string,
+    authUserId?: string,
     reason?: string
   ): Promise<TestDriver> {
-    return this.restore(id, tenantId, memberId, clerkUserId, reason);
+    return this.restore(id, tenantId, memberId, authUserId, reason);
   }
 
   public async testExecuteInTransaction<R>(
@@ -236,7 +236,7 @@ describe("BaseService - Integration Tests (SQLite + Real Prisma)", () => {
         testDriverId,
         TEST_DATA.ACTIVE_TENANT_ID,
         TEST_DATA.MEMBER_ID,
-        "user_clerk_123",
+        "user_auth_123",
         "Driver resigned"
       );
 
@@ -276,7 +276,7 @@ describe("BaseService - Integration Tests (SQLite + Real Prisma)", () => {
         testDriverId,
         TEST_DATA.ACTIVE_TENANT_ID,
         TEST_DATA.MEMBER_ID,
-        "user_clerk_456",
+        "user_auth_456",
         "Recovery requested"
       );
 

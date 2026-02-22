@@ -4,13 +4,15 @@ import { format } from "date-fns";
 export const dynamic = "force-dynamic";
 
 export default async function OrganizationsPage() {
-  // Fetch all organizations (excluding FleetCore Admin internal org)
-  // NOTE: Uses env var until Phase 6 adds is_headquarters to DB schema
-  const adminOrgId = process.env.FLEETCORE_ADMIN_ORG_ID;
+  // Fetch HQ provider to exclude from org list
+  const hqProvider = await db.adm_providers.findFirst({
+    where: { is_headquarters: true },
+    select: { id: true },
+  });
 
   const organizations = await db.adm_tenants.findMany({
     where: {
-      ...(adminOrgId ? { NOT: { clerk_organization_id: adminOrgId } } : {}),
+      ...(hqProvider ? { NOT: { id: hqProvider.id } } : {}),
     },
     orderBy: {
       created_at: "desc",
@@ -94,7 +96,7 @@ export default async function OrganizationsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {org.clerk_organization_id || "N/A"}
+                        {org.auth_organization_id || "N/A"}
                       </div>
                     </td>
                     <td className="px-6 py-4">

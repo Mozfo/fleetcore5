@@ -218,7 +218,7 @@ export async function PUT(
       }
     }
 
-    // STEP 6: Convert Clerk user ID to provider employee UUID for audit trail
+    // STEP 6: Convert auth user ID to provider employee UUID for audit trail
     // Note: crm_settings.updated_by has FK to adm_provider_employees, not clt_members
     const employee = await resolveEmployeeId(userId);
     const employeeUuid = employee?.id ?? null;
@@ -366,7 +366,7 @@ export async function DELETE(
       );
     }
 
-    // STEP 3: Convert Clerk user ID to provider employee UUID for audit trail
+    // STEP 3: Convert auth user ID to provider employee UUID for audit trail
     // Note: crm_settings.deleted_by has FK to adm_provider_employees, not clt_members
     const employee = await resolveEmployeeId(userId);
     const employeeUuid = employee?.id ?? null;
