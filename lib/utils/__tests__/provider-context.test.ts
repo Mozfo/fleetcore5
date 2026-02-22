@@ -2,7 +2,7 @@
  * Provider Context Utilities Tests
  *
  * Tests for multi-division data isolation utilities:
- * - getCurrentProviderId(): Get current user's provider_id from Clerk session
+ * - getCurrentProviderId(): Get current user's provider_id from auth session
  * - getProviderContext(): Get full provider context with global access flag
  * - buildProviderFilter(): Build Prisma where clause for provider filtering
  * - buildHybridProviderFilter(): Build filter for hybrid tables (system + custom)
@@ -18,9 +18,9 @@ import {
   buildHybridProviderFilter,
 } from "../provider-context";
 
-// Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(),
+// Mock Better Auth server wrapper
+vi.mock("@/lib/auth/server", () => ({
+  getSession: vi.fn(),
 }));
 
 // Mock Prisma
@@ -32,7 +32,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { prisma } from "@/lib/prisma";
 
 describe("Provider Context Utilities", () => {
@@ -45,25 +45,19 @@ describe("Provider Context Utilities", () => {
   // ==========================================================================
   describe("getCurrentProviderId()", () => {
     it("should return null when user is not authenticated", async () => {
-      // Mock Clerk auth returning no userId
-      vi.mocked(auth).mockResolvedValue({
-        userId: null,
-      } as never);
+      vi.mocked(getSession).mockResolvedValue(null);
 
       const result = await getCurrentProviderId();
 
       expect(result).toBeNull();
-      // Prisma should not be called if no userId
       expect(prisma.adm_provider_employees.findFirst).not.toHaveBeenCalled();
     });
 
     it("should return null when employee is not found", async () => {
-      // Mock Clerk auth returning valid userId
-      vi.mocked(auth).mockResolvedValue({
-        userId: "user_clerk_123",
+      vi.mocked(getSession).mockResolvedValue({
+        userId: "user_123",
       } as never);
 
-      // Mock Prisma not finding employee
       vi.mocked(prisma.adm_provider_employees.findFirst).mockResolvedValue(
         null
       );
@@ -73,7 +67,7 @@ describe("Provider Context Utilities", () => {
       expect(result).toBeNull();
       expect(prisma.adm_provider_employees.findFirst).toHaveBeenCalledWith({
         where: {
-          clerk_user_id: "user_clerk_123",
+          OR: [{ auth_user_id: "user_123" }, { clerk_user_id: "user_123" }],
           status: "active",
           deleted_at: null,
         },
@@ -82,8 +76,7 @@ describe("Provider Context Utilities", () => {
     });
 
     it("should return null when employee has no provider_id (global access)", async () => {
-      // Mock Clerk auth returning valid userId
-      vi.mocked(auth).mockResolvedValue({
+      vi.mocked(getSession).mockResolvedValue({
         userId: "user_ceo_456",
       } as never);
 
@@ -100,8 +93,7 @@ describe("Provider Context Utilities", () => {
     it("should return provider_id when employee has one", async () => {
       const expectedProviderId = "uuid-fleetcore-france";
 
-      // Mock Clerk auth returning valid userId
-      vi.mocked(auth).mockResolvedValue({
+      vi.mocked(getSession).mockResolvedValue({
         userId: "user_france_789",
       } as never);
 
@@ -121,9 +113,7 @@ describe("Provider Context Utilities", () => {
   // ==========================================================================
   describe("getProviderContext()", () => {
     it("should return empty context when user is not authenticated", async () => {
-      vi.mocked(auth).mockResolvedValue({
-        userId: null,
-      } as never);
+      vi.mocked(getSession).mockResolvedValue(null);
 
       const result = await getProviderContext();
 
@@ -135,7 +125,7 @@ describe("Provider Context Utilities", () => {
     });
 
     it("should return empty context when employee is not found", async () => {
-      vi.mocked(auth).mockResolvedValue({
+      vi.mocked(getSession).mockResolvedValue({
         userId: "user_unknown",
       } as never);
 
@@ -153,7 +143,7 @@ describe("Provider Context Utilities", () => {
     });
 
     it("should return global access context for CEO (null provider_id)", async () => {
-      vi.mocked(auth).mockResolvedValue({
+      vi.mocked(getSession).mockResolvedValue({
         userId: "user_ceo",
       } as never);
 
@@ -174,7 +164,7 @@ describe("Provider Context Utilities", () => {
     it("should return division-specific context for regular employee", async () => {
       const providerId = "uuid-fleetcore-uae";
 
-      vi.mocked(auth).mockResolvedValue({
+      vi.mocked(getSession).mockResolvedValue({
         userId: "user_uae",
       } as never);
 

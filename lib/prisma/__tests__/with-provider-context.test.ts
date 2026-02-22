@@ -3,7 +3,7 @@
  *
  * Tests for PostgreSQL RLS context extension:
  * - withProviderContext(): Creates Prisma extension that sets app.current_provider_id
- * - getPrismaWithProvider(): Gets extended client from Clerk session
+ * - getPrismaWithProvider(): Gets extended client from auth session
  * - getPrismaForProvider(): Gets extended client with explicit providerId
  * - CRM_TABLES_WITH_RLS: List of tables requiring RLS filtering
  *
@@ -15,9 +15,9 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Clerk auth before importing the module
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(),
+// Mock Better Auth server wrapper
+vi.mock("@/lib/auth/server", () => ({
+  getSession: vi.fn(),
 }));
 
 // Mock prisma with inline mock factory (no external references)
@@ -34,7 +34,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 // Import after mocks are set up
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { prisma } from "@/lib/prisma";
 
 // Dynamic import to ensure mocks are applied
@@ -192,9 +192,8 @@ describe("Prisma Provider Context Extension", () => {
   // getPrismaWithProvider()
   // ==========================================================================
   describe("getPrismaWithProvider()", () => {
-    it("should return extended client from Clerk session", async () => {
-      // Mock Clerk auth returning valid userId
-      vi.mocked(auth).mockResolvedValue({
+    it("should return extended client from auth session", async () => {
+      vi.mocked(getSession).mockResolvedValue({
         userId: "user_france_123",
       } as never);
 
@@ -212,10 +211,7 @@ describe("Prisma Provider Context Extension", () => {
     });
 
     it("should handle unauthenticated user (null providerId)", async () => {
-      // Mock Clerk auth returning no userId
-      vi.mocked(auth).mockResolvedValue({
-        userId: null,
-      } as never);
+      vi.mocked(getSession).mockResolvedValue(null);
 
       const { getPrismaWithProvider } = await importModule();
 
@@ -227,7 +223,7 @@ describe("Prisma Provider Context Extension", () => {
     });
 
     it("should handle employee not found (null providerId)", async () => {
-      vi.mocked(auth).mockResolvedValue({
+      vi.mocked(getSession).mockResolvedValue({
         userId: "user_unknown",
       } as never);
 
@@ -244,7 +240,7 @@ describe("Prisma Provider Context Extension", () => {
     });
 
     it("should handle CEO with null provider_id (global access)", async () => {
-      vi.mocked(auth).mockResolvedValue({
+      vi.mocked(getSession).mockResolvedValue({
         userId: "user_ceo",
       } as never);
 

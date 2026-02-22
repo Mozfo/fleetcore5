@@ -27,9 +27,6 @@ const {
   mockGetCurrentProviderId,
   mockQuoteService,
 } = vi.hoisted(() => {
-  // Set env var in hoisted block - this runs before module imports
-  process.env.FLEETCORE_ADMIN_ORG_ID = "org_admin_test";
-
   return {
     mockAuth: vi.fn(),
     mockDb: {
@@ -68,9 +65,9 @@ const {
 // MOCKS
 // =============================================================================
 
-// Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: () => mockAuth(),
+// Mock Better Auth server wrapper
+vi.mock("@/lib/auth/server", () => ({
+  requireCrmAuth: () => mockAuth(),
 }));
 
 // Mock Next.js cache revalidation
@@ -270,21 +267,16 @@ function setupAdminAuth() {
  * Setup unauthenticated context
  */
 function setupNoAuth() {
-  mockAuth.mockResolvedValue({
-    userId: null,
-    orgId: null,
-  });
+  mockAuth.mockRejectedValue(new Error("AUTH: Not authenticated"));
 }
 
 /**
  * Setup non-admin auth (different org)
  */
 function setupNonAdminAuth() {
-  mockAuth.mockResolvedValue({
-    userId: TEST_USER_ID,
-    orgId: "org_other_company",
-  });
-  mockGetCurrentProviderId.mockResolvedValue(TEST_PROVIDER_ID);
+  mockAuth.mockRejectedValue(
+    new Error("AUTH: Not a headquarters organization")
+  );
 }
 
 /**
@@ -369,7 +361,7 @@ describe("quote.actions.ts", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Unauthorized");
+        expect(result.error).toBe("AUTH: Not authenticated");
       }
       expect(mockQuoteService.createQuote).not.toHaveBeenCalled();
     });
@@ -381,7 +373,7 @@ describe("quote.actions.ts", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Forbidden: Admin access required");
+        expect(result.error).toBe("AUTH: Not a headquarters organization");
       }
     });
 
@@ -623,7 +615,7 @@ describe("quote.actions.ts", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Unauthorized");
+        expect(result.error).toBe("AUTH: Not authenticated");
       }
     });
 
@@ -976,7 +968,7 @@ describe("quote.actions.ts", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBe("Unauthorized");
+        expect(result.error).toBe("AUTH: Not authenticated");
       }
     });
   });
@@ -1362,7 +1354,7 @@ describe("quote.actions.ts", () => {
 
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error).toBe("Unauthorized");
+          expect(result.error).toBe("AUTH: Not authenticated");
         }
       });
 
@@ -1373,7 +1365,7 @@ describe("quote.actions.ts", () => {
 
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error).toBe("Forbidden: Admin access required");
+          expect(result.error).toBe("AUTH: Not a headquarters organization");
         }
       });
     });
