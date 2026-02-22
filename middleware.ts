@@ -16,10 +16,20 @@ import type { NextRequest } from "next/server";
 
 // Edge-compatible session cookie check (replaces better-auth/cookies which
 // pulls Node.js-only transitive deps like db/schema, crypto/jwt, hmac)
-const SESSION_COOKIE_NAME = "better-auth.session_token";
+//
+// better-auth uses "__Secure-" prefix on HTTPS (production) per RFC 6265bis.
+// On HTTP (localhost dev) the prefix is omitted.
+const SESSION_COOKIE_NAMES = [
+  "__Secure-better-auth.session_token",
+  "better-auth.session_token",
+];
 
 function getSessionCookie(req: NextRequest): string | null {
-  return req.cookies.get(SESSION_COOKIE_NAME)?.value ?? null;
+  for (const name of SESSION_COOKIE_NAMES) {
+    const value = req.cookies.get(name)?.value;
+    if (value) return value;
+  }
+  return null;
 }
 
 // ── Rate limiting (in-memory, 100 req/min by IP) ────────────────────────────
