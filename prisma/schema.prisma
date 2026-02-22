@@ -117,6 +117,7 @@ model clt_members {
   tenant_id                                                                                       String                         @db.Uuid
   email                                                                                           String                         @db.Citext
   clerk_user_id                                                                                   String                         @db.VarChar(255)
+  auth_user_id                                                                                    String?
   first_name                                                                                      String?                        @db.VarChar(100)
   last_name                                                                                       String?                        @db.VarChar(100)
   phone                                                                                           String                         @db.VarChar(50)
@@ -403,6 +404,7 @@ model adm_notification_queue {
 model adm_provider_employees {
   id                                                                                        String                        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clerk_user_id                                                                             String                        @db.VarChar(255)
+  auth_user_id                                                                              String?
   email                                                                                     String                        @db.VarChar(255)
   department                                                                                String?                       @db.VarChar(50)
   title                                                                                     String?                       @db.VarChar(50)
@@ -6809,4 +6811,131 @@ model crm_blacklist {
   @@unique([email, provider_id], map: "uq_blacklist_email_provider")
   @@index([email], map: "idx_crm_blacklist_email")
   @@index([provider_id], map: "idx_crm_blacklist_provider")
+}
+
+// ============================================================================
+// BETTER AUTH TABLES
+// ============================================================================
+
+// ── Better Auth tables (auth_* prefix, snake_case) ──────────────────────────
+
+model auth_user {
+  id             String            @id
+  name           String
+  email          String
+  email_verified Boolean           @default(false)
+  image          String?
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @default(now())
+  sessions       auth_session[]
+  accounts       auth_account[]
+  members        auth_member[]
+  invitations    auth_invitation[]
+
+  @@unique([email], map: "auth_user_email_unique")
+  @@map("auth_user")
+}
+
+model auth_session {
+  id                     String    @id
+  expires_at             DateTime
+  token                  String
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @default(now())
+  ip_address             String?
+  user_agent             String?
+  user_id                String
+  user                   auth_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  active_organization_id String?
+
+  @@unique([token], map: "auth_session_token_unique")
+  @@index([user_id], map: "idx_auth_session_user_id")
+  @@map("auth_session")
+}
+
+model auth_account {
+  id                       String    @id
+  account_id               String
+  provider_id              String
+  user_id                  String
+  user                     auth_user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  access_token             String?
+  refresh_token            String?
+  id_token                 String?
+  access_token_expires_at  DateTime?
+  refresh_token_expires_at DateTime?
+  scope                    String?
+  password                 String?
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @default(now())
+
+  @@index([user_id], map: "idx_auth_account_user_id")
+  @@map("auth_account")
+}
+
+model auth_verification {
+  id         String   @id
+  identifier String
+  value      String
+  expires_at DateTime
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+
+  @@index([identifier], map: "idx_auth_verification_identifier")
+  @@map("auth_verification")
+}
+
+model auth_organization {
+  id          String            @id
+  name        String
+  slug        String
+  logo        String?
+  created_at  DateTime          @default(now())
+  metadata    String?
+  members     auth_member[]
+  invitations auth_invitation[]
+
+  @@unique([slug], map: "auth_organization_slug_unique")
+  @@map("auth_organization")
+}
+
+model auth_member {
+  id              String            @id
+  organization_id String
+  organization    auth_organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user_id         String
+  user            auth_user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role            String            @default("member")
+  created_at      DateTime          @default(now())
+
+  @@index([organization_id], map: "idx_auth_member_organization_id")
+  @@index([user_id], map: "idx_auth_member_user_id")
+  @@map("auth_member")
+}
+
+model auth_invitation {
+  id              String            @id
+  organization_id String
+  organization    auth_organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  email           String
+  role            String?
+  status          String            @default("pending")
+  expires_at      DateTime
+  created_at      DateTime          @default(now())
+  inviter_id      String
+  user            auth_user         @relation(fields: [inviter_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id], map: "idx_auth_invitation_organization_id")
+  @@index([email], map: "idx_auth_invitation_email")
+  @@map("auth_invitation")
+}
+
+model auth_rate_limit {
+  id           String @id
+  key          String
+  count        Int
+  last_request BigInt
+
+  @@unique([key], map: "auth_rate_limit_key_unique")
+  @@map("auth_rate_limit")
 }

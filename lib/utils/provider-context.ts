@@ -16,7 +16,7 @@
  * @module lib/utils/provider-context
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -34,7 +34,7 @@ export interface ProviderContext {
 /**
  * Get current FleetCore employee's provider_id
  *
- * Looks up the authenticated Clerk user in adm_provider_employees
+ * Looks up the authenticated user in adm_provider_employees
  * to determine their division (provider_id).
  *
  * @returns provider_id (division) or null (global access for CEO/admins)
@@ -42,19 +42,19 @@ export interface ProviderContext {
  * @example
  * ```typescript
  * const providerId = await getCurrentProviderId();
- * // providerId = "uuid-fleetcore-fr" → FleetCore France employee
- * // providerId = "uuid-fleetcore-uae" → FleetCore UAE employee
- * // providerId = null → Global access (CEO, admin)
+ * // providerId = "uuid-fleetcore-fr" -> FleetCore France employee
+ * // providerId = "uuid-fleetcore-uae" -> FleetCore UAE employee
+ * // providerId = null -> Global access (CEO, admin)
  * ```
  */
 export async function getCurrentProviderId(): Promise<string | null> {
-  const { userId } = await auth();
+  const session = await getSession();
 
-  if (!userId) return null;
+  if (!session) return null;
 
   const employee = await prisma.adm_provider_employees.findFirst({
     where: {
-      clerk_user_id: userId,
+      OR: [{ auth_user_id: session.userId }, { clerk_user_id: session.userId }],
       status: "active",
       deleted_at: null,
     },
@@ -83,9 +83,9 @@ export async function getCurrentProviderId(): Promise<string | null> {
  * ```
  */
 export async function getProviderContext(): Promise<ProviderContext> {
-  const { userId } = await auth();
+  const session = await getSession();
 
-  if (!userId) {
+  if (!session) {
     return {
       providerId: null,
       employeeId: null,
@@ -95,7 +95,7 @@ export async function getProviderContext(): Promise<ProviderContext> {
 
   const employee = await prisma.adm_provider_employees.findFirst({
     where: {
-      clerk_user_id: userId,
+      OR: [{ auth_user_id: session.userId }, { clerk_user_id: session.userId }],
       status: "active",
       deleted_at: null,
     },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { hasPermission, type OrgRole } from "@/lib/config/permissions";
 import {
   RESOURCE_TO_MODULE,
@@ -8,7 +8,9 @@ import {
 
 /** POST /api/auth/can — Refine accessControlProvider.can() server-side fallback */
 export async function POST(request: NextRequest) {
-  const { orgRole } = await auth();
+  const session = await getSession();
+  const orgRole = session?.orgRole ?? null;
+
   const { resource, action } = (await request.json()) as {
     resource?: string;
     action?: string;

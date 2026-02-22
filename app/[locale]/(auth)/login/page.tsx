@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useSignIn, useSession } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,8 +35,6 @@ function LoginForm() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showResetSuccess, setShowResetSuccess] = useState(false);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
-  const { isLoaded, signIn, setActive } = useSignIn();
-  const { session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -74,48 +72,29 @@ function LoginForm() {
   const watchPassword = watch("password");
 
   const onSubmit = async (data: FormData) => {
-    if (!isLoaded) return;
-
     setIsLoading(true);
     setError("");
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    try {
-      const result = await signIn.create({
-        identifier: data.email,
-        password: data.password,
-      });
+    const { error: signInError } = await authClient.signIn.email({
+      email: data.email,
+      password: data.password,
+    });
 
-      if (result.status === "complete") {
-        setShowSuccess(true);
-
-        // Activer la session
-        await setActive({ session: result.createdSessionId });
-
-        // Force JWT refresh to include orgId after session activation
-        // This is critical for middleware to have correct auth context
-        if (session) {
-          await session.getToken({ skipCache: true });
-        }
-
-        // Redirect to unified dashboard
-        // Middleware will redirect to /select-org if no orgId
-        const redirectUrl =
-          searchParams.get("redirect_url") || localizedPath("dashboard");
-        setPendingRedirect(redirectUrl);
-      }
-    } catch (err: unknown) {
-      if (err && typeof err === "object" && "errors" in err) {
-        const clerkError = err as { errors?: Array<{ message: string }> };
-        setError(
-          clerkError.errors?.[0]?.message ||
-            t("login.errors.invalidCredentials")
-        );
-      } else {
-        setError(t("login.errors.invalidCredentials"));
-      }
+    if (signInError) {
+      setError(signInError.message ?? t("login.errors.invalidCredentials"));
       setIsLoading(false);
+      return;
     }
+
+    // Better Auth activates the session automatically via cookies
+    setShowSuccess(true);
+
+    // Redirect to unified dashboard
+    // Middleware will redirect to /select-org if no orgId
+    const redirectUrl =
+      searchParams.get("redirect_url") || localizedPath("dashboard");
+    setPendingRedirect(redirectUrl);
   };
 
   return (

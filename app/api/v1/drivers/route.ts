@@ -6,6 +6,7 @@ import {
   driverQuerySchema,
 } from "@/lib/validators/drivers.validators";
 import { handleApiError } from "@/lib/api/error-handler";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 import { logger } from "@/lib/logger";
 
 /**
@@ -13,15 +14,8 @@ import { logger } from "@/lib/logger";
  * Create a new driver
  */
 export async function POST(request: NextRequest) {
-  // 1. Extract headers (injected by middleware) - declared before try for error context
-  const tenantId = request.headers.get("x-tenant-id");
-  const userId = request.headers.get("x-user-id");
-
   try {
-    // 2. Auth check
-    if (!tenantId || !userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { userId, tenantId } = await requireTenantApiAuth();
 
     // 3. Parse and validate request body
     const body = await request.json();
@@ -41,8 +35,6 @@ export async function POST(request: NextRequest) {
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "POST",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }
@@ -52,15 +44,8 @@ export async function POST(request: NextRequest) {
  * List drivers with pagination and filters
  */
 export async function GET(request: NextRequest) {
-  // 1. Extract headers (injected by middleware) - declared before try for error context
-  const tenantId = request.headers.get("x-tenant-id");
-  const userId = request.headers.get("x-user-id");
-
   try {
-    // 2. Auth check
-    if (!tenantId || !userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { tenantId } = await requireTenantApiAuth();
 
     // 3. Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -126,8 +111,6 @@ export async function GET(request: NextRequest) {
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

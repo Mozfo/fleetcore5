@@ -2,27 +2,18 @@
  * /api/v1/crm/owners
  * Returns active Sales team members for lead assignment dropdowns.
  *
- * Authentication: Via middleware (FleetCore Admin org membership)
+ * Authentication: Via auth guard (FleetCore Admin org membership)
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    if (!userId || !orgId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: "UNAUTHORIZED", message: "Authentication required" },
-        },
-        { status: 401 }
-      );
-    }
+    await requireCrmApiAuth();
 
     const owners = await db.adm_provider_employees.findMany({
       where: {
@@ -40,6 +31,16 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: owners }, { status: 200 });
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[CRM Owners] Error fetching sales owners");
     return NextResponse.json(
       {

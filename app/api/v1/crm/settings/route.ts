@@ -10,12 +10,11 @@
  * Follows "ZERO HARDCODING" principle - all config is database-driven.
  *
  * Authentication flow:
- * 1. Middleware validates: userId + FleetCore Admin org membership + settings:view/edit
- * 2. Middleware injects: x-user-id, x-org-id headers
- * 3. This route trusts middleware validation
+ * 1. Auth guard validates: userId + FleetCore Admin org membership + settings:view/edit
+ * 2. Auth guard returns userId, orgId directly
  *
  * Security: Access restricted to FleetCore Admin users with settings permissions
- * (org:adm_admin, org:admin, org:provider_admin) - enforced at middleware level.
+ * (org:adm_admin, org:admin, org:provider_admin) - enforced at auth guard level.
  *
  * @module app/api/v1/crm/settings
  */
@@ -29,12 +28,14 @@ import {
 import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * GET /api/v1/crm/settings
  * List all CRM settings with optional category filter
  *
- * Authentication: Via middleware (FleetCore Admin + settings:view)
+ * Authentication: Via auth guard (FleetCore Admin + settings:view)
  *
  * Query Parameters:
  * - category: Filter by category (pipeline, scoring, assignment, loss_reasons, etc.)
@@ -62,27 +63,8 @@ import { logger } from "@/lib/logger";
  */
 export async function GET(request: NextRequest) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Settings List] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via auth guard
+    await requireCrmApiAuth();
 
     // STEP 2: Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -140,6 +122,16 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     // Zod validation error
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -174,7 +166,7 @@ export async function GET(request: NextRequest) {
  * POST /api/v1/crm/settings
  * Create a new CRM setting
  *
- * Authentication: Via middleware (FleetCore Admin + settings:edit)
+ * Authentication: Via auth guard (FleetCore Admin + settings:edit)
  *
  * Request Body: CreateSettingInput (validated with Zod)
  * Response 201: Created setting
@@ -194,27 +186,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Settings Create] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via auth guard
+    const { userId } = await requireCrmApiAuth();
 
     // STEP 2: Parse request body
     const body = await request.json();
@@ -292,6 +265,16 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     // Zod validation error
     if (error instanceof ZodError) {
       return NextResponse.json(

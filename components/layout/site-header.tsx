@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser, UserButton } from "@clerk/nextjs";
+import { useUser } from "@/lib/auth/client";
 import { PanelLeftIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import Search from "@/components/layout/header/search";
 import Notifications from "@/components/layout/header/notifications";
 import { ThemeCustomizerPanel } from "@/components/theme-customizer";
+import { UserMenu } from "@/components/layout/UserMenu";
 
 export function SiteHeader() {
   const { toggleSidebar } = useSidebar();
@@ -33,7 +34,6 @@ export function SiteHeader() {
             orientation="vertical"
             className="mx-2 data-[orientation=vertical]:h-4"
           />
-          {/* User — Clerk replaces shadcnuikit UserMenu */}
           <div className="flex items-center gap-3">
             <div className="hidden text-right lg:block">
               <p className="text-foreground text-sm font-medium">
@@ -43,14 +43,7 @@ export function SiteHeader() {
                 {user?.primaryEmailAddress?.emailAddress}
               </p>
             </div>
-            <UserButton
-              afterSignOutUrl="/"
-              appearance={{
-                elements: {
-                  avatarBox: "h-9 w-9",
-                },
-              }}
-            />
+            <UserMenu afterSignOutUrl="/" />
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth/server";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ export default async function LeadDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   const { id } = await params;
 
   if (!user) {

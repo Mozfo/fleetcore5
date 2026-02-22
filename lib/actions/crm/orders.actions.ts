@@ -4,10 +4,10 @@
  * CRM Order Server Actions
  *
  * Server Actions for order lifecycle management in Quote-to-Cash flow.
- * All actions require Clerk authentication with FleetCore Admin org access.
+ * All actions require admin authentication.
  *
  * Security:
- * 1. All actions require Clerk auth + FleetCore Admin org check
+ * 1. All actions require requireCrmAuth (HQ org check)
  * 2. Provider isolation via getCurrentProviderId()
  * 3. All inputs validated with Zod schemas
  *
@@ -23,12 +23,12 @@
  * @module lib/actions/crm/orders.actions
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
 import { getCurrentProviderId } from "@/lib/utils/provider-context";
 import { orderService } from "@/lib/services/crm/order.service";
 import { orderRepository } from "@/lib/repositories/crm/order.repository";
@@ -50,8 +50,6 @@ import type {
   OrderWithRelations,
 } from "@/lib/repositories/crm/order.repository";
 import type { OrderCreationResult } from "@/lib/services/crm/order.service";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // =============================================================================
 // INLINE SCHEMAS (not in validators)
@@ -122,22 +120,19 @@ export type GetOrderStatsResult =
 async function checkAdminAuth(): Promise<
   { userId: string; orgId: string; providerId: string } | { error: string }
 > {
-  const { userId, orgId } = await auth();
+  try {
+    const { userId, orgId } = await requireCrmAuth();
 
-  if (!userId) {
-    return { error: "Unauthorized" };
+    const providerId = await getCurrentProviderId();
+    if (!providerId) {
+      return { error: "Provider context required" };
+    }
+
+    return { userId, orgId, providerId };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unauthorized";
+    return { error: message };
   }
-
-  if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-    return { error: "Forbidden: Admin access required" };
-  }
-
-  const providerId = await getCurrentProviderId();
-  if (!providerId) {
-    return { error: "Provider context required" };
-  }
-
-  return { userId, orgId, providerId };
 }
 
 // =============================================================================

@@ -3,18 +3,13 @@
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
-import { useOrganizationList, useClerk } from "@clerk/nextjs";
+import { useListOrganizations } from "@/lib/auth/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 function LoginTasksContent() {
   const { localizedPath } = useLocalizedPath();
-  const { userMemberships, isLoaded } = useOrganizationList({
-    userMemberships: {
-      infinite: true,
-    },
-  });
-  const { setActive } = useClerk();
+  const { organizationList, isLoaded, setActive } = useListOrganizations();
   const router = useRouter();
   const hasProcessed = useRef(false);
 
@@ -22,14 +17,12 @@ function LoginTasksContent() {
     // Wait for data to load
     if (!isLoaded || hasProcessed.current) return;
 
-    const memberships = userMemberships?.data;
-
-    // If user has exactly one organization, auto-select it
-    if (memberships && memberships.length === 1) {
+    // If user has at least one organization, auto-select the first
+    if (organizationList && organizationList.length >= 1) {
       hasProcessed.current = true;
-      const organization = memberships[0].organization;
+      const organization = organizationList[0].organization;
 
-      setActive({ organization: organization.id })
+      setActive({ organizationId: organization.id })
         .then(() => {
           router.push(localizedPath("dashboard"));
         })
@@ -37,25 +30,12 @@ function LoginTasksContent() {
           // Even if setActive fails, try redirecting
           router.push(localizedPath("dashboard"));
         });
-    } else if (memberships && memberships.length === 0) {
-      // No organization - this shouldn't happen with invitation workflow
-      // Redirect to dashboard anyway and let auth handle it
+    } else if (organizationList && organizationList.length === 0) {
+      // No organization - redirect to dashboard and let auth handle it
       hasProcessed.current = true;
       router.push(localizedPath("dashboard"));
-    } else if (memberships && memberships.length > 1) {
-      // Multiple organizations - auto-select first one (or could show selector)
-      hasProcessed.current = true;
-      const organization = memberships[0].organization;
-
-      setActive({ organization: organization.id })
-        .then(() => {
-          router.push(localizedPath("dashboard"));
-        })
-        .catch(() => {
-          router.push(localizedPath("dashboard"));
-        });
     }
-  }, [isLoaded, userMemberships, setActive, router, localizedPath]);
+  }, [isLoaded, organizationList, setActive, router, localizedPath]);
 
   return (
     <div className="mx-auto w-full max-w-md">

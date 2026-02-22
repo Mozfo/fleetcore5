@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DirectoryService } from "@/lib/services/directory/directory.service";
 import { handleApiError } from "@/lib/api/error-handler";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * GET /api/v1/directory/makes/:id/models
@@ -24,31 +25,23 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // 1. Extract auth headers (before try for error context)
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // 1. Auth check
+    const { tenantId } = await requireTenantApiAuth();
 
-    // 3. Await params (Next.js 15 convention)
+    // 2. Await params (Next.js 15 convention)
     const { id: makeId } = await params;
 
     // 4. Call DirectoryService to list models
     const directoryService = new DirectoryService();
     const models = await directoryService.listModelsByMake(makeId, tenantId);
 
-    // 5. Return models array
+    // 4. Return models array
     return NextResponse.json(models, { status: 200 });
   } catch (error) {
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

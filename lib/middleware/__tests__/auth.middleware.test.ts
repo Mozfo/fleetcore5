@@ -1,7 +1,7 @@
 /**
  * Auth Middleware Tests
  *
- * Tests Clerk authentication integration with tenant validation.
+ * Tests Better Auth integration with tenant validation via api-guard.
  * Total: 3 tests covering success, missing auth, and suspended tenant.
  */
 
@@ -9,22 +9,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { requireAuth } from "../auth.middleware";
 import { UnauthorizedError, ForbiddenError } from "@/lib/core/errors";
 
-// Mock Clerk auth
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(),
+// Mock api-guard (the actual auth implementation)
+vi.mock("@/lib/auth/api-guard", () => ({
+  requireTenantApiAuth: vi.fn(),
 }));
 
-// Mock Prisma
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    adm_tenants: {
-      findUnique: vi.fn(),
-    },
-  },
-}));
-
-import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 describe("Auth Middleware - requireAuth()", () => {
   beforeEach(() => {
@@ -32,60 +22,34 @@ describe("Auth Middleware - requireAuth()", () => {
   });
 
   it("should successfully authenticate user with active tenant", async () => {
-    // Mock Clerk auth returning valid user and org
-    vi.mocked(auth).mockResolvedValue({
+    vi.mocked(requireTenantApiAuth).mockResolvedValue({
       userId: "user_123",
-      orgId: "org_abc",
-    } as Awaited<ReturnType<typeof auth>>);
+      tenantId: "tenant_001",
+    });
 
-    // Mock Prisma finding active tenant
-    vi.mocked(prisma.adm_tenants.findUnique).mockResolvedValue({
-      id: "tenant_001",
-      status: "active",
-      name: "Test Tenant",
-    } as never);
-
-    // Create mock request
-    const mockReq = {
-      headers: new Headers(),
-    } as never;
-
+    const mockReq = {} as never;
     const result = await requireAuth(mockReq);
 
     expect(result.userId).toBe("user_123");
     expect(result.tenantId).toBe("tenant_001");
-    expect(result.headers.get("x-user-id")).toBe("user_123");
-    expect(result.headers.get("x-tenant-id")).toBe("tenant_001");
   });
 
   it("should throw UnauthorizedError when user is not authenticated", async () => {
-    // Mock Clerk auth returning no userId
-    vi.mocked(auth).mockResolvedValue({
-      userId: null,
-      orgId: null,
-    } as never);
+    vi.mocked(requireTenantApiAuth).mockRejectedValue(
+      new UnauthorizedError("Not authenticated")
+    );
 
     const mockReq = {} as never;
 
     await expect(requireAuth(mockReq)).rejects.toThrow(UnauthorizedError);
-    await expect(requireAuth(mockReq)).rejects.toThrow(
-      /Authentication required/
-    );
   });
 
   it("should throw ForbiddenError when tenant is suspended", async () => {
-    // Mock Clerk auth returning valid user
-    vi.mocked(auth).mockResolvedValue({
-      userId: "user_123",
-      orgId: "org_abc",
-    } as Awaited<ReturnType<typeof auth>>);
-
-    // Mock Prisma finding suspended tenant
-    vi.mocked(prisma.adm_tenants.findUnique).mockResolvedValue({
-      id: "tenant_001",
-      status: "suspended",
-      name: "Suspended Tenant",
-    } as never);
+    vi.mocked(requireTenantApiAuth).mockRejectedValue(
+      new ForbiddenError(
+        'Access suspended. Organization "Test" has been suspended.'
+      )
+    );
 
     const mockReq = {} as never;
 

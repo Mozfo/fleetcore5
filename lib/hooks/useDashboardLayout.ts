@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/auth/client";
 import type {
   DashboardLayout,
   DashboardLayoutItem,

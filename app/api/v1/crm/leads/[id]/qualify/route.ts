@@ -22,6 +22,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { qualifyLeadSchema } from "@/lib/validators/crm/lead-status.validators";
 import { leadQualificationService } from "@/lib/services/crm/lead-qualification.service";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * POST /api/v1/crm/leads/[id]/qualify
@@ -68,28 +70,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    // STEP 1: Authenticate via direct auth helper
+    const { userId } = await requireCrmApiAuth();
     const { id } = await params;
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Lead Qualify] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
 
     // STEP 2: Validate ID format
     const uuidRegex =
@@ -156,6 +139,16 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     // Handle business logic errors (e.g., "Cannot qualify converted lead")
     if (error instanceof Error) {
       // Check if it's a "not found" error

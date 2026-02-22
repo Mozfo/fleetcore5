@@ -7,16 +7,15 @@
  * Uses the unified crm_activities table with polymorphic links to leads AND/OR opportunities.
  *
  * Security:
- * 1. Authentication via Clerk auth()
+ * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Authorization (FleetCore Admin only)
- * 4. Multi-tenant isolation via provider_id
+ * 3. Multi-tenant isolation via provider_id
  *
  * @see prisma/schema.prisma - crm_activities model
  * @module lib/actions/crm/activities.actions
  */
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -26,8 +25,6 @@ import {
   getCurrentProviderId,
   buildProviderFilter,
 } from "@/lib/utils/provider-context";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // ============================================================================
 // TYPES
@@ -88,18 +85,10 @@ export async function getActivitiesAction(
   filters: ActivityFilters
 ): Promise<GetActivitiesResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    await requireCrmAuth();
 
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validate at least one entity filter
+    // 2. Validate at least one entity filter
     if (!filters.leadId && !filters.opportunityId) {
       return {
         success: false,
@@ -216,18 +205,10 @@ export async function createActivityAction(
   data: CreateActivityData
 ): Promise<CreateActivityResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validate with Zod
+    // 2. Validate with Zod
     const validated = CreateActivitySchema.safeParse(data);
     if (!validated.success) {
       const firstError = validated.error.issues[0];
@@ -275,20 +256,16 @@ export async function createActivityAction(
       }
     }
 
-    // 7. Get current employee ID for created_by
-    const user = await currentUser();
-    let createdBy: string | null = null;
-    if (user) {
-      const employee = await db.adm_provider_employees.findFirst({
-        where: {
-          clerk_user_id: userId,
-          ...buildProviderFilter(providerId),
-          deleted_at: null,
-        },
-        select: { id: true },
-      });
-      createdBy = employee?.id || null;
-    }
+    // 7. Get current employee ID for created_by (dual-ID for transition)
+    const employee = await db.adm_provider_employees.findFirst({
+      where: {
+        OR: [{ auth_user_id: userId }, { clerk_user_id: userId }],
+        ...buildProviderFilter(providerId),
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+    const createdBy = employee?.id ?? null;
 
     // 8. Create activity
     const activity = await db.crm_activities.create({
@@ -411,24 +388,16 @@ export async function updateActivityAction(
   data: UpdateActivityData
 ): Promise<UpdateActivityResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    await requireCrmAuth();
 
-    // 2. Authorization
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validate UUID
+    // 2. Validate UUID
     const uuidSchema = z.string().uuid();
     if (!uuidSchema.safeParse(id).success) {
       return { success: false, error: "Invalid activity ID" };
     }
 
-    // 4. Validate data
+    // 3. Validate data
     const validated = UpdateActivitySchema.safeParse(data);
     if (!validated.success) {
       return { success: false, error: "Invalid update data" };
@@ -530,27 +499,19 @@ export async function deleteActivityAction(
   id: string
 ): Promise<DeleteActivityResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
-    // 2. Authorization
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validate UUID
+    // 2. Validate UUID
     const uuidSchema = z.string().uuid();
     if (!uuidSchema.safeParse(id).success) {
       return { success: false, error: "Invalid activity ID" };
     }
 
-    // 4. Get provider context
+    // 3. Get provider context
     const providerId = await getCurrentProviderId();
 
-    // 5. Find activity with provider filter
+    // 4. Find activity with provider filter
     const existing = await db.crm_activities.findFirst({
       where: { id, ...buildProviderFilter(providerId) },
       select: { id: true, lead_id: true, opportunity_id: true },
@@ -560,7 +521,7 @@ export async function deleteActivityAction(
       return { success: false, error: "Activity not found" };
     }
 
-    // 6. Delete activity
+    // 5. Delete activity
     await db.crm_activities.delete({ where: { id } });
 
     logger.info(
@@ -608,27 +569,19 @@ export async function markActivityCompleteAction(
   id: string
 ): Promise<MarkActivityCompleteResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
-    // 2. Authorization
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validate UUID
+    // 2. Validate UUID
     const uuidSchema = z.string().uuid();
     if (!uuidSchema.safeParse(id).success) {
       return { success: false, error: "Invalid activity ID" };
     }
 
-    // 4. Get provider context
+    // 3. Get provider context
     const providerId = await getCurrentProviderId();
 
-    // 5. Find activity with provider filter
+    // 4. Find activity with provider filter
     const existing = await db.crm_activities.findFirst({
       where: { id, ...buildProviderFilter(providerId) },
       select: {

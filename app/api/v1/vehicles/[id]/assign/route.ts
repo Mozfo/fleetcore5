@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { VehicleService } from "@/lib/services/vehicles/vehicle.service";
 import { vehicleAssignmentSchema } from "@/lib/validators/vehicles.validators";
 import { handleApiError } from "@/lib/api/error-handler";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * POST /api/v1/vehicles/:id/assign
@@ -12,15 +13,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // 1. Extract auth headers (before try for error context)
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { userId, tenantId } = await requireTenantApiAuth();
 
     // 3. Await params (Next.js 15 convention)
     const { id: vehicleId } = await params;
@@ -45,8 +39,6 @@ export async function POST(
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "POST",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }
@@ -59,15 +51,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // 1. Extract auth headers (before try for error context)
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { userId, tenantId } = await requireTenantApiAuth();
 
     // 3. Await params (Next.js 15 convention)
     const { id: vehicleId } = await params;
@@ -82,8 +67,6 @@ export async function DELETE(
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "DELETE",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useSignIn } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
   const { localizedPath } = useLocalizedPath();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { isLoaded, signIn } = useSignIn();
+  // Better Auth handles password reset via forgetPassword() + resetPassword()
 
   const formSchema = z.object({
     email: z.string().email(t("forgotPassword.errors.invalidEmail")),
@@ -36,22 +36,17 @@ export default function ForgotPasswordPage() {
     resolver: zodResolver(formSchema),
   });
   const onSubmit = async (data: FormData) => {
-    if (!isLoaded) return;
-
     setIsLoading(true);
-    try {
-      await signIn.create({
-        strategy: "reset_password_email_code",
-        identifier: data.email,
-      });
-      setIsSuccess(true);
-    } catch (_err: unknown) {
-      // Security: always show success to prevent email enumeration
-      // We don't use the error, just show success for security
-      setIsSuccess(true);
-    } finally {
-      setIsLoading(false);
-    }
+
+    // Always show success regardless of result to prevent email enumeration
+    const resetUrl = `${window.location.origin}${localizedPath("reset-password")}`;
+    await authClient.requestPasswordReset({
+      email: data.email,
+      redirectTo: resetUrl,
+    });
+
+    setIsSuccess(true);
+    setIsLoading(false);
   };
   if (isSuccess) {
     return (

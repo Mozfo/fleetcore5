@@ -13,12 +13,11 @@
  * Status: open (active), won, lost, on_hold, cancelled
  *
  * Authentication flow:
- * 1. Middleware validates: userId + FleetCore Admin org membership + CRM role
- * 2. Middleware injects: x-user-id, x-org-id headers
- * 3. This route trusts middleware validation
+ * 1. Auth guard validates: userId + FleetCore Admin org membership + CRM role
+ * 2. Auth guard returns userId, orgId directly
  *
  * Security: Access restricted to FleetCore Admin users with CRM roles
- * (org:adm_admin, org:adm_commercial) - enforced at middleware level.
+ * (org:adm_admin, org:adm_commercial) - enforced at auth guard level.
  *
  * @module app/api/v1/crm/opportunities
  */
@@ -39,12 +38,14 @@ import {
 } from "@/lib/config/opportunity-stages";
 import { CreateOpportunitySchema } from "@/lib/validators/crm/opportunity.validators";
 import { ZodError } from "zod";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * GET /api/v1/crm/opportunities
  * List opportunities with filtering, sorting, and pagination
  *
- * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Authentication: Via auth guard (FleetCore Admin + CRM role)
  *
  * Query Parameters:
  * - stage: Filter by pipeline stage (qualification, demo, proposal, negotiation, contract_sent)
@@ -65,26 +66,8 @@ import { ZodError } from "zod";
  */
 export async function GET(request: NextRequest) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Opportunity List] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via auth guard
+    await requireCrmApiAuth();
 
     // STEP 2: Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -295,6 +278,16 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error(
       { error },
       "[CRM Opportunity List] Error fetching opportunities"
@@ -420,7 +413,7 @@ async function calculateOpportunityStats(baseWhere: Record<string, any>) {
  * POST /api/v1/crm/opportunities
  * Create a new opportunity
  *
- * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Authentication: Via auth guard (FleetCore Admin + CRM role)
  *
  * Request Body:
  * - expected_value (required): Deal value in currency
@@ -440,26 +433,8 @@ async function calculateOpportunityStats(baseWhere: Record<string, any>) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Opportunity Create] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via auth guard
+    const { userId } = await requireCrmApiAuth();
 
     // STEP 2: Parse and validate request body
     const body = await request.json();
@@ -506,7 +481,7 @@ export async function POST(request: NextRequest) {
         assigned_to: validatedData.assigned_to ?? undefined,
         notes: validatedData.notes || null,
         metadata: (validatedData.metadata || {
-          created_by_clerk_id: userId,
+          created_by_user_id: userId,
         }) as object,
         stage_entered_at: new Date(),
         max_days_in_stage: maxDays,
@@ -571,6 +546,16 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     // Zod validation error
     if (error instanceof ZodError) {
       return NextResponse.json(

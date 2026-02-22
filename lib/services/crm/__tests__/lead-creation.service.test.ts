@@ -31,6 +31,7 @@ describe("LeadCreationService", () => {
     hire_date: null,
     avatar_url: null,
     clerk_user_id: "clerk_user_123",
+    auth_user_id: null,
     permissions: [],
     supervisor_id: null,
     preferred_locale: null,

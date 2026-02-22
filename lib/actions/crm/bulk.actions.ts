@@ -4,17 +4,13 @@
  * CRM Bulk Lead Server Actions
  *
  * Server Actions for bulk operations on leads.
- * Uses Clerk auth() directly - no middleware tenant check required.
- *
  * Security:
- * 1. Authentication via Clerk auth()
+ * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Authorization (FleetCore Admin only)
- *
- * @see https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
+ * 3. Provider isolation via getCurrentProviderId
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -23,8 +19,6 @@ import {
   buildProviderFilter,
 } from "@/lib/utils/provider-context";
 import type { LeadStatus } from "@/types/crm";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // Schemas de validation
 const BulkAssignSchema = z.object({
@@ -71,17 +65,8 @@ export async function bulkAssignLeadsAction(
   assigneeId: string
 ): Promise<BulkActionResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return {
-        success: false,
-        successCount: 0,
-        failedCount: leadIds.length,
-        errors: ["Unauthorized"],
-      };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
     // 2. Validation Zod
     const validation = BulkAssignSchema.safeParse({ leadIds, assigneeId });
@@ -94,17 +79,7 @@ export async function bulkAssignLeadsAction(
       };
     }
 
-    // 3. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return {
-        success: false,
-        successCount: 0,
-        failedCount: leadIds.length,
-        errors: ["Forbidden: Admin access required"],
-      };
-    }
-
-    // 4. Verify assignee exists and is a member
+    // 3. Verify assignee exists and is a member
     const assignee = await db.clt_members.findUnique({
       where: { id: assigneeId },
       select: { id: true },
@@ -164,17 +139,8 @@ export async function bulkUpdateStatusAction(
   status: LeadStatus
 ): Promise<BulkActionResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return {
-        success: false,
-        successCount: 0,
-        failedCount: leadIds.length,
-        errors: ["Unauthorized"],
-      };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
     // 2. Validation Zod
     const validation = BulkStatusSchema.safeParse({ leadIds, status });
@@ -187,17 +153,7 @@ export async function bulkUpdateStatusAction(
       };
     }
 
-    // 3. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return {
-        success: false,
-        successCount: 0,
-        failedCount: leadIds.length,
-        errors: ["Forbidden: Admin access required"],
-      };
-    }
-
-    // 4. Get provider context for data isolation
+    // 3. Get provider context for data isolation
     const providerId = await getCurrentProviderId();
 
     // 5. Bulk update with Prisma (with provider filter)
@@ -242,17 +198,8 @@ export async function bulkDeleteLeadsAction(
   reason: string
 ): Promise<BulkActionResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return {
-        success: false,
-        successCount: 0,
-        failedCount: leadIds.length,
-        errors: ["Unauthorized"],
-      };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
     // 2. Validation Zod
     const validation = BulkDeleteSchema.safeParse({ leadIds, reason });
@@ -265,17 +212,7 @@ export async function bulkDeleteLeadsAction(
       };
     }
 
-    // 3. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return {
-        success: false,
-        successCount: 0,
-        failedCount: leadIds.length,
-        errors: ["Forbidden: Admin access required"],
-      };
-    }
-
-    // 4. Get provider context for data isolation
+    // 3. Get provider context for data isolation
     const providerId = await getCurrentProviderId();
 
     // 5. Soft delete with Prisma (with provider filter)

@@ -25,6 +25,8 @@ import { UpdateLeadSchema } from "@/lib/validators/crm/lead.validators";
 import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * GET /api/v1/crm/leads/[id]
@@ -43,29 +45,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    // Security: Middleware already validated FleetCore Admin membership + CRM role
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    // STEP 1: Authenticate via direct auth helper
+    await requireCrmApiAuth();
     const { id } = await params;
-
-    // Defensive check (should never fail if middleware is correctly configured)
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Lead Detail] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
 
     // STEP 2: Validate ID format
     // Basic UUID format validation
@@ -183,6 +165,16 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[Lead Detail] Error fetching lead");
 
     return NextResponse.json(
@@ -225,29 +217,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    // Security: Middleware already validated FleetCore Admin membership + CRM role
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    // STEP 1: Authenticate via direct auth helper
+    const { userId } = await requireCrmApiAuth();
     const { id } = await params;
-
-    // Defensive check (should never fail if middleware is correctly configured)
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Lead Update] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
 
     // STEP 2: Validate ID format
     const uuidRegex =
@@ -455,6 +427,16 @@ export async function PATCH(
   } catch (error) {
     // ERROR HANDLING
 
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     // Zod validation error
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -508,29 +490,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    // Security: Middleware already validated FleetCore Admin membership + CRM role
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    // STEP 1: Authenticate via direct auth helper
+    const { userId } = await requireCrmApiAuth();
     const { id } = await params;
-
-    // Defensive check (should never fail if middleware is correctly configured)
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Lead Delete] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
 
     // STEP 2: Validate ID format
     const uuidRegex =
@@ -592,6 +554,16 @@ export async function DELETE(
     // STEP 7: Return 204 No Content
     return new NextResponse(null, { status: 204 });
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     // Error handling
     logger.error({ error }, "[Lead Delete] Error deleting lead");
 

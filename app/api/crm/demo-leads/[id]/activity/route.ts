@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
@@ -8,10 +8,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { userId } = session;
 
     const { id: leadId } = await params;
     const body = await request.json();

@@ -6,7 +6,7 @@
  * Validates lead status against bil_settings.payment_settings.
  * Updates lead to payment_pending status after link creation.
  *
- * Authentication: Middleware validates userId + FleetCore Admin org + CRM role
+ * Authentication: Auth guard validates userId + FleetCore Admin org + CRM role
  *
  * @module app/api/v1/bil/payment-links
  */
@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { paymentLinkService } from "@/lib/services/billing/payment-link.service";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * Request body validation schema
@@ -34,7 +36,7 @@ const createPaymentLinkSchema = z.object({
  * POST /api/v1/bil/payment-links
  * Create a payment link for a lead
  *
- * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Authentication: Via auth guard (FleetCore Admin + CRM role)
  *
  * Request Body:
  * {
@@ -71,27 +73,8 @@ const createPaymentLinkSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[Payment Links] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via auth guard
+    const { userId } = await requireCrmApiAuth();
 
     // STEP 2: Parse and validate request body with Zod safeParse
     const body = await request.json();
@@ -178,6 +161,16 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[Payment Links] Error creating payment link");
 
     return NextResponse.json(

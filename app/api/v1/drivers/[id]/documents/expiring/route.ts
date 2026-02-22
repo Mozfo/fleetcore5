@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DriverService } from "@/lib/services/drivers/driver.service";
 import { handleApiError } from "@/lib/api/error-handler";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * GET /api/v1/drivers/:id/documents/expiring
@@ -14,15 +15,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // 1. Extract auth headers (before try for error context)
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { tenantId } = await requireTenantApiAuth();
 
     // 3. Await params (Next.js 15 convention)
     const { id } = await params;
@@ -40,8 +34,6 @@ export async function GET(
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

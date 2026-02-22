@@ -7,6 +7,7 @@ import {
 } from "@/lib/validators/directory.validators";
 import { hasPermission } from "@/lib/auth/permissions";
 import { handleApiError } from "@/lib/api/error-handler";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * GET /api/v1/directory/vehicle-classes
@@ -33,17 +34,11 @@ import { handleApiError } from "@/lib/api/error-handler";
  * ]
  */
 export async function GET(request: NextRequest) {
-  // 1. Extract auth headers (before try for error context)
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // 1. Auth check
+    await requireTenantApiAuth();
 
-    // 3. Parse query parameters
+    // 2. Parse query parameters
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
@@ -65,14 +60,12 @@ export async function GET(request: NextRequest) {
       validatedQuery.sortOrder
     );
 
-    // 6. Return vehicle classes array
+    // 5. Return vehicle classes array
     return NextResponse.json(vehicleClasses, { status: 200 });
   } catch (error) {
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }
@@ -103,17 +96,11 @@ export async function GET(request: NextRequest) {
  * }
  */
 export async function POST(request: NextRequest) {
-  // 1. Extract headers (injected by middleware) - declared before try for error context
-  const tenantId = request.headers.get("x-tenant-id");
-  const userId = request.headers.get("x-user-id");
-
   try {
-    // 2. Auth check
-    if (!tenantId || !userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // 1. Auth check
+    const { userId, tenantId } = await requireTenantApiAuth();
 
-    // 3. Check permission (manage_directory or admin)
+    // 2. Check permission (manage_directory or admin)
     const permCheck = await hasPermission(userId, tenantId, "manage_directory");
 
     if (!permCheck.hasPermission) {
@@ -132,14 +119,12 @@ export async function POST(request: NextRequest) {
     const vehicleClass =
       await directoryService.createVehicleClass(validatedData);
 
-    // 6. Return created vehicle class
+    // 5. Return created vehicle class
     return NextResponse.json(vehicleClass, { status: 201 });
   } catch (error) {
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "POST",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/auth/client";
 import { useTranslation } from "react-i18next";
 import { DashboardGrid } from "@/components/app/widgets";
 import { FCPageHeader } from "@/components/fc";
@@ -10,7 +10,6 @@ export default function DashboardPage() {
   const { user, isLoaded } = useUser();
   const { t } = useTranslation("common");
 
-  // Wait for Clerk to load user data
   const displayName = isLoaded && user?.firstName ? user.firstName : null;
 
   const titleText = displayName

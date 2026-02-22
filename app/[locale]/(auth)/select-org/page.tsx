@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
-import { useOrganizationList, useAuth } from "@clerk/nextjs";
+import { useListOrganizations } from "@/lib/auth/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -11,12 +11,10 @@ import { Button } from "@/components/ui/button";
 /**
  * Organization Selection Page
  *
- * Official Clerk best practice for B2B apps:
- * https://clerk.com/docs/organizations/force-organizations
+ * After login, this page handles organization selection/activation
+ * before redirecting to protected routes.
  *
- * After login, Clerk does NOT auto-activate an organization.
- * This page handles organization selection/activation before
- * redirecting to protected routes.
+ * Better Auth uses cookie-based sessions — no JWT refresh needed.
  */
 function SelectOrgContent() {
   const { t } = useTranslation("auth");
@@ -24,37 +22,19 @@ function SelectOrgContent() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/en/dashboard";
 
-  const { setActive, userMemberships, isLoaded } = useOrganizationList({
-    userMemberships: {
-      infinite: true,
-    },
-  });
-
-  // Hook pour forcer le refresh du JWT après activation de l'org
-  const { getToken } = useAuth();
+  const { organizationList, isLoaded, setActive } = useListOrganizations();
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    const memberships = userMemberships.data;
-
     // Auto-select if user has exactly one organization
-    if (memberships && memberships.length === 1) {
-      const org = memberships[0].organization;
-      void setActive({ organization: org.id }).then(async () => {
-        // Force le refresh du JWT pour inclure orgId (pattern Clerk 2025)
-        await getToken({ skipCache: true });
+    if (organizationList && organizationList.length === 1) {
+      const org = organizationList[0].organization;
+      void setActive({ organizationId: org.id }).then(() => {
         router.push(redirectUrl);
       });
     }
-  }, [
-    isLoaded,
-    userMemberships.data,
-    setActive,
-    router,
-    redirectUrl,
-    getToken,
-  ]);
+  }, [isLoaded, organizationList, setActive, router, redirectUrl]);
 
   // Loading state
   if (!isLoaded) {
@@ -72,10 +52,8 @@ function SelectOrgContent() {
     );
   }
 
-  const memberships = userMemberships.data || [];
-
   // No organizations - show error
-  if (memberships.length === 0) {
+  if (!organizationList || organizationList.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -110,7 +88,7 @@ function SelectOrgContent() {
   }
 
   // Single organization - show loading while auto-selecting
-  if (memberships.length === 1) {
+  if (organizationList.length === 1) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -155,32 +133,26 @@ function SelectOrgContent() {
         </div>
 
         <div className="space-y-3">
-          {memberships.map((membership, index) => (
+          {organizationList.map((item, index) => (
             <motion.button
-              key={membership.organization.id}
+              key={item.organization.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 * index }}
               onClick={async () => {
-                await setActive({ organization: membership.organization.id });
-                await getToken({ skipCache: true });
+                await setActive({ organizationId: item.organization.id });
                 router.push(redirectUrl);
               }}
               className="flex w-full items-center gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 transition-all hover:border-blue-600 hover:bg-white dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-700">
                 <span className="text-lg font-bold text-white">
-                  {membership.organization.name.charAt(0).toUpperCase()}
+                  {item.organization.name.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 text-left">
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {membership.organization.name}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {membership.role === "org:admin"
-                    ? t("selectOrg.roleAdmin", "Administrator")
-                    : t("selectOrg.roleMember", "Member")}
+                  {item.organization.name}
                 </p>
               </div>
             </motion.button>

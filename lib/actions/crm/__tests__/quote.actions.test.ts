@@ -94,7 +94,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 // Mock audit log UUIDs
-vi.mock("@/lib/utils/clerk-uuid-mapper", () => ({
+vi.mock("@/lib/utils/audit-resolver", () => ({
   getAuditLogUuids: () => mockGetAuditLogUuids(),
 }));
 

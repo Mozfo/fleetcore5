@@ -5,7 +5,7 @@
 
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { getQuoteWithRelationsAction } from "@/lib/actions/crm/quote.actions";
 import { QuoteDetailClient } from "@/components/crm/quotes/QuoteDetailClient";
 import { localizedRedirect } from "@/lib/navigation";
@@ -18,10 +18,10 @@ interface QuoteDetailPageProps {
 export default async function QuoteDetailPage({
   params,
 }: QuoteDetailPageProps) {
-  const { userId } = await auth();
+  const session = await getSession();
   const { locale, id } = await params;
 
-  if (!userId) {
+  if (!session) {
     localizedRedirect("login", locale as "en" | "fr");
   }
 

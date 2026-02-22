@@ -1,23 +1,21 @@
 import { NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 
 /** GET /api/auth/identity — Refine authProvider.getIdentity() server-side fallback */
 export async function GET() {
-  const { userId, orgId, orgRole } = await auth();
+  const session = await getSession();
 
-  if (!userId) {
+  if (!session) {
     return NextResponse.json(null, { status: 401 });
   }
 
-  const user = await currentUser();
+  const { userId, orgId, orgRole, user } = session;
 
   return NextResponse.json({
     id: userId,
-    name: user
-      ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
-      : "Unknown",
-    email: user?.emailAddresses?.[0]?.emailAddress ?? undefined,
-    avatar: user?.imageUrl,
+    name: user.name || "Unknown",
+    email: user.email || undefined,
+    avatar: user.image,
     orgId,
     orgRole,
   });

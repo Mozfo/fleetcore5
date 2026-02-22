@@ -12,7 +12,7 @@
  * - Server-side pagination for 10k+ leads
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { localizedRedirect } from "@/lib/navigation";
 import { LeadsReportsClient } from "@/components/crm/leads/reports/LeadsReportsClient";
 
@@ -21,10 +21,10 @@ interface ReportsPageProps {
 }
 
 export default async function LeadsReportsPage({ params }: ReportsPageProps) {
-  const { userId } = await auth();
+  const session = await getSession();
   const { locale } = await params;
 
-  if (!userId) {
+  if (!session) {
     localizedRedirect("login", locale as "en" | "fr");
   }
 

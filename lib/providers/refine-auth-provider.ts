@@ -3,17 +3,17 @@
 import type { AuthProvider } from "@refinedev/core";
 
 /**
- * Factory that creates a Refine AuthProvider from Clerk runtime values.
+ * Factory that creates a Refine AuthProvider from auth runtime values.
  *
- * Why a factory? Clerk hooks (useUser, useAuth, useOrganization) can only be
- * called inside React components. The AuthProvider is a plain object passed to
- * <Refine>. The factory bridges the two: the layout component calls hooks,
- * then passes their values here.
+ * Why a factory? Auth hooks can only be called inside React components.
+ * The AuthProvider is a plain object passed to <Refine>. The factory
+ * bridges the two: the layout component calls hooks, then passes
+ * their values here.
  *
- * This provider is an OBSERVER of Clerk state — it does NOT control login/
- * logout flows. Clerk handles those via <SignIn>, <UserButton>, middleware.
+ * This provider is an OBSERVER of auth state -- it does NOT control
+ * login/logout flows. Auth pages handle those directly.
  */
-export function createAuthProvider(clerk: {
+export function createAuthProvider(authData: {
   userId: string | null | undefined;
   orgId: string | null | undefined;
   orgRole: string | null | undefined;
@@ -27,7 +27,7 @@ export function createAuthProvider(clerk: {
   return {
     // Called by Refine on every route to verify auth state
     check: async () => {
-      if (clerk.userId) {
+      if (authData.userId) {
         return { authenticated: true };
       }
       return {
@@ -39,34 +39,34 @@ export function createAuthProvider(clerk: {
 
     // Returns the current user identity (shown in Refine UI helpers)
     getIdentity: async () => {
-      if (!clerk.user) return null;
+      if (!authData.user) return null;
       return {
-        id: clerk.userId,
-        name: clerk.user.fullName ?? "Unknown",
-        email: clerk.user.primaryEmailAddress ?? undefined,
-        avatar: clerk.user.imageUrl,
-        orgId: clerk.orgId,
-        orgRole: clerk.orgRole,
+        id: authData.userId,
+        name: authData.user.fullName ?? "Unknown",
+        email: authData.user.primaryEmailAddress ?? undefined,
+        avatar: authData.user.imageUrl,
+        orgId: authData.orgId,
+        orgRole: authData.orgRole,
       };
     },
 
     // Returns the user's role for Refine's getPermissions
     getPermissions: async () => {
-      return clerk.orgRole ? { role: clerk.orgRole } : null;
+      return authData.orgRole ? { role: authData.orgRole } : null;
     },
 
-    // Clerk's signOut — Refine calls this when logout is triggered
+    // Sign out -- Refine calls this when logout is triggered
     logout: async () => {
-      await clerk.signOut();
+      await authData.signOut();
       return { success: true, redirectTo: "/login" };
     },
 
-    // Refine calls login() but Clerk handles login via its own components
+    // Refine calls login() but auth pages handle login directly
     login: async () => {
       return { success: true, redirectTo: "/" };
     },
 
-    // Handle auth errors (401/403) — redirect to login
+    // Handle auth errors (401/403) -- redirect to login
     onError: async (error) => {
       const status = (error as { statusCode?: number })?.statusCode;
       if (status === 401 || status === 403) {

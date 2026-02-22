@@ -19,6 +19,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateStatusSchema } from "@/lib/validators/crm/lead-status.validators";
 import { leadStatusService } from "@/lib/services/crm/lead-status.service";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * PATCH /api/v1/crm/leads/[id]/status
@@ -53,28 +55,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    // STEP 1: Authenticate via direct auth helper
+    const { userId } = await requireCrmApiAuth();
     const { id } = await params;
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Lead Status] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
 
     // STEP 2: Validate ID format
     const uuidRegex =
@@ -162,6 +145,16 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[CRM Lead Status] Error updating status");
 
     return NextResponse.json(

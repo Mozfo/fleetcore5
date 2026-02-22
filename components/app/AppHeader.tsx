@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/auth/client";
 import { useTranslation } from "react-i18next";
 import { Bell, Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
+import { UserMenu } from "@/components/layout/UserMenu";
 
 interface AppHeaderProps {
   onMenuClick?: () => void;
@@ -85,14 +86,7 @@ export function AppHeader({
               {user?.primaryEmailAddress?.emailAddress}
             </p>
           </div>
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                avatarBox: "h-9 w-9",
-              },
-            }}
-          />
+          <UserMenu afterSignOutUrl="/" />
         </div>
       </div>
     </header>

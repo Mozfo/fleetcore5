@@ -4,7 +4,7 @@
  */
 
 import { Suspense, cache } from "react";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { LeadsBrowserClient } from "@/components/crm/leads/LeadsBrowserClient";
 import { localizedRedirect } from "@/lib/navigation";
@@ -124,10 +124,10 @@ const fetchAllLeads = cache(
 );
 
 export default async function LeadsBrowserPage({ params }: BrowserPageProps) {
-  const { userId } = await auth();
+  const session = await getSession();
   const { locale } = await params;
 
-  if (!userId) {
+  if (!session) {
     localizedRedirect("login", locale as "en" | "fr");
   }
 

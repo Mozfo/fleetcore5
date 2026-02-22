@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import type { DashboardLayout } from "@/lib/types/dashboard";
@@ -25,11 +25,13 @@ const SETTING_CATEGORY = "ui";
  */
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const session = await getSession();
 
-    if (!userId) {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { userId } = session;
 
     // Check query param for specific user (admin access)
     const searchParams = request.nextUrl.searchParams;
@@ -78,11 +80,13 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const session = await getSession();
 
-    if (!userId) {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { userId } = session;
 
     const body = (await request.json()) as DashboardLayout;
 
@@ -158,11 +162,13 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE() {
   try {
-    const { userId } = await auth();
+    const session = await getSession();
 
-    if (!userId) {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { userId } = session;
 
     // Soft delete from crm_settings
     const settingKey = `${SETTING_KEY_PREFIX}${userId}`;

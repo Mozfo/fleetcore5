@@ -4,11 +4,9 @@
  * CRM Quote Server Actions
  *
  * Server Actions for quote lifecycle management in Quote-to-Cash flow.
- * Uses Clerk auth() for admin actions, token-based for public actions.
- *
  * Security:
- * 1. Admin Actions: Clerk auth + FleetCore Admin org check
- * 2. Public Actions: Token-based validation (no Clerk auth)
+ * 1. Admin Actions: requireCrmAuth (HQ org check)
+ * 2. Public Actions: Token-based validation (no auth)
  * 3. All inputs validated with Zod schemas
  *
  * Action Categories:
@@ -22,12 +20,12 @@
  * @module lib/actions/crm/quote.actions
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
 import { getCurrentProviderId } from "@/lib/utils/provider-context";
 import { quoteService } from "@/lib/services/crm/quote.service";
 import {
@@ -55,8 +53,6 @@ import type {
 } from "@/lib/repositories/crm/quote.repository";
 import type { Order } from "@/lib/repositories/crm/order.repository";
 import type { quote_status } from "@prisma/client";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // =============================================================================
 // INLINE SCHEMAS (not in validators)
@@ -181,25 +177,22 @@ export type GetExpiringSoonResult =
 async function checkAdminAuth(): Promise<
   { userId: string; orgId: string; providerId: string } | { error: string }
 > {
-  const { userId, orgId } = await auth();
+  try {
+    const { userId, orgId } = await requireCrmAuth();
 
-  if (!userId) {
-    return { error: "Unauthorized" };
+    const providerId = await getCurrentProviderId();
+    if (!providerId) {
+      return {
+        error:
+          "Provider context required. User must be linked to a provider in adm_provider_employees.",
+      };
+    }
+
+    return { userId, orgId, providerId };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unauthorized";
+    return { error: message };
   }
-
-  if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-    return { error: "Forbidden: Admin access required" };
-  }
-
-  const providerId = await getCurrentProviderId();
-  if (!providerId) {
-    return {
-      error:
-        "Provider context required. User must be linked to a provider in adm_provider_employees.",
-    };
-  }
-
-  return { userId, orgId, providerId };
 }
 
 // =============================================================================

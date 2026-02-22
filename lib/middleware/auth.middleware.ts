@@ -1,22 +1,20 @@
 /**
- * Authentication Middleware - Clerk Integration
+ * Authentication Middleware — Better Auth Integration
  *
- * Provides authentication verification for Next.js 15 App Router API routes.
- * Integrates with Clerk for user authentication and tenant validation.
+ * Provides authentication verification for API routes.
+ * Validates session via Better Auth and resolves tenant.
  *
  * Key features:
- * - Extracts and validates Clerk JWT token
+ * - Gets session from Better Auth (cookie-based)
  * - Verifies tenant exists and is active (not suspended)
- * - Injects user/tenant info into request headers for downstream middleware
- * - Returns appropriate HTTP errors (401 Unauthorized, 403 Forbidden)
+ * - Returns userId + tenantId for downstream use
  *
  * @module lib/middleware/auth.middleware
  */
 
-import { auth } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
-import { UnauthorizedError, ForbiddenError } from "@/lib/core/errors";
-import { prisma } from "@/lib/prisma";
+import { UnauthorizedError } from "@/lib/core/errors";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * Authentication result with user and tenant information
@@ -24,119 +22,38 @@ import { prisma } from "@/lib/prisma";
 export interface AuthResult {
   userId: string;
   tenantId: string;
-  headers: Headers;
 }
 
 /**
  * Require authentication middleware
  *
- * Verifies Clerk authentication token and validates tenant access.
- * This middleware should be called FIRST in the middleware chain.
+ * Validates Better Auth session and resolves tenant.
+ * Delegates to requireTenantApiAuth() for session + tenant lookup.
  *
- * Flow:
- * 1. Extract userId and orgId from Clerk JWT
- * 2. Validate user is authenticated (has userId)
- * 3. Validate user belongs to an organization (has orgId)
- * 4. Query database to find tenant by clerk_organization_id
- * 5. Verify tenant exists and is not suspended
- * 6. Return headers with x-user-id and x-tenant-id for downstream use
+ * @param _req - Next.js request object (kept for API compatibility)
+ * @returns Authentication result with userId and tenantId
  *
- * @param req - Next.js request object
- * @returns Authentication result with userId, tenantId, and modified headers
- *
- * @throws {UnauthorizedError} If token is missing, invalid, or tenant not found
- * @throws {ForbiddenError} If tenant is suspended
+ * @throws {UnauthorizedError} If not authenticated or tenant not found
+ * @throws {ForbiddenError} If tenant is suspended or cancelled
  *
  * @example
- * // In API route handler
  * export async function POST(req: NextRequest) {
  *   const { userId, tenantId } = await requireAuth(req);
- *
- *   // Now you have authenticated user and tenant
- *   const data = await validate(LeadCreateSchema, await req.json());
- *   const lead = await leadService.create(data, tenantId, userId);
- *
- *   return NextResponse.json(lead);
+ *   const data = await validate(Schema, await req.json());
+ *   const result = await service.create(data, tenantId, userId);
+ *   return NextResponse.json(result);
  * }
  */
-export async function requireAuth(req: NextRequest): Promise<AuthResult> {
-  // Extract Clerk authentication from request
-  const { userId, orgId } = await auth();
-
-  // Validate user is authenticated
-  if (!userId) {
-    throw new UnauthorizedError(
-      "Authentication required. Please log in to access this resource."
-    );
-  }
-
-  // Validate user belongs to an organization (multi-tenant requirement)
-  if (!orgId) {
-    throw new UnauthorizedError(
-      "Organization membership required. Please select an organization or contact support."
-    );
-  }
-
-  // Query database to find tenant by Clerk organization ID
-  const tenant = await prisma.adm_tenants.findUnique({
-    where: {
-      clerk_organization_id: orgId,
-    },
-    select: {
-      id: true,
-      status: true,
-      name: true,
-    },
-  });
-
-  // Validate tenant exists
-  if (!tenant) {
-    throw new UnauthorizedError(
-      "Tenant not found. This organization is not registered in the system. Please contact support."
-    );
-  }
-
-  // Validate tenant is not suspended
-  if (tenant.status === "suspended") {
-    throw new ForbiddenError(
-      `Access suspended. The organization "${tenant.name}" has been suspended. Please contact billing or support.`
-    );
-  }
-
-  // Validate tenant is not cancelled
-  if (tenant.status === "cancelled") {
-    throw new ForbiddenError(
-      `Access denied. The organization "${tenant.name}" subscription has been cancelled. Please contact support to reactivate.`
-    );
-  }
-
-  // Create modified headers with authentication context
-  const headers = new Headers(req.headers);
-  headers.set("x-user-id", userId);
-  headers.set("x-tenant-id", tenant.id);
-
-  // Return authentication result
-  return {
-    userId,
-    tenantId: tenant.id,
-    headers,
-  };
+export async function requireAuth(_req: NextRequest): Promise<AuthResult> {
+  // requireTenantApiAuth() already throws UnauthorizedError/ForbiddenError
+  return await requireTenantApiAuth();
 }
 
 /**
  * Get current authenticated user from request
  *
- * Helper function to extract userId and tenantId from request headers
- * injected by requireAuth() middleware.
- *
- * @param req - Next.js request object (must have been processed by requireAuth)
- * @returns Object with userId and tenantId
- *
- * @throws {UnauthorizedError} If headers are missing (requireAuth not called)
- *
- * @example
- * // After requireAuth has been called
- * const { userId, tenantId } = getCurrentUser(req);
+ * @deprecated Use requireAuth() or requireTenantApiAuth() instead.
+ * Kept for backward compatibility with existing consumers.
  */
 export function getCurrentUser(req: NextRequest): {
   userId: string;
@@ -147,7 +64,7 @@ export function getCurrentUser(req: NextRequest): {
 
   if (!userId || !tenantId) {
     throw new UnauthorizedError(
-      "Authentication context missing. requireAuth() middleware must be called first."
+      "Authentication context missing. requireAuth() must be called first."
     );
   }
 

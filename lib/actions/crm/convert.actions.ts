@@ -9,15 +9,12 @@
  * @see lib/actions/crm/qualify.actions.ts for pattern reference
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
-import {
-  getAuditLogUuids,
-  getTenantUuidFromClerkOrgId,
-} from "@/lib/utils/clerk-uuid-mapper";
+import { getAuditLogUuids, resolveTenantId } from "@/lib/utils/audit-resolver";
 import {
   getCurrentProviderId,
   buildProviderFilter,
@@ -28,8 +25,6 @@ import {
   DEFAULT_OPPORTUNITY_STAGE,
 } from "@/lib/config/opportunity-stages";
 import { getOrgCurrency } from "@/lib/organization";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // Schema for convert action
 const ConvertSchema = z.object({
@@ -74,30 +69,10 @@ export async function convertLeadToOpportunityAction(
   );
 
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    logger.debug(
-      { userId: userId?.substring(0, 15), orgId: orgId?.substring(0, 15) },
-      "[convertLeadToOpportunityAction] Auth result"
-    );
+    // 1. Authentication & Authorization
+    const { userId, orgId } = await requireCrmAuth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      logger.debug(
-        { orgId, ADMIN_ORG_ID, match: orgId === ADMIN_ORG_ID },
-        "[convertLeadToOpportunityAction] Auth debug"
-      );
-      return {
-        success: false,
-        error: `Forbidden: Admin access required (org: ${orgId?.slice(0, 10)}...)`,
-      };
-    }
-
-    // 3. Validation Zod
+    // 2. Validation Zod
     const validation = ConvertSchema.safeParse(data);
     if (!validation.success) {
       const firstError = validation.error.issues[0];
@@ -130,8 +105,8 @@ export async function convertLeadToOpportunityAction(
     }
 
     // 7. Get currency from tenant (zero hardcoding principle)
-    // Lookup tenant UUID from Clerk org ID, then get configured currency
-    const tenant = orgId ? await getTenantUuidFromClerkOrgId(orgId) : null;
+    // Lookup tenant UUID from org ID, then get configured currency
+    const tenant = orgId ? await resolveTenantId(orgId) : null;
     const currency = tenant ? await getOrgCurrency(tenant.id) : "EUR";
 
     // 8. Transaction: Create opportunity + Update lead
@@ -179,7 +154,7 @@ export async function convertLeadToOpportunityAction(
           lead_qualification_score: currentLead.qualification_score,
           lead_assigned_to: currentLead.assigned_to, // Store for reference, not as FK
           notes: validation.data.notes || null,
-          created_by_clerk_id: userId, // Clerk user ID (not UUID)
+          created_by_user_id: userId,
         },
       };
 
@@ -219,7 +194,7 @@ export async function convertLeadToOpportunityAction(
     });
 
     // 8. Create audit log entry
-    // Look up proper UUIDs from Clerk IDs (adm_audit_logs requires UUID FKs)
+    // Look up proper UUIDs for audit log (adm_audit_logs requires UUID FKs)
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 
     if (tenantUuid && memberUuid) {

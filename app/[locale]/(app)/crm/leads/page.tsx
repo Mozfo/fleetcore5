@@ -5,7 +5,7 @@
  * Data: fetched client-side via Refine useList (both table and kanban views).
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { LeadsViewRouter } from "@/features/crm/leads/components/leads-view-router";
 import { localizedRedirect } from "@/lib/navigation";
 
@@ -14,10 +14,10 @@ interface LeadsPageProps {
 }
 
 export default async function LeadsPage({ params }: LeadsPageProps) {
-  const { userId } = await auth();
+  const session = await getSession();
   const { locale } = await params;
 
-  if (!userId) {
+  if (!session) {
     localizedRedirect("login", locale as "en" | "fr");
   }
 

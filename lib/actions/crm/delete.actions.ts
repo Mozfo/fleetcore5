@@ -6,23 +6,20 @@
  * Handles soft delete and GDPR permanent delete for leads.
  *
  * Security:
- * 1. Authentication via Clerk auth()
+ * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Authorization (FleetCore Admin only)
- * 4. Audit logging for compliance
+ * 3. Audit logging for compliance
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
 import {
   getCurrentProviderId,
   buildProviderFilter,
 } from "@/lib/utils/provider-context";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // Valid deletion reasons
 const DELETE_REASONS = [
@@ -62,19 +59,10 @@ export async function deleteLeadAction(
   permanentDelete: boolean = false
 ): Promise<DeleteLeadResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
+    // 1. Authentication & Authorization
+    const { userId, orgId } = await requireCrmAuth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validation Zod
+    // 2. Validation Zod
     const validation = DeleteLeadSchema.safeParse({
       leadId,
       reason,
@@ -212,19 +200,10 @@ export async function restoreLeadAction(
   leadId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
+    // 1. Authentication & Authorization
+    const { userId, orgId } = await requireCrmAuth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validate lead ID
+    // 2. Validate lead ID
     if (!z.string().uuid().safeParse(leadId).success) {
       return { success: false, error: "Invalid lead ID" };
     }

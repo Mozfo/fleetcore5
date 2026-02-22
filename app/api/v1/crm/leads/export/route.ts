@@ -16,6 +16,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 // CSV field definitions with labels
 const CSV_FIELDS = [
@@ -106,20 +108,8 @@ function formatDate(date: Date | null | undefined): string {
  */
 export async function POST(request: NextRequest) {
   try {
-    // STEP 1: Auth from middleware headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    if (!userId || !orgId) {
-      logger.error({ userId, orgId }, "[CRM Lead Export] Missing auth headers");
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: "UNAUTHORIZED", message: "Authentication required" },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via direct auth helper
+    await requireCrmApiAuth();
 
     // STEP 2: Parse request body
     const body = await request.json();
@@ -297,6 +287,16 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[CRM Lead Export] Error exporting leads");
 
     return NextResponse.json(

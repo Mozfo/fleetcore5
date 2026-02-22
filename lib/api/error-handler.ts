@@ -34,6 +34,7 @@ import * as Sentry from "@sentry/nextjs";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger";
 import {
+  AppError,
   ValidationError,
   NotFoundError,
   ConflictError,
@@ -926,6 +927,18 @@ export function handleApiError(
     // Pattern A: ConflictError (duplicate/conflict)
     errorResponse = formatConflictError(error, enrichedContext);
     statusCode = 409;
+  } else if (error instanceof AppError) {
+    // Auth errors (UnauthorizedError 401, ForbiddenError 403) and other AppError subclasses
+    errorResponse = {
+      error: {
+        code: (error.code ?? ErrorCode.INTERNAL_ERROR) as ErrorCode,
+        message: error.message,
+        path: enrichedContext.path,
+        timestamp: enrichedContext.timestamp,
+        request_id: enrichedContext.request_id,
+      },
+    };
+    statusCode = error.statusCode;
   } else {
     // Pattern B fallback + Prisma errors + unknown errors
     // Phase 3.3: formatInternalError now handles Prisma errors and returns

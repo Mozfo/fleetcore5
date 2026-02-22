@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useSignIn } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -27,7 +27,6 @@ function ResetPasswordForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const { isLoaded, signIn } = useSignIn();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -69,37 +68,31 @@ function ResetPasswordForm() {
   }, [token, t]);
 
   const onSubmit = async (data: FormData) => {
-    if (!isLoaded || !token) return;
+    if (!token) return;
 
     setIsLoading(true);
     setError("");
 
-    try {
-      const result = await signIn.attemptFirstFactor({
-        strategy: "reset_password_email_code",
-        code: token,
-        password: data.password,
-      });
+    const { error: resetError } = await authClient.resetPassword({
+      newPassword: data.password,
+      token,
+    });
 
-      if (result.status === "complete") {
-        setSuccess(true);
-        setTimeout(() => {
-          router.push(localizedPath("login") + "?reset=success");
-        }, 2000);
-      }
-    } catch (err: unknown) {
-      let errorMessage = t("resetPassword.invalidOrExpired");
-      if (err && typeof err === "object" && "errors" in err) {
-        const clerkError = err as { errors?: Array<{ message: string }> };
-        if (clerkError.errors?.[0]?.message?.includes("expired")) {
-          errorMessage = t("resetPassword.linkExpired");
-        }
-      }
+    if (resetError) {
+      const errorMessage = resetError.message?.includes("expired")
+        ? t("resetPassword.linkExpired")
+        : t("resetPassword.invalidOrExpired");
       setError(errorMessage);
       setTokenValid(false);
-    } finally {
       setIsLoading(false);
+      return;
     }
+
+    setSuccess(true);
+    setTimeout(() => {
+      router.push(localizedPath("login") + "?reset=success");
+    }, 2000);
+    setIsLoading(false);
   };
 
   if (success) {

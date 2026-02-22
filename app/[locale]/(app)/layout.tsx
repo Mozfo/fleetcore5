@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Toaster } from "sonner";
@@ -14,7 +14,7 @@ export default async function AppLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   const { locale } = await params;
 
   if (!user) {

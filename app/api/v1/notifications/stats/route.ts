@@ -1,11 +1,11 @@
 /**
  * GET /api/v1/notifications/stats
  * Get notification statistics and analytics
- * Requires authentication (Clerk)
+ * Requires authentication
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { NotificationLogRepository } from "@/lib/repositories/notification-log.repository";
 import { getStatsSchema } from "@/lib/validators/notification.validators";
 import { prisma } from "@/lib/prisma";
@@ -14,8 +14,8 @@ import { ZodError } from "zod";
 export async function GET(request: NextRequest) {
   try {
     // Authentication check
-    const { userId } = await auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json(
         { error: "Unauthorized - Authentication required" },
         { status: 401 }

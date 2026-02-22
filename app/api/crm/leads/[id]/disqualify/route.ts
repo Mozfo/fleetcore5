@@ -8,16 +8,16 @@
  * Optionally adds email to crm_blacklist.
  *
  * Security:
- * - Protected endpoint (Clerk auth required)
+ * - Protected endpoint (auth required)
  *
  * @module app/api/crm/leads/[id]/disqualify/route
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { z } from "zod";
 import { leadStatusService } from "@/lib/services/crm/lead-status.service";
-import { getProviderEmployeeUuidFromClerkUserId } from "@/lib/utils/clerk-uuid-mapper";
+import { resolveEmployeeId } from "@/lib/utils/audit-resolver";
 import { logger } from "@/lib/logger";
 
 // ============================================================================
@@ -75,8 +75,8 @@ export async function POST(
 ) {
   try {
     // Auth check
-    const { userId } = await auth();
-    if (!userId) {
+    const session = await getSession();
+    if (!session) {
       return NextResponse.json(
         {
           success: false,
@@ -88,6 +88,7 @@ export async function POST(
         { status: 401 }
       );
     }
+    const { userId } = session;
 
     const { id: leadId } = await params;
 
@@ -131,8 +132,8 @@ export async function POST(
       blacklist: addToBlacklist,
     } = validationResult.data;
 
-    // Resolve Clerk userId to provider employee UUID
-    const employee = await getProviderEmployeeUuidFromClerkUserId(userId);
+    // Resolve userId to provider employee UUID
+    const employee = await resolveEmployeeId(userId);
     const employeeUuid = employee?.id || null;
 
     // Disqualify lead via service

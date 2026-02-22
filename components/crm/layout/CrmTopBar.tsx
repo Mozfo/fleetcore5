@@ -6,8 +6,8 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/layout/UserMenu";
 
 interface CrmTopBarProps {
   afterSignOutUrl: string;
@@ -31,7 +31,7 @@ export function CrmTopBar({ afterSignOutUrl }: CrmTopBarProps) {
         </Button>
 
         {/* User Menu */}
-        <UserButton afterSignOutUrl={afterSignOutUrl} />
+        <UserMenu afterSignOutUrl={afterSignOutUrl} />
       </div>
     </div>
   );

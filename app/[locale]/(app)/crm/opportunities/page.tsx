@@ -5,11 +5,11 @@
  */
 
 import { Suspense, cache } from "react";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { OpportunitiesPageClient } from "@/components/crm/opportunities/OpportunitiesPageClient";
 import { localizedRedirect } from "@/lib/navigation";
-import { getMemberUuidFromClerkUserId } from "@/lib/utils/clerk-uuid-mapper";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 import type {
   Opportunity,
   OpportunityStage,
@@ -253,16 +253,16 @@ export default async function OpportunitiesPage({
   params,
   searchParams,
 }: OpportunitiesPageProps) {
-  const { userId } = await auth();
+  const session = await getSession();
   const { locale } = await params;
 
-  if (!userId) {
+  if (!session) {
     localizedRedirect("login", locale as "en" | "fr");
   }
 
   const searchParamsData = await searchParams;
 
-  const member = await getMemberUuidFromClerkUserId(userId);
+  const member = await resolveMemberId(session.userId);
   const currentUserMemberUuid = member?.id;
 
   const initialFilters = parseFiltersFromURL(

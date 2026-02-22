@@ -5,7 +5,7 @@
 
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { getQuoteWithItemsAction } from "@/lib/actions/crm/quote.actions";
 import { QuoteForm } from "@/components/crm/quotes/QuoteForm";
@@ -53,10 +53,10 @@ async function fetchOpportunities() {
 }
 
 export default async function EditQuotePage({ params }: EditQuotePageProps) {
-  const { userId } = await auth();
+  const session = await getSession();
   const { locale, id } = await params;
 
-  if (!userId) {
+  if (!session) {
     localizedRedirect("login", locale as "en" | "fr");
   }
 

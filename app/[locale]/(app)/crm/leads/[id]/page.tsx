@@ -9,7 +9,7 @@
  */
 
 import { notFound } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { LeadDetailPage } from "@/components/crm/leads/LeadDetailPage";
 import type { Lead } from "@/types/crm";
@@ -164,16 +164,14 @@ export default async function LeadPage({ params }: LeadPageProps) {
   const { locale, id } = await params;
 
   // Run auth, lead+navigation, and owners ALL in parallel (single DB round-trip for lead+nav)
-  const [authResult, leadResult, owners] = await Promise.all([
-    auth(),
+  const [session, leadResult, owners] = await Promise.all([
+    getSession(),
     getLeadWithNavigation(id),
     getOwners(),
   ]);
 
-  const { userId, orgId } = authResult;
-
   // Require authentication
-  if (!userId || !orgId) {
+  if (!session) {
     notFound();
   }
 

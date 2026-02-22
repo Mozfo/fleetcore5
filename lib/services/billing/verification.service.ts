@@ -8,7 +8,7 @@
  * 1. Customer receives email with verification link after payment
  * 2. Customer fills verification form (company details, admin designation, CGI/CGU)
  * 3. This service validates token and updates tenant/masterdata
- * 4. ClerkService sends admin invitation
+ * 4. AuthService sends admin invitation
  *
  * @module lib/services/billing/verification.service
  */
@@ -16,7 +16,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger";
-import { clerkService } from "@/lib/services/clerk/clerk.service";
+import { authService } from "@/lib/services/auth/auth.service";
 import {
   type VerificationSubmitInput,
   type VerificationResult,
@@ -152,7 +152,7 @@ export class VerificationService {
    * 1. Validate token (not expired, not already used)
    * 2. Update adm_tenants with admin info and CGI tracking
    * 3. Update clt_masterdata with company legal info
-   * 4. Invite admin via Clerk
+   * 4. Invite admin via AuthService
    * 5. Mark verification as completed
    */
   async submitVerification(
@@ -224,7 +224,7 @@ export class VerificationService {
         return { tenantId };
       });
 
-      // Step 3: Get tenant details for Clerk invitation
+      // Step 3: Get tenant details for invitation
       const tenant = await prisma.adm_tenants.findUnique({
         where: { id: result.tenantId },
         select: {
@@ -246,16 +246,16 @@ export class VerificationService {
         };
       }
 
-      // Step 4: Invite admin via Clerk
+      // Step 4: Invite admin via AuthService
       let adminInvitationSent = false;
 
       if (tenant.clerk_organization_id) {
         try {
-          const inviteResult = await clerkService.inviteAdmin({
+          const inviteResult = await authService.inviteAdmin({
             organizationId: tenant.clerk_organization_id,
             email: input.admin_email,
             name: input.admin_name,
-            role: "org:admin",
+            role: "admin",
           });
 
           if (inviteResult.success) {
@@ -285,20 +285,20 @@ export class VerificationService {
               "[Verification] Admin invitation failed - will retry later"
             );
           }
-        } catch (clerkError) {
+        } catch (inviteError) {
           logger.error(
             {
               tenantId: tenant.id,
               error:
-                clerkError instanceof Error ? clerkError.message : "Unknown",
+                inviteError instanceof Error ? inviteError.message : "Unknown",
             },
-            "[Verification] Clerk invitation error - non-fatal"
+            "[Verification] Invitation error - non-fatal"
           );
         }
       } else {
         logger.warn(
           { tenantId: tenant.id },
-          "[Verification] No Clerk organization - skipping invitation"
+          "[Verification] No auth organization - skipping invitation"
         );
       }
 

@@ -4,29 +4,22 @@
  * CRM Lead Server Actions
  *
  * Server Actions for CRM backoffice operations.
- * Uses Clerk auth() directly - no middleware tenant check required.
- *
  * Security:
- * 1. Authentication via Clerk auth()
+ * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Authorization (FleetCore Admin only)
- *
- * @see https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
- * @see https://clerk.com/articles/complete-authentication-guide-for-nextjs-app-router
+ * 3. Provider isolation via getCurrentProviderId
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
 import {
   getCurrentProviderId,
   buildProviderFilter,
 } from "@/lib/utils/provider-context";
 import type { LeadStatus } from "@/types/crm";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // Schema de validation pour status update (Kanban)
 // V6.6: 9 statuts (added callback_requested)
@@ -92,12 +85,8 @@ export async function updateLeadStatusAction(
   }
 ): Promise<UpdateStatusResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
     // 2. Validation Zod
     const validation = UpdateStatusSchema.safeParse({
@@ -111,12 +100,7 @@ export async function updateLeadStatusAction(
       return { success: false, error: "Invalid input" };
     }
 
-    // 3. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 4. Get provider context for data isolation
+    // 3. Get provider context for data isolation
     const providerId = await getCurrentProviderId();
 
     // 5. Fetch current lead to get old status and metadata
@@ -236,23 +220,10 @@ export async function updateLeadAction(
   logger.debug({ leadId, data }, "[updateLeadAction] CALLED");
 
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    logger.debug(
-      { userId: userId?.substring(0, 15), orgId: orgId?.substring(0, 15) },
-      "[updateLeadAction] Auth result"
-    );
+    // 1. Authentication & Authorization
+    const { userId, orgId } = await requireCrmAuth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validation Zod
+    // 2. Validation Zod
     const validation = UpdateLeadSchema.safeParse(data);
     if (!validation.success) {
       const firstError = validation.error.issues[0];
@@ -319,7 +290,7 @@ export async function updateLeadAction(
     });
 
     // 8. Create audit log entry
-    // Look up proper UUIDs from Clerk IDs (adm_audit_logs requires UUID FKs)
+    // Look up proper UUIDs for audit log (adm_audit_logs requires UUID FKs)
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 
     if (tenantUuid && memberUuid) {

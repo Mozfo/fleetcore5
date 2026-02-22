@@ -4,12 +4,10 @@
  * CRM Opportunity Server Actions
  *
  * Server Actions for opportunity pipeline operations.
- * Uses Clerk auth() directly - no middleware tenant check required.
- *
  * Security:
- * 1. Authentication via Clerk auth()
+ * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Authorization (FleetCore Admin only)
+ * 3. Provider isolation via getCurrentProviderId
  *
  * Business Logic:
  * - Stage changes reset stage_entered_at and update probability
@@ -19,12 +17,12 @@
  * @module lib/actions/crm/opportunity.actions
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
 import {
   getCurrentProviderId,
   buildProviderFilter,
@@ -40,8 +38,6 @@ import { orderService } from "@/lib/services/crm/order.service";
 import { BILLING_CYCLES } from "@/lib/validators/crm/order.validators";
 import { NotFoundError, ValidationError } from "@/lib/core/errors";
 import { sendOrderCreatedNotification } from "@/lib/services/notification";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // ============================================================================
 // Schemas
@@ -216,22 +212,10 @@ export async function createOpportunityAction(
   data: CreateOpportunityData
 ): Promise<CreateOpportunityResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
+    // 1. Authentication & Authorization
+    const { userId, orgId } = await requireCrmAuth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return {
-        success: false,
-        error: "Forbidden: Admin access required",
-      };
-    }
-
-    // 3. Validation
+    // 2. Validation
     const validation = CreateOpportunitySchema.safeParse(data);
     if (!validation.success) {
       const firstError = validation.error.issues[0];
@@ -362,12 +346,8 @@ export async function updateOpportunityStageAction(
   stage: OpportunityStage
 ): Promise<UpdateStageResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
     // 2. Validation
     const validation = UpdateStageSchema.safeParse({ opportunityId, stage });
@@ -375,12 +355,7 @@ export async function updateOpportunityStageAction(
       return { success: false, error: "Invalid input" };
     }
 
-    // 3. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 4. Fetch current opportunity
+    // 3. Fetch current opportunity
     const current = await db.crm_opportunities.findUnique({
       where: { id: opportunityId },
       select: {
@@ -499,19 +474,10 @@ export async function updateOpportunityAction(
   data: UpdateOpportunityData
 ): Promise<UpdateOpportunityResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
+    // 1. Authentication & Authorization
+    const { userId, orgId } = await requireCrmAuth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Validation
+    // 2. Validation
     const validation = UpdateOpportunitySchema.safeParse(data);
     if (!validation.success) {
       const firstError = validation.error.issues[0];
@@ -675,12 +641,8 @@ export async function markOpportunityWonAction(
   params: MarkAsWonInput
 ): Promise<MarkAsWonResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
     // 2. Validation with Zod schema
     const validation = MarkAsWonSchema.safeParse(params);
@@ -693,12 +655,7 @@ export async function markOpportunityWonAction(
     }
     const validated = validation.data;
 
-    // 3. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 4. Get provider context for data isolation
+    // 3. Get provider context for data isolation
     const providerId = await getCurrentProviderId();
 
     if (!providerId) {
@@ -829,12 +786,8 @@ export async function markOpportunityLostAction(
   loss_notes?: string
 ): Promise<MarkWonLostResult> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
     // 2. Validation
     const validation = MarkLostSchema.safeParse({
@@ -846,12 +799,7 @@ export async function markOpportunityLostAction(
       return { success: false, error: "Invalid input" };
     }
 
-    // 3. Authorization
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 4. Get provider context for data isolation
+    // 3. Get provider context for data isolation
     const providerId = await getCurrentProviderId();
 
     // 5. Fetch opportunity (with provider filter)
@@ -949,19 +897,10 @@ export async function getOpportunitiesAction(options?: {
   | { success: false; error: string }
 > {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
+    // 1. Authentication & Authorization
+    await requireCrmAuth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    // 2. Authorization
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 3. Get provider context for data isolation
+    // 2. Get provider context for data isolation
     const providerId = await getCurrentProviderId();
 
     const page = options?.page ?? 1;
@@ -1038,24 +977,15 @@ export async function deleteOpportunityAction(
   reason?: string
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
+    // 1. Authentication & Authorization
+    const { userId } = await requireCrmAuth();
 
     // 2. Validation
     if (!opportunityId || typeof opportunityId !== "string") {
       return { success: false, error: "Invalid opportunity ID" };
     }
 
-    // 3. Authorization
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      return { success: false, error: "Forbidden: Admin access required" };
-    }
-
-    // 4. Get provider context for data isolation
+    // 3. Get provider context for data isolation
     const providerId = await getCurrentProviderId();
 
     // 5. Check opportunity exists (with provider filter)

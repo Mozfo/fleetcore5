@@ -1,7 +1,7 @@
 "use client";
 
 import { Refine } from "@refinedev/core";
-import { useUser, useAuth, useOrganization } from "@clerk/nextjs";
+import { useUser, useAuth, useActiveOrganization } from "@/lib/auth/client";
 import { fleetcoreDataProvider } from "@/lib/providers/refine-data-provider";
 import { createAuthProvider } from "@/lib/providers/refine-auth-provider";
 import { createAccessControlProvider } from "@/lib/providers/refine-access-control-provider";
@@ -14,7 +14,7 @@ import type { OrgRole } from "@/lib/config/permissions";
 export function RefineProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
   const { userId, orgId, orgRole, signOut } = useAuth();
-  const { organization } = useOrganization();
+  const { organization } = useActiveOrganization();
 
   const authProvider = createAuthProvider({
     userId,
@@ -27,7 +27,9 @@ export function RefineProvider({ children }: { children: React.ReactNode }) {
           imageUrl: user.imageUrl,
         }
       : null,
-    signOut: () => signOut(),
+    signOut: async () => {
+      await signOut();
+    },
   });
 
   const accessControlProvider = createAccessControlProvider(

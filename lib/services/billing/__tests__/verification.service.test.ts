@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { VerificationService } from "../verification.service";
 import { prisma } from "@/lib/prisma";
-import { clerkService } from "@/lib/services/clerk/clerk.service";
+import { authService } from "@/lib/services/auth/auth.service";
 import { CGI_VERSION } from "@/lib/validators/billing/verification.validators";
 import { Prisma } from "@prisma/client";
 
@@ -29,8 +29,8 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-vi.mock("@/lib/services/clerk/clerk.service", () => ({
-  clerkService: {
+vi.mock("@/lib/services/auth/auth.service", () => ({
+  authService: {
     inviteAdmin: vi.fn(),
   },
 }));
@@ -54,7 +54,7 @@ const mockTenantValid = {
   verification_token: mockToken,
   verification_token_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
   verification_completed_at: null,
-  clerk_organization_id: "org_clerk_123",
+  clerk_organization_id: "org_auth_123",
 };
 
 const mockTenantExpired = {
@@ -109,7 +109,7 @@ describe("VerificationService", () => {
     vi.mocked(prisma.clt_masterdata.updateMany).mockResolvedValue({
       count: 1,
     } as never);
-    vi.mocked(clerkService.inviteAdmin).mockResolvedValue({
+    vi.mocked(authService.inviteAdmin).mockResolvedValue({
       success: true,
       invitationId: "inv_123",
     });
@@ -226,22 +226,22 @@ describe("VerificationService", () => {
       );
     });
 
-    it("should invite admin via Clerk", async () => {
+    it("should invite admin via AuthService", async () => {
       const result = await service.submitVerification(
         mockVerificationInput,
         mockClientIp
       );
 
-      expect(clerkService.inviteAdmin).toHaveBeenCalledWith({
-        organizationId: "org_clerk_123",
+      expect(authService.inviteAdmin).toHaveBeenCalledWith({
+        organizationId: "org_auth_123",
         email: "admin@testcompany.com",
         name: "John Doe",
-        role: "org:admin",
+        role: "admin",
       });
       expect(result.adminInvitationSent).toBe(true);
     });
 
-    it("should update admin_invited_at after successful Clerk invitation", async () => {
+    it("should update admin_invited_at after successful invitation", async () => {
       await service.submitVerification(mockVerificationInput, mockClientIp);
 
       // Second update call is for admin_invited_at
@@ -254,10 +254,10 @@ describe("VerificationService", () => {
       );
     });
 
-    it("should continue if Clerk invitation fails", async () => {
-      vi.mocked(clerkService.inviteAdmin).mockResolvedValue({
+    it("should continue if invitation fails", async () => {
+      vi.mocked(authService.inviteAdmin).mockResolvedValue({
         success: false,
-        error: "Clerk API error",
+        error: "Auth API error",
       });
 
       const result = await service.submitVerification(
@@ -269,7 +269,7 @@ describe("VerificationService", () => {
       expect(result.adminInvitationSent).toBe(false);
     });
 
-    it("should skip Clerk invitation if no organization ID", async () => {
+    it("should skip invitation if no organization ID", async () => {
       vi.mocked(prisma.adm_tenants.findUnique).mockResolvedValue({
         ...mockTenantValid,
         clerk_organization_id: null,
@@ -281,7 +281,7 @@ describe("VerificationService", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(clerkService.inviteAdmin).not.toHaveBeenCalled();
+      expect(authService.inviteAdmin).not.toHaveBeenCalled();
     });
 
     it("should fail if token is invalid", async () => {

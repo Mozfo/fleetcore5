@@ -5,6 +5,7 @@ import {
   expenseQuerySchema,
 } from "@/lib/validators/vehicles.validators";
 import { handleApiError } from "@/lib/api/error-handler";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * POST /api/v1/vehicles/:id/expenses
@@ -28,15 +29,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // 1. Extract auth headers (before try for error context)
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { userId, tenantId } = await requireTenantApiAuth();
 
     // 3. Extract vehicle ID from params
     const { id: vehicleId } = await params;
@@ -60,8 +54,6 @@ export async function POST(
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "POST",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }
@@ -90,15 +82,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // 1. Extract auth headers (before try for error context)
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { tenantId } = await requireTenantApiAuth();
 
     // 3. Extract vehicle ID from params
     const { id: vehicleId } = await params;
@@ -133,8 +118,6 @@ export async function GET(
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

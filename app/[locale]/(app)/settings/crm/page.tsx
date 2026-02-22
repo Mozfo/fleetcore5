@@ -10,7 +10,7 @@
  */
 
 import { Suspense, cache } from "react";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { CrmSettingsPageClient } from "@/components/crm/settings/CrmSettingsPageClient";
 import { localizedRedirect } from "@/lib/navigation";
@@ -88,11 +88,11 @@ export default async function CrmSettingsPage({
   params,
   searchParams,
 }: CrmSettingsPageProps) {
-  const { userId } = await auth();
+  const session = await getSession();
   const { locale } = await params;
   const { tab } = await searchParams;
 
-  if (!userId) {
+  if (!session) {
     localizedRedirect("login", locale as "en" | "fr");
   }
 

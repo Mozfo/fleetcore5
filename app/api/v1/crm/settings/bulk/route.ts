@@ -10,9 +10,8 @@
  * Useful for saving entire configuration pages (e.g., pipeline stages).
  *
  * Authentication flow:
- * 1. Middleware validates: userId + FleetCore Admin org membership + settings:edit
- * 2. Middleware injects: x-user-id, x-org-id headers
- * 3. This route trusts middleware validation
+ * 1. Auth guard validates: userId + FleetCore Admin org membership + settings:edit
+ * 2. Auth guard returns userId, orgId directly
  *
  * Security: Access restricted to FleetCore Admin users with settings:edit permission.
  *
@@ -25,12 +24,14 @@ import { BulkUpdateSettingsSchema } from "@/lib/validators/crm/settings.validato
 import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * POST /api/v1/crm/settings/bulk
  * Bulk update multiple CRM settings in a single atomic transaction
  *
- * Authentication: Via middleware (FleetCore Admin + settings:edit)
+ * Authentication: Via auth guard (FleetCore Admin + settings:edit)
  *
  * Request Body: {
  *   updates: [
@@ -70,27 +71,8 @@ import { logger } from "@/lib/logger";
  */
 export async function POST(request: NextRequest) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Settings Bulk] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via auth guard
+    const { userId } = await requireCrmApiAuth();
 
     // STEP 2: Parse request body
     const body = await request.json();
@@ -145,6 +127,16 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     // Zod validation error
     if (error instanceof ZodError) {
       return NextResponse.json(

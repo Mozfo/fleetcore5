@@ -10,12 +10,11 @@
  * Settings are identified by their unique key (e.g., "lead_stages").
  *
  * Authentication flow:
- * 1. Middleware validates: userId + FleetCore Admin org membership + settings:view/edit
- * 2. Middleware injects: x-user-id, x-org-id headers
- * 3. This route trusts middleware validation
+ * 1. Auth guard validates: userId + FleetCore Admin org membership + settings:view/edit
+ * 2. Auth guard returns userId, orgId directly
  *
  * Security: Access restricted to FleetCore Admin users with settings permissions
- * (org:adm_admin, org:admin, org:provider_admin) - enforced at middleware level.
+ * (org:adm_admin, org:admin, org:provider_admin) - enforced at auth guard level.
  *
  * @module app/api/v1/crm/settings/[key]
  */
@@ -26,13 +25,15 @@ import { UpdateSettingSchema } from "@/lib/validators/crm/settings.validators";
 import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { getProviderEmployeeUuidFromClerkUserId } from "@/lib/utils/clerk-uuid-mapper";
+import { resolveEmployeeId } from "@/lib/utils/audit-resolver";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * GET /api/v1/crm/settings/[key]
  * Retrieve a specific CRM setting by key
  *
- * Authentication: Via middleware (FleetCore Admin + settings:view)
+ * Authentication: Via auth guard (FleetCore Admin + settings:view)
  *
  * Response 200: Setting with full data
  * Response 401: Unauthorized
@@ -58,28 +59,9 @@ export async function GET(
   { params }: { params: Promise<{ key: string }> }
 ) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    // STEP 1: Authenticate via auth guard
+    await requireCrmApiAuth();
     const { key } = await params;
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Settings Detail] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
 
     // STEP 2: Validate key format (snake_case, lowercase)
     const keyRegex = /^[a-z][a-z0-9_]*$/;
@@ -139,6 +121,16 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[CRM Settings Detail] Error fetching setting");
 
     return NextResponse.json(
@@ -158,7 +150,7 @@ export async function GET(
  * PUT /api/v1/crm/settings/[key]
  * Update an existing CRM setting (or create via upsert)
  *
- * Authentication: Via middleware (FleetCore Admin + settings:edit)
+ * Authentication: Via auth guard (FleetCore Admin + settings:edit)
  *
  * Request Body: UpdateSettingInput (validated with Zod)
  * Response 200: Updated setting with incremented version
@@ -182,28 +174,9 @@ export async function PUT(
   { params }: { params: Promise<{ key: string }> }
 ) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    // STEP 1: Authenticate via auth guard
+    const { userId } = await requireCrmApiAuth();
     const { key } = await params;
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Settings Update] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
 
     // STEP 2: Validate key format
     const keyRegex = /^[a-z][a-z0-9_]*$/;
@@ -247,7 +220,7 @@ export async function PUT(
 
     // STEP 6: Convert Clerk user ID to provider employee UUID for audit trail
     // Note: crm_settings.updated_by has FK to adm_provider_employees, not clt_members
-    const employee = await getProviderEmployeeUuidFromClerkUserId(userId);
+    const employee = await resolveEmployeeId(userId);
     const employeeUuid = employee?.id ?? null;
 
     // STEP 7: Upsert setting
@@ -311,6 +284,16 @@ export async function PUT(
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     // Zod validation error
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -345,7 +328,7 @@ export async function PUT(
  * DELETE /api/v1/crm/settings/[key]
  * Soft delete a CRM setting
  *
- * Authentication: Via middleware (FleetCore Admin + settings:edit)
+ * Authentication: Via auth guard (FleetCore Admin + settings:edit)
  *
  * Response 204: No Content (successful soft delete)
  * Response 400: Cannot delete system setting
@@ -363,28 +346,9 @@ export async function DELETE(
   { params }: { params: Promise<{ key: string }> }
 ) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    // STEP 1: Authenticate via auth guard
+    const { userId } = await requireCrmApiAuth();
     const { key } = await params;
-
-    // Defensive check
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Settings Delete] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
 
     // STEP 2: Validate key format
     const keyRegex = /^[a-z][a-z0-9_]*$/;
@@ -404,7 +368,7 @@ export async function DELETE(
 
     // STEP 3: Convert Clerk user ID to provider employee UUID for audit trail
     // Note: crm_settings.deleted_by has FK to adm_provider_employees, not clt_members
-    const employee = await getProviderEmployeeUuidFromClerkUserId(userId);
+    const employee = await resolveEmployeeId(userId);
     const employeeUuid = employee?.id ?? null;
 
     // STEP 4: Soft delete
@@ -455,6 +419,16 @@ export async function DELETE(
     // STEP 6: Return 204 No Content
     return new NextResponse(null, { status: 204 });
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[CRM Settings Delete] Error deleting setting");
 
     return NextResponse.json(

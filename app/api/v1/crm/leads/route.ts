@@ -25,7 +25,8 @@ import { LeadCreationService } from "@/lib/services/crm/lead-creation.service";
 import { CreateLeadSchema } from "@/lib/validators/crm/lead.validators";
 import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 // ── Security: Allowed sort fields (must match DataTable sortable columns) ────
 const ALLOWED_SORT_FIELDS = new Set([
@@ -124,28 +125,8 @@ const ALLOWED_SORT_FIELDS = new Set([
  */
 export async function POST(request: NextRequest) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    // Security: Middleware already validated FleetCore Admin membership + CRM role
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    // Defensive check (should never fail if middleware is correctly configured)
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Lead Create] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via direct auth helper
+    const { userId, orgId } = await requireCrmApiAuth();
 
     // STEP 2: Parse request body
     const body = await request.json();
@@ -194,6 +175,16 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     // ERROR HANDLING
+
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
 
     // Zod validation error
     if (error instanceof ZodError) {
@@ -321,28 +312,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    // STEP 1: Read authentication from middleware-injected headers
-    // Security: Middleware already validated FleetCore Admin membership + CRM role
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    // Defensive check (should never fail if middleware is correctly configured)
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Lead List] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via direct auth helper
+    await requireCrmApiAuth();
 
     // STEP 2: Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -592,6 +563,16 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     // Error handling
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     if (error instanceof Error) {
       return NextResponse.json(
         {

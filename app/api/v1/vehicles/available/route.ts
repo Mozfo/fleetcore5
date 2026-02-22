@@ -2,21 +2,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { VehicleService } from "@/lib/services/vehicles/vehicle.service";
 import { handleApiError } from "@/lib/api/error-handler";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * GET /api/v1/vehicles/available
  * List all available vehicles (not currently assigned)
  */
 export async function GET(request: NextRequest) {
-  // 1. Extract headers (injected by middleware) - declared before try for error context
-  const tenantId = request.headers.get("x-tenant-id");
-  const userId = request.headers.get("x-user-id");
-
   try {
-    // 2. Auth check
-    if (!tenantId || !userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { tenantId } = await requireTenantApiAuth();
 
     // 2. Call VehicleService to list available vehicles
     const vehicleService = new VehicleService();
@@ -28,8 +22,6 @@ export async function GET(request: NextRequest) {
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

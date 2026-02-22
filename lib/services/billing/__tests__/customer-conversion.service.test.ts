@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { CustomerConversionService } from "../customer-conversion.service";
 import { prisma } from "@/lib/prisma";
-import { clerkService } from "@/lib/services/clerk/clerk.service";
+import { authService } from "@/lib/services/auth/auth.service";
 import type Stripe from "stripe";
 
 // ===== MOCKS =====
@@ -38,8 +38,8 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-vi.mock("@/lib/services/clerk/clerk.service", () => ({
-  clerkService: {
+vi.mock("@/lib/services/auth/auth.service", () => ({
+  authService: {
     createOrganization: vi.fn(),
   },
 }));
@@ -178,9 +178,9 @@ describe("CustomerConversionService", () => {
     vi.mocked(prisma.crm_lead_activities.create).mockResolvedValue({} as never);
     vi.mocked(prisma.adm_tenants.update).mockResolvedValue({} as never);
 
-    vi.mocked(clerkService.createOrganization).mockResolvedValue({
+    vi.mocked(authService.createOrganization).mockResolvedValue({
       success: true,
-      organizationId: "org_clerk_123",
+      organizationId: "org_auth_123",
     });
   });
 
@@ -506,14 +506,14 @@ describe("CustomerConversionService", () => {
   });
 
   // ============================================
-  // SUITE 7: Clerk Organization
+  // SUITE 7: Auth Organization
   // ============================================
 
-  describe("Clerk Organization", () => {
-    it("should create Clerk organization", async () => {
+  describe("Auth Organization", () => {
+    it("should create auth organization", async () => {
       await service.convertLeadToCustomer(mockCheckoutSession);
 
-      expect(clerkService.createOrganization).toHaveBeenCalledWith(
+      expect(authService.createOrganization).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "Test Company",
           tenantId: "tenant-uuid-123",
@@ -521,27 +521,27 @@ describe("CustomerConversionService", () => {
       );
     });
 
-    it("should update tenant with clerk_organization_id", async () => {
+    it("should update tenant with organization ID (stored in clerk_organization_id column)", async () => {
       await service.convertLeadToCustomer(mockCheckoutSession);
 
       expect(prisma.adm_tenants.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "tenant-uuid-123" },
-          data: { clerk_organization_id: "org_clerk_123" },
+          data: { clerk_organization_id: "org_auth_123" },
         })
       );
     });
 
-    it("should continue if Clerk creation fails", async () => {
-      vi.mocked(clerkService.createOrganization).mockResolvedValue({
+    it("should continue if auth organization creation fails", async () => {
+      vi.mocked(authService.createOrganization).mockResolvedValue({
         success: false,
-        error: "Clerk API error",
+        error: "Auth API error",
       });
 
       const result = await service.convertLeadToCustomer(mockCheckoutSession);
 
       expect(result.success).toBe(true);
-      expect(result.clerkOrgId).toBeUndefined();
+      expect(result.authOrgId).toBeUndefined();
     });
   });
 
@@ -784,11 +784,11 @@ describe("CustomerConversionService", () => {
       );
     });
 
-    it("should pass segment info to Clerk organization", async () => {
+    it("should pass segment info to auth organization", async () => {
       await service.convertLeadToCustomer(mockCheckoutSession);
 
       // fleet_size = "10" -> segment_2 (Small Fleet)
-      expect(clerkService.createOrganization).toHaveBeenCalledWith(
+      expect(authService.createOrganization).toHaveBeenCalledWith(
         expect.objectContaining({
           metadata: expect.objectContaining({
             segment: "segment_2",

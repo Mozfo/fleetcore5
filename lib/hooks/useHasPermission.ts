@@ -1,6 +1,6 @@
 "use client";
 
-import { useOrganization } from "@clerk/nextjs";
+import { useActiveOrganization } from "@/lib/auth/client";
 import { useMemo } from "react";
 import {
   hasPermission,
@@ -14,7 +14,7 @@ import {
 import { MODULES, type ModuleConfig } from "@/lib/config/modules";
 
 /**
- * Hook to check user permissions based on Clerk orgRole
+ * Hook to check user permissions based on orgRole
  *
  * Usage:
  * ```tsx
@@ -30,9 +30,9 @@ import { MODULES, type ModuleConfig } from "@/lib/config/modules";
  * ```
  */
 export function useHasPermission() {
-  const { membership } = useOrganization();
+  const { membership } = useActiveOrganization();
 
-  // Get orgRole from Clerk membership
+  // Get orgRole from organization membership
   const orgRole = membership?.role as OrgRole | undefined;
 
   // Memoize permission checks to avoid recalculation
@@ -92,7 +92,7 @@ export function useHasPermission() {
     accessibleModuleKeys,
     accessibleModules,
 
-    // Loading state
+    // Loading state (undefined = not yet loaded from organization hook)
     isLoading: membership === undefined,
   };
 }

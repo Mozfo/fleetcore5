@@ -5,7 +5,7 @@
  */
 
 import { Suspense, cache } from "react";
-import { auth } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth/server";
 import { QuotesPageClient } from "@/components/crm/quotes/QuotesPageClient";
 import { localizedRedirect } from "@/lib/navigation";
 import {
@@ -90,10 +90,10 @@ export default async function QuotesPage({
   params,
   searchParams,
 }: QuotesPageProps) {
-  const { userId } = await auth();
+  const session = await getSession();
   const { locale } = await params;
 
-  if (!userId) {
+  if (!session) {
     localizedRedirect("login", locale as "en" | "fr");
   }
 

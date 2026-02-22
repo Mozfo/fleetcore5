@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { VehicleService } from "@/lib/services/vehicles/vehicle.service";
 import { handleApiError } from "@/lib/api/error-handler";
 import { logger } from "@/lib/logger";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * GET /api/v1/vehicles/insurance-expiring
@@ -10,16 +11,8 @@ import { logger } from "@/lib/logger";
  * Query params: daysAhead (default: 30)
  */
 export async function GET(request: NextRequest) {
-  // 1. Extract headers (injected by middleware) - declared before try for error context
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { tenantId } = await requireTenantApiAuth();
 
     // 3. Parse optional query parameter daysAhead
     const { searchParams } = new URL(request.url);
@@ -58,8 +51,6 @@ export async function GET(request: NextRequest) {
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "GET",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

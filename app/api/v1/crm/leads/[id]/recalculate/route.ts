@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { LeadScoringService } from "@/lib/services/crm/lead-scoring.service";
 import { logger } from "@/lib/logger";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 // Request body schema
 const RecalculateRequestSchema = z.object({
@@ -43,26 +45,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
-    // 1. Authentication - Read from middleware-injected headers (consistent with other routes)
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[Recalculate] Missing auth headers - middleware may be misconfigured"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        },
-        { status: 401 }
-      );
-    }
+    // 1. Authenticate via direct auth helper
+    const { userId } = await requireCrmApiAuth();
 
     // 3. Validate lead ID
     const { id: leadId } = await params;
@@ -114,6 +98,16 @@ export async function POST(
       notificationQueued: result.notificationQueued,
     });
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[POST /recalculate] Error");
 
     if (error instanceof Error && error.message.includes("not found")) {

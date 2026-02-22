@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
-import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
 import { fontVariables } from "@/lib/fonts";
 import { ActiveThemeProvider } from "@/components/active-theme";
@@ -62,7 +61,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <ActiveThemeProvider initialTheme={themeSettings}>
-            <ClerkProvider>{children}</ClerkProvider>
+            {children}
           </ActiveThemeProvider>
         </ThemeProvider>
       </body>

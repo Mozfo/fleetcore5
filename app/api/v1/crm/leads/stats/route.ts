@@ -19,7 +19,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { getMemberUuidFromClerkUserId } from "@/lib/utils/clerk-uuid-mapper";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 /**
  * GET /api/v1/crm/leads/stats
@@ -34,20 +36,8 @@ import { getMemberUuidFromClerkUserId } from "@/lib/utils/clerk-uuid-mapper";
  */
 export async function GET(request: NextRequest) {
   try {
-    // STEP 1: Auth from middleware headers
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
-
-    if (!userId || !orgId) {
-      logger.error({ userId, orgId }, "[CRM Lead Stats] Missing auth headers");
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: "UNAUTHORIZED", message: "Authentication required" },
-        },
-        { status: 401 }
-      );
-    }
+    // STEP 1: Authenticate via direct auth helper
+    const { userId } = await requireCrmApiAuth();
 
     // STEP 2: Parse query params
     const { searchParams } = new URL(request.url);
@@ -77,7 +67,7 @@ export async function GET(request: NextRequest) {
     previousEnd.setDate(previousEnd.getDate() - 1);
 
     // Get member UUID for "My Leads" count
-    const member = await getMemberUuidFromClerkUserId(userId);
+    const member = await resolveMemberId(userId);
     const memberUuid = member?.id;
 
     // STEP 3: Execute ALL queries in parallel (optimized - no sequential queries)
@@ -416,6 +406,16 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[CRM Lead Stats] Error fetching stats");
 
     return NextResponse.json(

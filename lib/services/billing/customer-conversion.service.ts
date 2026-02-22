@@ -8,7 +8,7 @@
  * 3. Generate tenant_code (C-XXXXXX format)
  * 4. Create adm_tenants with Stripe IDs
  * 5. Create clt_masterdata with client_code = tenant_code
- * 6. Create Clerk Organization
+ * 6. Create Auth Organization
  * 7. Update lead to converted status
  * 8. Generate verification token (24h expiry)
  * 9. Send verification email
@@ -23,7 +23,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { clerkService } from "@/lib/services/clerk/clerk.service";
+import { authService } from "@/lib/services/auth/auth.service";
 import { NotificationQueueService } from "@/lib/services/notification/queue.service";
 import { CountryRepository } from "@/lib/repositories/crm/country.repository";
 import { URLS } from "@/lib/config/urls.config";
@@ -74,7 +74,7 @@ export interface ConversionResult {
   success: boolean;
   tenantId?: string;
   tenantCode?: string;
-  clerkOrgId?: string;
+  authOrgId?: string;
   cltMasterdataId?: string;
   verificationToken?: string;
   verificationExpiresAt?: Date;
@@ -145,7 +145,7 @@ export class CustomerConversionService {
    *    - Generate tenant_code (C-XXXXXX)
    *    - Create adm_tenants
    *    - Create clt_masterdata
-   *    - Create Clerk Organization
+   *    - Create Auth Organization
    *    - Update lead to converted
    *    - Create activity log
    * 5. Generate verification token
@@ -315,10 +315,10 @@ export class CustomerConversionService {
         };
       });
 
-      // Step 7: Create Clerk Organization (outside transaction - external API)
-      let clerkOrgId: string | null = null;
+      // Step 7: Create Auth Organization (outside transaction)
+      let authOrgId: string | null = null;
       try {
-        const clerkResult = await clerkService.createOrganization({
+        const orgResult = await authService.createOrganization({
           name: lead.company_name || `${lead.first_name} ${lead.last_name}`,
           tenantId: result.tenant.id,
           metadata: {
@@ -330,25 +330,25 @@ export class CustomerConversionService {
           },
         });
 
-        if (clerkResult.success && clerkResult.organizationId) {
-          clerkOrgId = clerkResult.organizationId;
+        if (orgResult.success && orgResult.organizationId) {
+          authOrgId = orgResult.organizationId;
 
-          // Update tenant with Clerk org ID
+          // Update tenant with auth org ID (stored in clerk_organization_id column)
           await prisma.adm_tenants.update({
             where: { id: result.tenant.id },
-            data: { clerk_organization_id: clerkOrgId },
+            data: { clerk_organization_id: authOrgId },
           });
 
           logger.info(
-            { clerkOrgId, tenantId: result.tenant.id },
-            "[CustomerConversion] Clerk organization created"
+            { authOrgId, tenantId: result.tenant.id },
+            "[CustomerConversion] Auth organization created"
           );
         }
-      } catch (clerkError) {
+      } catch (orgError) {
         // Non-fatal: Log but continue
         logger.error(
-          { error: clerkError, tenantId: result.tenant.id },
-          "[CustomerConversion] Failed to create Clerk organization - will retry later"
+          { error: orgError, tenantId: result.tenant.id },
+          "[CustomerConversion] Failed to create auth organization - will retry later"
         );
       }
 
@@ -400,7 +400,7 @@ export class CustomerConversionService {
           leadId,
           tenantId: result.tenant.id,
           tenantCode,
-          clerkOrgId,
+          authOrgId,
         },
         "[CustomerConversion] Lead conversion completed successfully"
       );
@@ -409,7 +409,7 @@ export class CustomerConversionService {
         success: true,
         tenantId: result.tenant.id,
         tenantCode,
-        clerkOrgId: clerkOrgId || undefined,
+        authOrgId: authOrgId || undefined,
         cltMasterdataId: result.masterdata.id,
         verificationToken,
         verificationExpiresAt,

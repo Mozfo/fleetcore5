@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { VehicleService } from "@/lib/services/vehicles/vehicle.service";
 import { updateMaintenanceSchema } from "@/lib/validators/vehicles.validators";
 import { handleApiError } from "@/lib/api/error-handler";
+import { requireTenantApiAuth } from "@/lib/auth/api-guard";
 
 /**
  * PATCH /api/v1/vehicles/:id/maintenance/:maintenanceId
@@ -26,15 +27,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; maintenanceId: string }> }
 ) {
-  // 1. Extract auth headers (before try for error context)
-  const userId = request.headers.get("x-user-id");
-  const tenantId = request.headers.get("x-tenant-id");
-
   try {
-    // 2. Auth check
-    if (!userId || !tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { userId, tenantId } = await requireTenantApiAuth();
 
     // 3. Extract vehicle and maintenance IDs from params
     const { id: vehicleId, maintenanceId } = await params;
@@ -59,8 +53,6 @@ export async function PATCH(
     return handleApiError(error, {
       path: request.nextUrl.pathname,
       method: "PATCH",
-      tenantId: tenantId || undefined,
-      userId: userId || undefined,
     });
   }
 }

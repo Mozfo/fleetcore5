@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
@@ -12,7 +12,7 @@ export default async function LeadsPage({
 }: {
   searchParams: Promise<{ status?: string; country?: string; search?: string }>;
 }) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/en/login");

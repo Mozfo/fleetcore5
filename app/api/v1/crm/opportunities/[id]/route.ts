@@ -13,9 +13,8 @@
  * Status: open (active), won, lost, on_hold, cancelled
  *
  * Authentication flow:
- * 1. Middleware validates: userId + FleetCore Admin org membership + CRM role
- * 2. Middleware injects: x-user-id, x-org-id headers
- * 3. This route trusts middleware validation
+ * 1. Auth guard validates: userId + FleetCore Admin org membership + CRM role
+ * 2. Auth guard returns userId, orgId directly
  *
  * @module app/api/v1/crm/opportunities/[id]
  */
@@ -32,6 +31,8 @@ import {
   OPPORTUNITY_STAGE_VALUES,
 } from "@/lib/config/opportunity-stages";
 import type { Prisma } from "@prisma/client";
+import { requireCrmApiAuth } from "@/lib/auth/api-guard";
+import { AppError } from "@/lib/core/errors";
 
 // Zod schema for updating an opportunity
 const UpdateOpportunitySchema = z.object({
@@ -63,23 +64,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    await requireCrmApiAuth();
     const { id } = await params;
-
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Opportunity Detail] Missing auth headers"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: "UNAUTHORIZED", message: "Authentication required" },
-        },
-        { status: 401 }
-      );
-    }
 
     // Validate UUID format
     const uuidRegex =
@@ -228,6 +214,16 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[Opportunity Detail] Error fetching opportunity");
     return NextResponse.json(
       {
@@ -257,23 +253,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    const { userId } = await requireCrmApiAuth();
     const { id } = await params;
-
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Opportunity Update] Missing auth headers"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: "UNAUTHORIZED", message: "Authentication required" },
-        },
-        { status: 401 }
-      );
-    }
 
     // Validate UUID format
     const uuidRegex =
@@ -512,6 +493,16 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
@@ -552,23 +543,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = request.headers.get("x-user-id");
-    const orgId = request.headers.get("x-org-id");
+    const { userId } = await requireCrmApiAuth();
     const { id } = await params;
-
-    if (!userId || !orgId) {
-      logger.error(
-        { userId, orgId },
-        "[CRM Opportunity Delete] Missing auth headers"
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: "UNAUTHORIZED", message: "Authentication required" },
-        },
-        { status: 401 }
-      );
-    }
 
     // Validate UUID format
     const uuidRegex =
@@ -643,6 +619,16 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: error.code, message: error.message },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error({ error }, "[Opportunity Delete] Error deleting opportunity");
     return NextResponse.json(
       {

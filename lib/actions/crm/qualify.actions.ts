@@ -11,18 +11,16 @@
  * @see lib/actions/crm/lead.actions.ts for pattern reference
  */
 
-import { auth } from "@clerk/nextjs/server";
+import { requireCrmAuth } from "@/lib/auth/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
-import { getAuditLogUuids } from "@/lib/utils/clerk-uuid-mapper";
+import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
 import {
   getCurrentProviderId,
   buildProviderFilter,
 } from "@/lib/utils/provider-context";
-
-const ADMIN_ORG_ID = process.env.FLEETCORE_ADMIN_ORG_ID;
 
 // Stage order for validation (progression only, no going back)
 const STAGE_ORDER = [
@@ -68,30 +66,10 @@ export async function qualifyLeadAction(
   );
 
   try {
-    // 1. Authentication
-    const { userId, orgId } = await auth();
-    logger.debug(
-      { userId: userId?.substring(0, 15), orgId: orgId?.substring(0, 15) },
-      "[qualifyLeadAction] Auth result"
-    );
+    // 1. Authentication & Authorization
+    const { userId, orgId } = await requireCrmAuth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    // 2. Authorization - FleetCore Admin only
-    if (!ADMIN_ORG_ID || orgId !== ADMIN_ORG_ID) {
-      logger.debug(
-        { orgId, ADMIN_ORG_ID, match: orgId === ADMIN_ORG_ID },
-        "[qualifyLeadAction] Auth debug"
-      );
-      return {
-        success: false,
-        error: `Forbidden: Admin access required (org: ${orgId?.slice(0, 10)}...)`,
-      };
-    }
-
-    // 3. Validation Zod
+    // 2. Validation Zod
     const validation = QualifySchema.safeParse({ leadId, newStage, notes });
     if (!validation.success) {
       const firstError = validation.error.issues[0];
@@ -170,7 +148,7 @@ export async function qualifyLeadAction(
     });
 
     // 9. Create audit log entry
-    // Look up proper UUIDs from Clerk IDs (adm_audit_logs requires UUID FKs)
+    // Look up proper UUIDs for audit log (adm_audit_logs requires UUID FKs)
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
 
     if (tenantUuid && memberUuid) {
