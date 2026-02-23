@@ -1,3 +1,4 @@
+
 -- Phase 6D: admin() plugin + teams
 -- Execute manually in Supabase SQL Editor
 

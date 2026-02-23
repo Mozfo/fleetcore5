@@ -16,7 +16,8 @@ import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 import { EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME } from "@/lib/config/email.config";
-import { URLS } from "@/lib/config/urls.config";
+import { URLS, buildAppUrl } from "@/lib/config/urls.config";
+import { defaultLocale } from "@/lib/i18n/locales";
 
 // ── Resend singleton (lazy) ────────────────────────────────────────────────────
 
@@ -267,13 +268,63 @@ export const auth = betterAuth({
         },
       },
       sendInvitationEmail: async ({ email, id }) => {
-        const inviteUrl = `${URLS.app}/en/accept-invitation?id=${id}`;
+        const inviteUrl = buildAppUrl(
+          `/${defaultLocale}/accept-invitation?id=${id}`
+        );
         await getResend().emails.send({
           from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
           to: email,
           subject: "You've been invited to FleetCore",
           html: `<p>You've been invited to join FleetCore. <a href="${inviteUrl}">Accept invitation</a></p>`,
         });
+      },
+
+      // ── Hook: sync auth_member → clt_members on invitation acceptance ──────
+      organizationHooks: {
+        afterAcceptInvitation: async ({ member, user }) => {
+          try {
+            // Check if clt_members entry already exists for this user+tenant
+            const existing = await prisma.clt_members.findFirst({
+              where: {
+                auth_user_id: user.id,
+                tenant_id: member.organizationId,
+              },
+            });
+
+            if (existing) {
+              return; // clt_members already exists for this user+tenant
+            }
+
+            // Parse name into first/last
+            const nameParts = (user.name ?? "").trim().split(/\s+/);
+            const firstName = nameParts[0] || null;
+            const lastName =
+              nameParts.length > 1 ? nameParts.slice(1).join(" ") : null;
+
+            // Map org role → business role
+            const ORG_ROLE_MAP: Record<string, string> = {
+              owner: "admin",
+              admin: "admin",
+              "org:adm_admin": "admin",
+              member: "member",
+            };
+            const businessRole = ORG_ROLE_MAP[member.role] ?? "member";
+
+            await prisma.clt_members.create({
+              data: {
+                tenant_id: member.organizationId,
+                auth_user_id: user.id,
+                email: user.email,
+                first_name: firstName,
+                last_name: lastName,
+                role: businessRole,
+                status: "active",
+              },
+            });
+          } catch {
+            // Non-blocking: hook failure must not break invitation acceptance
+          }
+        },
       },
     }),
     admin({

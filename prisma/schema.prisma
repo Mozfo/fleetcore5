@@ -118,7 +118,7 @@ model clt_members {
   auth_user_id             String?
   first_name               String?                        @db.VarChar(100)
   last_name                String?                        @db.VarChar(100)
-  phone                    String                         @db.VarChar(50)
+  phone                    String?                        @db.VarChar(50)
   role                     String                         @default("member") @db.VarChar(50)
   last_login_at            DateTime?                      @db.Timestamptz(6)
   metadata                 Json                           @default("{}")

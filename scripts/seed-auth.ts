@@ -124,7 +124,7 @@ async function main() {
   if (existingInv) {
     log("  SKIP — pending invitation exists");
     log("\n  INVITATION URL:");
-    log("  http://localhost:3000/en/accept-invitation?id=" + existingInv.id);
+    log("  http://localhost:3000/accept-invitation?id=" + existingInv.id);
   } else {
     const invId = crypto.randomUUID();
     const ttlMs = 7 * 24 * 60 * 60 * 1000;
@@ -143,7 +143,7 @@ async function main() {
     });
     log("  CREATED — email=" + ceo.email + " role=owner");
     log("\n  INVITATION URL:");
-    log("  http://localhost:3000/en/accept-invitation?id=" + invId);
+    log("  http://localhost:3000/accept-invitation?id=" + invId);
   }
 
   // ── Summary ──────────────────────────────────────────────────────────────
