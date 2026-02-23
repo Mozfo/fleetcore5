@@ -3,14 +3,13 @@
  *
  * Creates:
  *   1. auth_user "system" (bootstrap inviter — cannot login)
- *   2. auth_organization HQ (shared-ID = adm_tenants.id = adm_providers.id)
+ *   2. auth_organization HQ (shared-ID = adm_tenants.id)
  *   3. auth_member system -> HQ
  *   4. auth_invitation for CEO
  *
- * HQ provider resolved via: is_headquarters column on adm_providers
- * (DB column added via raw migration, NOT in Prisma schema)
+ * HQ tenant resolved via: tenant_type = 'headquarters' on adm_tenants
  *
- * CEO resolved via: first active non-system employee on HQ provider
+ * CEO resolved via: first active non-system member on HQ tenant
  *
  * Idempotent: safe to run multiple times.
  * Usage: pnpm exec tsx scripts/seed-auth.ts
@@ -25,35 +24,34 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const log = (msg: string) => process.stdout.write(msg + "\n");
 
-// System employee ID — well-known zero UUID from adm_provider_employees seed
+// System user ID — well-known zero UUID from seed
 const SYSTEM_ID = "00000000-0000-0000-0000-000000000000";
 
 async function main() {
   log("=== FleetCore Auth Seed ===\n");
 
   // ── Resolve HQ tenant ID from DB ─────────────────────────────────────────
-  // is_headquarters is a DB column on adm_providers (not in Prisma schema)
-  log("Resolving HQ provider...");
-  const hqRows = await prisma.$queryRawUnsafe<{ id: string; name: string }[]>(
-    "SELECT id, name FROM adm_providers WHERE is_headquarters = true LIMIT 1"
-  );
-  const hq = hqRows[0];
-  if (!hq) throw new Error("No HQ provider found (is_headquarters=true)");
+  log("Resolving HQ tenant...");
+  const hq = await prisma.adm_tenants.findFirst({
+    where: { tenant_type: "headquarters" },
+    select: { id: true, name: true },
+  });
+  if (!hq) throw new Error("No HQ tenant found (tenant_type='headquarters')");
   const hqId = hq.id;
   log("  HQ: " + hq.name + " (" + hqId + ")");
 
   // ── Resolve CEO email from DB ────────────────────────────────────────────
   log("Resolving CEO...");
-  const ceo = await prisma.adm_provider_employees.findFirst({
+  const ceo = await prisma.clt_members.findFirst({
     where: {
-      provider_id: hqId,
+      tenant_id: hqId,
       status: "active",
       deleted_at: null,
       email: { not: { contains: "fleetcore.internal" } },
     },
     select: { id: true, email: true },
   });
-  if (!ceo) throw new Error("No active employee on HQ provider");
+  if (!ceo) throw new Error("No active member on HQ tenant");
   log("  CEO: " + ceo.email + " (" + ceo.id + ")");
 
   // ── STEP 1: System auth_user ─────────────────────────────────────────────

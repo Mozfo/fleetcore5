@@ -20,7 +20,6 @@ async function main() {
       country_code: "AE",
       default_currency: "EUR",
       timezone: "UTC",
-      auth_organization_id: null,
     },
   });
 
@@ -61,7 +60,6 @@ async function main() {
       default_currency: "AED",
       vat_rate: 5.0,
       timezone: "Asia/Dubai",
-      auth_organization_id: null,
     },
   });
 
@@ -75,7 +73,6 @@ async function main() {
       default_currency: "EUR",
       vat_rate: 20.0,
       timezone: "Europe/Paris",
-      auth_organization_id: null,
     },
   });
 
@@ -127,79 +124,6 @@ async function main() {
   console.log(
     `✅ Created 2 members: ${dubaiAdmin.first_name} ${dubaiAdmin.last_name}, ${parisAdmin.first_name} ${parisAdmin.last_name}`
   );
-
-  // ===================================
-  // ADM_PROVIDERS - FleetCore Provider
-  // ===================================
-  console.log("🏢 Creating FleetCore provider...");
-
-  const fleetcoreProvider = await prisma.adm_providers.upsert({
-    where: { code: "FLEETCORE" },
-    update: {},
-    create: {
-      id: "880e8400-e29b-41d4-a716-446655440001",
-      code: "FLEETCORE",
-      name: "FleetCore",
-      is_internal: true,
-      status: "active",
-    },
-  });
-
-  console.log(`✅ Created FleetCore provider: ${fleetcoreProvider.name}`);
-
-  // ===================================
-  // ADM_PROVIDER_EMPLOYEES - FleetCore Sales Team
-  // ===================================
-  console.log("👔 Creating FleetCore sales team...");
-
-  const salesTeam = [
-    {
-      id: "990e8400-e29b-41d4-a716-446655440001",
-      provider_id: fleetcoreProvider.id,
-
-      first_name: "Karim",
-      last_name: "Al-Rashid",
-      email: "karim.alrashid@fleetcore.com",
-      department: "Sales",
-      title: "Sales Manager UAE",
-      status: "active",
-      permissions: { can_manage_leads: true },
-    },
-    {
-      id: "990e8400-e29b-41d4-a716-446655440002",
-      provider_id: fleetcoreProvider.id,
-
-      first_name: "Marie",
-      last_name: "Dubois",
-      email: "marie.dubois@fleetcore.com",
-      department: "Sales",
-      title: "Sales Manager France",
-      status: "active",
-      permissions: { can_manage_leads: true },
-    },
-    {
-      id: "990e8400-e29b-41d4-a716-446655440003",
-      provider_id: fleetcoreProvider.id,
-
-      first_name: "Faisal",
-      last_name: "Al-Otaibi",
-      email: "faisal.alotaibi@fleetcore.com",
-      department: "Sales",
-      title: "Sales Manager KSA",
-      status: "active",
-      permissions: { can_manage_leads: true },
-    },
-  ];
-
-  for (const employee of salesTeam) {
-    await prisma.adm_provider_employees.upsert({
-      where: { id: employee.id },
-      update: {},
-      create: employee,
-    });
-  }
-
-  console.log(`✅ Created ${salesTeam.length} FleetCore sales employees`);
 
   // ===================================
   // CRM_LEAD_SOURCES - Lead Sources
@@ -1249,7 +1173,6 @@ async function main() {
   console.log("📊 Summary:");
   console.log("  - 2 tenants (Dubai, Paris)");
   console.log("  - 2 members (1 admin per tenant)");
-  console.log(`  - ${salesTeam.length} FleetCore sales employees`);
   console.log(`  - ${leadSources.length} lead sources`);
   console.log(`  - ${leads.length} demo leads`);
   console.log(`  - ${drivers.length} test drivers`);

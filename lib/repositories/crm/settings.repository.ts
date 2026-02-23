@@ -61,7 +61,7 @@ export const CrmSettingKey = {
 /**
  * Repository for CRM settings
  *
- * NOTE: crm_settings is a GLOBAL table (no provider_id).
+ * NOTE: crm_settings is a GLOBAL table (no tenant_id).
  * All settings are globally accessible. The is_system flag indicates
  * whether a setting is system-provided (true) or custom (false).
  *
@@ -520,10 +520,13 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
  * @example
  * ```typescript
  * import { seedCrmSettings } from '@/lib/repositories/crm/settings.repository';
- * const count = await seedCrmSettings(prisma);
+ * const count = await seedCrmSettings(prisma, tenantId);
  * ```
  */
-export async function seedCrmSettings(prisma: PrismaClient): Promise<number> {
+export async function seedCrmSettings(
+  prisma: PrismaClient,
+  tenantId: string = "7ad8173c-68c5-41d3-9918-686e4e941cc0"
+): Promise<number> {
   const settings = [
     {
       setting_key: "lead_scoring_config",
@@ -1066,7 +1069,7 @@ export async function seedCrmSettings(prisma: PrismaClient): Promise<number> {
   for (const setting of settings) {
     await prisma.crm_settings.upsert({
       where: { setting_key: setting.setting_key },
-      create: setting,
+      create: { ...setting, tenant_id: tenantId },
       update: {
         setting_value: setting.setting_value,
         description: setting.description,

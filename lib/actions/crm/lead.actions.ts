@@ -7,7 +7,7 @@
  * Security:
  * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Provider isolation via getCurrentProviderId
+ * 3. Tenant isolation via session.orgId
  */
 
 import { requireCrmAuth } from "@/lib/auth/server";
@@ -15,10 +15,6 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
-import {
-  getCurrentProviderId,
-  buildProviderFilter,
-} from "@/lib/utils/provider-context";
 import type { LeadStatus } from "@/types/crm";
 
 // Schema de validation pour status update (Kanban)
@@ -86,7 +82,8 @@ export async function updateLeadStatusAction(
 ): Promise<UpdateStatusResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validation Zod
     const validation = UpdateStatusSchema.safeParse({
@@ -100,12 +97,9 @@ export async function updateLeadStatusAction(
       return { success: false, error: "Invalid input" };
     }
 
-    // 3. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
     // 5. Fetch current lead to get old status and metadata
     const currentLead = await db.crm_leads.findFirst({
-      where: { id: leadId, ...buildProviderFilter(providerId) },
+      where: { id: leadId, tenant_id: session.orgId },
       select: { status: true, metadata: true, qualified_date: true },
     });
 
@@ -160,7 +154,7 @@ export async function updateLeadStatusAction(
       updateData.qualified_date = now;
     }
 
-    // 6. Update with Prisma (provider_id filter already applied via RLS)
+    // 6. Update with Prisma (tenant_id filter already applied via RLS)
     const updatedLead = await db.crm_leads.update({
       where: { id: leadId },
       data: updateData,
@@ -221,7 +215,8 @@ export async function updateLeadAction(
 
   try {
     // 1. Authentication & Authorization
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
     // 2. Validation Zod
     const validation = UpdateLeadSchema.safeParse(data);
@@ -230,12 +225,9 @@ export async function updateLeadAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Fetch old lead for audit log (with provider filter)
+    // 5. Fetch old lead for audit log (with tenant filter)
     const oldLead = await db.crm_leads.findFirst({
-      where: { id: leadId, ...buildProviderFilter(providerId) },
+      where: { id: leadId, tenant_id: session.orgId },
     });
 
     if (!oldLead) {
@@ -278,7 +270,7 @@ export async function updateLeadAction(
       where: { id: leadId },
       data: updateData,
       include: {
-        eu1f9qh: {
+        assigned_member: {
           select: {
             id: true,
             first_name: true,
@@ -360,11 +352,11 @@ export async function updateLeadAction(
         ? Number(updatedLead.qualification_score)
         : null,
       // Format assigned_to relation
-      assigned_to: updatedLead.eu1f9qh
+      assigned_to: updatedLead.assigned_member
         ? {
-            id: updatedLead.eu1f9qh.id,
-            first_name: updatedLead.eu1f9qh.first_name,
-            last_name: updatedLead.eu1f9qh.last_name,
+            id: updatedLead.assigned_member.id,
+            first_name: updatedLead.assigned_member.first_name,
+            last_name: updatedLead.assigned_member.last_name,
           }
         : null,
       gdpr_consent: updatedLead.gdpr_consent,

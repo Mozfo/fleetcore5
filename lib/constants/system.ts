@@ -15,7 +15,7 @@ export const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
 /**
  * System Provider Employee ID - Used for tenant lifecycle events performed by automated system
  *
- * Reference: adm_provider_employees.id = '00000000-0000-0000-0000-000000000002'
+ * Reference: clt_members.id = '00000000-0000-0000-0000-000000000002'
  */
 export const SYSTEM_PROVIDER_EMPLOYEE_ID =
   "00000000-0000-0000-0000-000000000002";

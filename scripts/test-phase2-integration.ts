@@ -31,7 +31,7 @@ async function testCreateOpportunityWithAssignedTo(): Promise<void> {
     // V6.3: Get a valid lead (qualified → proposal_sent)
     const lead = await db.crm_leads.findFirst({
       where: { deleted_at: null, status: "proposal_sent" },
-      select: { id: true, provider_id: true },
+      select: { id: true, tenant_id: true },
     });
 
     if (!lead) {
@@ -39,8 +39,8 @@ async function testCreateOpportunityWithAssignedTo(): Promise<void> {
     }
 
     // Get a valid employee for assigned_to
-    const employee = await db.adm_provider_employees.findFirst({
-      where: { provider_id: lead.provider_id, deleted_at: null },
+    const employee = await db.clt_members.findFirst({
+      where: { tenant_id: lead.tenant_id, deleted_at: null },
       select: { id: true },
     });
 
@@ -55,7 +55,7 @@ async function testCreateOpportunityWithAssignedTo(): Promise<void> {
     await db.$executeRaw`
       INSERT INTO crm_opportunities (
         id, lead_id, assigned_to, stage, status, expected_value,
-        probability_percent, provider_id, notes
+        probability_percent, tenant_id, notes
       ) VALUES (
         ${testId}::uuid,
         ${lead.id}::uuid,
@@ -64,7 +64,7 @@ async function testCreateOpportunityWithAssignedTo(): Promise<void> {
         'open',
         1000,
         20,
-        ${lead.provider_id}::uuid,
+        ${lead.tenant_id}::uuid,
         ${testNotes}
       )
     `;
@@ -107,7 +107,7 @@ async function testCreateActivityOnLead(): Promise<void> {
     // Get a valid lead with provider
     const lead = await db.crm_leads.findFirst({
       where: { deleted_at: null },
-      select: { id: true, provider_id: true },
+      select: { id: true, tenant_id: true },
     });
 
     if (!lead) {
@@ -115,8 +115,8 @@ async function testCreateActivityOnLead(): Promise<void> {
     }
 
     // Get an employee for created_by
-    const employee = await db.adm_provider_employees.findFirst({
-      where: { provider_id: lead.provider_id, deleted_at: null },
+    const employee = await db.clt_members.findFirst({
+      where: { tenant_id: lead.tenant_id, deleted_at: null },
       select: { id: true },
     });
 
@@ -130,13 +130,13 @@ async function testCreateActivityOnLead(): Promise<void> {
 
     await db.$executeRaw`
       INSERT INTO crm_activities (
-        id, lead_id, opportunity_id, provider_id,
+        id, lead_id, opportunity_id, tenant_id,
         activity_type, subject, description, created_by
       ) VALUES (
         ${testId}::uuid,
         ${lead.id}::uuid,
         NULL,
-        ${lead.provider_id}::uuid,
+        ${lead.tenant_id}::uuid,
         'note',
         ${testSubject},
         'Integration test - activity on lead',
@@ -185,7 +185,7 @@ async function testCreateActivityOnOpportunity(): Promise<void> {
       select: {
         id: true,
         lead_id: true,
-        provider_id: true,
+        tenant_id: true,
       },
     });
 
@@ -194,8 +194,8 @@ async function testCreateActivityOnOpportunity(): Promise<void> {
     }
 
     // Get an employee for created_by
-    const employee = await db.adm_provider_employees.findFirst({
-      where: { provider_id: opportunity.provider_id, deleted_at: null },
+    const employee = await db.clt_members.findFirst({
+      where: { tenant_id: opportunity.tenant_id, deleted_at: null },
       select: { id: true },
     });
 
@@ -209,13 +209,13 @@ async function testCreateActivityOnOpportunity(): Promise<void> {
 
     await db.$executeRaw`
       INSERT INTO crm_activities (
-        id, lead_id, opportunity_id, provider_id,
+        id, lead_id, opportunity_id, tenant_id,
         activity_type, subject, description, created_by
       ) VALUES (
         ${testId}::uuid,
         ${opportunity.lead_id}::uuid,
         ${opportunity.id}::uuid,
-        ${opportunity.provider_id}::uuid,
+        ${opportunity.tenant_id}::uuid,
         'meeting',
         ${testSubject},
         'Integration test - activity on opportunity',

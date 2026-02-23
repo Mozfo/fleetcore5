@@ -9,7 +9,7 @@ export type Country = crm_countries;
 /**
  * Repository for managing CRM countries
  *
- * NOTE: crm_countries is a SYSTEM table (no provider_id, no is_system).
+ * NOTE: crm_countries is a SYSTEM table (no tenant_id, no is_system).
  * All countries are globally visible to all users.
  * No multi-tenant filtering is applied.
  *
