@@ -196,8 +196,6 @@ export class PostgresContainerManager {
 
     // Core admin tables
     await this.prismaClient.$executeRaw`TRUNCATE TABLE clt_members CASCADE`;
-    await this.prismaClient
-      .$executeRaw`TRUNCATE TABLE adm_provider_employees CASCADE`;
     await this.prismaClient.$executeRaw`TRUNCATE TABLE adm_tenants CASCADE`;
 
     // Seed minimal test data
@@ -224,7 +222,7 @@ export class PostgresContainerManager {
 
     // Create SYSTEM provider employee (used for tenant lifecycle events)
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_provider_employees (id, auth_user_id, first_name, last_name, email, status)
+      INSERT INTO clt_members (id, auth_user_id, first_name, last_name, email, status)
       VALUES (${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, ${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, 'System', NULL, 'system@fleetcore.internal', 'active')
     `;
 
@@ -236,7 +234,7 @@ export class PostgresContainerManager {
 
     // Create test provider employee (required for sent_by in invitations)
     await this.prismaClient.$executeRaw`
-      INSERT INTO adm_provider_employees (id, auth_user_id, first_name, last_name, email, status)
+      INSERT INTO clt_members (id, auth_user_id, first_name, last_name, email, status)
       VALUES (${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, ${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, 'Test', 'Admin', 'admin@fleetcore.com', 'active')
     `;
 

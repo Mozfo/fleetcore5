@@ -2,7 +2,7 @@
  * Agreement Repository - CRM Agreement Data Access
  *
  * Repository for managing CRM agreements (contrats).
- * Multi-division isolation via provider_id column.
+ * Multi-division isolation via tenant_id column.
  *
  * @module lib/repositories/crm/agreement.repository
  */
@@ -85,7 +85,7 @@ export type AgreementWithRelations = Agreement & {
  */
 export interface AgreementCreateInput {
   order_id: string;
-  provider_id: string;
+  tenant_id: string;
   created_by: string;
   agreement_type: agreement_type;
   effective_date?: Date;
@@ -159,13 +159,13 @@ export interface AgreementFilters {
  * Repository for managing CRM agreements
  *
  * Agreements are legal contracts associated with orders.
- * Multi-division isolation via provider_id column (FleetCore France, UAE, etc.)
+ * Multi-division isolation via tenant_id column (FleetCore France, UAE, etc.)
  *
  * @example
  * ```typescript
  * const agreement = await agreementRepository.createAgreement({
  *   order_id: "order-uuid",
- *   provider_id: "provider-uuid",
+ *   tenant_id: "tenant-uuid",
  *   created_by: "user-uuid",
  *   agreement_type: "msa",
  *   effective_date: new Date("2025-02-01"),
@@ -260,7 +260,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
       data: {
         agreement_reference: agreementReference,
         order_id: data.order_id,
-        provider_id: data.provider_id,
+        tenant_id: data.tenant_id,
         created_by: data.created_by,
         updated_by: data.created_by,
         agreement_type: data.agreement_type,
@@ -287,16 +287,16 @@ export class AgreementRepository extends BaseRepository<Agreement> {
   }
 
   /**
-   * Find an agreement by ID with provider filtering
+   * Find an agreement by ID with tenant filtering
    */
   async findByIdWithProvider(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement | null> {
     return await this.model.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -307,12 +307,12 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async findByReference(
     reference: string,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement | null> {
     return await this.model.findFirst({
       where: {
         agreement_reference: reference,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -323,12 +323,12 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async findWithRelations(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<AgreementWithRelations | null> {
     return await this.model.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       include: {
@@ -374,7 +374,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async updateAgreement(
     id: string,
-    providerId: string,
+    tenantId: string,
     data: AgreementUpdateInput,
     userId: string
   ): Promise<Agreement> {
@@ -437,7 +437,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     return await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: updateData,
@@ -449,14 +449,14 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async softDeleteAgreement(
     id: string,
-    providerId: string,
+    tenantId: string,
     deletedBy: string,
     reason?: string
   ): Promise<void> {
     await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -474,11 +474,11 @@ export class AgreementRepository extends BaseRepository<Agreement> {
   /**
    * Find agreements by order
    */
-  async findByOrder(orderId: string, providerId: string): Promise<Agreement[]> {
+  async findByOrder(orderId: string, tenantId: string): Promise<Agreement[]> {
     return await this.model.findMany({
       where: {
         order_id: orderId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -490,12 +490,12 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async findByType(
     agreementType: agreement_type,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement[]> {
     return await this.model.findMany({
       where: {
         agreement_type: agreementType,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -507,12 +507,12 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async findByStatus(
     status: agreement_status,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement[]> {
     return await this.model.findMany({
       where: {
         status,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -522,10 +522,10 @@ export class AgreementRepository extends BaseRepository<Agreement> {
   /**
    * Find agreements pending signature
    */
-  async findPendingSignature(providerId: string): Promise<Agreement[]> {
+  async findPendingSignature(tenantId: string): Promise<Agreement[]> {
     return await this.model.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: { in: ["pending_signature", "pending_review"] },
         deleted_at: null,
       },
@@ -536,17 +536,14 @@ export class AgreementRepository extends BaseRepository<Agreement> {
   /**
    * Find agreements expiring within N days
    */
-  async findExpiringSoon(
-    providerId: string,
-    days: number
-  ): Promise<Agreement[]> {
+  async findExpiringSoon(tenantId: string, days: number): Promise<Agreement[]> {
     const now = new Date();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
 
     return await this.model.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: { in: ["signed", "active"] },
         expiry_date: {
           gte: now,
@@ -561,10 +558,10 @@ export class AgreementRepository extends BaseRepository<Agreement> {
   /**
    * Find expired agreements
    */
-  async findExpired(providerId: string): Promise<Agreement[]> {
+  async findExpired(tenantId: string): Promise<Agreement[]> {
     return await this.model.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: { in: ["signed", "active"] },
         expiry_date: { lt: new Date() },
         deleted_at: null,
@@ -577,13 +574,13 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    * Find all agreements with pagination and filters
    */
   async findAllWithFilters(
-    providerId: string,
+    tenantId: string,
     filters: AgreementFilters = {},
     page = 1,
     pageSize = 20
   ): Promise<PaginatedResult<Agreement>> {
     const where: Prisma.crm_agreementsWhereInput = {
-      provider_id: providerId,
+      tenant_id: tenantId,
       deleted_at: null,
     };
 
@@ -633,7 +630,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async findVersionHistory(
     parentAgreementId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement[]> {
     return await this.model.findMany({
       where: {
@@ -641,7 +638,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
           { id: parentAgreementId },
           { parent_agreement_id: parentAgreementId },
         ],
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { version_number: "asc" },
@@ -653,7 +650,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async createNewVersion(
     agreementId: string,
-    providerId: string,
+    tenantId: string,
     userId: string,
     tx?: PrismaTransaction
   ): Promise<Agreement> {
@@ -662,7 +659,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     const existingAgreement = await model.findFirst({
       where: {
         id: agreementId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -683,7 +680,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     return this.createAgreement(
       {
         order_id: existingAgreement.order_id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         created_by: userId,
         agreement_type: existingAgreement.agreement_type,
         effective_date: existingAgreement.effective_date ?? undefined,
@@ -721,7 +718,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async markSentForSignature(
     id: string,
-    providerId: string,
+    tenantId: string,
     userId: string,
     envelopeId?: string,
     envelopeUrl?: string
@@ -729,7 +726,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     return await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -748,7 +745,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async recordClientSignature(
     id: string,
-    providerId: string,
+    tenantId: string,
     signatureData: {
       signedAt: Date;
       signatureIp?: string;
@@ -759,7 +756,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     userId: string
   ): Promise<Agreement> {
     // Check if provider has already signed
-    const agreement = await this.findByIdWithProvider(id, providerId);
+    const agreement = await this.findByIdWithProvider(id, tenantId);
     const newStatus: agreement_status = agreement?.provider_signed_at
       ? "signed"
       : "pending_review";
@@ -767,7 +764,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     return await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -788,7 +785,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async recordProviderSignature(
     id: string,
-    providerId: string,
+    tenantId: string,
     signatureData: {
       signedAt: Date;
       signatoryId: string;
@@ -798,7 +795,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     userId: string
   ): Promise<Agreement> {
     // Check if client has already signed
-    const agreement = await this.findByIdWithProvider(id, providerId);
+    const agreement = await this.findByIdWithProvider(id, tenantId);
     const newStatus: agreement_status = agreement?.client_signed_at
       ? "signed"
       : "pending_review";
@@ -806,7 +803,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     return await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -826,14 +823,14 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async activateAgreement(
     id: string,
-    providerId: string,
+    tenantId: string,
     signedDocumentUrl: string,
     userId: string
   ): Promise<Agreement> {
     return await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -850,14 +847,14 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    */
   async terminateAgreement(
     id: string,
-    providerId: string,
+    tenantId: string,
     reason: string,
     userId: string
   ): Promise<Agreement> {
     return await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -877,13 +874,13 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    * Count agreements by status for a provider
    */
   async countByStatus(
-    providerId: string
+    tenantId: string
   ): Promise<Partial<Record<agreement_status, number>>> {
     const counts: Array<{ status: agreement_status; _count: { id: number } }> =
       await this.model.groupBy({
         by: ["status"],
         where: {
-          provider_id: providerId,
+          tenant_id: tenantId,
           deleted_at: null,
         },
         _count: { id: true },
@@ -900,7 +897,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
    * Count agreements by type for a provider
    */
   async countByType(
-    providerId: string
+    tenantId: string
   ): Promise<Partial<Record<agreement_type, number>>> {
     const counts: Array<{
       agreement_type: agreement_type;
@@ -908,7 +905,7 @@ export class AgreementRepository extends BaseRepository<Agreement> {
     }> = await this.model.groupBy({
       by: ["agreement_type"],
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       _count: { id: true },
@@ -924,10 +921,10 @@ export class AgreementRepository extends BaseRepository<Agreement> {
   /**
    * Get average time to signature (in days)
    */
-  async getAverageTimeToSignature(providerId: string): Promise<number | null> {
+  async getAverageTimeToSignature(tenantId: string): Promise<number | null> {
     const signedAgreements = await this.model.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: { in: ["signed", "active"] },
         sent_for_signature_at: { not: null },
         client_signed_at: { not: null },

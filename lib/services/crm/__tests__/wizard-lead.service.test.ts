@@ -74,7 +74,6 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     priority: "medium",
     consent_ip: null,
     last_activity_at: null,
-    provider_id: WIZARD_LEAD_CONSTANTS.DEFAULT_PROVIDER_ID,
     // V5: Closing columns
     stage_entered_at: now,
     loss_reason_code: null,
@@ -88,7 +87,7 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     // V6.2: Wizard
     wizard_completed: false,
     // V6.2: Conversion
-    tenant_id: null,
+    tenant_id: WIZARD_LEAD_CONSTANTS.DEFAULT_TENANT_ID,
     converted_at: null,
     // V6.2.1: Stripe Payment Link
     stripe_checkout_session_id: null,
@@ -181,7 +180,7 @@ describe("WizardLeadService", () => {
           country_code: mockCountryCode,
           status: "new",
           email_verified: false,
-          provider_id: WIZARD_LEAD_CONSTANTS.DEFAULT_PROVIDER_ID,
+          tenant_id: WIZARD_LEAD_CONSTANTS.DEFAULT_TENANT_ID,
           wizard_completed: false,
         }),
       });

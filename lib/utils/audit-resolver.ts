@@ -3,10 +3,10 @@
  *
  * Resolves auth session IDs to database UUIDs for audit logging.
  * Required because adm_audit_logs has FK constraints to tables
- * (adm_tenants, clt_members, adm_provider_employees) whose primary keys
- * differ from the auth session IDs.
+ * (adm_tenants, clt_members) whose primary keys differ from the auth session IDs.
  *
- * Queries match auth_user_id (Better Auth) on provider employees and members.
+ * Uses shared-ID pattern: auth_organization.id = adm_tenants.id
+ * Queries match auth_user_id (Better Auth) on clt_members.
  *
  * @module lib/utils/audit-resolver
  */
@@ -37,6 +37,9 @@ interface EmployeeLookupResult {
 /**
  * Resolve organization ID to tenant UUID.
  *
+ * Uses shared-ID pattern: auth_organization.id = adm_tenants.id
+ * (no auth_organization_id column needed)
+ *
  * @param orgId - Organization ID from auth session
  * @returns Tenant record or null
  */
@@ -44,8 +47,8 @@ export async function resolveTenantId(
   orgId: string
 ): Promise<TenantLookupResult | null> {
   try {
-    const tenant = await db.adm_tenants.findFirst({
-      where: { auth_organization_id: orgId },
+    const tenant = await db.adm_tenants.findUnique({
+      where: { id: orgId },
       select: { id: true, name: true },
     });
 
@@ -87,8 +90,8 @@ export async function resolveMemberId(
 }
 
 /**
- * Resolve user ID to adm_provider_employees UUID.
- * Resolves auth_user_id (Better Auth) to the employee record.
+ * Resolve user ID to clt_members UUID.
+ * Resolves auth_user_id (Better Auth) to the member record (employee lookup).
  *
  * @param userId - User ID from auth session
  * @returns Employee record or null
@@ -97,7 +100,7 @@ export async function resolveEmployeeId(
   userId: string
 ): Promise<EmployeeLookupResult | null> {
   try {
-    const employee = await db.adm_provider_employees.findFirst({
+    const member = await db.clt_members.findFirst({
       where: {
         auth_user_id: userId,
         deleted_at: null,
@@ -105,7 +108,7 @@ export async function resolveEmployeeId(
       select: { id: true, email: true },
     });
 
-    return employee;
+    return member;
   } catch (error) {
     logger.error({ error, userId }, "[resolveEmployeeId] Error");
     return null;

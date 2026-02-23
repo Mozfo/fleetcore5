@@ -192,16 +192,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Resolve HQ tenant_id for waitlist entry
+    const hqTenant = await db.adm_tenants.findFirst({
+      where: { tenant_type: "headquarters" },
+      select: { id: true },
+    });
+
+    if (!hqTenant) {
+      logger.error("[Waitlist] No HQ tenant found");
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "INTERNAL_ERROR",
+            message: "An error occurred. Please try again.",
+          },
+        },
+        { status: 500 }
+      );
+    }
+
     // Create waitlist entry using Prisma relation syntax
     // V6.3: marketing_consent = false (pending) until user clicks opt-in in email
     // V6.3.2: Generate short_token for iOS Mail compatible short URLs
     const waitlistEntry = await db.crm_waitlist.create({
       data: {
+        tenant_id: hqTenant.id,
         email: data.email.toLowerCase().trim(),
         short_token: generateShortToken(),
-        crm_countries: {
-          connect: { country_code: data.country_code },
-        },
+        country_code: data.country_code,
         fleet_size: data.fleet_size || null,
         detected_country_code: finalDetectedCountry,
         ip_address: clientIP,

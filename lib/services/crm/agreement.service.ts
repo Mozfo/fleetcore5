@@ -43,7 +43,7 @@ import {
  */
 export interface CreateAgreementParams {
   orderId: string;
-  providerId: string;
+  tenantId: string;
   userId: string;
   agreementType: agreement_type;
   effectiveDate?: Date;
@@ -151,24 +151,24 @@ function isTransitionAllowed(
  * ```typescript
  * // Create agreements for an order
  * const agreements = await agreementService.createAgreementsForOrder(
- *   orderId, providerId, userId, ["msa", "sla"]
+ *   orderId, tenantId, userId, ["msa", "sla"]
  * );
  *
  * // Send for signature
- * await agreementService.sendForSignature(agreementId, providerId, userId);
+ * await agreementService.sendForSignature(agreementId, tenantId, userId);
  *
  * // Record signatures
- * await agreementService.recordClientSignature(agreementId, providerId, {
+ * await agreementService.recordClientSignature(agreementId, tenantId, {
  *   signatoryName: "John Doe",
  *   signatoryEmail: "john@client.com"
  * }, userId);
  *
- * await agreementService.recordProviderSignature(agreementId, providerId, {
+ * await agreementService.recordProviderSignature(agreementId, tenantId, {
  *   signatoryId: "employee-uuid"
  * }, userId);
  *
  * // Activate
- * await agreementService.activateAgreement(agreementId, providerId, userId);
+ * await agreementService.activateAgreement(agreementId, tenantId, userId);
  * ```
  */
 export class AgreementService {
@@ -192,7 +192,7 @@ export class AgreementService {
   async createAgreement(params: CreateAgreementParams): Promise<Agreement> {
     const {
       orderId,
-      providerId,
+      tenantId,
       userId,
       agreementType,
       effectiveDate,
@@ -214,7 +214,7 @@ export class AgreementService {
     const order = await prisma.crm_orders.findFirst({
       where: {
         id: orderId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -225,7 +225,7 @@ export class AgreementService {
 
     const agreement = await this.agreementRepo.createAgreement({
       order_id: orderId,
-      provider_id: providerId,
+      tenant_id: tenantId,
       created_by: userId,
       agreement_type: agreementType,
       effective_date: effectiveDate,
@@ -262,7 +262,7 @@ export class AgreementService {
    * Only draft agreements can be updated.
    *
    * @param id - Agreement UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param userId - User making the update
    * @param params - Update parameters
    * @returns Updated agreement
@@ -271,13 +271,13 @@ export class AgreementService {
    */
   async updateAgreement(
     id: string,
-    providerId: string,
+    tenantId: string,
     userId: string,
     params: UpdateAgreementParams
   ): Promise<Agreement> {
     const agreement = await this.agreementRepo.findByIdWithProvider(
       id,
-      providerId
+      tenantId
     );
 
     if (!agreement) {
@@ -322,7 +322,7 @@ export class AgreementService {
 
     const updated = await this.agreementRepo.updateAgreement(
       id,
-      providerId,
+      tenantId,
       updateData,
       userId
     );
@@ -346,7 +346,7 @@ export class AgreementService {
    * Only draft agreements can be deleted.
    *
    * @param id - Agreement UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param deletedBy - User making the deletion
    * @param reason - Optional deletion reason
    * @throws {NotFoundError} If agreement not found
@@ -354,13 +354,13 @@ export class AgreementService {
    */
   async deleteAgreement(
     id: string,
-    providerId: string,
+    tenantId: string,
     deletedBy: string,
     reason?: string
   ): Promise<void> {
     const agreement = await this.agreementRepo.findByIdWithProvider(
       id,
-      providerId
+      tenantId
     );
 
     if (!agreement) {
@@ -377,7 +377,7 @@ export class AgreementService {
 
     await this.agreementRepo.softDeleteAgreement(
       id,
-      providerId,
+      tenantId,
       deletedBy,
       reason
     );
@@ -401,7 +401,7 @@ export class AgreementService {
    * Send an agreement for signature
    *
    * @param id - Agreement UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param sentBy - User sending the agreement
    * @returns Send result with public token
    * @throws {NotFoundError} If agreement not found
@@ -409,12 +409,12 @@ export class AgreementService {
    */
   async sendForSignature(
     id: string,
-    providerId: string,
+    tenantId: string,
     sentBy: string
   ): Promise<SendForSignatureResult> {
     const agreement = await this.agreementRepo.findByIdWithProvider(
       id,
-      providerId
+      tenantId
     );
 
     if (!agreement) {
@@ -442,7 +442,7 @@ export class AgreementService {
     // Mark as sent for signature
     const updated = await this.agreementRepo.markSentForSignature(
       id,
-      providerId,
+      tenantId,
       sentBy,
       undefined, // envelopeId - for DocuSign integration
       undefined // envelopeUrl - for DocuSign integration
@@ -472,7 +472,7 @@ export class AgreementService {
    * Record client signature
    *
    * @param id - Agreement UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param params - Signature parameters
    * @param recordedBy - User recording the signature
    * @returns Updated agreement
@@ -481,13 +481,13 @@ export class AgreementService {
    */
   async recordClientSignature(
     id: string,
-    providerId: string,
+    tenantId: string,
     params: RecordClientSignatureParams,
     recordedBy: string
   ): Promise<Agreement> {
     const agreement = await this.agreementRepo.findByIdWithProvider(
       id,
-      providerId
+      tenantId
     );
 
     if (!agreement) {
@@ -507,7 +507,7 @@ export class AgreementService {
 
     const updated = await this.agreementRepo.recordClientSignature(
       id,
-      providerId,
+      tenantId,
       {
         signedAt: new Date(),
         signatureIp: params.signatureIp,
@@ -544,7 +544,7 @@ export class AgreementService {
    * Record provider signature
    *
    * @param id - Agreement UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param params - Signature parameters
    * @param recordedBy - User recording the signature
    * @returns Updated agreement
@@ -553,13 +553,13 @@ export class AgreementService {
    */
   async recordProviderSignature(
     id: string,
-    providerId: string,
+    tenantId: string,
     params: RecordProviderSignatureParams,
     recordedBy: string
   ): Promise<Agreement> {
     const agreement = await this.agreementRepo.findByIdWithProvider(
       id,
-      providerId
+      tenantId
     );
 
     if (!agreement) {
@@ -579,7 +579,7 @@ export class AgreementService {
 
     const updated = await this.agreementRepo.recordProviderSignature(
       id,
-      providerId,
+      tenantId,
       {
         signedAt: new Date(),
         signatoryId: params.signatoryId,
@@ -616,7 +616,7 @@ export class AgreementService {
    * Both parties must have signed.
    *
    * @param id - Agreement UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param activatedBy - User activating the agreement
    * @param signedDocumentUrl - Optional URL to signed document
    * @returns Activated agreement
@@ -625,13 +625,13 @@ export class AgreementService {
    */
   async activateAgreement(
     id: string,
-    providerId: string,
+    tenantId: string,
     activatedBy: string,
     signedDocumentUrl?: string
   ): Promise<Agreement> {
     const agreement = await this.agreementRepo.findByIdWithProvider(
       id,
-      providerId
+      tenantId
     );
 
     if (!agreement) {
@@ -663,7 +663,7 @@ export class AgreementService {
 
     const updated = await this.agreementRepo.activateAgreement(
       id,
-      providerId,
+      tenantId,
       signedDocumentUrl ?? agreement.signed_document_url ?? "",
       activatedBy
     );
@@ -688,7 +688,7 @@ export class AgreementService {
    * Terminate an agreement
    *
    * @param id - Agreement UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param terminatedBy - User terminating the agreement
    * @param reason - Termination reason
    * @returns Terminated agreement
@@ -697,13 +697,13 @@ export class AgreementService {
    */
   async terminateAgreement(
     id: string,
-    providerId: string,
+    tenantId: string,
     terminatedBy: string,
     reason: string
   ): Promise<Agreement> {
     const agreement = await this.agreementRepo.findByIdWithProvider(
       id,
-      providerId
+      tenantId
     );
 
     if (!agreement) {
@@ -720,7 +720,7 @@ export class AgreementService {
 
     const updated = await this.agreementRepo.terminateAgreement(
       id,
-      providerId,
+      tenantId,
       reason,
       terminatedBy
     );
@@ -748,19 +748,19 @@ export class AgreementService {
    * The original agreement is marked as superseded.
    *
    * @param originalId - Original agreement UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param createdBy - User creating the new version
    * @returns New agreement version
    * @throws {NotFoundError} If original agreement not found
    */
   async createNewVersion(
     originalId: string,
-    providerId: string,
+    tenantId: string,
     createdBy: string
   ): Promise<Agreement> {
     const original = await this.agreementRepo.findByIdWithProvider(
       originalId,
-      providerId
+      tenantId
     );
 
     if (!original) {
@@ -772,7 +772,7 @@ export class AgreementService {
       // Create new version
       const newAgreement = await this.agreementRepo.createNewVersion(
         originalId,
-        providerId,
+        tenantId,
         createdBy,
         tx
       );
@@ -812,14 +812,14 @@ export class AgreementService {
    * Create standard agreements for an order
    *
    * @param orderId - Order UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param createdBy - User creating the agreements
    * @param types - Agreement types to create (defaults to MSA)
    * @returns Created agreements
    */
   async createAgreementsForOrder(
     orderId: string,
-    providerId: string,
+    tenantId: string,
     createdBy: string,
     types?: agreement_type[]
   ): Promise<Agreement[]> {
@@ -829,7 +829,7 @@ export class AgreementService {
     const order = await prisma.crm_orders.findFirst({
       where: {
         id: orderId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -843,7 +843,7 @@ export class AgreementService {
     for (const agreementType of agreementTypes) {
       const agreement = await this.createAgreement({
         orderId,
-        providerId,
+        tenantId,
         userId: createdBy,
         agreementType,
         effectiveDate: order.effective_date ?? undefined,
@@ -873,11 +873,8 @@ export class AgreementService {
   /**
    * Get an agreement by ID
    */
-  async getAgreement(
-    id: string,
-    providerId: string
-  ): Promise<Agreement | null> {
-    return this.agreementRepo.findByIdWithProvider(id, providerId);
+  async getAgreement(id: string, tenantId: string): Promise<Agreement | null> {
+    return this.agreementRepo.findByIdWithProvider(id, tenantId);
   }
 
   /**
@@ -885,9 +882,9 @@ export class AgreementService {
    */
   async getAgreementWithRelations(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<AgreementWithRelations | null> {
-    return this.agreementRepo.findWithRelations(id, providerId);
+    return this.agreementRepo.findWithRelations(id, tenantId);
   }
 
   /**
@@ -895,22 +892,22 @@ export class AgreementService {
    */
   async getAgreementByReference(
     reference: string,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement | null> {
-    return this.agreementRepo.findByReference(reference, providerId);
+    return this.agreementRepo.findByReference(reference, tenantId);
   }
 
   /**
    * List agreements with pagination and filters
    */
   async listAgreements(
-    providerId: string,
+    tenantId: string,
     filters?: AgreementFilters,
     page = 1,
     pageSize = 20
   ): Promise<PaginatedResult<Agreement>> {
     return this.agreementRepo.findAllWithFilters(
-      providerId,
+      tenantId,
       filters,
       page,
       pageSize
@@ -922,9 +919,9 @@ export class AgreementService {
    */
   async getAgreementsByOrder(
     orderId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement[]> {
-    return this.agreementRepo.findByOrder(orderId, providerId);
+    return this.agreementRepo.findByOrder(orderId, tenantId);
   }
 
   /**
@@ -932,18 +929,16 @@ export class AgreementService {
    */
   async getAgreementsByType(
     agreementType: agreement_type,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement[]> {
-    return this.agreementRepo.findByType(agreementType, providerId);
+    return this.agreementRepo.findByType(agreementType, tenantId);
   }
 
   /**
    * Get agreements pending signature
    */
-  async getPendingSignatureAgreements(
-    providerId: string
-  ): Promise<Agreement[]> {
-    return this.agreementRepo.findPendingSignature(providerId);
+  async getPendingSignatureAgreements(tenantId: string): Promise<Agreement[]> {
+    return this.agreementRepo.findPendingSignature(tenantId);
   }
 
   /**
@@ -951,9 +946,9 @@ export class AgreementService {
    */
   async getVersionHistory(
     agreementId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Agreement[]> {
-    return this.agreementRepo.findVersionHistory(agreementId, providerId);
+    return this.agreementRepo.findVersionHistory(agreementId, tenantId);
   }
 
   // ===========================================================================
@@ -963,16 +958,16 @@ export class AgreementService {
   /**
    * Send reminders for agreements pending signature
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param daysThreshold - Days since sent for signature
    * @returns Number of reminders sent
    */
   async sendSignatureReminders(
-    providerId: string,
+    tenantId: string,
     daysThreshold: number
   ): Promise<number> {
     const pendingAgreements =
-      await this.agreementRepo.findPendingSignature(providerId);
+      await this.agreementRepo.findPendingSignature(tenantId);
 
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() - daysThreshold);
@@ -1003,7 +998,7 @@ export class AgreementService {
 
     logger.info(
       {
-        providerId,
+        tenantId,
         remindersSent: sentCount,
         daysThreshold,
       },
@@ -1016,18 +1011,18 @@ export class AgreementService {
   /**
    * Expire agreements that have passed their expiry date
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @returns Number of agreements expired
    */
-  async expireOverdueAgreements(providerId: string): Promise<number> {
-    const expiredAgreements = await this.agreementRepo.findExpired(providerId);
+  async expireOverdueAgreements(tenantId: string): Promise<number> {
+    const expiredAgreements = await this.agreementRepo.findExpired(tenantId);
 
     let count = 0;
     for (const agreement of expiredAgreements) {
       try {
         await this.agreementRepo.updateAgreement(
           agreement.id,
-          providerId,
+          tenantId,
           { status: "expired" },
           "system"
         );
@@ -1054,7 +1049,7 @@ export class AgreementService {
 
     logger.info(
       {
-        providerId,
+        tenantId,
         expiredCount: count,
         totalFound: expiredAgreements.length,
       },
@@ -1068,35 +1063,35 @@ export class AgreementService {
    * Get agreements expiring soon
    */
   async getExpiringSoonAgreements(
-    providerId: string,
+    tenantId: string,
     days: number
   ): Promise<Agreement[]> {
-    return this.agreementRepo.findExpiringSoon(providerId, days);
+    return this.agreementRepo.findExpiringSoon(tenantId, days);
   }
 
   /**
    * Count agreements by status
    */
   async countByStatus(
-    providerId: string
+    tenantId: string
   ): Promise<Partial<Record<agreement_status, number>>> {
-    return this.agreementRepo.countByStatus(providerId);
+    return this.agreementRepo.countByStatus(tenantId);
   }
 
   /**
    * Count agreements by type
    */
   async countByType(
-    providerId: string
+    tenantId: string
   ): Promise<Partial<Record<agreement_type, number>>> {
-    return this.agreementRepo.countByType(providerId);
+    return this.agreementRepo.countByType(tenantId);
   }
 
   /**
    * Get average time to signature
    */
-  async getAverageTimeToSignature(providerId: string): Promise<number | null> {
-    return this.agreementRepo.getAverageTimeToSignature(providerId);
+  async getAverageTimeToSignature(tenantId: string): Promise<number | null> {
+    return this.agreementRepo.getAverageTimeToSignature(tenantId);
   }
 }
 

@@ -16,10 +16,6 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
-import {
-  getCurrentProviderId,
-  buildProviderFilter,
-} from "@/lib/utils/provider-context";
 
 // Valid deletion reasons
 const DELETE_REASONS = [
@@ -60,7 +56,8 @@ export async function deleteLeadAction(
 ): Promise<DeleteLeadResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
     // 2. Validation Zod
     const validation = DeleteLeadSchema.safeParse({
@@ -74,12 +71,9 @@ export async function deleteLeadAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Verify lead exists (with provider filter)
+    // 5. Verify lead exists (with tenant filter)
     const lead = await db.crm_leads.findFirst({
-      where: { id: leadId, ...buildProviderFilter(providerId) },
+      where: { id: leadId, tenant_id: session.orgId },
       select: {
         id: true,
         email: true,
@@ -201,19 +195,17 @@ export async function restoreLeadAction(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // 1. Authentication & Authorization
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
     // 2. Validate lead ID
     if (!z.string().uuid().safeParse(leadId).success) {
       return { success: false, error: "Invalid lead ID" };
     }
 
-    // 4. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Verify lead exists and is soft-deleted (with provider filter)
+    // 5. Verify lead exists and is soft-deleted (with tenant filter)
     const lead = await db.crm_leads.findFirst({
-      where: { id: leadId, ...buildProviderFilter(providerId) },
+      where: { id: leadId, tenant_id: session.orgId },
       select: { id: true, deleted_at: true },
     });
 

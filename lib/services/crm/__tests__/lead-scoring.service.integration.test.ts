@@ -40,28 +40,30 @@ describeIntegration("LeadScoringService Integration Tests", () => {
     // Ensure required settings exist
     await ensureTestSettings();
 
-    // Create or get a test provider for employee assignment
-    const provider = await prisma.adm_providers.upsert({
-      where: { code: "TEST_SCORING" },
+    // Create or get a test tenant for employee assignment
+    const tenant = await prisma.adm_tenants.upsert({
+      where: { subdomain: "test-scoring" },
       update: {},
       create: {
-        code: "TEST_SCORING",
-        name: "Test Scoring Provider",
-        is_internal: true,
-        status: "active",
+        subdomain: "test-scoring",
+        name: "Test Scoring Tenant",
+        country_code: "FR",
+        tenant_type: "client",
+        status: "trialing",
       },
     });
-    testProviderId = provider.id;
+    testProviderId = tenant.id;
 
     // Create test employee for assignment
-    const employee = await prisma.adm_provider_employees.create({
+    const employee = await prisma.clt_members.create({
       data: {
         email: `test-scoring-${Date.now()}@fleetcore.test`,
         first_name: "Test",
         last_name: "Employee",
+        phone: "",
         auth_user_id: `test_auth_${Date.now()}`,
         status: "active",
-        provider_id: testProviderId,
+        tenant_id: testProviderId,
       },
     });
     testEmployeeId = employee.id;
@@ -101,7 +103,7 @@ describeIntegration("LeadScoringService Integration Tests", () => {
     // Cleanup test employee
     if (testEmployeeId) {
       try {
-        await prisma.adm_provider_employees.delete({
+        await prisma.clt_members.delete({
           where: { id: testEmployeeId },
         });
       } catch {

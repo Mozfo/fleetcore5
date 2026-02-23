@@ -24,7 +24,7 @@ interface LeadPageProps {
 // Cache owners list for 5 minutes (doesn't change often)
 const getOwners = unstable_cache(
   async () => {
-    return db.adm_provider_employees.findMany({
+    return db.clt_members.findMany({
       where: { deleted_at: null },
       select: { id: true, first_name: true, last_name: true },
       orderBy: { first_name: "asc" },
@@ -121,7 +121,7 @@ const getLeadWithNavigation = cache(async (id: string) => {
       n.prev_id, n.next_id, n.total_count, n.current_position
     FROM crm_leads l
     LEFT JOIN crm_countries c ON l.country_code = c.country_code
-    LEFT JOIN adm_provider_employees e ON l.assigned_to = e.id
+    LEFT JOIN clt_members e ON l.assigned_to = e.id
     CROSS JOIN nav n
     WHERE l.id = ${id}::uuid AND l.deleted_at IS NULL
   `;
@@ -250,7 +250,7 @@ export default async function LeadPage({ params }: LeadPageProps) {
   return (
     <LeadDetailPage
       lead={lead}
-      owners={owners}
+      owners={owners.map((o) => ({ ...o, first_name: o.first_name ?? "" }))}
       locale={locale as "en" | "fr"}
       navigation={navigation}
     />

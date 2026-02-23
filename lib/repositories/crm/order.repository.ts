@@ -38,7 +38,7 @@ export type Order = crm_orders;
 export interface OrderCreateInput {
   opportunity_id: string;
   lead_id: string;
-  provider_id: string;
+  tenant_id: string;
   order_type?: "new" | "renewal" | "upgrade" | "downgrade" | "amendment";
   total_value: number;
   currency: string;
@@ -108,7 +108,7 @@ export type OrderWithRelations = crm_orders & {
  * Repository for managing CRM orders
  *
  * Orders are commercial contracts confirmed from opportunities.
- * Multi-division isolation via provider_id column (FleetCore France, UAE, etc.)
+ * Multi-division isolation via tenant_id column (FleetCore France, UAE, etc.)
  *
  * @module lib/repositories/crm/order.repository
  */
@@ -128,18 +128,18 @@ export class OrderRepository extends BaseRepository<Order> {
    * Find an order by ID with relations
    *
    * @param id - Order UUID
-   * @param providerId - Optional provider ID for multi-division filtering
+   * @param tenantId - Optional tenant ID for multi-division filtering
    * @returns Order with relations or null
    */
   async findByIdWithRelations(
     id: string,
-    providerId?: string
+    tenantId?: string
   ): Promise<OrderWithRelations | null> {
     return await this.model.findFirst({
       where: {
         id,
         deleted_at: null,
-        ...(providerId && { provider_id: providerId }),
+        ...(tenantId && { tenant_id: tenantId }),
       },
       include: {
         crm_leads: {
@@ -183,18 +183,18 @@ export class OrderRepository extends BaseRepository<Order> {
    * Find orders by opportunity ID
    *
    * @param opportunityId - Opportunity UUID
-   * @param providerId - Optional provider ID for filtering
+   * @param tenantId - Optional tenant ID for filtering
    * @returns Array of orders linked to the opportunity
    */
   async findByOpportunityId(
     opportunityId: string,
-    providerId?: string
+    tenantId?: string
   ): Promise<Order[]> {
     return await this.model.findMany({
       where: {
         opportunity_id: opportunityId,
         deleted_at: null,
-        ...(providerId && { provider_id: providerId }),
+        ...(tenantId && { tenant_id: tenantId }),
       },
       orderBy: { created_at: "desc" },
     });
@@ -204,15 +204,15 @@ export class OrderRepository extends BaseRepository<Order> {
    * Find orders by lead ID
    *
    * @param leadId - Lead UUID
-   * @param providerId - Optional provider ID for filtering
+   * @param tenantId - Optional tenant ID for filtering
    * @returns Array of orders linked to the lead
    */
-  async findByLeadId(leadId: string, providerId?: string): Promise<Order[]> {
+  async findByLeadId(leadId: string, tenantId?: string): Promise<Order[]> {
     return await this.model.findMany({
       where: {
         lead_id: leadId,
         deleted_at: null,
-        ...(providerId && { provider_id: providerId }),
+        ...(tenantId && { tenant_id: tenantId }),
       },
       orderBy: { created_at: "desc" },
     });
@@ -363,20 +363,20 @@ export class OrderRepository extends BaseRepository<Order> {
    * @param id - Order UUID
    * @param data - Update input
    * @param userId - User ID for audit trail
-   * @param providerId - Optional provider ID for multi-division filtering
+   * @param tenantId - Optional tenant ID for multi-division filtering
    * @returns Updated order
    */
   async updateOrder(
     id: string,
     data: OrderUpdateInput,
     userId: string,
-    providerId?: string
+    tenantId?: string
   ): Promise<Order> {
     return await this.model.update({
       where: {
         id,
         deleted_at: null,
-        ...(providerId && { provider_id: providerId }),
+        ...(tenantId && { tenant_id: tenantId }),
       },
       data: {
         ...data,
@@ -387,15 +387,15 @@ export class OrderRepository extends BaseRepository<Order> {
   }
 
   /**
-   * Count active orders for a provider (division)
+   * Count active orders for a tenant (division)
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Tenant UUID
    * @returns Count of active orders
    */
-  async countActiveOrders(providerId: string): Promise<number> {
+  async countActiveOrders(tenantId: string): Promise<number> {
     return await this.model.count({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: "active",
         fulfillment_status: {
           notIn: ["cancelled", "expired"],
@@ -408,12 +408,12 @@ export class OrderRepository extends BaseRepository<Order> {
   /**
    * Find orders expiring within a number of days
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Tenant UUID
    * @param days - Number of days from now
    * @returns Array of orders expiring soon
    */
   async findExpiringWithinDays(
-    providerId: string,
+    tenantId: string,
     days: number
   ): Promise<Order[]> {
     const now = new Date();
@@ -422,7 +422,7 @@ export class OrderRepository extends BaseRepository<Order> {
 
     return await this.model.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         expiry_date: {
           gte: now,
           lte: futureDate,
@@ -437,12 +437,12 @@ export class OrderRepository extends BaseRepository<Order> {
   /**
    * Find orders eligible for auto-renewal
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Tenant UUID
    * @param daysBeforeExpiry - Days before expiry to check
    * @returns Array of orders eligible for renewal
    */
   async findAutoRenewable(
-    providerId: string,
+    tenantId: string,
     daysBeforeExpiry: number
   ): Promise<Order[]> {
     const now = new Date();
@@ -451,7 +451,7 @@ export class OrderRepository extends BaseRepository<Order> {
 
     return await this.model.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         auto_renew: true,
         renewal_date: {
           gte: now,

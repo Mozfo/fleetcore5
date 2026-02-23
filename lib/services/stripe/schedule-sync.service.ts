@@ -19,7 +19,6 @@ import { logger } from "@/lib/logger";
  */
 export interface ScheduleSyncData {
   // IDs FleetCore
-  providerId: string;
   tenantId: string;
   scheduleId: string; // ID FleetCore du schedule
   orderId?: string;
@@ -112,7 +111,6 @@ export class ScheduleSyncService {
     try {
       // Construire les metadata FleetCore
       const metadata = createFleetCoreMetadata({
-        providerId: data.providerId,
         tenantId: data.tenantId,
         scheduleId: data.scheduleId,
         orderId: data.orderId,

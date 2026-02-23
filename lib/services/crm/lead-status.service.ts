@@ -92,7 +92,7 @@ export interface DisqualifyLeadInput {
   comment?: string | null;
   disqualifiedBy: string | null;
   addToBlacklist: boolean;
-  providerId: string;
+  tenantId: string;
 }
 
 // ===== SERVICE CLASS =====
@@ -275,7 +275,7 @@ export class LeadStatusService {
       // 1. Get current lead
       const lead = await prisma.crm_leads.findUnique({
         where: { id: leadId },
-        select: { id: true, status: true, email: true },
+        select: { id: true, status: true, email: true, tenant_id: true },
       });
 
       if (!lead) {
@@ -289,6 +289,16 @@ export class LeadStatusService {
       }
 
       const previousStatus = lead.status || "new";
+
+      // Resolve tenant_id for activity log
+      let activityTenantId = lead.tenant_id;
+      if (!activityTenantId) {
+        const hqTenant = await prisma.adm_tenants.findFirst({
+          where: { tenant_type: "headquarters" },
+          select: { id: true },
+        });
+        activityTenantId = hqTenant?.id ?? null;
+      }
 
       // 2. Validate transition
       const isValidTransition = await this.validateTransition(
@@ -371,18 +381,21 @@ export class LeadStatusService {
         });
 
         // Create activity
-        await tx.crm_lead_activities.create({
-          data: {
-            lead_id: leadId,
-            activity_type: "status_change",
-            title: `Status changed from ${previousStatus} to ${newStatus}`,
-            description: lossReasonCode
-              ? `Reason: ${lossReasonCode}${lossReasonDetail ? ` - ${lossReasonDetail}` : ""}`
-              : null,
-            performed_by: performedBy,
-            created_at: new Date(),
-          },
-        });
+        if (activityTenantId) {
+          await tx.crm_lead_activities.create({
+            data: {
+              tenant_id: activityTenantId,
+              lead_id: leadId,
+              activity_type: "status_change",
+              title: `Status changed from ${previousStatus} to ${newStatus}`,
+              description: lossReasonCode
+                ? `Reason: ${lossReasonCode}${lossReasonDetail ? ` - ${lossReasonDetail}` : ""}`
+                : null,
+              performed_by: performedBy,
+              created_at: new Date(),
+            },
+          });
+        }
       });
 
       logger.info(
@@ -438,7 +451,7 @@ export class LeadStatusService {
       comment,
       disqualifiedBy,
       addToBlacklist,
-      providerId,
+      tenantId,
     } = input;
 
     try {
@@ -479,6 +492,7 @@ export class LeadStatusService {
 
         await tx.crm_lead_activities.create({
           data: {
+            tenant_id: tenantId,
             lead_id: leadId,
             activity_type: "status_change",
             title: `Lead disqualified (from ${previousStatus})`,
@@ -495,7 +509,7 @@ export class LeadStatusService {
         try {
           const blacklistSvc = new BlacklistService();
           await blacklistSvc.addToBlacklist({
-            providerId,
+            tenantId,
             email: lead.email,
             reason: "disqualified",
             reasonComment: `Disqualified: ${reason}`,

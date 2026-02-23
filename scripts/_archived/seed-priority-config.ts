@@ -13,6 +13,13 @@ async function seedPriorityConfig() {
   logger.info("🎯 Seeding lead_priority_config in crm_settings...");
 
   try {
+    // Resolve HQ tenant_id (required by crm_settings)
+    const hq = await prisma.adm_tenants.findFirst({
+      where: { tenant_type: "headquarters" },
+      select: { id: true },
+    });
+    if (!hq) throw new Error("No HQ tenant found");
+
     // Upsert lead_priority_config
     const setting = await prisma.crm_settings.upsert({
       where: { setting_key: "lead_priority_config" },
@@ -68,6 +75,7 @@ async function seedPriorityConfig() {
         updated_at: new Date(),
       },
       create: {
+        tenant_id: hq.id,
         setting_key: "lead_priority_config",
         setting_value: {
           priority_levels: ["low", "medium", "high", "urgent"],

@@ -7,17 +7,13 @@
  * Security:
  * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Provider isolation via getCurrentProviderId
+ * 3. Tenant isolation via session.orgId
  */
 
 import { requireCrmAuth } from "@/lib/auth/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import {
-  getCurrentProviderId,
-  buildProviderFilter,
-} from "@/lib/utils/provider-context";
 import type { LeadStatus } from "@/types/crm";
 
 // Schemas de validation
@@ -66,7 +62,8 @@ export async function bulkAssignLeadsAction(
 ): Promise<BulkActionResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validation Zod
     const validation = BulkAssignSchema.safeParse({ leadIds, assigneeId });
@@ -94,12 +91,9 @@ export async function bulkAssignLeadsAction(
       };
     }
 
-    // 5. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 6. Bulk update with Prisma (with provider filter)
+    // 6. Bulk update with Prisma (with tenant filter)
     const result = await db.crm_leads.updateMany({
-      where: { id: { in: leadIds }, ...buildProviderFilter(providerId) },
+      where: { id: { in: leadIds }, tenant_id: session.orgId },
       data: {
         assigned_to: assigneeId,
         updated_at: new Date(),
@@ -140,7 +134,8 @@ export async function bulkUpdateStatusAction(
 ): Promise<BulkActionResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validation Zod
     const validation = BulkStatusSchema.safeParse({ leadIds, status });
@@ -153,12 +148,9 @@ export async function bulkUpdateStatusAction(
       };
     }
 
-    // 3. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Bulk update with Prisma (with provider filter)
+    // 5. Bulk update with Prisma (with tenant filter)
     const result = await db.crm_leads.updateMany({
-      where: { id: { in: leadIds }, ...buildProviderFilter(providerId) },
+      where: { id: { in: leadIds }, tenant_id: session.orgId },
       data: {
         status,
         updated_at: new Date(),
@@ -199,7 +191,8 @@ export async function bulkDeleteLeadsAction(
 ): Promise<BulkActionResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validation Zod
     const validation = BulkDeleteSchema.safeParse({ leadIds, reason });
@@ -212,15 +205,12 @@ export async function bulkDeleteLeadsAction(
       };
     }
 
-    // 3. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Soft delete with Prisma (with provider filter)
+    // 5. Soft delete with Prisma (with tenant filter)
     const result = await db.crm_leads.updateMany({
       where: {
         id: { in: leadIds },
         deleted_at: null, // Only delete non-deleted leads
-        ...buildProviderFilter(providerId),
+        tenant_id: session.orgId,
       },
       data: {
         deleted_at: new Date(),

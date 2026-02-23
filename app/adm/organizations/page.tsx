@@ -4,15 +4,10 @@ import { format } from "date-fns";
 export const dynamic = "force-dynamic";
 
 export default async function OrganizationsPage() {
-  // Fetch HQ provider to exclude from org list
-  const hqProvider = await db.adm_providers.findFirst({
-    where: { is_headquarters: true },
-    select: { id: true },
-  });
-
+  // Fetch all client organizations (exclude HQ tenant)
   const organizations = await db.adm_tenants.findMany({
     where: {
-      ...(hqProvider ? { NOT: { id: hqProvider.id } } : {}),
+      tenant_type: { not: "headquarters" },
     },
     orderBy: {
       created_at: "desc",
@@ -63,7 +58,7 @@ export default async function OrganizationsPage() {
                   Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-600 uppercase dark:text-gray-400">
-                  Slug
+                  Code
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-600 uppercase dark:text-gray-400">
                   Country
@@ -96,7 +91,7 @@ export default async function OrganizationsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {org.auth_organization_id || "N/A"}
+                        {org.tenant_code || "N/A"}
                       </div>
                     </td>
                     <td className="px-6 py-4">

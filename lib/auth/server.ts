@@ -36,11 +36,11 @@ export interface CrmAuthSession extends AuthSession {
   orgId: string;
 }
 
-export interface ProviderContext {
-  /** Provider UUID or null for global access */
-  providerId: string | null;
-  /** Employee UUID */
-  employeeId: string | null;
+export interface TenantContext {
+  /** Tenant UUID (from session.activeOrganizationId) or null */
+  tenantId: string | null;
+  /** Auth user ID */
+  userId: string | null;
   /** Whether user has global access (CEO/admin) */
   isGlobalAccess: boolean;
 }
@@ -165,50 +165,28 @@ export async function getCurrentUser() {
   return session?.user ?? null;
 }
 
-// -- Provider Context ---------------------------------------------------------
+// -- Tenant Context -----------------------------------------------------------
 
 /**
- * Get provider context for the current user.
+ * Get tenant context for the current user.
  *
- * Looks up the authenticated user in adm_provider_employees
- * using auth_user_id (Better Auth).
- *
- * Replaces: getProviderContext() from lib/utils/provider-context.ts
+ * Uses session.activeOrganizationId as tenantId.
+ * Replaces: getProviderContext() — no more adm_provider_employees lookup.
  */
-export async function getProviderContext(): Promise<ProviderContext> {
+export async function getTenantContext(): Promise<TenantContext> {
   const session = await getSession();
 
   if (!session) {
     return {
-      providerId: null,
-      employeeId: null,
-      isGlobalAccess: false,
-    };
-  }
-
-  const employee = await prisma.adm_provider_employees.findFirst({
-    where: {
-      auth_user_id: session.userId,
-      status: "active",
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      provider_id: true,
-    },
-  });
-
-  if (!employee) {
-    return {
-      providerId: null,
-      employeeId: null,
+      tenantId: null,
+      userId: null,
       isGlobalAccess: false,
     };
   }
 
   return {
-    providerId: employee.provider_id,
-    employeeId: employee.id,
-    isGlobalAccess: employee.provider_id === null,
+    tenantId: session.orgId,
+    userId: session.userId,
+    isGlobalAccess: false,
   };
 }

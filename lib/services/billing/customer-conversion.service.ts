@@ -293,6 +293,7 @@ export class CustomerConversionService {
         // 6d. Create activity log
         await tx.crm_lead_activities.create({
           data: {
+            tenant_id: tenant.id,
             lead_id: leadId,
             activity_type: "lead_converted",
             description: `Lead converted to customer. Tenant: ${tenantCode}, Plan: ${planCode}`,
@@ -332,12 +333,6 @@ export class CustomerConversionService {
 
         if (orgResult.success && orgResult.organizationId) {
           authOrgId = orgResult.organizationId;
-
-          // Update tenant with auth org ID (stored in auth_organization_id column)
-          await prisma.adm_tenants.update({
-            where: { id: result.tenant.id },
-            data: { auth_organization_id: authOrgId },
-          });
 
           logger.info(
             { authOrgId, tenantId: result.tenant.id },

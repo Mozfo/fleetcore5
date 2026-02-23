@@ -73,7 +73,6 @@ export interface PaginatedResult<T> {
  */
 export interface CreateScheduleInput {
   tenantId: string;
-  providerId: string;
   userId: string;
   orderId?: string;
   startDate: Date;
@@ -185,7 +184,7 @@ function isTransitionAllowed(
  * // Create a schedule with phases
  * const schedule = await subscriptionScheduleService.createSchedule({
  *   tenantId: "tenant-uuid",
- *   providerId: "provider-uuid",
+ *   tenantId: "provider-uuid",
  *   userId: "user-uuid",
  *   startDate: new Date("2025-01-01"),
  *   phases: [
@@ -211,7 +210,7 @@ export class SubscriptionScheduleService {
    * Format: SCH-YYYY-NNNNN (e.g., SCH-2025-00001)
    */
   async generateScheduleReference(
-    providerId: string,
+    tenantId: string,
     tx?: PrismaTransaction
   ): Promise<string> {
     const client = tx || this.prisma;
@@ -220,7 +219,7 @@ export class SubscriptionScheduleService {
 
     const lastSchedule = await client.bil_subscription_schedules.findFirst({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         schedule_reference: { startsWith: prefix },
         deleted_at: null,
       },
@@ -277,7 +276,7 @@ export class SubscriptionScheduleService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       const reference = await this.generateScheduleReference(
-        input.providerId,
+        input.tenantId,
         tx
       );
 
@@ -286,7 +285,6 @@ export class SubscriptionScheduleService {
         data: {
           schedule_reference: reference,
           tenant_id: input.tenantId,
-          provider_id: input.providerId,
           order_id: input.orderId,
           status: "not_started",
           end_behavior: input.endBehavior || "cancel",
@@ -309,7 +307,7 @@ export class SubscriptionScheduleService {
           await tx.bil_subscription_schedule_phases.create({
             data: {
               schedule_id: schedule.id,
-              provider_id: input.providerId,
+              tenant_id: input.tenantId,
               plan_id: phase.planId,
               phase_number: i + 1,
               phase_name: phase.phaseName,
@@ -354,7 +352,7 @@ export class SubscriptionScheduleService {
 
     return this.getScheduleWithPhases(
       result.id,
-      input.providerId
+      input.tenantId
     ) as Promise<ScheduleWithPhases>;
   }
 
@@ -363,16 +361,16 @@ export class SubscriptionScheduleService {
    */
   async updateSchedule(
     id: string,
-    providerId: string,
+    tenantId: string,
     input: UpdateScheduleInput,
     userId: string
   ): Promise<SubscriptionSchedule> {
     logger.info(
-      { id, providerId, input },
+      { id, tenantId, input },
       "[SubscriptionScheduleService] Updating schedule"
     );
 
-    const schedule = await this.getSchedule(id, providerId);
+    const schedule = await this.getSchedule(id, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${id}`);
@@ -411,16 +409,16 @@ export class SubscriptionScheduleService {
    */
   async deleteSchedule(
     id: string,
-    providerId: string,
+    tenantId: string,
     deletedBy: string,
     reason?: string
   ): Promise<void> {
     logger.info(
-      { id, providerId },
+      { id, tenantId },
       "[SubscriptionScheduleService] Deleting schedule"
     );
 
-    const schedule = await this.getSchedule(id, providerId);
+    const schedule = await this.getSchedule(id, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${id}`);
@@ -458,15 +456,15 @@ export class SubscriptionScheduleService {
    */
   async addPhase(
     scheduleId: string,
-    providerId: string,
+    tenantId: string,
     input: CreatePhaseInput
   ): Promise<SchedulePhase> {
     logger.info(
-      { scheduleId, providerId, input },
+      { scheduleId, tenantId, input },
       "[SubscriptionScheduleService] Adding phase"
     );
 
-    const schedule = await this.getScheduleWithPhases(scheduleId, providerId);
+    const schedule = await this.getScheduleWithPhases(scheduleId, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${scheduleId}`);
@@ -498,7 +496,7 @@ export class SubscriptionScheduleService {
       const phase = await tx.bil_subscription_schedule_phases.create({
         data: {
           schedule_id: scheduleId,
-          provider_id: providerId,
+          tenant_id: tenantId,
           plan_id: input.planId,
           phase_number: phaseNumber,
           phase_name: input.phaseName,
@@ -546,18 +544,18 @@ export class SubscriptionScheduleService {
    */
   async updatePhase(
     phaseId: string,
-    providerId: string,
+    tenantId: string,
     input: UpdatePhaseInput
   ): Promise<SchedulePhase> {
     logger.info(
-      { phaseId, providerId, input },
+      { phaseId, tenantId, input },
       "[SubscriptionScheduleService] Updating phase"
     );
 
     const phase = await this.prisma.bil_subscription_schedule_phases.findFirst({
       where: {
         id: phaseId,
-        provider_id: providerId,
+        tenant_id: tenantId,
       },
     });
 
@@ -633,16 +631,16 @@ export class SubscriptionScheduleService {
   /**
    * Remove a phase from a schedule
    */
-  async removePhase(phaseId: string, providerId: string): Promise<void> {
+  async removePhase(phaseId: string, tenantId: string): Promise<void> {
     logger.info(
-      { phaseId, providerId },
+      { phaseId, tenantId },
       "[SubscriptionScheduleService] Removing phase"
     );
 
     const phase = await this.prisma.bil_subscription_schedule_phases.findFirst({
       where: {
         id: phaseId,
-        provider_id: providerId,
+        tenant_id: tenantId,
       },
     });
 
@@ -700,9 +698,9 @@ export class SubscriptionScheduleService {
    */
   async getPhases(
     scheduleId: string,
-    providerId: string
+    tenantId: string
   ): Promise<SchedulePhase[]> {
-    const schedule = await this.getSchedule(scheduleId, providerId);
+    const schedule = await this.getSchedule(scheduleId, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${scheduleId}`);
@@ -723,14 +721,14 @@ export class SubscriptionScheduleService {
    */
   async activateSchedule(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule> {
     logger.info(
-      { id, providerId },
+      { id, tenantId },
       "[SubscriptionScheduleService] Activating schedule"
     );
 
-    const schedule = await this.getScheduleWithPhases(id, providerId);
+    const schedule = await this.getScheduleWithPhases(id, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${id}`);
@@ -777,14 +775,14 @@ export class SubscriptionScheduleService {
    */
   async transitionToNextPhase(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule> {
     logger.info(
-      { id, providerId },
+      { id, tenantId },
       "[SubscriptionScheduleService] Transitioning to next phase"
     );
 
-    const schedule = await this.getScheduleWithPhases(id, providerId);
+    const schedule = await this.getScheduleWithPhases(id, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${id}`);
@@ -807,7 +805,7 @@ export class SubscriptionScheduleService {
 
     if (!nextPhase) {
       // No more phases - complete the schedule
-      return this.completeSchedule(id, providerId);
+      return this.completeSchedule(id, tenantId);
     }
 
     const updated = await this.prisma.bil_subscription_schedules.update({
@@ -837,14 +835,14 @@ export class SubscriptionScheduleService {
    */
   async completeSchedule(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule> {
     logger.info(
-      { id, providerId },
+      { id, tenantId },
       "[SubscriptionScheduleService] Completing schedule"
     );
 
-    const schedule = await this.getSchedule(id, providerId);
+    const schedule = await this.getSchedule(id, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${id}`);
@@ -878,15 +876,15 @@ export class SubscriptionScheduleService {
    */
   async cancelSchedule(
     id: string,
-    providerId: string,
+    tenantId: string,
     reason?: string
   ): Promise<SubscriptionSchedule> {
     logger.info(
-      { id, providerId, reason },
+      { id, tenantId, reason },
       "[SubscriptionScheduleService] Canceling schedule"
     );
 
-    const schedule = await this.getSchedule(id, providerId);
+    const schedule = await this.getSchedule(id, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${id}`);
@@ -925,14 +923,14 @@ export class SubscriptionScheduleService {
    */
   async releaseSchedule(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule> {
     logger.info(
-      { id, providerId },
+      { id, tenantId },
       "[SubscriptionScheduleService] Releasing schedule"
     );
 
-    const schedule = await this.getSchedule(id, providerId);
+    const schedule = await this.getSchedule(id, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${id}`);
@@ -974,12 +972,12 @@ export class SubscriptionScheduleService {
    */
   async getSchedule(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule | null> {
     return this.prisma.bil_subscription_schedules.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -990,14 +988,14 @@ export class SubscriptionScheduleService {
    */
   async getScheduleWithPhases(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<ScheduleWithPhases | null> {
     // NOTE: Relations (phases, tenant, order) are NOT defined in Prisma schema.
     // We fetch schedule first, then phases separately.
     const schedule = await this.prisma.bil_subscription_schedules.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -1017,12 +1015,12 @@ export class SubscriptionScheduleService {
    */
   async getScheduleByReference(
     reference: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule | null> {
     return this.prisma.bil_subscription_schedules.findFirst({
       where: {
         schedule_reference: reference,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -1032,7 +1030,7 @@ export class SubscriptionScheduleService {
    * List schedules with filters
    */
   async listSchedules(
-    providerId: string,
+    tenantId: string,
     filters?: ScheduleFilters
   ): Promise<PaginatedResult<SubscriptionSchedule>> {
     const page = filters?.page || 1;
@@ -1040,7 +1038,7 @@ export class SubscriptionScheduleService {
     const skip = (page - 1) * limit;
 
     const where: Prisma.bil_subscription_schedulesWhereInput = {
-      provider_id: providerId,
+      tenant_id: tenantId,
       deleted_at: null,
       ...(filters?.status && { status: filters.status }),
       ...(filters?.tenantId && { tenant_id: filters.tenantId }),
@@ -1074,13 +1072,11 @@ export class SubscriptionScheduleService {
    * Get schedules by tenant
    */
   async getSchedulesByTenant(
-    tenantId: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule[]> {
     return this.prisma.bil_subscription_schedules.findMany({
       where: {
         tenant_id: tenantId,
-        provider_id: providerId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -1092,12 +1088,12 @@ export class SubscriptionScheduleService {
    */
   async getSchedulesByOrder(
     orderId: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule[]> {
     return this.prisma.bil_subscription_schedules.findMany({
       where: {
         order_id: orderId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -1107,12 +1103,10 @@ export class SubscriptionScheduleService {
   /**
    * Get active schedules
    */
-  async getActiveSchedules(
-    providerId: string
-  ): Promise<SubscriptionSchedule[]> {
+  async getActiveSchedules(tenantId: string): Promise<SubscriptionSchedule[]> {
     return this.prisma.bil_subscription_schedules.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: "active",
         deleted_at: null,
       },
@@ -1128,20 +1122,20 @@ export class SubscriptionScheduleService {
    * Check and process phase transitions for schedules
    * Returns the number of transitions performed
    */
-  async checkPhaseTransitions(providerId: string): Promise<number> {
+  async checkPhaseTransitions(tenantId: string): Promise<number> {
     logger.info(
-      { providerId },
+      { tenantId },
       "[SubscriptionScheduleService] Checking phase transitions"
     );
 
     const schedulesToTransition =
-      await this.getSchedulesNeedingTransition(providerId);
+      await this.getSchedulesNeedingTransition(tenantId);
 
     let transitionCount = 0;
 
     for (const schedule of schedulesToTransition) {
       try {
-        await this.transitionToNextPhase(schedule.id, providerId);
+        await this.transitionToNextPhase(schedule.id, tenantId);
         transitionCount++;
       } catch (error) {
         logger.error(
@@ -1152,7 +1146,7 @@ export class SubscriptionScheduleService {
     }
 
     logger.info(
-      { providerId, transitionCount },
+      { tenantId, transitionCount },
       "[SubscriptionScheduleService] Phase transitions completed"
     );
 
@@ -1163,14 +1157,14 @@ export class SubscriptionScheduleService {
    * Get schedules needing phase transition
    */
   async getSchedulesNeedingTransition(
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule[]> {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
     return this.prisma.bil_subscription_schedules.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: "active",
         current_phase_end: { lt: now },
         deleted_at: null,
@@ -1187,9 +1181,9 @@ export class SubscriptionScheduleService {
    */
   async recalculateTotalValue(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<SubscriptionSchedule> {
-    const schedule = await this.getScheduleWithPhases(id, providerId);
+    const schedule = await this.getScheduleWithPhases(id, tenantId);
 
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${id}`);

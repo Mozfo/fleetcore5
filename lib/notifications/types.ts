@@ -412,11 +412,8 @@ export interface SendNotificationOptions {
   /** Member ID for member-related notifications */
   memberId?: string;
 
-  /** Tenant ID for tenant-scoped notifications (client context) */
+  /** Tenant ID for tenant-scoped notifications */
   tenantId?: string;
-
-  /** Provider ID for provider-scoped notifications (FleetCore division) */
-  providerId?: string;
 
   /** Country code for locale resolution */
   countryCode?: string;

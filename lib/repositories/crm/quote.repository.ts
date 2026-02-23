@@ -2,7 +2,7 @@
  * Quote Repository - CRM Quote Data Access
  *
  * Repository for managing CRM quotes (devis).
- * Multi-division isolation via provider_id column.
+ * Multi-division isolation via tenant_id column.
  *
  * @module lib/repositories/crm/quote.repository
  */
@@ -102,7 +102,7 @@ export type QuoteWithRelations = Quote & {
  */
 export interface QuoteCreateInput {
   opportunity_id: string;
-  provider_id: string;
+  tenant_id: string;
   created_by: string;
   valid_until: Date;
   valid_from?: Date;
@@ -191,13 +191,13 @@ export interface QuoteFilters {
  * Repository for managing CRM quotes
  *
  * Quotes are proposals sent to prospects before order confirmation.
- * Multi-division isolation via provider_id column (FleetCore France, UAE, etc.)
+ * Multi-division isolation via tenant_id column (FleetCore France, UAE, etc.)
  *
  * @example
  * ```typescript
  * const quote = await quoteRepository.createQuote({
  *   opportunity_id: "opp-uuid",
- *   provider_id: "provider-uuid",
+ *   tenant_id: "tenant-uuid",
  *   created_by: "user-uuid",
  *   valid_until: new Date("2025-02-28"),
  *   currency: "EUR",
@@ -338,7 +338,7 @@ export class QuoteRepository extends BaseRepository<Quote> {
         quote_reference: quoteReference,
         quote_code: quoteCode,
         opportunity_id: data.opportunity_id,
-        provider_id: data.provider_id,
+        tenant_id: data.tenant_id,
         created_by: data.created_by,
         updated_by: data.created_by,
         valid_from: data.valid_from ?? new Date(),
@@ -374,7 +374,7 @@ export class QuoteRepository extends BaseRepository<Quote> {
         await itemModel.create({
           data: {
             quote_id: quote.id,
-            provider_id: data.provider_id,
+            tenant_id: data.tenant_id,
             item_type: item.item_type,
             recurrence: item.recurrence ?? "recurring",
             plan_id: item.plan_id,
@@ -400,7 +400,7 @@ export class QuoteRepository extends BaseRepository<Quote> {
     }
 
     // Fetch final quote with items
-    const result = await this.findWithItems(quote.id, data.provider_id, tx);
+    const result = await this.findWithItems(quote.id, data.tenant_id, tx);
     if (!result) {
       throw new Error(`Failed to retrieve created quote: ${quote.id}`);
     }
@@ -408,16 +408,16 @@ export class QuoteRepository extends BaseRepository<Quote> {
   }
 
   /**
-   * Find a quote by ID with provider filtering
+   * Find a quote by ID with tenant filtering
    */
   async findByIdWithProvider(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<Quote | null> {
     return await this.model.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -428,12 +428,12 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async findByReference(
     reference: string,
-    providerId: string
+    tenantId: string
   ): Promise<Quote | null> {
     return await this.model.findFirst({
       where: {
         quote_reference: reference,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -444,14 +444,14 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async findWithItems(
     id: string,
-    providerId: string,
+    tenantId: string,
     tx?: PrismaTransaction
   ): Promise<QuoteWithItems | null> {
     const model = tx ? tx.crm_quotes : this.model;
     return await model.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       include: {
@@ -467,12 +467,12 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async findWithRelations(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<QuoteWithRelations | null> {
     return await this.model.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       include: {
@@ -519,14 +519,14 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async updateQuote(
     id: string,
-    providerId: string,
+    tenantId: string,
     data: QuoteUpdateInput,
     userId: string
   ): Promise<Quote> {
     return await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -542,14 +542,14 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async softDeleteQuote(
     id: string,
-    providerId: string,
+    tenantId: string,
     deletedBy: string,
     reason?: string
   ): Promise<void> {
     await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -569,12 +569,12 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async findByOpportunity(
     opportunityId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Quote[]> {
     return await this.model.findMany({
       where: {
         opportunity_id: opportunityId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -584,14 +584,11 @@ export class QuoteRepository extends BaseRepository<Quote> {
   /**
    * Find quotes by status
    */
-  async findByStatus(
-    status: quote_status,
-    providerId: string
-  ): Promise<Quote[]> {
+  async findByStatus(status: quote_status, tenantId: string): Promise<Quote[]> {
     return await this.model.findMany({
       where: {
         status,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -601,10 +598,10 @@ export class QuoteRepository extends BaseRepository<Quote> {
   /**
    * Find expired quotes (valid_until < now && status = sent)
    */
-  async findExpired(providerId: string): Promise<Quote[]> {
+  async findExpired(tenantId: string): Promise<Quote[]> {
     return await this.model.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: "sent",
         valid_until: { lt: new Date() },
         deleted_at: null,
@@ -616,14 +613,14 @@ export class QuoteRepository extends BaseRepository<Quote> {
   /**
    * Find quotes expiring within N days
    */
-  async findExpiringSoon(providerId: string, days: number): Promise<Quote[]> {
+  async findExpiringSoon(tenantId: string, days: number): Promise<Quote[]> {
     const now = new Date();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
 
     return await this.model.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: { in: ["sent", "viewed"] },
         valid_until: {
           gte: now,
@@ -639,13 +636,13 @@ export class QuoteRepository extends BaseRepository<Quote> {
    * Find all quotes with pagination and filters
    */
   async findAllWithFilters(
-    providerId: string,
+    tenantId: string,
     filters: QuoteFilters = {},
     page = 1,
     pageSize = 20
   ): Promise<PaginatedResult<Quote>> {
     const where: Prisma.crm_quotesWhereInput = {
-      provider_id: providerId,
+      tenant_id: tenantId,
       deleted_at: null,
     };
 
@@ -692,12 +689,12 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async findVersionHistory(
     parentQuoteId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Quote[]> {
     return await this.model.findMany({
       where: {
         OR: [{ id: parentQuoteId }, { parent_quote_id: parentQuoteId }],
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { quote_version: "asc" },
@@ -709,12 +706,12 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async getLatestVersion(
     opportunityId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Quote | null> {
     return await this.model.findFirst({
       where: {
         opportunity_id: opportunityId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { quote_version: "desc" },
@@ -726,11 +723,11 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async createNewVersion(
     quoteId: string,
-    providerId: string,
+    tenantId: string,
     userId: string,
     tx?: PrismaTransaction
   ): Promise<QuoteWithItems> {
-    const existingQuote = await this.findWithItems(quoteId, providerId, tx);
+    const existingQuote = await this.findWithItems(quoteId, tenantId, tx);
     if (!existingQuote) {
       throw new Error(`Quote not found: ${quoteId}`);
     }
@@ -771,7 +768,7 @@ export class QuoteRepository extends BaseRepository<Quote> {
     return this.createQuote(
       {
         opportunity_id: existingQuote.opportunity_id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         created_by: userId,
         valid_until: existingQuote.valid_until,
         valid_from: new Date(),
@@ -823,14 +820,14 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async setPublicToken(
     id: string,
-    providerId: string,
+    tenantId: string,
     userId: string
   ): Promise<string> {
     const token = this.generatePublicToken();
     await this.model.update({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       data: {
@@ -941,7 +938,7 @@ export class QuoteRepository extends BaseRepository<Quote> {
    */
   async addItem(
     quoteId: string,
-    providerId: string,
+    tenantId: string,
     item: QuoteItemCreateInput,
     tx?: PrismaTransaction
   ): Promise<QuoteItem> {
@@ -958,7 +955,7 @@ export class QuoteRepository extends BaseRepository<Quote> {
     const createdItem = await itemModel.create({
       data: {
         quote_id: quoteId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         item_type: item.item_type,
         recurrence: item.recurrence ?? "recurring",
         plan_id: item.plan_id,
@@ -1072,11 +1069,11 @@ export class QuoteRepository extends BaseRepository<Quote> {
   /**
    * Count quotes by status for a provider
    */
-  async countByStatus(providerId: string): Promise<Record<string, number>> {
+  async countByStatus(tenantId: string): Promise<Record<string, number>> {
     const counts = await this.model.groupBy({
       by: ["status"],
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       _count: { id: true },

@@ -86,7 +86,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { userId } = session;
+    const { userId, orgId } = session;
+
+    // orgId = adm_tenants.id (shared-ID pattern: auth_organization.id = adm_tenants.id)
+    if (!orgId) {
+      return NextResponse.json(
+        { success: false, error: "No active organization" },
+        { status: 401 }
+      );
+    }
 
     const body = (await request.json()) as DashboardLayout;
 
@@ -129,6 +137,7 @@ export async function PUT(request: NextRequest) {
       // Create new setting
       await db.crm_settings.create({
         data: {
+          tenant_id: orgId,
           setting_key: settingKey,
           setting_value: layoutToSave as object,
           category: SETTING_CATEGORY,

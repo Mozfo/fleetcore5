@@ -225,12 +225,12 @@ export class VerificationService {
       });
 
       // Step 3: Get tenant details for invitation
+      // Shared-ID pattern: adm_tenants.id = auth_organization.id
       const tenant = await prisma.adm_tenants.findUnique({
         where: { id: result.tenantId },
         select: {
           id: true,
           tenant_code: true,
-          auth_organization_id: true,
         },
       });
 
@@ -249,10 +249,11 @@ export class VerificationService {
       // Step 4: Invite admin via AuthService
       let adminInvitationSent = false;
 
-      if (tenant.auth_organization_id) {
+      // Shared-ID pattern: tenant.id = auth_organization.id
+      if (tenant.id) {
         try {
           const inviteResult = await authService.inviteAdmin({
-            organizationId: tenant.auth_organization_id,
+            organizationId: tenant.id,
             email: input.admin_email,
             name: input.admin_name,
             role: "org:provider_admin",

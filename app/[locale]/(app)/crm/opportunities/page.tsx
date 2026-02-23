@@ -139,9 +139,8 @@ const fetchAllOpportunities = cache(
           orderBy: { created_at: "desc" },
           take: 200,
         }),
-        db.adm_provider_employees.findMany({
+        db.clt_members.findMany({
           where: {
-            department: "Sales",
             status: "active",
             deleted_at: null,
           },
@@ -222,8 +221,8 @@ const fetchAllOpportunities = cache(
         lead: lead
           ? {
               id: lead.id,
-              first_name: lead.first_name,
-              last_name: lead.last_name,
+              first_name: lead.first_name ?? "",
+              last_name: lead.last_name ?? "",
               email: lead.email,
               company_name: lead.company_name,
               country_code: lead.country_code,
@@ -233,7 +232,7 @@ const fetchAllOpportunities = cache(
         assignedTo: assignedTo
           ? {
               id: assignedTo.id,
-              first_name: assignedTo.first_name,
+              first_name: assignedTo.first_name ?? "",
               last_name: assignedTo.last_name,
               email: assignedTo.email,
             }
@@ -243,7 +242,10 @@ const fetchAllOpportunities = cache(
 
     return {
       opportunities,
-      owners: salesTeamMembers,
+      owners: salesTeamMembers.map((m) => ({
+        ...m,
+        first_name: m.first_name ?? "",
+      })),
       leads: qualifiedLeads,
     };
   }

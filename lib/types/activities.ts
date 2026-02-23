@@ -27,7 +27,7 @@ export interface Activity {
   id: string;
   lead_id: string | null;
   opportunity_id: string | null;
-  provider_id: string;
+  tenant_id: string;
   activity_type: ActivityType;
   subject: string;
   description: string | null;
@@ -40,7 +40,7 @@ export interface Activity {
   created_at: string;
   updated_at: string;
   creator?: {
-    first_name: string;
+    first_name: string | null;
     last_name: string | null;
   } | null;
 }

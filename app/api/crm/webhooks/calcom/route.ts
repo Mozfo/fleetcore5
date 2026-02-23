@@ -207,6 +207,7 @@ export async function POST(request: NextRequest) {
         country_code: true,
         reschedule_token: true,
         language: true,
+        tenant_id: true,
       },
     });
 
@@ -359,7 +360,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 8. Create activity log
+    // 8. Resolve tenant_id for activity log (use lead's tenant or fallback to HQ)
+    let activityTenantId = lead.tenant_id;
+    if (!activityTenantId) {
+      const hqTenant = await prisma.adm_tenants.findFirst({
+        where: { tenant_type: "headquarters" },
+        select: { id: true },
+      });
+      activityTenantId = hqTenant?.id ?? null;
+    }
+
+    // 9. Create activity log
     const activityType =
       CALCOM_ACTIVITY_TYPES[
         payload.triggerEvent as keyof typeof CALCOM_ACTIVITY_TYPES
@@ -369,39 +380,42 @@ export async function POST(request: NextRequest) {
         payload.triggerEvent as keyof typeof CALCOM_ACTIVITY_TITLES
       ] || `Cal.com: ${payload.triggerEvent}`;
 
-    await prisma.crm_lead_activities.create({
-      data: {
-        lead_id: lead.id,
-        activity_type: activityType,
-        title: activityTitle,
-        description: `Booking ${payload.uid} pour ${new Date(
-          payload.startTime
-        ).toLocaleDateString("fr-FR", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
-        metadata: {
-          calcom_uid: payload.uid,
-          start_time: payload.startTime,
-          attendee_email: attendeeEmail,
-          attendee_name: attendeeName,
-          first_name: firstName,
-          last_name: lastName,
-          event: payload.triggerEvent,
-          previous_status: lead.status,
-          new_status: newStatus || lead.status,
+    if (activityTenantId) {
+      await prisma.crm_lead_activities.create({
+        data: {
+          tenant_id: activityTenantId,
+          lead_id: lead.id,
+          activity_type: activityType,
+          title: activityTitle,
+          description: `Booking ${payload.uid} pour ${new Date(
+            payload.startTime
+          ).toLocaleDateString("fr-FR", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`,
+          metadata: {
+            calcom_uid: payload.uid,
+            start_time: payload.startTime,
+            attendee_email: attendeeEmail,
+            attendee_name: attendeeName,
+            first_name: firstName,
+            last_name: lastName,
+            event: payload.triggerEvent,
+            previous_status: lead.status,
+            new_status: newStatus || lead.status,
+          },
+          performed_by_name: "Cal.com Webhook",
+          is_completed: true,
+          completed_at: new Date(),
         },
-        performed_by_name: "Cal.com Webhook",
-        is_completed: true,
-        completed_at: new Date(),
-      },
-    });
+      });
+    }
 
-    // 9. Log success
+    // 10. Log success
     const duration = Date.now() - startTime;
     logger.info(
       {

@@ -36,7 +36,7 @@ export const LEAD_SORT_FIELDS = [
  * Note: crm_lead_sources uses JSONB translations (name_translations, description_translations)
  */
 export type LeadWithRelations = crm_leads & {
-  eu1f9qh?: {
+  assigned_member?: {
     id: string;
     first_name: string;
     last_name: string;
@@ -83,7 +83,7 @@ export class LeadRepository
    * const lead = await leadRepo.findByEmail('contact@example.com');
    * if (lead) {
    *   // Access assigned employee and source
-   *   const employee = lead.eu1f9qh;
+   *   const employee = lead.assigned_member;
    *   const source = lead.crm_lead_sources;
    * }
    * ```
@@ -99,7 +99,7 @@ export class LeadRepository
       },
       include: {
         // Include assigned employee (if any)
-        eu1f9qh: {
+        assigned_member: {
           select: {
             id: true,
             first_name: true,
@@ -383,7 +383,7 @@ export class LeadRepository
         expected_value: true,
         currency: true,
         created_at: true,
-        eqtkd3: {
+        mfiaerr: {
           select: {
             id: true,
             first_name: true,
@@ -405,7 +405,13 @@ export class LeadRepository
           : null,
         metadata: { stage: opp.stage, expected_value: value },
         created_at: opp.created_at,
-        created_by: opp.eqtkd3,
+        created_by: opp.mfiaerr
+          ? {
+              id: opp.mfiaerr.id,
+              first_name: opp.mfiaerr.first_name ?? "",
+              last_name: opp.mfiaerr.last_name,
+            }
+          : null,
         entity_id: opp.id,
         entity_type: "opportunity",
       });
@@ -439,7 +445,7 @@ export class LeadRepository
 
       const creators =
         creatorIds.length > 0
-          ? await this.prisma.adm_provider_employees.findMany({
+          ? await this.prisma.clt_members.findMany({
               where: { id: { in: creatorIds } },
               select: { id: true, first_name: true, last_name: true },
             })
@@ -459,9 +465,16 @@ export class LeadRepository
             status: quote.status,
           },
           created_at: quote.created_at,
-          created_by: quote.created_by
-            ? creatorMap.get(quote.created_by) || null
-            : null,
+          created_by: (() => {
+            if (!quote.created_by) return null;
+            const creator = creatorMap.get(quote.created_by);
+            if (!creator) return null;
+            return {
+              id: creator.id,
+              first_name: creator.first_name ?? "",
+              last_name: creator.last_name,
+            };
+          })(),
           entity_id: quote.id,
           entity_type: "quote",
         });

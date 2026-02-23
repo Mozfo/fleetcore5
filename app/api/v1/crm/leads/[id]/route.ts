@@ -74,7 +74,7 @@ export async function GET(
       },
       include: {
         // Assigned employee
-        eu1f9qh: true,
+        assigned_member: true,
         // Country
         crm_countries: true,
         // Source
@@ -96,7 +96,7 @@ export async function GET(
     }
 
     // STEP 5: Format response
-    const assignedEmployee = lead.eu1f9qh;
+    const assignedEmployee = lead.assigned_member;
 
     return NextResponse.json(
       {
@@ -138,8 +138,7 @@ export async function GET(
                 first_name: assignedEmployee.first_name,
                 last_name: assignedEmployee.last_name,
                 email: assignedEmployee.email,
-                title: assignedEmployee.title,
-                department: assignedEmployee.department,
+                role: assignedEmployee.role,
               }
             : null,
           source: lead.crm_lead_sources
@@ -325,7 +324,7 @@ export async function PATCH(
       where: { id },
       data: updateData,
       include: {
-        eu1f9qh: true,
+        assigned_member: true,
         crm_countries: true,
         crm_lead_sources: true,
       },
@@ -344,7 +343,7 @@ export async function PATCH(
     );
 
     // STEP 10: Success response with FULL lead data (same format as GET)
-    const assignedEmployee = updatedLead.eu1f9qh;
+    const assignedEmployee = updatedLead.assigned_member;
 
     return NextResponse.json(
       {
@@ -394,8 +393,7 @@ export async function PATCH(
                 first_name: assignedEmployee.first_name,
                 last_name: assignedEmployee.last_name,
                 email: assignedEmployee.email,
-                title: assignedEmployee.title,
-                department: assignedEmployee.department,
+                role: assignedEmployee.role,
               }
             : null,
           assigned_to_id: updatedLead.assigned_to,

@@ -8,7 +8,7 @@
  *
  * Security:
  * 1. All actions require requireCrmAuth (HQ org check)
- * 2. Provider isolation via getCurrentProviderId()
+ * 2. Tenant isolation via session.orgId
  * 3. All inputs validated with Zod schemas
  *
  * Action Categories:
@@ -30,7 +30,6 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
-import { getCurrentProviderId } from "@/lib/utils/provider-context";
 import { agreementService } from "@/lib/services/crm/agreement.service";
 import {
   NotFoundError,
@@ -160,19 +159,20 @@ export type GetAgreementStatsResult =
 /**
  * Check admin authorization
  * Returns error message if not authorized, context if OK
+ * Tenant isolation via session.orgId
  */
 async function checkAdminAuth(): Promise<
-  { userId: string; orgId: string; providerId: string } | { error: string }
+  { userId: string; orgId: string; tenantId: string } | { error: string }
 > {
   try {
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
-    const providerId = await getCurrentProviderId();
-    if (!providerId) {
-      return { error: "Provider context required" };
+    if (!orgId) {
+      return { error: "Tenant context required" };
     }
 
-    return { userId, orgId, providerId };
+    return { userId, orgId, tenantId: orgId };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unauthorized";
     return { error: message };
@@ -198,7 +198,7 @@ export async function createAgreementAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = CreateAgreementSchema.safeParse(input);
@@ -211,7 +211,7 @@ export async function createAgreementAction(
     // 3. Create agreement via service
     const agreement = await agreementService.createAgreement({
       orderId: validated.orderId,
-      providerId,
+      tenantId,
       userId,
       agreementType: validated.agreementType,
       effectiveDate: validated.effectiveDate ?? undefined,
@@ -295,7 +295,7 @@ export async function updateAgreementAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate UUID
     const idValidation = UuidSchema.safeParse(agreementId);
@@ -314,7 +314,7 @@ export async function updateAgreementAction(
     // 4. Update via service
     const agreement = await agreementService.updateAgreement(
       agreementId,
-      providerId,
+      tenantId,
       userId,
       {
         effectiveDate: validated.effectiveDate ?? undefined,
@@ -389,7 +389,7 @@ export async function deleteAgreementAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = DeleteAgreementSchema.safeParse(input);
@@ -402,7 +402,7 @@ export async function deleteAgreementAction(
     // 3. Delete via service
     await agreementService.deleteAgreement(
       validated.agreementId,
-      providerId,
+      tenantId,
       userId,
       validated.reason
     );
@@ -467,7 +467,7 @@ export async function sendForSignatureAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate UUID
     const idValidation = UuidSchema.safeParse(agreementId);
@@ -478,7 +478,7 @@ export async function sendForSignatureAction(
     // 3. Send via service
     const result = await agreementService.sendForSignature(
       agreementId,
-      providerId,
+      tenantId,
       userId
     );
 
@@ -544,7 +544,7 @@ export async function recordClientSignatureAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = RecordClientSignatureSchema.safeParse(input);
@@ -557,7 +557,7 @@ export async function recordClientSignatureAction(
     // 3. Record via service
     const agreement = await agreementService.recordClientSignature(
       validated.agreementId,
-      providerId,
+      tenantId,
       {
         signatoryName: validated.signatoryName,
         signatoryEmail: validated.signatoryEmail,
@@ -632,7 +632,7 @@ export async function recordProviderSignatureAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = RecordProviderSignatureSchema.safeParse(input);
@@ -645,7 +645,7 @@ export async function recordProviderSignatureAction(
     // 3. Record via service
     const agreement = await agreementService.recordProviderSignature(
       validated.agreementId,
-      providerId,
+      tenantId,
       {
         signatoryId: validated.signatoryId,
         signatoryName: validated.signatoryName ?? undefined,
@@ -718,7 +718,7 @@ export async function activateAgreementAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate UUID
     const idValidation = UuidSchema.safeParse(agreementId);
@@ -729,7 +729,7 @@ export async function activateAgreementAction(
     // 3. Activate via service
     const agreement = await agreementService.activateAgreement(
       agreementId,
-      providerId,
+      tenantId,
       userId,
       signedDocumentUrl
     );
@@ -803,7 +803,7 @@ export async function terminateAgreementAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = TerminateAgreementSchema.safeParse(input);
@@ -816,7 +816,7 @@ export async function terminateAgreementAction(
     // 3. Terminate via service
     const agreement = await agreementService.terminateAgreement(
       validated.agreementId,
-      providerId,
+      tenantId,
       userId,
       validated.reason
     );
@@ -879,7 +879,7 @@ export async function createNewVersionAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = CreateNewVersionSchema.safeParse(input);
@@ -892,7 +892,7 @@ export async function createNewVersionAction(
     // 3. Create new version via service
     const agreement = await agreementService.createNewVersion(
       validated.originalAgreementId,
-      providerId,
+      tenantId,
       userId
     );
 
@@ -962,7 +962,7 @@ export async function getAgreementAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate UUID
     const idValidation = UuidSchema.safeParse(agreementId);
@@ -973,7 +973,7 @@ export async function getAgreementAction(
     // 3. Get via service
     const agreement = await agreementService.getAgreement(
       agreementId,
-      providerId
+      tenantId
     );
 
     return { success: true, agreement };
@@ -1000,7 +1000,7 @@ export async function getAgreementWithRelationsAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate UUID
     const idValidation = UuidSchema.safeParse(agreementId);
@@ -1011,7 +1011,7 @@ export async function getAgreementWithRelationsAction(
     // 3. Get via service
     const agreement = await agreementService.getAgreementWithRelations(
       agreementId,
-      providerId
+      tenantId
     );
 
     return { success: true, agreement };
@@ -1041,7 +1041,7 @@ export async function listAgreementsAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate query
     const validation = AgreementQuerySchema.safeParse(query || {});
@@ -1053,7 +1053,7 @@ export async function listAgreementsAction(
 
     // 3. Map camelCase query to snake_case filters for repository
     const result = await agreementService.listAgreements(
-      providerId,
+      tenantId,
       {
         status: validated.status,
         agreement_type: validated.agreementType,
@@ -1096,7 +1096,7 @@ export async function getAgreementsByOrderAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate UUID
     const idValidation = UuidSchema.safeParse(orderId);
@@ -1107,7 +1107,7 @@ export async function getAgreementsByOrderAction(
     // 3. Get via service
     const agreements = await agreementService.getAgreementsByOrder(
       orderId,
-      providerId
+      tenantId
     );
 
     return { success: true, agreements };
@@ -1134,7 +1134,7 @@ export async function getExpiringAgreementsAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate days
     const daysValidation = DaysSchema.safeParse(days);
@@ -1144,7 +1144,7 @@ export async function getExpiringAgreementsAction(
 
     // 3. Get via service
     const agreements = await agreementService.getExpiringSoonAgreements(
-      providerId,
+      tenantId,
       daysValidation.data
     );
 
@@ -1175,13 +1175,13 @@ export async function getAgreementStatsAction(): Promise<GetAgreementStatsResult
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Get stats via service
     const [byStatus, byType, averageTimeToSignature] = await Promise.all([
-      agreementService.countByStatus(providerId),
-      agreementService.countByType(providerId),
-      agreementService.getAverageTimeToSignature(providerId),
+      agreementService.countByStatus(tenantId),
+      agreementService.countByType(tenantId),
+      agreementService.getAverageTimeToSignature(tenantId),
     ]);
 
     return {

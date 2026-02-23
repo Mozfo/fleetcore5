@@ -20,7 +20,6 @@ import { logger } from "@/lib/logger";
  */
 export interface AmendmentApplyData {
   // IDs FleetCore
-  providerId: string;
   tenantId: string;
   amendmentId: string;
   subscriptionId: string; // ID FleetCore
@@ -569,7 +568,6 @@ export class AmendmentSyncService {
     data: AmendmentApplyData
   ): Record<string, string> {
     const baseMetadata = createFleetCoreMetadata({
-      providerId: data.providerId,
       tenantId: data.tenantId,
       amendmentId: data.amendmentId,
       subscriptionId: data.subscriptionId,

@@ -9,7 +9,7 @@
  * Security:
  * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Multi-tenant isolation via provider_id
+ * 3. Tenant isolation via session.orgId
  *
  * @see prisma/schema.prisma - crm_activities model
  * @module lib/actions/crm/activities.actions
@@ -21,10 +21,6 @@ import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
 import { LeadScoringService } from "@/lib/services/crm/lead-scoring.service";
-import {
-  getCurrentProviderId,
-  buildProviderFilter,
-} from "@/lib/utils/provider-context";
 
 // ============================================================================
 // TYPES
@@ -36,7 +32,7 @@ export interface Activity {
   id: string;
   lead_id: string | null;
   opportunity_id: string | null;
-  provider_id: string;
+  tenant_id: string;
   activity_type: ActivityType;
   subject: string;
   description: string | null;
@@ -86,7 +82,7 @@ export async function getActivitiesAction(
 ): Promise<GetActivitiesResult> {
   try {
     // 1. Authentication & Authorization
-    await requireCrmAuth();
+    const session = await requireCrmAuth();
 
     // 2. Validate at least one entity filter
     if (!filters.leadId && !filters.opportunityId) {
@@ -96,12 +92,9 @@ export async function getActivitiesAction(
       };
     }
 
-    // 4. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
     // 5. Build where clause
     const whereClause: Record<string, unknown> = {
-      ...buildProviderFilter(providerId),
+      tenant_id: session.orgId,
     };
 
     if (filters.leadId) {
@@ -128,7 +121,7 @@ export async function getActivitiesAction(
         take: limit,
         skip: offset,
         include: {
-          adm_provider_employees: {
+          created_by_member: {
             select: { first_name: true, last_name: true },
           },
         },
@@ -141,7 +134,7 @@ export async function getActivitiesAction(
       id: a.id,
       lead_id: a.lead_id,
       opportunity_id: a.opportunity_id,
-      provider_id: a.provider_id,
+      tenant_id: a.tenant_id,
       activity_type: a.activity_type as ActivityType,
       subject: a.subject,
       description: a.description,
@@ -153,7 +146,12 @@ export async function getActivitiesAction(
       created_by: a.created_by,
       created_at: a.created_at?.toISOString() || new Date().toISOString(),
       updated_at: a.updated_at?.toISOString() || new Date().toISOString(),
-      creator: a.adm_provider_employees,
+      creator: a.created_by_member
+        ? {
+            first_name: a.created_by_member.first_name ?? "",
+            last_name: a.created_by_member.last_name,
+          }
+        : null,
     }));
 
     return { success: true, activities: serializedActivities, total };
@@ -206,7 +204,8 @@ export async function createActivityAction(
 ): Promise<CreateActivityResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validate with Zod
     const validated = CreateActivitySchema.safeParse(data);
@@ -215,18 +214,12 @@ export async function createActivityAction(
       return { success: false, error: firstError?.message || "Invalid data" };
     }
 
-    // 4. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-    if (!providerId) {
-      return { success: false, error: "Provider context not found" };
-    }
-
     // 5. Verify lead exists if provided
     if (validated.data.leadId) {
       const lead = await db.crm_leads.findFirst({
         where: {
           id: validated.data.leadId,
-          ...buildProviderFilter(providerId),
+          tenant_id: session.orgId,
           deleted_at: null,
         },
         select: { id: true },
@@ -237,17 +230,12 @@ export async function createActivityAction(
     }
 
     // 6. Verify opportunity exists if provided
-    // Note: crm_opportunities doesn't have provider_id directly
-    // We verify provider isolation via the linked lead's provider_id
     if (validated.data.opportunityId) {
       const opportunity = await db.crm_opportunities.findFirst({
         where: {
           id: validated.data.opportunityId,
           deleted_at: null,
-          // Provider isolation via lead relation
-          xva1wvf: {
-            ...buildProviderFilter(providerId),
-          },
+          tenant_id: session.orgId,
         },
         select: { id: true },
       });
@@ -256,23 +244,23 @@ export async function createActivityAction(
       }
     }
 
-    // 7. Get current employee ID for created_by (dual-ID for transition)
-    const employee = await db.adm_provider_employees.findFirst({
+    // 7. Get current member ID for created_by
+    const member = await db.clt_members.findFirst({
       where: {
         auth_user_id: userId,
-        ...buildProviderFilter(providerId),
+        tenant_id: session.orgId,
         deleted_at: null,
       },
       select: { id: true },
     });
-    const createdBy = employee?.id ?? null;
+    const createdBy = member?.id ?? null;
 
     // 8. Create activity
     const activity = await db.crm_activities.create({
       data: {
         lead_id: validated.data.leadId ?? undefined,
         opportunity_id: validated.data.opportunityId ?? undefined,
-        provider_id: providerId,
+        tenant_id: session.orgId,
         activity_type: validated.data.activityType,
         subject: validated.data.subject,
         description: validated.data.description ?? undefined,
@@ -283,7 +271,7 @@ export async function createActivityAction(
         created_by: createdBy ?? undefined,
       },
       include: {
-        adm_provider_employees: {
+        created_by_member: {
           select: { first_name: true, last_name: true },
         },
       },
@@ -333,7 +321,7 @@ export async function createActivityAction(
         id: activity.id,
         lead_id: activity.lead_id,
         opportunity_id: activity.opportunity_id,
-        provider_id: activity.provider_id,
+        tenant_id: activity.tenant_id,
         activity_type: activity.activity_type as ActivityType,
         subject: activity.subject,
         description: activity.description,
@@ -347,7 +335,12 @@ export async function createActivityAction(
           activity.created_at?.toISOString() || new Date().toISOString(),
         updated_at:
           activity.updated_at?.toISOString() || new Date().toISOString(),
-        creator: activity.adm_provider_employees,
+        creator: activity.created_by_member
+          ? {
+              first_name: activity.created_by_member.first_name ?? "",
+              last_name: activity.created_by_member.last_name,
+            }
+          : null,
       },
     };
   } catch (error) {
@@ -389,7 +382,7 @@ export async function updateActivityAction(
 ): Promise<UpdateActivityResult> {
   try {
     // 1. Authentication & Authorization
-    await requireCrmAuth();
+    const session = await requireCrmAuth();
 
     // 2. Validate UUID
     const uuidSchema = z.string().uuid();
@@ -403,12 +396,9 @@ export async function updateActivityAction(
       return { success: false, error: "Invalid update data" };
     }
 
-    // 5. Get provider context
-    const providerId = await getCurrentProviderId();
-
-    // 6. Find activity with provider filter
+    // 6. Find activity with tenant filter
     const existing = await db.crm_activities.findFirst({
-      where: { id, ...buildProviderFilter(providerId) },
+      where: { id, tenant_id: session.orgId },
       select: { id: true, lead_id: true, opportunity_id: true },
     });
 
@@ -438,7 +428,7 @@ export async function updateActivityAction(
       where: { id },
       data: updateData,
       include: {
-        adm_provider_employees: {
+        created_by_member: {
           select: { first_name: true, last_name: true },
         },
       },
@@ -458,7 +448,7 @@ export async function updateActivityAction(
         id: activity.id,
         lead_id: activity.lead_id,
         opportunity_id: activity.opportunity_id,
-        provider_id: activity.provider_id,
+        tenant_id: activity.tenant_id,
         activity_type: activity.activity_type as ActivityType,
         subject: activity.subject,
         description: activity.description,
@@ -472,7 +462,12 @@ export async function updateActivityAction(
           activity.created_at?.toISOString() || new Date().toISOString(),
         updated_at:
           activity.updated_at?.toISOString() || new Date().toISOString(),
-        creator: activity.adm_provider_employees,
+        creator: activity.created_by_member
+          ? {
+              first_name: activity.created_by_member.first_name ?? "",
+              last_name: activity.created_by_member.last_name,
+            }
+          : null,
       },
     };
   } catch (error) {
@@ -500,7 +495,8 @@ export async function deleteActivityAction(
 ): Promise<DeleteActivityResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validate UUID
     const uuidSchema = z.string().uuid();
@@ -508,12 +504,9 @@ export async function deleteActivityAction(
       return { success: false, error: "Invalid activity ID" };
     }
 
-    // 3. Get provider context
-    const providerId = await getCurrentProviderId();
-
-    // 4. Find activity with provider filter
+    // 4. Find activity with tenant filter
     const existing = await db.crm_activities.findFirst({
-      where: { id, ...buildProviderFilter(providerId) },
+      where: { id, tenant_id: session.orgId },
       select: { id: true, lead_id: true, opportunity_id: true },
     });
 
@@ -570,7 +563,8 @@ export async function markActivityCompleteAction(
 ): Promise<MarkActivityCompleteResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validate UUID
     const uuidSchema = z.string().uuid();
@@ -578,12 +572,9 @@ export async function markActivityCompleteAction(
       return { success: false, error: "Invalid activity ID" };
     }
 
-    // 3. Get provider context
-    const providerId = await getCurrentProviderId();
-
-    // 4. Find activity with provider filter
+    // 4. Find activity with tenant filter
     const existing = await db.crm_activities.findFirst({
-      where: { id, ...buildProviderFilter(providerId) },
+      where: { id, tenant_id: session.orgId },
       select: {
         id: true,
         lead_id: true,

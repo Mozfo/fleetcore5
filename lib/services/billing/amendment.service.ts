@@ -66,7 +66,6 @@ export interface CreateAmendmentInput {
   tenantId: string;
   subscriptionId: string;
   scheduleId?: string;
-  providerId: string;
   userId: string;
   amendmentType: amendment_type;
   effectiveDate: Date;
@@ -183,7 +182,7 @@ export class AmendmentService {
    * Format: AMD-YYYY-NNNNN (e.g., AMD-2025-00001)
    */
   async generateAmendmentReference(
-    providerId: string,
+    tenantId: string,
     tx?: PrismaTransaction
   ): Promise<string> {
     const client = tx || this.prisma;
@@ -192,7 +191,7 @@ export class AmendmentService {
 
     const lastAmendment = await client.bil_amendments.findFirst({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         amendment_reference: { startsWith: prefix },
         deleted_at: null,
       },
@@ -284,7 +283,7 @@ export class AmendmentService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       const reference = await this.generateAmendmentReference(
-        input.providerId,
+        input.tenantId,
         tx
       );
 
@@ -294,7 +293,6 @@ export class AmendmentService {
           tenant_id: input.tenantId,
           subscription_id: input.subscriptionId,
           schedule_id: input.scheduleId,
-          provider_id: input.providerId,
           amendment_type: input.amendmentType,
           status: "draft",
           // Store current values from subscription
@@ -339,16 +337,16 @@ export class AmendmentService {
    */
   async updateAmendment(
     id: string,
-    providerId: string,
+    tenantId: string,
     input: UpdateAmendmentInput,
     userId: string
   ): Promise<Amendment> {
     logger.info(
-      { id, providerId, input },
+      { id, tenantId, input },
       "[AmendmentService] Updating amendment"
     );
 
-    const amendment = await this.getAmendment(id, providerId);
+    const amendment = await this.getAmendment(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -400,12 +398,12 @@ export class AmendmentService {
    */
   async deleteAmendment(
     id: string,
-    providerId: string,
+    tenantId: string,
     deletedBy: string
   ): Promise<void> {
-    logger.info({ id, providerId }, "[AmendmentService] Deleting amendment");
+    logger.info({ id, tenantId }, "[AmendmentService] Deleting amendment");
 
-    const amendment = await this.getAmendment(id, providerId);
+    const amendment = await this.getAmendment(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -439,15 +437,12 @@ export class AmendmentService {
    */
   async submitForApproval(
     id: string,
-    providerId: string,
+    tenantId: string,
     submittedBy: string
   ): Promise<Amendment> {
-    logger.info(
-      { id, providerId },
-      "[AmendmentService] Submitting for approval"
-    );
+    logger.info({ id, tenantId }, "[AmendmentService] Submitting for approval");
 
-    const amendment = await this.getAmendment(id, providerId);
+    const amendment = await this.getAmendment(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -491,15 +486,15 @@ export class AmendmentService {
    */
   async approveAmendment(
     id: string,
-    providerId: string,
+    tenantId: string,
     approvedBy: string
   ): Promise<Amendment> {
     logger.info(
-      { id, providerId, approvedBy },
+      { id, tenantId, approvedBy },
       "[AmendmentService] Approving amendment"
     );
 
-    const amendment = await this.getAmendment(id, providerId);
+    const amendment = await this.getAmendment(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -533,16 +528,16 @@ export class AmendmentService {
    */
   async rejectAmendment(
     id: string,
-    providerId: string,
+    tenantId: string,
     rejectedBy: string,
     reason: string
   ): Promise<Amendment> {
     logger.info(
-      { id, providerId, rejectedBy, reason },
+      { id, tenantId, rejectedBy, reason },
       "[AmendmentService] Rejecting amendment"
     );
 
-    const amendment = await this.getAmendment(id, providerId);
+    const amendment = await this.getAmendment(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -579,10 +574,10 @@ export class AmendmentService {
   /**
    * Apply an approved amendment
    */
-  async applyAmendment(id: string, providerId: string): Promise<Amendment> {
-    logger.info({ id, providerId }, "[AmendmentService] Applying amendment");
+  async applyAmendment(id: string, tenantId: string): Promise<Amendment> {
+    logger.info({ id, tenantId }, "[AmendmentService] Applying amendment");
 
-    const amendment = await this.getAmendmentWithRelations(id, providerId);
+    const amendment = await this.getAmendmentWithRelations(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -660,16 +655,16 @@ export class AmendmentService {
    */
   async cancelAmendment(
     id: string,
-    providerId: string,
+    tenantId: string,
     cancelledBy: string,
     reason?: string
   ): Promise<Amendment> {
     logger.info(
-      { id, providerId, reason },
+      { id, tenantId, reason },
       "[AmendmentService] Canceling amendment"
     );
 
-    const amendment = await this.getAmendment(id, providerId);
+    const amendment = await this.getAmendment(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -716,9 +711,9 @@ export class AmendmentService {
    */
   async calculateProration(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<ProrationResult> {
-    const amendment = await this.getAmendmentWithRelations(id, providerId);
+    const amendment = await this.getAmendmentWithRelations(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -732,9 +727,9 @@ export class AmendmentService {
    */
   async previewAmendment(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<AmendmentPreview> {
-    const amendment = await this.getAmendmentWithRelations(id, providerId);
+    const amendment = await this.getAmendmentWithRelations(id, tenantId);
 
     if (!amendment) {
       throw new NotFoundError(`Amendment not found: ${id}`);
@@ -827,14 +822,11 @@ export class AmendmentService {
   /**
    * Get an amendment by ID
    */
-  async getAmendment(
-    id: string,
-    providerId: string
-  ): Promise<Amendment | null> {
+  async getAmendment(id: string, tenantId: string): Promise<Amendment | null> {
     return this.prisma.bil_amendments.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -845,14 +837,14 @@ export class AmendmentService {
    */
   async getAmendmentWithRelations(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<AmendmentWithRelations | null> {
     // NOTE: Relations are NOT defined in Prisma schema.
     // Return base amendment - related data must be fetched separately if needed.
     return this.prisma.bil_amendments.findFirst({
       where: {
         id,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -863,12 +855,12 @@ export class AmendmentService {
    */
   async getAmendmentByReference(
     reference: string,
-    providerId: string
+    tenantId: string
   ): Promise<Amendment | null> {
     return this.prisma.bil_amendments.findFirst({
       where: {
         amendment_reference: reference,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
     });
@@ -878,7 +870,7 @@ export class AmendmentService {
    * List amendments with filters
    */
   async listAmendments(
-    providerId: string,
+    tenantId: string,
     filters?: AmendmentFilters
   ): Promise<PaginatedResult<Amendment>> {
     const page = filters?.page || 1;
@@ -886,7 +878,7 @@ export class AmendmentService {
     const skip = (page - 1) * limit;
 
     const where: Prisma.bil_amendmentsWhereInput = {
-      provider_id: providerId,
+      tenant_id: tenantId,
       deleted_at: null,
       ...(filters?.status && { status: filters.status }),
       ...(filters?.amendmentType && { amendment_type: filters.amendmentType }),
@@ -927,12 +919,12 @@ export class AmendmentService {
    */
   async getAmendmentsBySubscription(
     subscriptionId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Amendment[]> {
     return this.prisma.bil_amendments.findMany({
       where: {
         subscription_id: subscriptionId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -944,12 +936,12 @@ export class AmendmentService {
    */
   async getAmendmentsBySchedule(
     scheduleId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Amendment[]> {
     return this.prisma.bil_amendments.findMany({
       where: {
         schedule_id: scheduleId,
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       orderBy: { created_at: "desc" },
@@ -959,10 +951,10 @@ export class AmendmentService {
   /**
    * Get pending amendments (awaiting approval)
    */
-  async getPendingAmendments(providerId: string): Promise<Amendment[]> {
+  async getPendingAmendments(tenantId: string): Promise<Amendment[]> {
     return this.prisma.bil_amendments.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: "pending_approval",
         deleted_at: null,
       },
@@ -973,13 +965,13 @@ export class AmendmentService {
   /**
    * Get amendments ready to apply (approved and effective date reached)
    */
-  async getAmendmentsToApply(providerId: string): Promise<Amendment[]> {
+  async getAmendmentsToApply(tenantId: string): Promise<Amendment[]> {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
     return this.prisma.bil_amendments.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: "approved",
         effective_date: { lte: now },
         deleted_at: null,
@@ -996,16 +988,16 @@ export class AmendmentService {
    * Apply all due amendments
    * Returns the number of amendments applied
    */
-  async applyDueAmendments(providerId: string): Promise<number> {
-    logger.info({ providerId }, "[AmendmentService] Applying due amendments");
+  async applyDueAmendments(tenantId: string): Promise<number> {
+    logger.info({ tenantId }, "[AmendmentService] Applying due amendments");
 
-    const amendmentsToApply = await this.getAmendmentsToApply(providerId);
+    const amendmentsToApply = await this.getAmendmentsToApply(tenantId);
 
     let appliedCount = 0;
 
     for (const amendment of amendmentsToApply) {
       try {
-        await this.applyAmendment(amendment.id, providerId);
+        await this.applyAmendment(amendment.id, tenantId);
         appliedCount++;
       } catch (error) {
         logger.error(
@@ -1016,7 +1008,7 @@ export class AmendmentService {
     }
 
     logger.info(
-      { providerId, appliedCount },
+      { tenantId, appliedCount },
       "[AmendmentService] Due amendments processed"
     );
 
@@ -1028,11 +1020,11 @@ export class AmendmentService {
    * Returns the number of reminders that would be sent
    */
   async sendApprovalReminders(
-    providerId: string,
+    tenantId: string,
     daysThreshold: number
   ): Promise<number> {
     logger.info(
-      { providerId, daysThreshold },
+      { tenantId, daysThreshold },
       "[AmendmentService] Checking for approval reminders"
     );
 
@@ -1041,7 +1033,7 @@ export class AmendmentService {
 
     const pendingAmendments = await this.prisma.bil_amendments.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         status: "pending_approval",
         created_at: { lte: thresholdDate },
         deleted_at: null,
@@ -1050,7 +1042,7 @@ export class AmendmentService {
 
     // In a real implementation, this would trigger notification service
     logger.info(
-      { providerId, reminderCount: pendingAmendments.length },
+      { tenantId, reminderCount: pendingAmendments.length },
       "[AmendmentService] Approval reminders identified"
     );
 
@@ -1065,12 +1057,12 @@ export class AmendmentService {
    * Count amendments by status
    */
   async countByStatus(
-    providerId: string
+    tenantId: string
   ): Promise<Record<amendment_status, number>> {
     const counts = await this.prisma.bil_amendments.groupBy({
       by: ["status"],
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       _count: true,
@@ -1095,13 +1087,11 @@ export class AmendmentService {
   /**
    * Count amendments by type
    */
-  async countByType(
-    providerId: string
-  ): Promise<Record<amendment_type, number>> {
+  async countByType(tenantId: string): Promise<Record<amendment_type, number>> {
     const counts = await this.prisma.bil_amendments.groupBy({
       by: ["amendment_type"],
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         deleted_at: null,
       },
       _count: true,

@@ -234,7 +234,7 @@ export class LeadQualificationService {
     // 1. Validate lead exists and status is valid for qualification
     const lead = await prisma.crm_leads.findUnique({
       where: { id: leadId },
-      select: { id: true, status: true, email: true },
+      select: { id: true, status: true, email: true, tenant_id: true },
     });
 
     if (!lead) {
@@ -280,7 +280,17 @@ export class LeadQualificationService {
       recommendation,
     };
 
-    // 5. Update lead and create activity in transaction
+    // 5. Resolve tenant_id for activity log
+    let activityTenantId = lead.tenant_id;
+    if (!activityTenantId) {
+      const hqTenant = await prisma.adm_tenants.findFirst({
+        where: { tenant_type: "headquarters" },
+        select: { id: true },
+      });
+      activityTenantId = hqTenant?.id ?? null;
+    }
+
+    // 6. Update lead and create activity in transaction
     await prisma.$transaction(async (tx) => {
       // Update lead with qualification data
       await tx.crm_leads.update({
@@ -294,16 +304,19 @@ export class LeadQualificationService {
       });
 
       // Create activity
-      await tx.crm_lead_activities.create({
-        data: {
-          lead_id: leadId,
-          activity_type: "lead_qualified",
-          title: `Lead qualified with CPT score: ${total}/100`,
-          description: `Recommendation: ${recommendation}. Challenges: ${cpt.challenges.score}, Priority: ${cpt.priority.score}, Timing: ${cpt.timing.score}`,
-          performed_by: performedBy,
-          created_at: new Date(),
-        },
-      });
+      if (activityTenantId) {
+        await tx.crm_lead_activities.create({
+          data: {
+            tenant_id: activityTenantId,
+            lead_id: leadId,
+            activity_type: "lead_qualified",
+            title: `Lead qualified with CPT score: ${total}/100`,
+            description: `Recommendation: ${recommendation}. Challenges: ${cpt.challenges.score}, Priority: ${cpt.priority.score}, Timing: ${cpt.timing.score}`,
+            performed_by: performedBy,
+            created_at: new Date(),
+          },
+        });
+      }
     });
 
     logger.info(

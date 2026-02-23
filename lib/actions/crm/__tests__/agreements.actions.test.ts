@@ -33,7 +33,7 @@ const {
   mockAuth,
   mockDb,
   mockGetAuditLogUuids,
-  mockGetCurrentProviderId,
+  mockGetCurrentTenantId,
   mockAgreementService,
 } = vi.hoisted(() => {
   return {
@@ -44,7 +44,7 @@ const {
       },
     },
     mockGetAuditLogUuids: vi.fn(),
-    mockGetCurrentProviderId: vi.fn(),
+    mockGetCurrentTenantId: vi.fn(),
     mockAgreementService: {
       createAgreement: vi.fn(),
       updateAgreement: vi.fn(),
@@ -100,9 +100,9 @@ vi.mock("@/lib/utils/audit-resolver", () => ({
   getAuditLogUuids: mockGetAuditLogUuids,
 }));
 
-// Mock provider context
-vi.mock("@/lib/utils/provider-context", () => ({
-  getCurrentProviderId: mockGetCurrentProviderId,
+// Mock tenant context
+vi.mock("@/lib/utils/tenant-context", () => ({
+  getCurrentTenantId: mockGetCurrentTenantId,
 }));
 
 // Mock agreement service
@@ -169,7 +169,7 @@ import {
 
 const ADMIN_ORG_ID = TEST_ADMIN_ORG_ID;
 const TEST_USER_ID = "user_test_123";
-const TEST_PROVIDER_ID = "550e8400-e29b-41d4-a716-446655440001";
+const TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440001";
 const TEST_TENANT_UUID = "550e8400-e29b-41d4-a716-446655440002";
 const TEST_MEMBER_UUID = "550e8400-e29b-41d4-a716-446655440003";
 const TEST_AGREEMENT_ID = "550e8400-e29b-41d4-a716-446655440004";
@@ -184,7 +184,7 @@ const mockAgreement = {
   id: TEST_AGREEMENT_ID,
   agreement_reference: "AGR-2025-00001",
   order_id: TEST_ORDER_ID,
-  provider_id: TEST_PROVIDER_ID,
+  tenant_id: TEST_TENANT_ID,
   agreement_type: "msa" as AgreementType,
   version_number: 1,
   parent_agreement_id: null,
@@ -251,7 +251,7 @@ const mockSendForSignatureResult = {
 
 function setupAdminAuth(): void {
   mockAuth.mockResolvedValue({ userId: TEST_USER_ID, orgId: ADMIN_ORG_ID });
-  mockGetCurrentProviderId.mockResolvedValue(TEST_PROVIDER_ID);
+  mockGetCurrentTenantId.mockResolvedValue(TEST_TENANT_ID);
   mockGetAuditLogUuids.mockResolvedValue({
     tenantUuid: TEST_TENANT_UUID,
     memberUuid: TEST_MEMBER_UUID,
@@ -270,12 +270,12 @@ function setupWrongOrg(): void {
 
 function setupNoProvider(): void {
   mockAuth.mockResolvedValue({ userId: TEST_USER_ID, orgId: ADMIN_ORG_ID });
-  mockGetCurrentProviderId.mockResolvedValue(null);
+  mockGetCurrentTenantId.mockResolvedValue(null);
 }
 
 function resetMocks(): void {
   mockAuth.mockClear();
-  mockGetCurrentProviderId.mockClear();
+  mockGetCurrentTenantId.mockClear();
   mockGetAuditLogUuids.mockClear();
   mockDb.adm_audit_logs.create.mockClear();
   Object.values(mockAgreementService).forEach((fn) => fn.mockClear());
@@ -337,7 +337,7 @@ describe("agreements.actions.ts", () => {
       expect(mockAgreementService.createAgreement).toHaveBeenCalledWith(
         expect.objectContaining({
           orderId: TEST_ORDER_ID,
-          providerId: TEST_PROVIDER_ID,
+          tenantId: TEST_TENANT_ID,
           userId: TEST_USER_ID,
           agreementType: "msa",
         })
@@ -492,7 +492,7 @@ describe("agreements.actions.ts", () => {
       expect(result.success).toBe(true);
       expect(mockAgreementService.deleteAgreement).toHaveBeenCalledWith(
         TEST_AGREEMENT_ID,
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         TEST_USER_ID,
         deleteInput.reason
       );
@@ -883,7 +883,7 @@ describe("agreements.actions.ts", () => {
       await listAgreementsAction({ ...defaultQuery, status: "active" });
 
       expect(mockAgreementService.listAgreements).toHaveBeenCalledWith(
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         expect.objectContaining({ status: "active" }),
         1,
         20
@@ -902,7 +902,7 @@ describe("agreements.actions.ts", () => {
       await listAgreementsAction({ ...defaultQuery, agreementType: "msa" });
 
       expect(mockAgreementService.listAgreements).toHaveBeenCalledWith(
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         expect.objectContaining({ agreement_type: "msa" }),
         1,
         20
@@ -950,7 +950,7 @@ describe("agreements.actions.ts", () => {
       expect(result.success).toBe(true);
       expect(
         mockAgreementService.getExpiringSoonAgreements
-      ).toHaveBeenCalledWith(TEST_PROVIDER_ID, 30);
+      ).toHaveBeenCalledWith(TEST_TENANT_ID, 30);
     });
 
     it("should get expiring agreements with custom days", async () => {
@@ -963,7 +963,7 @@ describe("agreements.actions.ts", () => {
 
       expect(
         mockAgreementService.getExpiringSoonAgreements
-      ).toHaveBeenCalledWith(TEST_PROVIDER_ID, 60);
+      ).toHaveBeenCalledWith(TEST_TENANT_ID, 60);
     });
 
     it("should return error for invalid days", async () => {
@@ -1129,7 +1129,7 @@ describe("agreements.actions.ts", () => {
   // ===========================================================================
 
   describe("Provider Isolation", () => {
-    it("createAgreementAction should pass provider_id from context to service", async () => {
+    it("createAgreementAction should pass tenant_id from context to service", async () => {
       setupAdminAuth();
       mockAgreementService.createAgreement.mockResolvedValue(mockAgreement);
 
@@ -1137,12 +1137,12 @@ describe("agreements.actions.ts", () => {
 
       expect(mockAgreementService.createAgreement).toHaveBeenCalledWith(
         expect.objectContaining({
-          providerId: TEST_PROVIDER_ID,
+          tenantId: TEST_TENANT_ID,
         })
       );
     });
 
-    it("getAgreementAction should pass provider_id to service", async () => {
+    it("getAgreementAction should pass tenant_id to service", async () => {
       setupAdminAuth();
       mockAgreementService.getAgreement.mockResolvedValue(mockAgreement);
 
@@ -1150,7 +1150,7 @@ describe("agreements.actions.ts", () => {
 
       expect(mockAgreementService.getAgreement).toHaveBeenCalledWith(
         TEST_AGREEMENT_ID,
-        TEST_PROVIDER_ID
+        TEST_TENANT_ID
       );
     });
   });

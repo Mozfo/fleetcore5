@@ -57,10 +57,10 @@ export async function GET(request: NextRequest) {
     }
 
     // V6.6: Check blacklist first
-    const DEFAULT_PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+    const DEFAULT_TENANT_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
     const isBlacklisted = await blacklistService.isBlacklisted(
       email.toLowerCase().trim(),
-      DEFAULT_PROVIDER_ID
+      DEFAULT_TENANT_ID
     );
 
     if (isBlacklisted) {

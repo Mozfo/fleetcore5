@@ -1276,17 +1276,17 @@ describe("Prisma ENUM alignment", () => {
 });
 
 // =============================================================================
-// PROVIDER ID PATTERN TESTS
+// TENANT ID PATTERN TESTS
 // =============================================================================
 
-describe("Provider ID pattern", () => {
-  it("CreateQuoteSchema does NOT include providerId field", () => {
-    // providerId is injected via getCurrentProviderId() at action layer
+describe("Tenant ID pattern", () => {
+  it("CreateQuoteSchema does NOT include tenantId field", () => {
+    // tenantId is injected via auth context at action layer
     const schema = CreateQuoteSchema;
     const result = schema.parse(validQuote);
 
-    // The result should not have providerId
-    expect("providerId" in result).toBe(false);
+    // The result should not have tenantId
+    expect("tenantId" in result).toBe(false);
   });
 
   it("CreateQuoteSchema does NOT include createdBy field", () => {
@@ -1298,8 +1298,8 @@ describe("Provider ID pattern", () => {
     expect("createdBy" in result).toBe(false);
   });
 
-  it("accepts quote without providerId in input", () => {
-    // Should not require providerId
+  it("accepts quote without tenantId in input", () => {
+    // Should not require tenantId
     const quote = {
       opportunityId: validUuid,
       validUntil: futureDate,

@@ -26,7 +26,7 @@ const fetchAllLeads = cache(
       db.crm_leads.findMany({
         where: { deleted_at: null },
         include: {
-          eu1f9qh: {
+          assigned_member: {
             select: {
               id: true,
               first_name: true,
@@ -45,9 +45,8 @@ const fetchAllLeads = cache(
         orderBy: { created_at: "desc" },
         take: 200,
       }),
-      db.adm_provider_employees.findMany({
+      db.clt_members.findMany({
         where: {
-          department: "Sales",
           status: "active",
           deleted_at: null,
         },
@@ -61,7 +60,7 @@ const fetchAllLeads = cache(
     ]);
 
     const leads: Lead[] = rawLeads.map((lead) => {
-      const assignedTo = lead.eu1f9qh;
+      const assignedTo = lead.assigned_member;
 
       return {
         id: lead.id,
@@ -101,7 +100,7 @@ const fetchAllLeads = cache(
         assigned_to: assignedTo
           ? {
               id: assignedTo.id,
-              first_name: assignedTo.first_name,
+              first_name: assignedTo.first_name ?? "",
               last_name: assignedTo.last_name,
               email: assignedTo.email,
             }
@@ -119,7 +118,13 @@ const fetchAllLeads = cache(
       };
     });
 
-    return { leads, owners: salesTeamMembers };
+    return {
+      leads,
+      owners: salesTeamMembers.map((m) => ({
+        ...m,
+        first_name: m.first_name ?? "",
+      })),
+    };
   }
 );
 

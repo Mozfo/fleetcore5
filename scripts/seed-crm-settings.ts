@@ -13,6 +13,14 @@ const prisma = new PrismaClient();
  * Run: pnpm exec tsx scripts/seed-crm-settings.ts
  */
 async function seedCrmSettings(): Promise<number> {
+  // Resolve HQ tenant_id (required by crm_settings)
+  const hq = await prisma.adm_tenants.findFirst({
+    where: { tenant_type: "headquarters" },
+    select: { id: true },
+  });
+  if (!hq) throw new Error("No HQ tenant found");
+  const tenantId = hq.id;
+
   const settings = [
     // ========================================================================
     // Pipeline Settings
@@ -332,7 +340,7 @@ async function seedCrmSettings(): Promise<number> {
   for (const setting of settings) {
     await prisma.crm_settings.upsert({
       where: { setting_key: setting.setting_key },
-      create: setting,
+      create: { ...setting, tenant_id: tenantId },
       update: {
         setting_value: setting.setting_value,
         description: setting.description,

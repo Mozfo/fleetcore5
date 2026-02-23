@@ -20,9 +20,9 @@
  * - RecordClientSignatureFormSchema: UI form for client signature
  * - TerminateAgreementFormSchema: UI form for termination
  *
- * NOTE: provider_id and created_by are NOT included in schemas.
- * They are injected at the action layer via getCurrentProviderId() and auth().
- * See: lib/utils/provider-context.ts
+ * NOTE: tenant_id and created_by are NOT included in schemas.
+ * They are injected at the action layer via getTenantContext() and auth().
+ * See: lib/auth/server.ts
  *
  * @module lib/validators/crm/agreement.validators
  */
@@ -182,7 +182,7 @@ export const signatureMethodSchema = z.enum(SIGNATURE_METHODS);
  *
  * Creates an agreement linked to an order.
  *
- * NOTE: provider_id and created_by are NOT included.
+ * NOTE: tenant_id and created_by are NOT included.
  * They are injected at the action layer.
  *
  * Validation rules:

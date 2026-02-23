@@ -26,7 +26,6 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
-import { getCurrentProviderId } from "@/lib/utils/provider-context";
 import { quoteService } from "@/lib/services/crm/quote.service";
 import {
   NotFoundError,
@@ -172,23 +171,23 @@ export type GetExpiringSoonResult =
 
 /**
  * Check admin authorization
- * Returns error message if not authorized, null if OK
+ * Returns error message if not authorized, context if OK
+ * Tenant isolation via session.orgId
  */
 async function checkAdminAuth(): Promise<
-  { userId: string; orgId: string; providerId: string } | { error: string }
+  { userId: string; orgId: string; tenantId: string } | { error: string }
 > {
   try {
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
-    const providerId = await getCurrentProviderId();
-    if (!providerId) {
+    if (!orgId) {
       return {
-        error:
-          "Provider context required. User must be linked to a provider in adm_provider_employees.",
+        error: "Tenant context required. User must belong to an organization.",
       };
     }
 
-    return { userId, orgId, providerId };
+    return { userId, orgId, tenantId: orgId };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unauthorized";
     return { error: message };
@@ -214,7 +213,7 @@ export async function createQuoteAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = CreateQuoteSchema.safeParse(input);
@@ -227,7 +226,7 @@ export async function createQuoteAction(
     // 3. Map to service params
     const quote = await quoteService.createQuote({
       opportunityId: validated.opportunityId,
-      providerId,
+      tenantId,
       userId,
       validUntil: validated.validUntil,
       validFrom: validated.validFrom,
@@ -326,7 +325,7 @@ export async function updateQuoteAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate quoteId
     const idValidation = UuidSchema.safeParse(quoteId);
@@ -343,7 +342,7 @@ export async function updateQuoteAction(
     const validated = validation.data;
 
     // 4. Update via service
-    const quote = await quoteService.updateQuote(quoteId, providerId, userId, {
+    const quote = await quoteService.updateQuote(quoteId, tenantId, userId, {
       validUntil: validated.validUntil,
       contractStartDate: validated.contractStartDate ?? undefined,
       contractDurationMonths: validated.contractDurationMonths,
@@ -418,7 +417,7 @@ export async function deleteQuoteAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate quoteId
     const idValidation = UuidSchema.safeParse(quoteId);
@@ -427,7 +426,7 @@ export async function deleteQuoteAction(
     }
 
     // 3. Delete via service
-    await quoteService.deleteQuote(quoteId, providerId, userId, reason);
+    await quoteService.deleteQuote(quoteId, tenantId, userId, reason);
 
     // 4. Audit log
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
@@ -491,7 +490,7 @@ export async function sendQuoteAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate quoteId
     const idValidation = UuidSchema.safeParse(quoteId);
@@ -500,7 +499,7 @@ export async function sendQuoteAction(
     }
 
     // 3. Send via service
-    const result = await quoteService.sendQuote(quoteId, providerId, userId);
+    const result = await quoteService.sendQuote(quoteId, tenantId, userId);
 
     // 4. Audit log
     const { tenantUuid, memberUuid } = await getAuditLogUuids(orgId, userId);
@@ -574,7 +573,7 @@ export async function convertQuoteToOrderAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = ConvertQuoteToOrderSchema.safeParse(input);
@@ -587,7 +586,7 @@ export async function convertQuoteToOrderAction(
     // 3. Convert via service
     const result = await quoteService.convertToOrder(
       validated.quoteId,
-      providerId,
+      tenantId,
       userId
     );
 
@@ -672,7 +671,7 @@ export async function createQuoteVersionAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate quoteId
     const idValidation = UuidSchema.safeParse(originalQuoteId);
@@ -683,7 +682,7 @@ export async function createQuoteVersionAction(
     // 3. Create version via service
     const newVersion = await quoteService.createNewVersion(
       originalQuoteId,
-      providerId,
+      tenantId,
       userId
     );
 
@@ -755,7 +754,7 @@ export async function getQuoteAction(quoteId: string): Promise<GetQuoteResult> {
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate quoteId
     const idValidation = UuidSchema.safeParse(quoteId);
@@ -764,7 +763,7 @@ export async function getQuoteAction(quoteId: string): Promise<GetQuoteResult> {
     }
 
     // 3. Get via service
-    const quote = await quoteService.getQuote(quoteId, providerId);
+    const quote = await quoteService.getQuote(quoteId, tenantId);
 
     return { success: true, quote };
   } catch (error) {
@@ -790,7 +789,7 @@ export async function getQuoteWithItemsAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate quoteId
     const idValidation = UuidSchema.safeParse(quoteId);
@@ -799,7 +798,7 @@ export async function getQuoteWithItemsAction(
     }
 
     // 3. Get via service
-    const quote = await quoteService.getQuoteWithItems(quoteId, providerId);
+    const quote = await quoteService.getQuoteWithItems(quoteId, tenantId);
 
     return { success: true, quote };
   } catch (error) {
@@ -825,7 +824,7 @@ export async function getQuoteWithRelationsAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate quoteId
     const idValidation = UuidSchema.safeParse(quoteId);
@@ -834,7 +833,7 @@ export async function getQuoteWithRelationsAction(
     }
 
     // 3. Get via service
-    const quote = await quoteService.getQuoteWithRelations(quoteId, providerId);
+    const quote = await quoteService.getQuoteWithRelations(quoteId, tenantId);
 
     return { success: true, quote };
   } catch (error) {
@@ -860,7 +859,7 @@ export async function listQuotesAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate query
     const validation = QuoteQuerySchema.safeParse(query || {});
@@ -886,7 +885,7 @@ export async function listQuotesAction(
 
     // 4. Get via service
     const result = await quoteService.listQuotes(
-      providerId,
+      tenantId,
       filters,
       validated.page,
       validated.limit
@@ -925,7 +924,7 @@ export async function getQuotesByOpportunityAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate opportunityId
     const idValidation = UuidSchema.safeParse(opportunityId);
@@ -936,7 +935,7 @@ export async function getQuotesByOpportunityAction(
     // 3. Get via service
     const quotes = await quoteService.getQuotesByOpportunity(
       opportunityId,
-      providerId
+      tenantId
     );
 
     return { success: true, quotes };
@@ -968,7 +967,7 @@ export async function getVersionHistoryAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate quoteId
     const idValidation = UuidSchema.safeParse(quoteId);
@@ -977,7 +976,7 @@ export async function getVersionHistoryAction(
     }
 
     // 3. Get via service
-    const quotes = await quoteService.getVersionHistory(quoteId, providerId);
+    const quotes = await quoteService.getVersionHistory(quoteId, tenantId);
 
     return { success: true, quotes };
   } catch (error) {
@@ -1003,7 +1002,7 @@ export async function getLatestVersionAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate opportunityId
     const idValidation = UuidSchema.safeParse(opportunityId);
@@ -1012,10 +1011,7 @@ export async function getLatestVersionAction(
     }
 
     // 3. Get via service
-    const quote = await quoteService.getLatestVersion(
-      opportunityId,
-      providerId
-    );
+    const quote = await quoteService.getLatestVersion(opportunityId, tenantId);
 
     return { success: true, quote };
   } catch (error) {
@@ -1038,10 +1034,10 @@ export async function getQuoteStatsAction(): Promise<GetQuoteStatsResult> {
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Get via service
-    const stats = await quoteService.countByStatus(providerId);
+    const stats = await quoteService.countByStatus(tenantId);
 
     return { success: true, stats };
   } catch (error) {
@@ -1070,13 +1066,13 @@ export async function expireOverdueQuotesAction(): Promise<ExpireOverdueResult> 
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Expire via service
-    const expiredCount = await quoteService.expireOverdueQuotes(providerId);
+    const expiredCount = await quoteService.expireOverdueQuotes(tenantId);
 
     logger.info(
-      { providerId, expiredCount },
+      { tenantId, expiredCount },
       "[expireOverdueQuotesAction] Expired overdue quotes"
     );
 
@@ -1104,7 +1100,7 @@ export async function getExpiringSoonQuotesAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate days
     const daysValidation = DaysSchema.safeParse(days ?? 7);
@@ -1114,7 +1110,7 @@ export async function getExpiringSoonQuotesAction(
 
     // 3. Get via service
     const quotes = await quoteService.getExpiringSoonQuotes(
-      providerId,
+      tenantId,
       daysValidation.data
     );
 
@@ -1160,17 +1156,17 @@ export async function viewQuoteByTokenAction(
       return { success: false, error: "Quote not found or expired" };
     }
 
-    // 3. Validate quote has provider_id (data integrity check)
-    if (!quote.provider_id) {
+    // 3. Validate quote has tenant_id (data integrity check)
+    if (!quote.tenant_id) {
       logger.error(
         { quoteId: quote.id },
-        "[viewQuoteByTokenAction] Quote missing provider_id - data integrity issue"
+        "[viewQuoteByTokenAction] Quote missing tenant_id - data integrity issue"
       );
       return { success: false, error: "Quote configuration error" };
     }
 
-    // 4. Mark as viewed (uses provider_id from the quote itself)
-    await quoteService.markAsViewed(quote.id, quote.provider_id);
+    // 4. Mark as viewed (uses tenant_id from the quote itself)
+    await quoteService.markAsViewed(quote.id, quote.tenant_id);
 
     logger.info(
       {
@@ -1219,19 +1215,19 @@ export async function acceptQuoteByTokenAction(params: {
       return { success: false, error: "Quote not found or expired" };
     }
 
-    // 3. Validate quote has provider_id (data integrity check)
-    if (!quote.provider_id) {
+    // 3. Validate quote has tenant_id (data integrity check)
+    if (!quote.tenant_id) {
       logger.error(
         { quoteId: quote.id },
-        "[acceptQuoteByTokenAction] Quote missing provider_id - data integrity issue"
+        "[acceptQuoteByTokenAction] Quote missing tenant_id - data integrity issue"
       );
       return { success: false, error: "Quote configuration error" };
     }
 
-    // 4. Accept via service (uses provider_id from the quote itself)
+    // 4. Accept via service (uses tenant_id from the quote itself)
     const result = await quoteService.acceptQuote(
       quote.id,
-      quote.provider_id,
+      quote.tenant_id,
       validated.acceptedBy ?? undefined
     );
 
@@ -1291,19 +1287,19 @@ export async function rejectQuoteByTokenAction(params: {
       return { success: false, error: "Quote not found or expired" };
     }
 
-    // 3. Validate quote has provider_id (data integrity check)
-    if (!quote.provider_id) {
+    // 3. Validate quote has tenant_id (data integrity check)
+    if (!quote.tenant_id) {
       logger.error(
         { quoteId: quote.id },
-        "[rejectQuoteByTokenAction] Quote missing provider_id - data integrity issue"
+        "[rejectQuoteByTokenAction] Quote missing tenant_id - data integrity issue"
       );
       return { success: false, error: "Quote configuration error" };
     }
 
-    // 4. Reject via service (uses provider_id from the quote itself)
+    // 4. Reject via service (uses tenant_id from the quote itself)
     const result = await quoteService.rejectQuote(
       quote.id,
-      quote.provider_id,
+      quote.tenant_id,
       validated.rejectionReason
     );
 

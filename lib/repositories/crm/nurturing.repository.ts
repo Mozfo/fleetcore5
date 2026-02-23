@@ -16,7 +16,7 @@ import { prisma as defaultPrisma } from "@/lib/prisma";
 export type Nurturing = crm_nurturing;
 
 export interface CreateNurturingInput {
-  provider_id: string;
+  tenant_id: string;
   email: string;
   country_code: string;
   email_verified_at: Date;
@@ -46,12 +46,12 @@ export class NurturingRepository {
    */
   async findByEmail(
     email: string,
-    providerId: string
+    tenantId: string
   ): Promise<crm_nurturing | null> {
     return this.prisma.crm_nurturing.findFirst({
       where: {
         email: { equals: email.toLowerCase().trim(), mode: "insensitive" },
-        provider_id: providerId,
+        tenant_id: tenantId,
         archived_at: null,
       },
     });
@@ -78,7 +78,7 @@ export class NurturingRepository {
    */
   async findEligibleForStep(
     step: number,
-    providerId: string
+    tenantId: string
   ): Promise<crm_nurturing[]> {
     const now = new Date();
 
@@ -87,7 +87,7 @@ export class NurturingRepository {
       const threshold = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       return this.prisma.crm_nurturing.findMany({
         where: {
-          provider_id: providerId,
+          tenant_id: tenantId,
           nurturing_step: 0,
           created_at: { lte: threshold },
           archived_at: null,
@@ -100,7 +100,7 @@ export class NurturingRepository {
       const threshold = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
       return this.prisma.crm_nurturing.findMany({
         where: {
-          provider_id: providerId,
+          tenant_id: tenantId,
           nurturing_step: 1,
           last_nurturing_at: { lte: threshold },
           archived_at: null,
@@ -115,11 +115,11 @@ export class NurturingRepository {
    * Find entries eligible for archiving
    * nurturing_step=2 AND last_nurturing_at <= NOW() - 24h
    */
-  async findEligibleForArchive(providerId: string): Promise<crm_nurturing[]> {
+  async findEligibleForArchive(tenantId: string): Promise<crm_nurturing[]> {
     const threshold = new Date(Date.now() - 24 * 60 * 60 * 1000);
     return this.prisma.crm_nurturing.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         nurturing_step: 2,
         last_nurturing_at: { lte: threshold },
         archived_at: null,
@@ -133,7 +133,7 @@ export class NurturingRepository {
   async create(data: CreateNurturingInput): Promise<crm_nurturing> {
     return this.prisma.crm_nurturing.create({
       data: {
-        provider_id: data.provider_id,
+        tenant_id: data.tenant_id,
         email: data.email.toLowerCase().trim(),
         country_code: data.country_code,
         email_verified_at: data.email_verified_at,

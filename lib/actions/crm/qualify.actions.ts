@@ -17,10 +17,6 @@ import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
 import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
-import {
-  getCurrentProviderId,
-  buildProviderFilter,
-} from "@/lib/utils/provider-context";
 
 // Stage order for validation (progression only, no going back)
 const STAGE_ORDER = [
@@ -67,7 +63,8 @@ export async function qualifyLeadAction(
 
   try {
     // 1. Authentication & Authorization
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
     // 2. Validation Zod
     const validation = QualifySchema.safeParse({ leadId, newStage, notes });
@@ -76,12 +73,9 @@ export async function qualifyLeadAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Fetch current lead (with provider filter)
+    // 5. Fetch current lead (with tenant filter)
     const currentLead = await db.crm_leads.findFirst({
-      where: { id: leadId, ...buildProviderFilter(providerId) },
+      where: { id: leadId, tenant_id: session.orgId },
     });
 
     if (!currentLead) {
@@ -136,7 +130,7 @@ export async function qualifyLeadAction(
       where: { id: leadId },
       data: updateData,
       include: {
-        eu1f9qh: {
+        assigned_member: {
           select: {
             id: true,
             first_name: true,

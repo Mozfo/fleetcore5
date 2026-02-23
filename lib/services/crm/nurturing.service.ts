@@ -53,15 +53,15 @@ export class NurturingService {
    * to crm_nurturing.
    */
   async createFromLead(lead: crm_leads): Promise<crm_nurturing> {
-    const providerId = lead.provider_id;
-    if (!providerId) {
+    const tenantId = lead.tenant_id;
+    if (!tenantId) {
       throw new Error(
-        `Lead ${lead.id} has no provider_id, cannot create nurturing entry`
+        `Lead ${lead.id} has no tenant_id, cannot create nurturing entry`
       );
     }
 
     // Check if already exists
-    const existing = await this.repo.findByEmail(lead.email, providerId);
+    const existing = await this.repo.findByEmail(lead.email, tenantId);
     if (existing) {
       logger.info(
         { email: lead.email, leadId: lead.id },
@@ -76,7 +76,7 @@ export class NurturingService {
     expiresAt.setDate(expiresAt.getDate() + RESUME_TOKEN_EXPIRY_DAYS);
 
     const nurturing = await this.repo.create({
-      provider_id: providerId,
+      tenant_id: tenantId,
       email: lead.email,
       country_code: lead.country_code || "XX",
       email_verified_at: new Date(),
@@ -123,9 +123,9 @@ export class NurturingService {
    */
   async getEligibleForStep(
     step: number,
-    providerId: string
+    tenantId: string
   ): Promise<crm_nurturing[]> {
-    return this.repo.findEligibleForStep(step, providerId);
+    return this.repo.findEligibleForStep(step, tenantId);
   }
 
   /**
@@ -157,8 +157,8 @@ export class NurturingService {
    * Archives entries where step 2 (J+7) was sent >= 24h ago.
    * Returns the number of entries archived.
    */
-  async archiveExpired(providerId: string): Promise<number> {
-    const eligible = await this.repo.findEligibleForArchive(providerId);
+  async archiveExpired(tenantId: string): Promise<number> {
+    const eligible = await this.repo.findEligibleForArchive(tenantId);
 
     let count = 0;
     for (const entry of eligible) {
@@ -167,10 +167,7 @@ export class NurturingService {
     }
 
     if (count > 0) {
-      logger.info(
-        { providerId, count },
-        "[Nurturing] Expired entries archived"
-      );
+      logger.info({ tenantId, count }, "[Nurturing] Expired entries archived");
     }
 
     return count;

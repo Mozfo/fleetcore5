@@ -33,7 +33,7 @@ const {
   mockAuth,
   mockDb,
   mockGetAuditLogUuids,
-  mockGetCurrentProviderId,
+  mockGetCurrentTenantId,
   mockOrderService,
   mockOrderRepository,
 } = vi.hoisted(() => {
@@ -45,7 +45,7 @@ const {
       },
     },
     mockGetAuditLogUuids: vi.fn(),
-    mockGetCurrentProviderId: vi.fn(),
+    mockGetCurrentTenantId: vi.fn(),
     mockOrderService: {
       createOrderFromOpportunity: vi.fn(),
       getOrderById: vi.fn(),
@@ -100,9 +100,9 @@ vi.mock("@/lib/utils/audit-resolver", () => ({
   getAuditLogUuids: mockGetAuditLogUuids,
 }));
 
-// Mock provider context
-vi.mock("@/lib/utils/provider-context", () => ({
-  getCurrentProviderId: mockGetCurrentProviderId,
+// Mock tenant context
+vi.mock("@/lib/utils/tenant-context", () => ({
+  getCurrentTenantId: mockGetCurrentTenantId,
 }));
 
 // Mock order service
@@ -158,7 +158,7 @@ import { NotFoundError, ValidationError } from "@/lib/core/errors";
 
 const ADMIN_ORG_ID = TEST_ADMIN_ORG_ID;
 const TEST_USER_ID = "user_test_123";
-const TEST_PROVIDER_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID
+const TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID
 const TEST_TENANT_UUID = "550e8400-e29b-41d4-a716-446655440002"; // Valid UUID
 const TEST_MEMBER_UUID = "550e8400-e29b-41d4-a716-446655440003"; // Valid UUID
 const TEST_ORDER_ID = "550e8400-e29b-41d4-a716-446655440004"; // Valid UUID
@@ -175,7 +175,7 @@ const mockOrder = {
   order_code: "O2025-001",
   opportunity_id: TEST_OPPORTUNITY_ID,
   lead_id: TEST_LEAD_ID,
-  provider_id: TEST_PROVIDER_ID,
+  tenant_id: TEST_TENANT_ID,
   total_value: 60000,
   monthly_value: 5000,
   annual_value: 60000,
@@ -234,7 +234,7 @@ const mockOrderCreationResult = {
 
 function setupAdminAuth(): void {
   mockAuth.mockResolvedValue({ userId: TEST_USER_ID, orgId: ADMIN_ORG_ID });
-  mockGetCurrentProviderId.mockResolvedValue(TEST_PROVIDER_ID);
+  mockGetCurrentTenantId.mockResolvedValue(TEST_TENANT_ID);
   mockGetAuditLogUuids.mockResolvedValue({
     tenantUuid: TEST_TENANT_UUID,
     memberUuid: TEST_MEMBER_UUID,
@@ -253,12 +253,12 @@ function setupWrongOrg(): void {
 
 function setupNoProvider(): void {
   mockAuth.mockResolvedValue({ userId: TEST_USER_ID, orgId: ADMIN_ORG_ID });
-  mockGetCurrentProviderId.mockResolvedValue(null);
+  mockGetCurrentTenantId.mockResolvedValue(null);
 }
 
 function resetMocks(): void {
   mockAuth.mockClear();
-  mockGetCurrentProviderId.mockClear();
+  mockGetCurrentTenantId.mockClear();
   mockGetAuditLogUuids.mockClear();
   mockDb.adm_audit_logs.create.mockClear();
   Object.values(mockOrderService).forEach((fn) => fn.mockClear());
@@ -326,7 +326,7 @@ describe("orders.actions.ts", () => {
       expect(mockOrderService.createOrderFromOpportunity).toHaveBeenCalledWith(
         expect.objectContaining({
           opportunityId: TEST_OPPORTUNITY_ID,
-          providerId: TEST_PROVIDER_ID,
+          tenantId: TEST_TENANT_ID,
           userId: TEST_USER_ID,
           totalValue: 60000,
         })
@@ -450,7 +450,7 @@ describe("orders.actions.ts", () => {
         TEST_ORDER_ID,
         "active",
         TEST_USER_ID,
-        TEST_PROVIDER_ID
+        TEST_TENANT_ID
       );
     });
 
@@ -590,7 +590,7 @@ describe("orders.actions.ts", () => {
         TEST_ORDER_ID,
         "active",
         TEST_USER_ID,
-        TEST_PROVIDER_ID
+        TEST_TENANT_ID
       );
     });
 
@@ -625,7 +625,7 @@ describe("orders.actions.ts", () => {
         TEST_ORDER_ID,
         "fulfilled",
         TEST_USER_ID,
-        TEST_PROVIDER_ID
+        TEST_TENANT_ID
       );
     });
 
@@ -846,7 +846,7 @@ describe("orders.actions.ts", () => {
         expect(result.orders).toHaveLength(1);
       }
       expect(mockOrderService.getExpiringOrders).toHaveBeenCalledWith(
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         30 // default
       );
     });
@@ -859,7 +859,7 @@ describe("orders.actions.ts", () => {
 
       expect(result.success).toBe(true);
       expect(mockOrderService.getExpiringOrders).toHaveBeenCalledWith(
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         60
       );
     });
@@ -901,7 +901,7 @@ describe("orders.actions.ts", () => {
 
       expect(result.success).toBe(true);
       expect(mockOrderService.getAutoRenewableOrders).toHaveBeenCalledWith(
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         30 // default
       );
     });
@@ -1006,7 +1006,7 @@ describe("orders.actions.ts", () => {
   // ===========================================================================
 
   describe("Provider Isolation", () => {
-    it("createOrderAction should pass provider_id from context to service", async () => {
+    it("createOrderAction should pass tenant_id from context to service", async () => {
       setupAdminAuth();
       mockOrderService.createOrderFromOpportunity.mockResolvedValue(
         mockOrderCreationResult
@@ -1016,12 +1016,12 @@ describe("orders.actions.ts", () => {
 
       expect(mockOrderService.createOrderFromOpportunity).toHaveBeenCalledWith(
         expect.objectContaining({
-          providerId: TEST_PROVIDER_ID,
+          tenantId: TEST_TENANT_ID,
         })
       );
     });
 
-    it("getOrderAction should pass provider_id to service", async () => {
+    it("getOrderAction should pass tenant_id to service", async () => {
       setupAdminAuth();
       mockOrderService.getOrderById.mockResolvedValue(mockOrderWithRelations);
 
@@ -1029,7 +1029,7 @@ describe("orders.actions.ts", () => {
 
       expect(mockOrderService.getOrderById).toHaveBeenCalledWith(
         TEST_ORDER_ID,
-        TEST_PROVIDER_ID
+        TEST_TENANT_ID
       );
     });
   });

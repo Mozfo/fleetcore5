@@ -8,7 +8,7 @@
  *
  * Security:
  * 1. All actions require requireCrmAuth (HQ org check)
- * 2. Provider isolation via getCurrentProviderId()
+ * 2. Tenant isolation via session.orgId
  * 3. All inputs validated with Zod schemas
  *
  * Action Categories:
@@ -29,7 +29,6 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
-import { getCurrentProviderId } from "@/lib/utils/provider-context";
 import { orderService } from "@/lib/services/crm/order.service";
 import { orderRepository } from "@/lib/repositories/crm/order.repository";
 import { NotFoundError, ValidationError } from "@/lib/core/errors";
@@ -115,20 +114,21 @@ export type GetOrderStatsResult =
 
 /**
  * Check admin authorization
- * Returns error message if not authorized, null if OK
+ * Returns error message if not authorized, context if OK
+ * Tenant isolation via session.orgId
  */
 async function checkAdminAuth(): Promise<
-  { userId: string; orgId: string; providerId: string } | { error: string }
+  { userId: string; orgId: string; tenantId: string } | { error: string }
 > {
   try {
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
-    const providerId = await getCurrentProviderId();
-    if (!providerId) {
-      return { error: "Provider context required" };
+    if (!orgId) {
+      return { error: "Tenant context required" };
     }
 
-    return { userId, orgId, providerId };
+    return { userId, orgId, tenantId: orgId };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unauthorized";
     return { error: message };
@@ -157,7 +157,7 @@ export async function createOrderAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = CreateOrderFromOpportunitySchema.safeParse(input);
@@ -170,7 +170,7 @@ export async function createOrderAction(
     // 3. Create via service
     const result = await orderService.createOrderFromOpportunity({
       opportunityId: validated.opportunityId,
-      providerId,
+      tenantId,
       userId,
       totalValue: validated.totalValue,
       currency: validated.currency,
@@ -258,7 +258,7 @@ export async function updateOrderStatusAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = UpdateOrderStatusSchema.safeParse(input);
@@ -273,7 +273,7 @@ export async function updateOrderStatusAction(
       validated.orderId,
       validated.status,
       userId,
-      providerId
+      tenantId
     );
 
     // 4. Audit log
@@ -340,7 +340,7 @@ export async function updateFulfillmentStatusAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = UpdateFulfillmentStatusSchema.safeParse(input);
@@ -355,7 +355,7 @@ export async function updateFulfillmentStatusAction(
       validated.orderId,
       validated.fulfillmentStatus,
       userId,
-      providerId
+      tenantId
     );
 
     // 4. Audit log
@@ -419,7 +419,7 @@ export async function cancelOrderAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate input
     const validation = CancelOrderSchema.safeParse(input);
@@ -434,7 +434,7 @@ export async function cancelOrderAction(
       validated.orderId,
       validated.reason,
       userId,
-      providerId
+      tenantId
     );
 
     // 4. Audit log
@@ -504,7 +504,7 @@ export async function activateOrderAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate orderId
     const idValidation = UuidSchema.safeParse(orderId);
@@ -517,7 +517,7 @@ export async function activateOrderAction(
       orderId,
       "active",
       userId,
-      providerId
+      tenantId
     );
 
     // 4. Audit log
@@ -576,7 +576,7 @@ export async function fulfillOrderAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { userId, orgId, providerId } = authResult;
+    const { userId, orgId, tenantId } = authResult;
 
     // 2. Validate orderId
     const idValidation = UuidSchema.safeParse(orderId);
@@ -589,7 +589,7 @@ export async function fulfillOrderAction(
       orderId,
       "fulfilled",
       userId,
-      providerId
+      tenantId
     );
 
     // 4. Audit log
@@ -647,7 +647,7 @@ export async function getOrderAction(orderId: string): Promise<GetOrderResult> {
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate orderId
     const idValidation = UuidSchema.safeParse(orderId);
@@ -656,7 +656,7 @@ export async function getOrderAction(orderId: string): Promise<GetOrderResult> {
     }
 
     // 3. Get via service
-    const order = await orderService.getOrderById(orderId, providerId);
+    const order = await orderService.getOrderById(orderId, tenantId);
 
     return { success: true, order };
   } catch (error) {
@@ -682,7 +682,7 @@ export async function listOrdersAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate query
     const validation = OrderQuerySchema.safeParse(query || {});
@@ -694,7 +694,7 @@ export async function listOrdersAction(
 
     // 3. Build where clause
     const where: Record<string, unknown> = {
-      provider_id: providerId,
+      tenant_id: tenantId,
       deleted_at: null,
     };
 
@@ -821,7 +821,7 @@ export async function getOrdersByOpportunityAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate opportunityId
     const idValidation = UuidSchema.safeParse(opportunityId);
@@ -832,7 +832,7 @@ export async function getOrdersByOpportunityAction(
     // 3. Get via service
     const orders = await orderService.getOrdersByOpportunity(
       opportunityId,
-      providerId
+      tenantId
     );
 
     return { success: true, orders };
@@ -862,7 +862,7 @@ export async function getOrdersByLeadAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate leadId
     const idValidation = UuidSchema.safeParse(leadId);
@@ -871,7 +871,7 @@ export async function getOrdersByLeadAction(
     }
 
     // 3. Get via service
-    const orders = await orderService.getOrdersByLead(leadId, providerId);
+    const orders = await orderService.getOrdersByLead(leadId, tenantId);
 
     return { success: true, orders };
   } catch (error) {
@@ -896,10 +896,10 @@ export async function getOrderStatsAction(): Promise<GetOrderStatsResult> {
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Get count via service
-    const activeCount = await orderService.countActiveOrders(providerId);
+    const activeCount = await orderService.countActiveOrders(tenantId);
 
     return { success: true, activeCount };
   } catch (error) {
@@ -929,7 +929,7 @@ export async function getExpiringOrdersAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate days
     const daysValidation = DaysSchema.safeParse(days ?? 30);
@@ -939,7 +939,7 @@ export async function getExpiringOrdersAction(
 
     // 3. Get via service
     const orders = await orderService.getExpiringOrders(
-      providerId,
+      tenantId,
       daysValidation.data
     );
 
@@ -967,7 +967,7 @@ export async function getAutoRenewableOrdersAction(
     if ("error" in authResult) {
       return { success: false, error: authResult.error };
     }
-    const { providerId } = authResult;
+    const { tenantId } = authResult;
 
     // 2. Validate days
     const daysValidation = DaysSchema.safeParse(daysBeforeExpiry ?? 30);
@@ -977,7 +977,7 @@ export async function getAutoRenewableOrdersAction(
 
     // 3. Get via service
     const orders = await orderService.getAutoRenewableOrders(
-      providerId,
+      tenantId,
       daysValidation.data
     );
 

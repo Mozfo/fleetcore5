@@ -29,7 +29,6 @@ export const STRIPE_CONFIG = {
 
   // Metadata keys - utilisés pour lier les objets Stripe aux entités FleetCore
   metadataKeys: {
-    providerId: "fleetcore_provider_id",
     tenantId: "fleetcore_tenant_id",
     orderId: "fleetcore_order_id",
     scheduleId: "fleetcore_schedule_id",
@@ -57,7 +56,6 @@ export type StripeMetadataKey = keyof typeof STRIPE_CONFIG.metadataKeys;
 
 // Helper pour créer les metadata FleetCore
 export function createFleetCoreMetadata(data: {
-  providerId?: string;
   tenantId?: string;
   orderId?: string;
   scheduleId?: string;
@@ -69,9 +67,6 @@ export function createFleetCoreMetadata(data: {
       process.env.NODE_ENV || "development",
   };
 
-  if (data.providerId) {
-    metadata[STRIPE_CONFIG.metadataKeys.providerId] = data.providerId;
-  }
   if (data.tenantId) {
     metadata[STRIPE_CONFIG.metadataKeys.tenantId] = data.tenantId;
   }
@@ -95,7 +90,6 @@ export function createFleetCoreMetadata(data: {
 export function extractFleetCoreIds(
   metadata: Record<string, string> | null | undefined
 ): {
-  providerId?: string;
   tenantId?: string;
   orderId?: string;
   scheduleId?: string;
@@ -105,7 +99,6 @@ export function extractFleetCoreIds(
   if (!metadata) return {};
 
   return {
-    providerId: metadata[STRIPE_CONFIG.metadataKeys.providerId],
     tenantId: metadata[STRIPE_CONFIG.metadataKeys.tenantId],
     orderId: metadata[STRIPE_CONFIG.metadataKeys.orderId],
     scheduleId: metadata[STRIPE_CONFIG.metadataKeys.scheduleId],

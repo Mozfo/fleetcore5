@@ -46,7 +46,7 @@ import { quote_status } from "@prisma/client";
  */
 export interface CreateQuoteParams {
   opportunityId: string;
-  providerId: string;
+  tenantId: string;
   userId: string;
   validUntil: Date;
   validFrom?: Date;
@@ -152,20 +152,20 @@ function isTransitionAllowed(from: quote_status, to: quote_status): boolean {
  * // Create a quote
  * const quote = await quoteService.createQuote({
  *   opportunityId: "opp-uuid",
- *   providerId: "provider-uuid",
+ *   tenantId: "provider-uuid",
  *   userId: "user-uuid",
  *   validUntil: new Date("2025-02-28"),
  *   items: [{ itemType: "plan", name: "Fleet Pro", quantity: 10, unitPrice: 99 }]
  * });
  *
  * // Send to client
- * const { publicUrl } = await quoteService.sendQuote(quote.id, providerId, userId);
+ * const { publicUrl } = await quoteService.sendQuote(quote.id, tenantId, userId);
  *
  * // Client accepts
- * await quoteService.acceptQuote(quote.id, providerId);
+ * await quoteService.acceptQuote(quote.id, tenantId);
  *
  * // Convert to order
- * const { order } = await quoteService.convertToOrder(quote.id, providerId, userId);
+ * const { order } = await quoteService.convertToOrder(quote.id, tenantId, userId);
  * ```
  */
 export class QuoteService {
@@ -197,7 +197,7 @@ export class QuoteService {
   async createQuote(params: CreateQuoteParams): Promise<QuoteWithItems> {
     const {
       opportunityId,
-      providerId,
+      tenantId,
       userId,
       validUntil,
       validFrom,
@@ -257,7 +257,7 @@ export class QuoteService {
       return this.quoteRepo.createQuote(
         {
           opportunity_id: opportunityId,
-          provider_id: providerId,
+          tenant_id: tenantId,
           created_by: userId,
           valid_until: validUntil,
           valid_from: validFrom,
@@ -297,7 +297,7 @@ export class QuoteService {
    * Only draft quotes can be updated.
    *
    * @param id - Quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param userId - User making the update
    * @param params - Update parameters
    * @returns Updated quote
@@ -306,11 +306,11 @@ export class QuoteService {
    */
   async updateQuote(
     id: string,
-    providerId: string,
+    tenantId: string,
     userId: string,
     params: UpdateQuoteParams
   ): Promise<Quote> {
-    const quote = await this.quoteRepo.findByIdWithProvider(id, providerId);
+    const quote = await this.quoteRepo.findByIdWithProvider(id, tenantId);
 
     if (!quote) {
       throw new NotFoundError(`Quote ${id}`);
@@ -344,7 +344,7 @@ export class QuoteService {
 
     const updated = await this.quoteRepo.updateQuote(
       id,
-      providerId,
+      tenantId,
       updateData,
       userId
     );
@@ -368,7 +368,7 @@ export class QuoteService {
    * Only draft quotes can be deleted.
    *
    * @param id - Quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param deletedBy - User making the deletion
    * @param reason - Optional deletion reason
    * @throws {NotFoundError} If quote not found
@@ -376,11 +376,11 @@ export class QuoteService {
    */
   async deleteQuote(
     id: string,
-    providerId: string,
+    tenantId: string,
     deletedBy: string,
     reason?: string
   ): Promise<void> {
-    const quote = await this.quoteRepo.findByIdWithProvider(id, providerId);
+    const quote = await this.quoteRepo.findByIdWithProvider(id, tenantId);
 
     if (!quote) {
       throw new NotFoundError(`Quote ${id}`);
@@ -394,7 +394,7 @@ export class QuoteService {
       );
     }
 
-    await this.quoteRepo.softDeleteQuote(id, providerId, deletedBy, reason);
+    await this.quoteRepo.softDeleteQuote(id, tenantId, deletedBy, reason);
 
     logger.info(
       {
@@ -419,7 +419,7 @@ export class QuoteService {
    * - Records sent_at timestamp
    *
    * @param id - Quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param sentBy - User sending the quote
    * @returns Send result with public URL
    * @throws {NotFoundError} If quote not found
@@ -427,10 +427,10 @@ export class QuoteService {
    */
   async sendQuote(
     id: string,
-    providerId: string,
+    tenantId: string,
     sentBy: string
   ): Promise<SendQuoteResult> {
-    const quote = await this.quoteRepo.findByIdWithProvider(id, providerId);
+    const quote = await this.quoteRepo.findByIdWithProvider(id, tenantId);
 
     if (!quote) {
       throw new NotFoundError(`Quote ${id}`);
@@ -447,13 +447,13 @@ export class QuoteService {
     // Generate public token if not present
     let publicToken = quote.public_token;
     if (!publicToken) {
-      publicToken = await this.quoteRepo.setPublicToken(id, providerId, sentBy);
+      publicToken = await this.quoteRepo.setPublicToken(id, tenantId, sentBy);
     }
 
     // Update status
     const updated = await this.quoteRepo.updateQuote(
       id,
-      providerId,
+      tenantId,
       {
         status: "sent",
         sent_at: new Date(),
@@ -488,11 +488,11 @@ export class QuoteService {
    * Called when client opens the public link.
    *
    * @param id - Quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @returns Updated quote
    */
-  async markAsViewed(id: string, providerId: string): Promise<Quote> {
-    const quote = await this.quoteRepo.findByIdWithProvider(id, providerId);
+  async markAsViewed(id: string, tenantId: string): Promise<Quote> {
+    const quote = await this.quoteRepo.findByIdWithProvider(id, tenantId);
 
     if (!quote) {
       throw new NotFoundError(`Quote ${id}`);
@@ -516,7 +516,7 @@ export class QuoteService {
 
     const updated = await this.quoteRepo.updateQuote(
       id,
-      providerId,
+      tenantId,
       updateData,
       "system"
     );
@@ -538,7 +538,7 @@ export class QuoteService {
    * Accept a quote
    *
    * @param id - Quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param acceptedBy - Optional identifier of who accepted
    * @returns Updated quote
    * @throws {NotFoundError} If quote not found
@@ -546,10 +546,10 @@ export class QuoteService {
    */
   async acceptQuote(
     id: string,
-    providerId: string,
+    tenantId: string,
     acceptedBy?: string
   ): Promise<Quote> {
-    const quote = await this.quoteRepo.findByIdWithProvider(id, providerId);
+    const quote = await this.quoteRepo.findByIdWithProvider(id, tenantId);
 
     if (!quote) {
       throw new NotFoundError(`Quote ${id}`);
@@ -574,7 +574,7 @@ export class QuoteService {
 
     const updated = await this.quoteRepo.updateQuote(
       id,
-      providerId,
+      tenantId,
       {
         status: "accepted",
         accepted_at: new Date(),
@@ -600,7 +600,7 @@ export class QuoteService {
    * Reject a quote
    *
    * @param id - Quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param reason - Optional rejection reason
    * @returns Updated quote
    * @throws {NotFoundError} If quote not found
@@ -608,10 +608,10 @@ export class QuoteService {
    */
   async rejectQuote(
     id: string,
-    providerId: string,
+    tenantId: string,
     reason?: string
   ): Promise<Quote> {
-    const quote = await this.quoteRepo.findByIdWithProvider(id, providerId);
+    const quote = await this.quoteRepo.findByIdWithProvider(id, tenantId);
 
     if (!quote) {
       throw new NotFoundError(`Quote ${id}`);
@@ -627,7 +627,7 @@ export class QuoteService {
 
     const updated = await this.quoteRepo.updateQuote(
       id,
-      providerId,
+      tenantId,
       {
         status: "rejected",
         rejected_at: new Date(),
@@ -654,13 +654,13 @@ export class QuoteService {
    * Expire a quote
    *
    * @param id - Quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @returns Updated quote
    * @throws {NotFoundError} If quote not found
    * @throws {BusinessRuleError} If quote cannot be expired
    */
-  async expireQuote(id: string, providerId: string): Promise<Quote> {
-    const quote = await this.quoteRepo.findByIdWithProvider(id, providerId);
+  async expireQuote(id: string, tenantId: string): Promise<Quote> {
+    const quote = await this.quoteRepo.findByIdWithProvider(id, tenantId);
 
     if (!quote) {
       throw new NotFoundError(`Quote ${id}`);
@@ -676,7 +676,7 @@ export class QuoteService {
 
     const updated = await this.quoteRepo.updateQuote(
       id,
-      providerId,
+      tenantId,
       {
         status: "expired",
         expired_at: new Date(),
@@ -703,19 +703,19 @@ export class QuoteService {
    * Create a new version of an existing quote
    *
    * @param originalQuoteId - Original quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param createdBy - User creating the new version
    * @returns New quote version
    * @throws {NotFoundError} If original quote not found
    */
   async createNewVersion(
     originalQuoteId: string,
-    providerId: string,
+    tenantId: string,
     createdBy: string
   ): Promise<QuoteWithItems> {
     const original = await this.quoteRepo.findWithItems(
       originalQuoteId,
-      providerId
+      tenantId
     );
 
     if (!original) {
@@ -725,7 +725,7 @@ export class QuoteService {
     const newVersion = await prisma.$transaction(async (tx) => {
       return this.quoteRepo.createNewVersion(
         originalQuoteId,
-        providerId,
+        tenantId,
         createdBy,
         tx
       );
@@ -753,7 +753,7 @@ export class QuoteService {
    * Convert an accepted quote to an order
    *
    * @param id - Quote UUID
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param convertedBy - User converting the quote
    * @returns Conversion result with order
    * @throws {NotFoundError} If quote not found
@@ -761,10 +761,10 @@ export class QuoteService {
    */
   async convertToOrder(
     id: string,
-    providerId: string,
+    tenantId: string,
     convertedBy: string
   ): Promise<QuoteConversionResult> {
-    const quote = await this.quoteRepo.findWithItems(id, providerId);
+    const quote = await this.quoteRepo.findWithItems(id, tenantId);
 
     if (!quote) {
       throw new NotFoundError(`Quote ${id}`);
@@ -790,7 +790,7 @@ export class QuoteService {
     // Create order from quote via OrderService
     const orderResult = await this.orderService.createOrderFromOpportunity({
       opportunityId: quote.opportunity_id,
-      providerId,
+      tenantId,
       userId: convertedBy,
       totalValue: Number(quote.total_value ?? 0),
       currency: quote.currency,
@@ -803,7 +803,7 @@ export class QuoteService {
     // Update quote status to converted
     const updatedQuote = await this.quoteRepo.updateQuote(
       id,
-      providerId,
+      tenantId,
       {
         status: "converted",
         converted_to_order_id: orderResult.order.id,
@@ -849,8 +849,8 @@ export class QuoteService {
   /**
    * Get a quote by ID
    */
-  async getQuote(id: string, providerId: string): Promise<Quote | null> {
-    return this.quoteRepo.findByIdWithProvider(id, providerId);
+  async getQuote(id: string, tenantId: string): Promise<Quote | null> {
+    return this.quoteRepo.findByIdWithProvider(id, tenantId);
   }
 
   /**
@@ -858,9 +858,9 @@ export class QuoteService {
    */
   async getQuoteWithItems(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<QuoteWithItems | null> {
-    return this.quoteRepo.findWithItems(id, providerId);
+    return this.quoteRepo.findWithItems(id, tenantId);
   }
 
   /**
@@ -868,9 +868,9 @@ export class QuoteService {
    */
   async getQuoteWithRelations(
     id: string,
-    providerId: string
+    tenantId: string
   ): Promise<QuoteWithRelations | null> {
-    return this.quoteRepo.findWithRelations(id, providerId);
+    return this.quoteRepo.findWithRelations(id, tenantId);
   }
 
   /**
@@ -885,26 +885,21 @@ export class QuoteService {
    */
   async getQuoteByReference(
     reference: string,
-    providerId: string
+    tenantId: string
   ): Promise<Quote | null> {
-    return this.quoteRepo.findByReference(reference, providerId);
+    return this.quoteRepo.findByReference(reference, tenantId);
   }
 
   /**
    * List quotes with pagination and filters
    */
   async listQuotes(
-    providerId: string,
+    tenantId: string,
     filters?: QuoteFilters,
     page = 1,
     pageSize = 20
   ): Promise<PaginatedResult<Quote>> {
-    return this.quoteRepo.findAllWithFilters(
-      providerId,
-      filters,
-      page,
-      pageSize
-    );
+    return this.quoteRepo.findAllWithFilters(tenantId, filters, page, pageSize);
   }
 
   /**
@@ -912,19 +907,16 @@ export class QuoteService {
    */
   async getQuotesByOpportunity(
     opportunityId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Quote[]> {
-    return this.quoteRepo.findByOpportunity(opportunityId, providerId);
+    return this.quoteRepo.findByOpportunity(opportunityId, tenantId);
   }
 
   /**
    * Get version history of a quote
    */
-  async getVersionHistory(
-    quoteId: string,
-    providerId: string
-  ): Promise<Quote[]> {
-    return this.quoteRepo.findVersionHistory(quoteId, providerId);
+  async getVersionHistory(quoteId: string, tenantId: string): Promise<Quote[]> {
+    return this.quoteRepo.findVersionHistory(quoteId, tenantId);
   }
 
   /**
@@ -932,9 +924,9 @@ export class QuoteService {
    */
   async getLatestVersion(
     opportunityId: string,
-    providerId: string
+    tenantId: string
   ): Promise<Quote | null> {
-    return this.quoteRepo.getLatestVersion(opportunityId, providerId);
+    return this.quoteRepo.getLatestVersion(opportunityId, tenantId);
   }
 
   // ===========================================================================
@@ -947,16 +939,16 @@ export class QuoteService {
    * Finds quotes where valid_until < now AND status in [sent, viewed]
    * and marks them as expired.
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @returns Number of quotes expired
    */
-  async expireOverdueQuotes(providerId: string): Promise<number> {
-    const expiredQuotes = await this.quoteRepo.findExpired(providerId);
+  async expireOverdueQuotes(tenantId: string): Promise<number> {
+    const expiredQuotes = await this.quoteRepo.findExpired(tenantId);
 
     let count = 0;
     for (const quote of expiredQuotes) {
       try {
-        await this.expireQuote(quote.id, providerId);
+        await this.expireQuote(quote.id, tenantId);
         count++;
       } catch (error) {
         logger.warn(
@@ -972,7 +964,7 @@ export class QuoteService {
 
     logger.info(
       {
-        providerId,
+        tenantId,
         expiredCount: count,
         totalFound: expiredQuotes.length,
       },
@@ -985,24 +977,24 @@ export class QuoteService {
   /**
    * Get quotes expiring soon
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param days - Number of days to check
    * @returns Quotes expiring within the specified days
    */
   async getExpiringSoonQuotes(
-    providerId: string,
+    tenantId: string,
     days: number
   ): Promise<Quote[]> {
-    return this.quoteRepo.findExpiringSoon(providerId, days);
+    return this.quoteRepo.findExpiringSoon(tenantId, days);
   }
 
   /**
    * Count quotes by status
    */
   async countByStatus(
-    providerId: string
+    tenantId: string
   ): Promise<Partial<Record<quote_status, number>>> {
-    return this.quoteRepo.countByStatus(providerId);
+    return this.quoteRepo.countByStatus(tenantId);
   }
 }
 

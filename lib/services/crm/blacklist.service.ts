@@ -21,7 +21,7 @@ import { logger } from "@/lib/logger";
 // ===== TYPES =====
 
 export interface AddToBlacklistInput {
-  providerId: string;
+  tenantId: string;
   email: string;
   reason: string;
   reasonComment?: string | null;
@@ -41,8 +41,8 @@ export class BlacklistService {
   /**
    * Check if an email is blacklisted for a provider
    */
-  async isBlacklisted(email: string, providerId: string): Promise<boolean> {
-    const entry = await this.repo.findByEmail(email, providerId);
+  async isBlacklisted(email: string, tenantId: string): Promise<boolean> {
+    const entry = await this.repo.findByEmail(email, tenantId);
     return entry !== null;
   }
 
@@ -54,7 +54,7 @@ export class BlacklistService {
    */
   async addToBlacklist(input: AddToBlacklistInput): Promise<crm_blacklist> {
     const {
-      providerId,
+      tenantId,
       email,
       reason,
       reasonComment,
@@ -63,17 +63,14 @@ export class BlacklistService {
     } = input;
 
     // Check if already blacklisted
-    const existing = await this.repo.findByEmail(email, providerId);
+    const existing = await this.repo.findByEmail(email, tenantId);
     if (existing) {
-      logger.info(
-        { email, providerId },
-        "[Blacklist] Email already blacklisted"
-      );
+      logger.info({ email, tenantId }, "[Blacklist] Email already blacklisted");
       return existing;
     }
 
     const entry = await this.repo.create({
-      provider_id: providerId,
+      tenant_id: tenantId,
       email,
       reason,
       reason_comment: reasonComment,
@@ -108,8 +105,8 @@ export class BlacklistService {
   /**
    * Get all active blacklisted emails for a provider
    */
-  async getBlacklist(providerId: string): Promise<crm_blacklist[]> {
-    return this.repo.findByProvider(providerId);
+  async getBlacklist(tenantId: string): Promise<crm_blacklist[]> {
+    return this.repo.findByProvider(tenantId);
   }
 }
 

@@ -955,20 +955,6 @@ export function getLeadColumns(
       size: 150,
     },
 
-    // ── Provider ──────────────────────────────────────────────────────
-    {
-      id: "provider_id",
-      accessorKey: "provider_id",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.provider_id")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.provider_id") },
-      size: 100,
-    },
-
     // ── Stage tracking (V5: CLOSING) ──────────────────────────────────
     {
       id: "stage_entered_at",

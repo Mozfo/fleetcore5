@@ -29,7 +29,7 @@ import { logger } from "@/lib/logger";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const DEFAULT_PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+const DEFAULT_TENANT_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
 
 // ============================================================================
 // TYPES
@@ -141,7 +141,7 @@ export async function GET(request: Request) {
           created_at: { lte: twentyFourHoursAgo },
           deleted_at: null,
           status: { in: ["new", "email_verified"] },
-          provider_id: { not: null },
+          tenant_id: { not: null },
         },
         take: 50,
       });
@@ -182,7 +182,7 @@ export async function GET(request: Request) {
     try {
       const eligible = await nurturingService.getEligibleForStep(
         1,
-        DEFAULT_PROVIDER_ID
+        DEFAULT_TENANT_ID
       );
 
       for (const entry of eligible) {
@@ -211,7 +211,7 @@ export async function GET(request: Request) {
     try {
       const eligible = await nurturingService.getEligibleForStep(
         2,
-        DEFAULT_PROVIDER_ID
+        DEFAULT_TENANT_ID
       );
 
       for (const entry of eligible) {
@@ -238,8 +238,7 @@ export async function GET(request: Request) {
     const step5Result: StepResult = { processed: 0, errors: 0 };
 
     try {
-      const archived =
-        await nurturingService.archiveExpired(DEFAULT_PROVIDER_ID);
+      const archived = await nurturingService.archiveExpired(DEFAULT_TENANT_ID);
       step5Result.processed = archived;
     } catch (err) {
       logger.error({ error: err }, "[CronNurturing] Step 5 failed");

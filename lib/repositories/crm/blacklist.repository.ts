@@ -16,7 +16,7 @@ import { prisma as defaultPrisma } from "@/lib/prisma";
 export type Blacklist = crm_blacklist;
 
 export interface CreateBlacklistInput {
-  provider_id: string;
+  tenant_id: string;
   email: string;
   reason: string;
   reason_comment?: string | null;
@@ -39,12 +39,12 @@ export class BlacklistRepository {
    */
   async findByEmail(
     email: string,
-    providerId: string
+    tenantId: string
   ): Promise<crm_blacklist | null> {
     return this.prisma.crm_blacklist.findFirst({
       where: {
         email: { equals: email.toLowerCase().trim(), mode: "insensitive" },
-        provider_id: providerId,
+        tenant_id: tenantId,
         removed_at: null,
       },
     });
@@ -53,10 +53,10 @@ export class BlacklistRepository {
   /**
    * Get all active blacklist entries for a provider
    */
-  async findByProvider(providerId: string): Promise<crm_blacklist[]> {
+  async findByProvider(tenantId: string): Promise<crm_blacklist[]> {
     return this.prisma.crm_blacklist.findMany({
       where: {
-        provider_id: providerId,
+        tenant_id: tenantId,
         removed_at: null,
       },
       orderBy: { blacklisted_at: "desc" },
@@ -69,7 +69,7 @@ export class BlacklistRepository {
   async create(data: CreateBlacklistInput): Promise<crm_blacklist> {
     return this.prisma.crm_blacklist.create({
       data: {
-        provider_id: data.provider_id,
+        tenant_id: data.tenant_id,
         email: data.email.toLowerCase().trim(),
         reason: data.reason,
         reason_comment: data.reason_comment || null,

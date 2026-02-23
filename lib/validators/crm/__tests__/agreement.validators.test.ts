@@ -1559,14 +1559,14 @@ describe("Prisma ENUM alignment", () => {
 });
 
 // =============================================================================
-// PROVIDER ID PATTERN TESTS
+// TENANT ID PATTERN TESTS
 // =============================================================================
 
-describe("Provider ID pattern", () => {
-  it("CreateAgreementSchema does NOT include providerId field", () => {
-    // providerId is injected via getCurrentProviderId() at action layer
+describe("Tenant ID pattern", () => {
+  it("CreateAgreementSchema does NOT include tenantId field", () => {
+    // tenantId is injected via auth context at action layer
     const result = CreateAgreementSchema.parse(validAgreement);
-    expect("providerId" in result).toBe(false);
+    expect("tenantId" in result).toBe(false);
   });
 
   it("CreateAgreementSchema does NOT include createdBy field", () => {
@@ -1575,8 +1575,8 @@ describe("Provider ID pattern", () => {
     expect("createdBy" in result).toBe(false);
   });
 
-  it("accepts agreement without providerId in input", () => {
-    // Should not require providerId
+  it("accepts agreement without tenantId in input", () => {
+    // Should not require tenantId
     expect(() => CreateAgreementSchema.parse(validAgreement)).not.toThrow();
   });
 });

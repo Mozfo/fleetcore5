@@ -195,7 +195,10 @@ async function main() {
     await prisma.crm_lead_sources.upsert({
       where: { id: source.id },
       update: {},
-      create: source,
+      create: {
+        ...source,
+        tenant_id: "7ad8173c-68c5-41d3-9918-686e4e941cc0",
+      },
     });
   }
 

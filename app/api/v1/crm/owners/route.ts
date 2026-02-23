@@ -15,9 +15,8 @@ export async function GET(_request: NextRequest) {
   try {
     await requireCrmApiAuth();
 
-    const owners = await db.adm_provider_employees.findMany({
+    const owners = await db.clt_members.findMany({
       where: {
-        department: "Sales",
         status: "active",
         deleted_at: null,
       },

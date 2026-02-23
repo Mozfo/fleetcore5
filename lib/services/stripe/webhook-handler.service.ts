@@ -32,7 +32,6 @@ export interface WebhookHandlerResult {
   action: string;
   error?: string;
   fleetcoreIds?: {
-    providerId?: string;
     tenantId?: string;
     orderId?: string;
     scheduleId?: string;
@@ -47,7 +46,6 @@ export interface WebhookLogData {
   eventId: string;
   eventType: string;
   stripeObjectId: string;
-  providerId?: string;
   tenantId?: string;
   status: "received" | "processing" | "processed" | "failed" | "ignored";
   errorMessage?: string;

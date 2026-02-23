@@ -166,6 +166,8 @@ model clt_members {
   m7im7no                  adm_tenant_vehicle_classes[]   @relation("M_bke6r4")
   mmhaxgt                  adm_tenant_vehicle_classes[]   @relation("M_tgsq3j")
   mrhx8v                   adm_tenant_vehicle_classes[]   @relation("M_juibnn")
+  crm_leads_assigned       crm_leads[]                    @relation("crm_leads_assigned")
+  crm_activities_created   crm_activities[]               @relation("crm_activities_creator")
   mpbrkx0                  crm_opportunities[]            @relation("M_ibz5tf")
   mp0iu8u                  crm_opportunities[]            @relation("M_ds7hn1")
   mg0o2lt                  crm_opportunities[]            @relation("M_r8zf7m")
@@ -1315,6 +1317,7 @@ model crm_activities {
   created_by        String?            @db.Uuid
   created_at        DateTime?          @default(now()) @db.Timestamptz(6)
   updated_at        DateTime?          @default(now()) @db.Timestamptz(6)
+  created_by_member clt_members?       @relation("crm_activities_creator", fields: [created_by], references: [id])
   crm_leads         crm_leads?         @relation(fields: [lead_id], references: [id], onDelete: Cascade, map: "crm_activities_lead_id_fkey")
   crm_opportunities crm_opportunities? @relation(fields: [opportunity_id], references: [id], onDelete: Cascade, map: "crm_activities_opportunity_id_fkey")
 
@@ -1812,6 +1815,7 @@ model crm_leads {
   recovery_notification_clicked_at DateTime?             @db.Timestamptz(6)
   whatsapp_number                  String?               @db.VarChar(50)
   // Relations
+  assigned_member                  clt_members?          @relation("crm_leads_assigned", fields: [assigned_to], references: [id])
   crm_activities                   crm_activities[]
   crm_lead_activities              crm_lead_activities[]
   crm_countries                    crm_countries?        @relation(fields: [country_code], references: [country_code], onDelete: Restrict, map: "fk_crm_leads_country")

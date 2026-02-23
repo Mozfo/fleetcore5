@@ -78,7 +78,6 @@ export async function POST(
           name: orgName,
           country_code: lead.country_code || "AE",
           default_currency: "AED",
-          auth_organization_id: orgId,
         },
       });
 

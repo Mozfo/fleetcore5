@@ -72,7 +72,7 @@ export interface AssignmentRulesConfig {
 }
 
 /**
- * Eligible employee record (from adm_provider_employees)
+ * Eligible employee record (from clt_members)
  */
 export interface EligibleEmployee {
   id: string;

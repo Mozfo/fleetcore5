@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
         booking_slot_at: true,
         reschedule_token: true,
         language: true,
+        tenant_id: true,
       },
     });
 
@@ -151,22 +152,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Resolve tenant_id for activity log (use lead's tenant or fallback to HQ)
+    let activityTenantId = lead.tenant_id;
+    if (!activityTenantId) {
+      const hqTenant = await prisma.adm_tenants.findFirst({
+        where: { tenant_type: "headquarters" },
+        select: { id: true },
+      });
+      activityTenantId = hqTenant?.id ?? null;
+    }
+
     // Log activity
-    await prisma.crm_lead_activities.create({
-      data: {
-        lead_id: lead.id,
-        activity_type: "email_sent",
-        title: "Reschedule link sent",
-        description: `Reschedule/cancel link sent to ${lead.email}`,
-        metadata: {
-          email_id: data?.id,
-          reschedule_url: rescheduleUrl,
+    if (activityTenantId) {
+      await prisma.crm_lead_activities.create({
+        data: {
+          tenant_id: activityTenantId,
+          lead_id: lead.id,
+          activity_type: "email_sent",
+          title: "Reschedule link sent",
+          description: `Reschedule/cancel link sent to ${lead.email}`,
+          metadata: {
+            email_id: data?.id,
+            reschedule_url: rescheduleUrl,
+          },
+          performed_by_name: "System",
+          is_completed: true,
+          completed_at: new Date(),
         },
-        performed_by_name: "System",
-        is_completed: true,
-        completed_at: new Date(),
-      },
-    });
+      });
+    }
 
     logger.info(
       {

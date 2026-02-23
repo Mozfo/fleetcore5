@@ -51,7 +51,7 @@ export interface LeadCreationResult {
 
 /**
  * Eligible employee structure for assignment
- * Matches adm_provider_employees table structure
+ * Matches clt_members table structure
  */
 interface EligibleEmployee {
   id: string;
@@ -95,7 +95,7 @@ interface PriorityConfig {
  *     message: "We need fleet management...",
  *     source: "website"
  *   },
- *   "provider-uuid",
+ *   "tenant-uuid",
  *   "user-uuid"
  * );
  * // Returns: { lead, scoring, assignment }
@@ -129,7 +129,7 @@ export class LeadCreationService {
    * - Create lead in database
    *
    * @param input - Validated lead creation input
-   * @param providerId - Provider UUID (FleetCore division for data isolation)
+   * @param tenantId - Tenant UUID (FleetCore division for data isolation)
    * @param createdBy - Employee UUID who created lead (optional, for internal leads)
    * @returns Complete lead creation result
    *
@@ -142,7 +142,7 @@ export class LeadCreationService {
    * ```typescript
    * const result = await service.createLead(
    *   { email: "test@example.com", source: "website" },
-   *   "provider-123",
+   *   "tenant-123",
    *   "user-456"
    * );
    *
@@ -153,7 +153,7 @@ export class LeadCreationService {
    */
   async createLead(
     input: CreateLeadInput,
-    providerId: string,
+    tenantId: string,
     createdBy?: string
   ): Promise<LeadCreationResult> {
     // STEP 0: GDPR validation (before any processing)
@@ -193,8 +193,8 @@ export class LeadCreationService {
     // STEP 3: Determine priority based on qualification score
     const priority = await this.determinePriority(scoring.qualification_score);
 
-    // STEP 4: Fetch active employees for assignment
-    const activeEmployees = await prisma.adm_provider_employees.findMany({
+    // STEP 4: Fetch active members for assignment
+    const activeEmployees = await prisma.clt_members.findMany({
       where: {
         status: "active",
         deleted_at: null,
@@ -204,7 +204,7 @@ export class LeadCreationService {
         first_name: true,
         last_name: true,
         email: true,
-        title: true,
+        role: true,
         status: true,
       },
     });
@@ -215,7 +215,7 @@ export class LeadCreationService {
         fleet_size: input.fleet_size ?? null,
         country_code: input.country_code ?? null,
       },
-      activeEmployees as EligibleEmployee[]
+      activeEmployees as unknown as EligibleEmployee[]
     );
 
     // STEP 5.5: Check expansion opportunity (non-operational countries)
@@ -288,7 +288,7 @@ export class LeadCreationService {
     const lead = await this.leadRepo.create(
       leadData,
       createdBy ?? "",
-      providerId
+      tenantId
     );
 
     // STEP 7: Send notification to assigned sales rep (if assigned)
@@ -308,7 +308,7 @@ export class LeadCreationService {
             "crm.sales.assignment",
             assignedEmployee.email,
             {
-              employee_name: assignedEmployee.first_name,
+              employee_name: assignedEmployee.first_name ?? "",
               lead_name: leadName,
               company_name: input.company_name || "N/A",
               priority: finalPriority as "urgent" | "high" | "medium" | "low",
@@ -321,7 +321,7 @@ export class LeadCreationService {
             },
             {
               leadId: lead.id,
-              providerId,
+              tenantId,
               idempotencyKey: `sales_rep_assignment_${lead.id}`,
             }
           );

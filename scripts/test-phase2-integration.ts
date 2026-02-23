@@ -34,8 +34,8 @@ async function testCreateOpportunityWithAssignedTo(): Promise<void> {
       select: { id: true, tenant_id: true },
     });
 
-    if (!lead) {
-      throw new Error("No proposal_sent lead found for test");
+    if (!lead || !lead.tenant_id) {
+      throw new Error("No proposal_sent lead with tenant_id found for test");
     }
 
     // Get a valid employee for assigned_to
@@ -110,8 +110,8 @@ async function testCreateActivityOnLead(): Promise<void> {
       select: { id: true, tenant_id: true },
     });
 
-    if (!lead) {
-      throw new Error("No lead found for test");
+    if (!lead || !lead.tenant_id) {
+      throw new Error("No lead with tenant_id found for test");
     }
 
     // Get an employee for created_by

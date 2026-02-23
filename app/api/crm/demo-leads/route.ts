@@ -99,10 +99,10 @@ async function handleWizardStep1(
   const locale = body.locale || "en";
 
   // V6.6: Check blacklist before processing
-  const DEFAULT_PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+  const DEFAULT_TENANT_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
   const isBlacklisted = await blacklistService.isBlacklisted(
     normalizedEmail,
-    DEFAULT_PROVIDER_ID
+    DEFAULT_TENANT_ID
   );
 
   if (isBlacklisted) {
@@ -247,10 +247,10 @@ async function handleFullForm(
   body: FullFormBody
 ): Promise<NextResponse> {
   // V6.6: Check blacklist before processing
-  const PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+  const TENANT_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
   const isEmailBlacklisted = await blacklistService.isBlacklisted(
     body.email.toLowerCase().trim(),
-    PROVIDER_ID
+    TENANT_ID
   );
 
   if (isEmailBlacklisted) {

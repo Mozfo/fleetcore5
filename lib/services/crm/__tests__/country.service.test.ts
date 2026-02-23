@@ -159,7 +159,7 @@ describe("CountryService", () => {
         is_visible: true,
         display_order: 2,
         is_system: false,
-        provider_id: null,
+        tenant_id: "tenant-id-123",
         created_at: new Date(),
         updated_at: new Date(),
       };

@@ -50,7 +50,6 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   deletion_reason: false,
   created_by: false,
   last_activity_at: false,
-  provider_id: false,
   stage_entered_at: false,
   loss_reason_code: false,
   loss_reason_detail: false,

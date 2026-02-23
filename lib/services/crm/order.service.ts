@@ -32,7 +32,7 @@ import { logger } from "@/lib/logger";
  */
 export interface CreateOrderFromOpportunityParams {
   opportunityId: string;
-  providerId: string;
+  tenantId: string;
   userId: string;
   totalValue: number;
   currency: string;
@@ -78,7 +78,7 @@ export interface OrderCreationResult {
  * ```typescript
  * const result = await orderService.createOrderFromOpportunity({
  *   opportunityId: "opp-uuid",
- *   providerId: "provider-uuid",
+ *   tenantId: "provider-uuid",
  *   userId: "user-uuid",
  *   totalValue: 60000,
  *   currency: "EUR",
@@ -121,7 +121,7 @@ export class OrderService {
   ): Promise<OrderCreationResult> {
     const {
       opportunityId,
-      providerId,
+      tenantId,
       userId,
       totalValue,
       currency,
@@ -135,7 +135,7 @@ export class OrderService {
     } = params;
 
     // STEP 1: Validate opportunity exists and is eligible
-    // Note: crm_opportunities doesn't have provider_id - division isolation happens at order level
+    // Note: crm_opportunities doesn't have tenant_id - division isolation happens at order level
     const opportunity = await prisma.crm_opportunities.findFirst({
       where: {
         id: opportunityId,
@@ -207,7 +207,7 @@ export class OrderService {
         {
           opportunity_id: opportunityId,
           lead_id: opportunity.lead_id,
-          provider_id: providerId,
+          tenant_id: tenantId,
           order_type: orderType,
           total_value: totalValue,
           currency: currency.toUpperCase(),
@@ -279,39 +279,39 @@ export class OrderService {
    * Get order by ID with relations
    *
    * @param id - Order UUID
-   * @param providerId - Optional provider ID for filtering
+   * @param tenantId - Optional provider ID for filtering
    * @returns Order with relations or null
    */
   async getOrderById(
     id: string,
-    providerId?: string
+    tenantId?: string
   ): Promise<OrderWithRelations | null> {
-    return this.orderRepo.findByIdWithRelations(id, providerId);
+    return this.orderRepo.findByIdWithRelations(id, tenantId);
   }
 
   /**
    * Get orders by opportunity ID
    *
    * @param opportunityId - Opportunity UUID
-   * @param providerId - Optional provider ID for filtering
+   * @param tenantId - Optional provider ID for filtering
    * @returns Array of orders
    */
   async getOrdersByOpportunity(
     opportunityId: string,
-    providerId?: string
+    tenantId?: string
   ): Promise<Order[]> {
-    return this.orderRepo.findByOpportunityId(opportunityId, providerId);
+    return this.orderRepo.findByOpportunityId(opportunityId, tenantId);
   }
 
   /**
    * Get orders by lead ID
    *
    * @param leadId - Lead UUID
-   * @param providerId - Optional provider ID for filtering
+   * @param tenantId - Optional provider ID for filtering
    * @returns Array of orders
    */
-  async getOrdersByLead(leadId: string, providerId?: string): Promise<Order[]> {
-    return this.orderRepo.findByLeadId(leadId, providerId);
+  async getOrdersByLead(leadId: string, tenantId?: string): Promise<Order[]> {
+    return this.orderRepo.findByLeadId(leadId, tenantId);
   }
 
   /**
@@ -320,16 +320,16 @@ export class OrderService {
    * @param id - Order UUID
    * @param status - New status
    * @param userId - User making the update
-   * @param providerId - Optional provider ID for filtering
+   * @param tenantId - Optional provider ID for filtering
    * @returns Updated order
    */
   async updateOrderStatus(
     id: string,
     status: string,
     userId: string,
-    providerId?: string
+    tenantId?: string
   ): Promise<Order> {
-    const order = await this.orderRepo.findByIdWithRelations(id, providerId);
+    const order = await this.orderRepo.findByIdWithRelations(id, tenantId);
 
     if (!order) {
       throw new NotFoundError(`Order not found: ${id}`);
@@ -341,7 +341,7 @@ export class OrderService {
       id,
       { status },
       userId,
-      providerId
+      tenantId
     );
 
     logger.info(
@@ -364,16 +364,16 @@ export class OrderService {
    * @param id - Order UUID
    * @param fulfillmentStatus - New fulfillment status
    * @param userId - User making the update
-   * @param providerId - Optional provider ID for filtering
+   * @param tenantId - Optional provider ID for filtering
    * @returns Updated order
    */
   async updateFulfillmentStatus(
     id: string,
     fulfillmentStatus: OrderUpdateInput["fulfillment_status"],
     userId: string,
-    providerId?: string
+    tenantId?: string
   ): Promise<Order> {
-    const order = await this.orderRepo.findByIdWithRelations(id, providerId);
+    const order = await this.orderRepo.findByIdWithRelations(id, tenantId);
 
     if (!order) {
       throw new NotFoundError(`Order not found: ${id}`);
@@ -402,7 +402,7 @@ export class OrderService {
       id,
       updateData,
       userId,
-      providerId
+      tenantId
     );
 
     logger.info(
@@ -425,16 +425,16 @@ export class OrderService {
    * @param id - Order UUID
    * @param reason - Cancellation reason
    * @param userId - User making the cancellation
-   * @param providerId - Optional provider ID for filtering
+   * @param tenantId - Optional provider ID for filtering
    * @returns Cancelled order
    */
   async cancelOrder(
     id: string,
     reason: string,
     userId: string,
-    providerId?: string
+    tenantId?: string
   ): Promise<Order> {
-    const order = await this.orderRepo.findByIdWithRelations(id, providerId);
+    const order = await this.orderRepo.findByIdWithRelations(id, tenantId);
 
     if (!order) {
       throw new NotFoundError(`Order not found: ${id}`);
@@ -453,7 +453,7 @@ export class OrderService {
         cancellation_reason: reason,
       },
       userId,
-      providerId
+      tenantId
     );
 
     logger.info(
@@ -472,36 +472,36 @@ export class OrderService {
   /**
    * Get orders expiring within a number of days
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param days - Number of days from now
    * @returns Array of expiring orders
    */
-  async getExpiringOrders(providerId: string, days: number): Promise<Order[]> {
-    return this.orderRepo.findExpiringWithinDays(providerId, days);
+  async getExpiringOrders(tenantId: string, days: number): Promise<Order[]> {
+    return this.orderRepo.findExpiringWithinDays(tenantId, days);
   }
 
   /**
    * Get orders eligible for auto-renewal
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @param daysBeforeExpiry - Days before expiry to check
    * @returns Array of auto-renewable orders
    */
   async getAutoRenewableOrders(
-    providerId: string,
+    tenantId: string,
     daysBeforeExpiry: number
   ): Promise<Order[]> {
-    return this.orderRepo.findAutoRenewable(providerId, daysBeforeExpiry);
+    return this.orderRepo.findAutoRenewable(tenantId, daysBeforeExpiry);
   }
 
   /**
    * Count active orders for a provider (division)
    *
-   * @param providerId - Provider UUID
+   * @param tenantId - Provider UUID
    * @returns Count of active orders
    */
-  async countActiveOrders(providerId: string): Promise<number> {
-    return this.orderRepo.countActiveOrders(providerId);
+  async countActiveOrders(tenantId: string): Promise<number> {
+    return this.orderRepo.countActiveOrders(tenantId);
   }
 }
 

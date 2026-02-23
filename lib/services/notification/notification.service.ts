@@ -260,7 +260,7 @@ export class NotificationService extends BaseService {
    *
    * Checks BOTH:
    * 1. clt_members.preferred_language (for tenant members)
-   * 2. adm_provider_employees.preferred_locale (for FleetCore employees without tenant)
+   * 2. clt_members.preferred_language (for FleetCore employees without tenant)
    *
    * @param userId - User UUID (can be member ID or auth_user_id for employees)
    * @returns Locale string or null if not configured
@@ -280,13 +280,13 @@ export class NotificationService extends BaseService {
         return member.preferred_language;
       }
 
-      // Fallback: Check adm_provider_employees (FleetCore staff without tenant)
-      const employee = await this.prisma.adm_provider_employees.findFirst({
+      // Fallback: Check clt_members by auth_user_id (FleetCore staff without tenant)
+      const memberByAuth = await this.prisma.clt_members.findFirst({
         where: { auth_user_id: userId },
-        select: { preferred_locale: true },
+        select: { preferred_language: true },
       });
 
-      return employee?.preferred_locale || null;
+      return memberByAuth?.preferred_language || null;
     } catch (error) {
       logger.error(
         {

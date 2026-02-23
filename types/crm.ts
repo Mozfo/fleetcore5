@@ -153,9 +153,6 @@ export interface Lead {
   // Activity tracking
   last_activity_at?: string | null;
 
-  // Provider
-  provider_id?: string | null;
-
   // Stage tracking (V5: CLOSING)
   stage_entered_at?: string | null;
   loss_reason_code?: string | null;

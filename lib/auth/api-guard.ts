@@ -57,7 +57,7 @@ export async function requireCrmApiAuth(): Promise<{
  *
  * Flow:
  * 1. Get authenticated session (userId + orgId)
- * 2. Lookup tenant by auth_organization_id (column reused during transition)
+ * 2. Lookup tenant by shared-ID pattern (auth_organization.id = adm_tenants.id)
  * 3. Verify tenant is active (not suspended/cancelled)
  *
  * @returns { userId, tenantId } for passing to services
@@ -84,9 +84,9 @@ export async function requireTenantApiAuth(): Promise<{
     throw new UnauthorizedError("No active organization");
   }
 
-  // Lookup tenant by org ID (auth_organization_id reused for Better Auth org IDs)
+  // Lookup tenant by shared-ID pattern (auth_organization.id = adm_tenants.id)
   const tenant = await prisma.adm_tenants.findUnique({
-    where: { auth_organization_id: session.orgId },
+    where: { id: session.orgId },
     select: { id: true, status: true, name: true },
   });
 

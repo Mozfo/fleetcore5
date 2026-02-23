@@ -503,7 +503,7 @@ export async function GET(request: NextRequest) {
       db.crm_leads.findMany({
         where,
         include: {
-          eu1f9qh: {
+          assigned_member: {
             select: {
               id: true,
               first_name: true,
@@ -532,7 +532,7 @@ export async function GET(request: NextRequest) {
         success: true,
         data: leads.map((lead) => {
           // Destructure Prisma relation keys to exclude from spread
-          const { eu1f9qh, crm_countries, ...scalar } = lead;
+          const { assigned_member, crm_countries, ...scalar } = lead;
           return {
             ...scalar,
             // Decimal → number (Prisma Decimal serializes to string)
@@ -542,12 +542,12 @@ export async function GET(request: NextRequest) {
               : null,
             // Relations → clean objects
             country: crm_countries ?? null,
-            assigned_to: eu1f9qh
+            assigned_to: assigned_member
               ? {
-                  id: eu1f9qh.id,
-                  first_name: eu1f9qh.first_name,
-                  last_name: eu1f9qh.last_name,
-                  email: eu1f9qh.email,
+                  id: assigned_member.id,
+                  first_name: assigned_member.first_name,
+                  last_name: assigned_member.last_name,
+                  email: assigned_member.email,
                 }
               : null,
           };

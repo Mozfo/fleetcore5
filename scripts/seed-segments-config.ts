@@ -93,6 +93,13 @@ const segmentsConfig = {
 async function main() {
   logger.info("[Seed] Starting homepage segments configuration...");
 
+  // Resolve HQ tenant_id (required by crm_settings)
+  const hq = await prisma.adm_tenants.findFirst({
+    where: { tenant_type: "headquarters" },
+    select: { id: true },
+  });
+  if (!hq) throw new Error("No HQ tenant found");
+
   const result = await prisma.crm_settings.upsert({
     where: {
       setting_key: SETTING_KEY,
@@ -107,6 +114,7 @@ async function main() {
     create: {
       setting_key: SETTING_KEY,
       setting_value: segmentsConfig,
+      tenant_id: hq.id,
       category: "ui",
       data_type: "object",
       description: "Homepage segmentation cards configuration (Solo vs Fleet)",

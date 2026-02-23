@@ -139,7 +139,7 @@ export async function hasPermission(
  */
 export async function isProviderEmployee(userId: string): Promise<boolean> {
   try {
-    const employee = await prisma.adm_provider_employees.findFirst({
+    const member = await prisma.clt_members.findFirst({
       where: {
         auth_user_id: userId,
         status: "active",
@@ -147,7 +147,7 @@ export async function isProviderEmployee(userId: string): Promise<boolean> {
       },
     });
 
-    return !!employee;
+    return !!member;
   } catch (_error) {
     return false;
   }

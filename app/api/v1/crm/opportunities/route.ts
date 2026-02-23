@@ -434,7 +434,8 @@ async function calculateOpportunityStats(baseWhere: Record<string, any>) {
 export async function POST(request: NextRequest) {
   try {
     // STEP 1: Authenticate via auth guard
-    const { userId } = await requireCrmApiAuth();
+    // orgId = adm_tenants.id (shared-ID pattern: auth_organization.id = adm_tenants.id)
+    const { userId, orgId } = await requireCrmApiAuth();
 
     // STEP 2: Parse and validate request body
     const body = await request.json();
@@ -468,6 +469,7 @@ export async function POST(request: NextRequest) {
     // STEP 5: Create opportunity
     const opportunity = await db.crm_opportunities.create({
       data: {
+        tenant_id: orgId,
         lead_id: validatedData.lead_id,
         stage,
         status: validatedData.status || "open",

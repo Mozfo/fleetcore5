@@ -34,7 +34,7 @@ const DISQUALIFICATION_REASONS = [
   "other",
 ] as const;
 
-const DEFAULT_PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+const DEFAULT_TENANT_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -143,7 +143,7 @@ export async function POST(
       comment: comment || null,
       disqualifiedBy: employeeUuid,
       addToBlacklist: addToBlacklist ?? true,
-      providerId: DEFAULT_PROVIDER_ID,
+      tenantId: DEFAULT_TENANT_ID,
     });
 
     if (!result.success) {

@@ -7,7 +7,7 @@
  * Security:
  * 1. Authentication via requireCrmAuth (HQ org check)
  * 2. Zod input validation
- * 3. Provider isolation via getCurrentProviderId
+ * 3. Tenant isolation via session.orgId
  *
  * Business Logic:
  * - Stage changes reset stage_entered_at and update probability
@@ -23,10 +23,6 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
-import {
-  getCurrentProviderId,
-  buildProviderFilter,
-} from "@/lib/utils/provider-context";
 import type { OpportunityStage, OpportunityStatus } from "@/types/crm";
 import {
   getStageProbability,
@@ -213,7 +209,8 @@ export async function createOpportunityAction(
 ): Promise<CreateOpportunityResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
     // 2. Validation
     const validation = CreateOpportunitySchema.safeParse(data);
@@ -224,14 +221,11 @@ export async function createOpportunityAction(
 
     const validData = validation.data;
 
-    // 4. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Verify lead exists and belongs to provider
+    // 5. Verify lead exists and belongs to tenant
     const lead = await db.crm_leads.findFirst({
       where: {
         id: validData.lead_id,
-        ...buildProviderFilter(providerId),
+        tenant_id: session.orgId,
         deleted_at: null,
       },
       select: { id: true },
@@ -267,7 +261,7 @@ export async function createOpportunityAction(
           opportunity_name: validData.name,
           created_manually: true,
         },
-        provider_id: providerId,
+        tenant_id: session.orgId,
       },
     });
 
@@ -475,7 +469,8 @@ export async function updateOpportunityAction(
 ): Promise<UpdateOpportunityResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId, orgId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId, orgId } = session;
 
     // 2. Validation
     const validation = UpdateOpportunitySchema.safeParse(data);
@@ -484,12 +479,9 @@ export async function updateOpportunityAction(
       return { success: false, error: firstError?.message || "Invalid input" };
     }
 
-    // 4. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Fetch old opportunity for audit log (with provider filter)
+    // 5. Fetch old opportunity for audit log (with tenant filter)
     const old = await db.crm_opportunities.findFirst({
-      where: { id: opportunityId, ...buildProviderFilter(providerId) },
+      where: { id: opportunityId, tenant_id: session.orgId },
     });
 
     if (!old) {
@@ -642,7 +634,8 @@ export async function markOpportunityWonAction(
 ): Promise<MarkAsWonResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validation with Zod schema
     const validation = MarkAsWonSchema.safeParse(params);
@@ -655,16 +648,6 @@ export async function markOpportunityWonAction(
     }
     const validated = validation.data;
 
-    // 3. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    if (!providerId) {
-      return {
-        success: false,
-        error: "Provider context required for order creation",
-      };
-    }
-
     // 5. Create order via OrderService
     // This handles:
     // - Opportunity validation (exists, not already won)
@@ -673,7 +656,7 @@ export async function markOpportunityWonAction(
     // - All in a single transaction
     const result = await orderService.createOrderFromOpportunity({
       opportunityId: validated.opportunityId,
-      providerId,
+      tenantId: session.orgId,
       userId,
       totalValue: validated.totalValue,
       currency: validated.currency,
@@ -787,7 +770,8 @@ export async function markOpportunityLostAction(
 ): Promise<MarkWonLostResult> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validation
     const validation = MarkLostSchema.safeParse({
@@ -799,12 +783,9 @@ export async function markOpportunityLostAction(
       return { success: false, error: "Invalid input" };
     }
 
-    // 3. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Fetch opportunity (with provider filter)
+    // 5. Fetch opportunity (with tenant filter)
     const current = await db.crm_opportunities.findFirst({
-      where: { id: opportunityId, ...buildProviderFilter(providerId) },
+      where: { id: opportunityId, tenant_id: session.orgId },
       select: { id: true, status: true, metadata: true },
     });
 
@@ -898,18 +879,15 @@ export async function getOpportunitiesAction(options?: {
 > {
   try {
     // 1. Authentication & Authorization
-    await requireCrmAuth();
-
-    // 2. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
+    const session = await requireCrmAuth();
 
     const page = options?.page ?? 1;
     const limit = Math.min(options?.limit ?? 50, 100);
 
-    // 4. Build where clause (with provider filter)
+    // 4. Build where clause (with tenant filter)
     const where: Prisma.crm_opportunitiesWhereInput = {
       deleted_at: null,
-      ...buildProviderFilter(providerId),
+      tenant_id: session.orgId,
     };
 
     if (options?.stage) where.stage = options.stage;
@@ -978,19 +956,17 @@ export async function deleteOpportunityAction(
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     // 1. Authentication & Authorization
-    const { userId } = await requireCrmAuth();
+    const session = await requireCrmAuth();
+    const { userId } = session;
 
     // 2. Validation
     if (!opportunityId || typeof opportunityId !== "string") {
       return { success: false, error: "Invalid opportunity ID" };
     }
 
-    // 3. Get provider context for data isolation
-    const providerId = await getCurrentProviderId();
-
-    // 5. Check opportunity exists (with provider filter)
+    // 5. Check opportunity exists (with tenant filter)
     const current = await db.crm_opportunities.findFirst({
-      where: { id: opportunityId, ...buildProviderFilter(providerId) },
+      where: { id: opportunityId, tenant_id: session.orgId },
       select: { id: true, deleted_at: true },
     });
 

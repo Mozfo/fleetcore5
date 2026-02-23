@@ -24,8 +24,8 @@ import { logger } from "@/lib/logger";
 
 // ===== CONSTANTS =====
 
-/** Default provider ID for FleetCore leads */
-const DEFAULT_PROVIDER_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
+/** Default tenant ID for FleetCore leads */
+const DEFAULT_TENANT_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
 
 // ===== TYPES & INTERFACES =====
 
@@ -187,7 +187,7 @@ export class WizardLeadService {
         source: "web", // Web form (detail in metadata.source)
         email_verified: false,
         email_verification_attempts: 0,
-        provider_id: DEFAULT_PROVIDER_ID,
+        tenant_id: DEFAULT_TENANT_ID,
         wizard_completed: false,
         // UTM tracking
         utm_source: utm_source || null,
@@ -472,5 +472,5 @@ export const wizardLeadService = new WizardLeadService();
 // ===== EXPORT CONSTANTS FOR TESTING =====
 
 export const WIZARD_LEAD_CONSTANTS = {
-  DEFAULT_PROVIDER_ID,
+  DEFAULT_TENANT_ID,
 } as const;

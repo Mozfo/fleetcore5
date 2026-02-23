@@ -291,7 +291,7 @@ describe("OrderRepository", () => {
     const mockOrderInput: OrderCreateInput = {
       opportunity_id: "opp-1",
       lead_id: "lead-1",
-      provider_id: "provider-1",
+      tenant_id: "provider-1",
       total_value: 50000,
       currency: "EUR",
       effective_date: new Date("2025-01-01"),
@@ -320,7 +320,7 @@ describe("OrderRepository", () => {
         data: expect.objectContaining({
           opportunity_id: "opp-1",
           lead_id: "lead-1",
-          provider_id: "provider-1",
+          tenant_id: "provider-1",
           total_value: 50000,
           currency: "EUR",
           order_reference: `ORD-${currentYear}-00001`,
@@ -414,7 +414,7 @@ describe("OrderRepository", () => {
       expect(result.status).toBe("active");
     });
 
-    it("should filter by provider_id when provided", async () => {
+    it("should filter by tenant_id when provided", async () => {
       mockPrisma.crm_orders.update.mockResolvedValue({ id: "order-1" });
 
       await repository.updateOrder(
@@ -428,7 +428,7 @@ describe("OrderRepository", () => {
         where: {
           id: "order-1",
           deleted_at: null,
-          provider_id: "provider-1",
+          tenant_id: "provider-1",
         },
         data: expect.any(Object),
       });
@@ -531,7 +531,7 @@ describe("OrderRepository", () => {
       expect(result).toBeNull();
     });
 
-    it("should filter by provider_id when provided", async () => {
+    it("should filter by tenant_id when provided", async () => {
       mockPrisma.crm_orders.findFirst.mockResolvedValue({ id: "order-1" });
 
       await repository.findByIdWithRelations("order-1", "provider-1");
@@ -540,7 +540,7 @@ describe("OrderRepository", () => {
         where: {
           id: "order-1",
           deleted_at: null,
-          provider_id: "provider-1",
+          tenant_id: "provider-1",
         },
         include: expect.any(Object),
       });
@@ -573,7 +573,7 @@ describe("OrderRepository", () => {
       expect(result).toHaveLength(2);
     });
 
-    it("should filter by provider_id when provided", async () => {
+    it("should filter by tenant_id when provided", async () => {
       mockPrisma.crm_orders.findMany.mockResolvedValue([]);
 
       await repository.findByOpportunityId("opp-1", "provider-1");
@@ -582,7 +582,7 @@ describe("OrderRepository", () => {
         where: {
           opportunity_id: "opp-1",
           deleted_at: null,
-          provider_id: "provider-1",
+          tenant_id: "provider-1",
         },
         orderBy: { created_at: "desc" },
       });
@@ -612,7 +612,7 @@ describe("OrderRepository", () => {
       expect(result).toHaveLength(1);
     });
 
-    it("should filter by provider_id when provided", async () => {
+    it("should filter by tenant_id when provided", async () => {
       mockPrisma.crm_orders.findMany.mockResolvedValue([]);
 
       await repository.findByLeadId("lead-1", "provider-1");
@@ -621,7 +621,7 @@ describe("OrderRepository", () => {
         where: {
           lead_id: "lead-1",
           deleted_at: null,
-          provider_id: "provider-1",
+          tenant_id: "provider-1",
         },
         orderBy: { created_at: "desc" },
       });
@@ -640,7 +640,7 @@ describe("OrderRepository", () => {
 
       expect(mockPrisma.crm_orders.count).toHaveBeenCalledWith({
         where: {
-          provider_id: "provider-1",
+          tenant_id: "provider-1",
           status: "active",
           fulfillment_status: {
             notIn: ["cancelled", "expired"],
@@ -670,7 +670,7 @@ describe("OrderRepository", () => {
 
       expect(mockPrisma.crm_orders.findMany).toHaveBeenCalledWith({
         where: {
-          provider_id: "provider-1",
+          tenant_id: "provider-1",
           expiry_date: {
             gte: expect.any(Date),
             lte: expect.any(Date),
@@ -705,7 +705,7 @@ describe("OrderRepository", () => {
 
       expect(mockPrisma.crm_orders.findMany).toHaveBeenCalledWith({
         where: {
-          provider_id: "provider-1",
+          tenant_id: "provider-1",
           auto_renew: true,
           renewal_date: {
             gte: expect.any(Date),

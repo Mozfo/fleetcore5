@@ -26,15 +26,21 @@ describe("LeadCreationService", () => {
     deleted_at: null,
     deleted_by: null,
     deletion_reason: null,
-    phone: null,
-    department: null,
-    hire_date: null,
-    avatar_url: null,
+    phone: "",
     auth_user_id: "auth_user_123",
-    permissions: [],
-    supervisor_id: null,
-    preferred_locale: null,
-    provider_id: "provider-1", // FleetCore division
+    tenant_id: "provider-1", // FleetCore division
+    role: "member",
+    last_login_at: null,
+    metadata: {},
+    email_verified_at: null,
+    two_factor_enabled: false,
+    two_factor_secret: null,
+    password_changed_at: null,
+    failed_login_attempts: 0,
+    locked_until: null,
+    default_role_id: null,
+    preferred_language: null,
+    notification_preferences: null,
   };
 
   beforeEach(() => {
@@ -241,10 +247,8 @@ describe("LeadCreationService", () => {
       return Promise.resolve(null);
     });
 
-    // Mock prisma.adm_provider_employees.findMany
-    vi.spyOn(prisma.adm_provider_employees, "findMany").mockResolvedValue([
-      mockEmployee,
-    ]);
+    // Mock prisma.clt_members.findMany
+    vi.spyOn(prisma.clt_members, "findMany").mockResolvedValue([mockEmployee]);
 
     // Note: lead_code generation removed - PostgreSQL trigger (trg_set_lead_code) handles it
     // Format: L-XXXXXX (random alphanumeric, no sequential numbers for security)
@@ -254,7 +258,7 @@ describe("LeadCreationService", () => {
       async (
         data: Record<string, unknown>,
         createdBy: string,
-        _providerId?: string
+        _tenantId?: string
       ) => {
         const lead = {
           id: "lead-uuid-123",
@@ -313,7 +317,7 @@ describe("LeadCreationService", () => {
           deleted_by: null,
           deletion_reason: null,
           last_activity_at: null,
-          provider_id: _providerId ?? null,
+          tenant_id: _tenantId ?? null,
           // V5: Closing columns (kept)
           stage_entered_at: null,
           loss_reason_code: null,
@@ -327,7 +331,6 @@ describe("LeadCreationService", () => {
           // V6.2: Wizard column
           wizard_completed: false,
           // V6.2: Conversion columns
-          tenant_id: null,
           converted_at: null,
           // V6.2.1: Stripe Payment Link columns
           stripe_checkout_session_id: null,
@@ -621,7 +624,7 @@ describe("LeadCreationService", () => {
 
     it("should handle no available employees gracefully", async () => {
       // Mock empty employees
-      vi.spyOn(prisma.adm_provider_employees, "findMany").mockResolvedValue([]);
+      vi.spyOn(prisma.clt_members, "findMany").mockResolvedValue([]);
 
       const input: CreateLeadInput = {
         email: "noassign@test.com",

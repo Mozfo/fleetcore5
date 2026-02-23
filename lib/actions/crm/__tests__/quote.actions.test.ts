@@ -5,7 +5,7 @@
  * - 16 Admin actions (auth, validation, service calls)
  * - 3 Public actions (token-based, no auth)
  * - Error handling (NotFoundError, BusinessRuleError, ValidationError)
- * - Provider isolation and data integrity checks
+ * - Tenant isolation and data integrity checks
  *
  * @module lib/actions/crm/__tests__/quote.actions.test.ts
  */
@@ -24,7 +24,7 @@ const {
   mockAuth,
   mockDb,
   mockGetAuditLogUuids,
-  mockGetCurrentProviderId,
+  mockGetCurrentTenantId,
   mockQuoteService,
 } = vi.hoisted(() => {
   return {
@@ -35,7 +35,7 @@ const {
       },
     },
     mockGetAuditLogUuids: vi.fn(),
-    mockGetCurrentProviderId: vi.fn(),
+    mockGetCurrentTenantId: vi.fn(),
     mockQuoteService: {
       createQuote: vi.fn(),
       updateQuote: vi.fn(),
@@ -95,9 +95,9 @@ vi.mock("@/lib/utils/audit-resolver", () => ({
   getAuditLogUuids: () => mockGetAuditLogUuids(),
 }));
 
-// Mock provider context
-vi.mock("@/lib/utils/provider-context", () => ({
-  getCurrentProviderId: () => mockGetCurrentProviderId(),
+// Mock tenant context
+vi.mock("@/lib/utils/tenant-context", () => ({
+  getCurrentTenantId: () => mockGetCurrentTenantId(),
 }));
 
 // Mock quote service
@@ -164,7 +164,7 @@ import { NotFoundError, BusinessRuleError } from "@/lib/core/errors";
 
 const ADMIN_ORG_ID = TEST_ADMIN_ORG_ID;
 const TEST_USER_ID = "user_test_123";
-const TEST_PROVIDER_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID
+const TEST_TENANT_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID
 const TEST_TENANT_UUID = "550e8400-e29b-41d4-a716-446655440002"; // Valid UUID
 const TEST_MEMBER_UUID = "550e8400-e29b-41d4-a716-446655440003"; // Valid UUID
 const TEST_QUOTE_ID = "550e8400-e29b-41d4-a716-446655440004"; // Valid UUID
@@ -181,7 +181,7 @@ const mockQuote = {
   quote_code: "QT001",
   quote_version: 1,
   opportunity_id: TEST_OPPORTUNITY_ID,
-  provider_id: TEST_PROVIDER_ID,
+  tenant_id: TEST_TENANT_ID,
   status: "draft" as const,
   currency: "EUR",
   subtotal: 1000,
@@ -256,7 +256,7 @@ function setupAdminAuth() {
     userId: TEST_USER_ID,
     orgId: ADMIN_ORG_ID,
   });
-  mockGetCurrentProviderId.mockResolvedValue(TEST_PROVIDER_ID);
+  mockGetCurrentTenantId.mockResolvedValue(TEST_TENANT_ID);
   mockGetAuditLogUuids.mockResolvedValue({
     tenantUuid: TEST_TENANT_UUID,
     memberUuid: TEST_MEMBER_UUID,
@@ -287,7 +287,7 @@ function setupAdminNoProvider() {
     userId: TEST_USER_ID,
     orgId: ADMIN_ORG_ID,
   });
-  mockGetCurrentProviderId.mockResolvedValue(null);
+  mockGetCurrentTenantId.mockResolvedValue(null);
 }
 
 /**
@@ -295,7 +295,7 @@ function setupAdminNoProvider() {
  */
 function resetMocks() {
   mockAuth.mockClear();
-  mockGetCurrentProviderId.mockClear();
+  mockGetCurrentTenantId.mockClear();
   mockGetAuditLogUuids.mockClear();
   Object.values(mockQuoteService).forEach((fn) => fn.mockClear());
   mockDb.adm_audit_logs.create.mockClear();
@@ -474,7 +474,7 @@ describe("quote.actions.ts", () => {
       }
       expect(mockQuoteService.updateQuote).toHaveBeenCalledWith(
         TEST_QUOTE_ID,
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         TEST_USER_ID,
         expect.any(Object)
       );
@@ -535,7 +535,7 @@ describe("quote.actions.ts", () => {
       expect(result.success).toBe(true);
       expect(mockQuoteService.deleteQuote).toHaveBeenCalledWith(
         TEST_QUOTE_ID,
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         TEST_USER_ID,
         "Duplicate quote"
       );
@@ -862,7 +862,7 @@ describe("quote.actions.ts", () => {
 
       expect(result.success).toBe(true);
       expect(mockQuoteService.listQuotes).toHaveBeenCalledWith(
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         expect.objectContaining({ status: "sent" }),
         1,
         20
@@ -985,7 +985,7 @@ describe("quote.actions.ts", () => {
         expect(result.quotes).toHaveLength(1);
       }
       expect(mockQuoteService.getExpiringSoonQuotes).toHaveBeenCalledWith(
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         7
       );
     });
@@ -997,7 +997,7 @@ describe("quote.actions.ts", () => {
       await getExpiringSoonQuotesAction();
 
       expect(mockQuoteService.getExpiringSoonQuotes).toHaveBeenCalledWith(
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         7
       );
     });
@@ -1012,7 +1012,7 @@ describe("quote.actions.ts", () => {
       // No auth setup needed - this is public
       const quoteWithProvider = {
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
         public_token: TEST_PUBLIC_TOKEN,
       };
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue(
@@ -1031,7 +1031,7 @@ describe("quote.actions.ts", () => {
       );
       expect(mockQuoteService.markAsViewed).toHaveBeenCalledWith(
         TEST_QUOTE_ID,
-        TEST_PROVIDER_ID
+        TEST_TENANT_ID
       );
     });
 
@@ -1055,10 +1055,10 @@ describe("quote.actions.ts", () => {
       }
     });
 
-    it("should return error when quote has no provider_id (data integrity)", async () => {
+    it("should return error when quote has no tenant_id (data integrity)", async () => {
       const quoteNoProvider = {
         ...mockQuoteWithItems,
-        provider_id: null, // Data integrity issue
+        tenant_id: null, // Data integrity issue
       };
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue(quoteNoProvider);
 
@@ -1077,7 +1077,7 @@ describe("quote.actions.ts", () => {
     it("should accept quote by token successfully", async () => {
       const quoteWithProvider = {
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
         status: "viewed",
       };
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue(
@@ -1101,7 +1101,7 @@ describe("quote.actions.ts", () => {
       }
       expect(mockQuoteService.acceptQuote).toHaveBeenCalledWith(
         TEST_QUOTE_ID,
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         "john@company.com"
       );
     });
@@ -1109,7 +1109,7 @@ describe("quote.actions.ts", () => {
     it("should accept quote without optional params", async () => {
       const quoteWithProvider = {
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
       };
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue(
         quoteWithProvider
@@ -1126,7 +1126,7 @@ describe("quote.actions.ts", () => {
       expect(result.success).toBe(true);
       expect(mockQuoteService.acceptQuote).toHaveBeenCalledWith(
         TEST_QUOTE_ID,
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         undefined
       );
     });
@@ -1153,10 +1153,10 @@ describe("quote.actions.ts", () => {
       }
     });
 
-    it("should return error when quote has no provider_id", async () => {
+    it("should return error when quote has no tenant_id", async () => {
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue({
         ...mockQuoteWithItems,
-        provider_id: null,
+        tenant_id: null,
       });
 
       const result = await acceptQuoteByTokenAction({
@@ -1173,7 +1173,7 @@ describe("quote.actions.ts", () => {
     it("should handle BusinessRuleError from service", async () => {
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue({
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
       });
       mockQuoteService.acceptQuote.mockRejectedValue(
         new BusinessRuleError(
@@ -1197,7 +1197,7 @@ describe("quote.actions.ts", () => {
     it("should reject quote by token successfully", async () => {
       const quoteWithProvider = {
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
         status: "viewed",
       };
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue(
@@ -1222,7 +1222,7 @@ describe("quote.actions.ts", () => {
       }
       expect(mockQuoteService.rejectQuote).toHaveBeenCalledWith(
         TEST_QUOTE_ID,
-        TEST_PROVIDER_ID,
+        TEST_TENANT_ID,
         "Price too high"
       );
     });
@@ -1265,10 +1265,10 @@ describe("quote.actions.ts", () => {
       }
     });
 
-    it("should return error when quote has no provider_id", async () => {
+    it("should return error when quote has no tenant_id", async () => {
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue({
         ...mockQuoteWithItems,
-        provider_id: null,
+        tenant_id: null,
       });
 
       const result = await rejectQuoteByTokenAction({
@@ -1286,7 +1286,7 @@ describe("quote.actions.ts", () => {
     it("should handle BusinessRuleError from service", async () => {
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue({
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
       });
       mockQuoteService.rejectQuote.mockRejectedValue(
         new BusinessRuleError(
@@ -1376,7 +1376,7 @@ describe("quote.actions.ts", () => {
       // Simulate no auth at all (mockAuth not called)
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue({
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
       });
       mockQuoteService.markAsViewed.mockResolvedValue(mockQuoteWithItems);
 
@@ -1390,7 +1390,7 @@ describe("quote.actions.ts", () => {
     it("acceptQuoteByTokenAction should work without auth context", async () => {
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue({
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
       });
       mockQuoteService.acceptQuote.mockResolvedValue({
         ...mockQuoteWithItems,
@@ -1408,7 +1408,7 @@ describe("quote.actions.ts", () => {
     it("rejectQuoteByTokenAction should work without auth context", async () => {
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue({
         ...mockQuoteWithItems,
-        provider_id: TEST_PROVIDER_ID,
+        tenant_id: TEST_TENANT_ID,
       });
       mockQuoteService.rejectQuote.mockResolvedValue({
         ...mockQuoteWithItems,
@@ -1430,7 +1430,7 @@ describe("quote.actions.ts", () => {
   // ===========================================================================
 
   describe("Provider Isolation", () => {
-    it("createQuoteAction should pass provider_id from context to service", async () => {
+    it("createQuoteAction should pass tenant_id from context to service", async () => {
       setupAdminAuth();
       mockQuoteService.createQuote.mockResolvedValue(mockQuoteWithItems);
 
@@ -1456,16 +1456,16 @@ describe("quote.actions.ts", () => {
 
       expect(mockQuoteService.createQuote).toHaveBeenCalledWith(
         expect.objectContaining({
-          providerId: TEST_PROVIDER_ID,
+          tenantId: TEST_TENANT_ID,
         })
       );
     });
 
-    it("public actions should use provider_id from quote", async () => {
+    it("public actions should use tenant_id from quote", async () => {
       const differentProviderId = "different-provider-id";
       mockQuoteService.getQuoteByPublicToken.mockResolvedValue({
         ...mockQuoteWithItems,
-        provider_id: differentProviderId,
+        tenant_id: differentProviderId,
       });
       mockQuoteService.acceptQuote.mockResolvedValue({
         ...mockQuoteWithItems,
@@ -1476,7 +1476,7 @@ describe("quote.actions.ts", () => {
 
       expect(mockQuoteService.acceptQuote).toHaveBeenCalledWith(
         TEST_QUOTE_ID,
-        differentProviderId, // Uses provider from quote, not context
+        differentProviderId, // Uses tenant from quote, not context
         undefined
       );
     });

@@ -72,7 +72,7 @@ describe("LeadRepository", () => {
         message: null,
         metadata: {},
         country_code: "FR",
-        provider_id: "7ad8173c-68c5-41d3-9918-686e4e941cc0",
+        tenant_id: "7ad8173c-68c5-41d3-9918-686e4e941cc0",
         // V5: Closing columns (kept)
         stage_entered_at: null,
         loss_reason_code: null,
@@ -86,9 +86,8 @@ describe("LeadRepository", () => {
         // V6.2: Wizard column
         wizard_completed: false,
         // V6.2: Conversion columns
-        tenant_id: null,
         converted_at: null,
-        eu1f9qh: {
+        assigned_member: {
           id: "emp-1",
           first_name: "Marie",
           last_name: "Martin",
@@ -113,7 +112,7 @@ describe("LeadRepository", () => {
           deleted_at: null,
         },
         include: {
-          eu1f9qh: {
+          assigned_member: {
             select: {
               id: true,
               first_name: true,
@@ -196,7 +195,7 @@ describe("LeadRepository", () => {
       const mockLead: Partial<LeadWithRelations> = {
         id: "lead-1",
         email: "test@example.com",
-        eu1f9qh: {
+        assigned_member: {
           id: "emp-1",
           first_name: "Marie",
           last_name: "Martin",
@@ -216,8 +215,8 @@ describe("LeadRepository", () => {
 
       const result = await repository.findByEmail("test@example.com");
 
-      expect(result?.eu1f9qh).toBeDefined();
-      expect(result?.eu1f9qh?.first_name).toBe("Marie");
+      expect(result?.assigned_member).toBeDefined();
+      expect(result?.assigned_member?.first_name).toBe("Marie");
       expect(result?.crm_lead_sources).toBeDefined();
       expect(result?.crm_lead_sources?.name_translations?.en).toBe(
         "Paid Search"
