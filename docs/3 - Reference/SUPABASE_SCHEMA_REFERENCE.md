@@ -1,13 +1,13 @@
 # FleetCore5 - Supabase Database Schema Reference
 
-**Last Updated:** 2026-02-22
+**Last Updated:** 2026-02-23
 
 **Database:** PostgreSQL on Supabase
-**Total Tables:** 141
+**Total Tables:** 138
 
 ## Table Count by Module
 
-- **adm\_**: 17 tables
+- **adm\_**: 14 tables
 - **auth\_**: 10 tables
 - **bil\_**: 15 tables
 - **clt\_**: 5 tables
@@ -283,99 +283,6 @@
 - `idx_adm_notification_queue_status`: (status)
 - `idx_adm_notification_queue_template`: (template_code)
 
-### adm_provider_countries
-
-**Row Count:** ~2
-
-| Column       | Type          | Nullable | Default              |
-| ------------ | ------------- | -------- | -------------------- |
-| id           | `uuid`        | NO       | `uuid_generate_v4()` |
-| provider_id  | `uuid`        | NO       | -                    |
-| country_code | `character`   | NO       | -                    |
-| is_primary   | `boolean`     | NO       | `false`              |
-| created_at   | `timestamptz` | NO       | `now()`              |
-
-**Indexes:**
-
-- `idx_apc_country`: (country_code)
-- `idx_apc_one_primary_per_provider`: (provider_id)
-- `idx_apc_provider`: (provider_id)
-- `uq_apc_country`: (country_code)
-
-### adm_provider_employees
-
-**Row Count:** ~5
-
-| Column           | Type          | Nullable | Default                          |
-| ---------------- | ------------- | -------- | -------------------------------- |
-| id               | `uuid`        | NO       | `uuid_generate_v4()`             |
-| email            | `varchar`     | NO       | -                                |
-| department       | `varchar`     | YES      | -                                |
-| title            | `varchar`     | YES      | -                                |
-| permissions      | `jsonb`       | YES      | -                                |
-| status           | `varchar`     | NO       | `'active'::character varying...` |
-| created_at       | `timestamptz` | NO       | `CURRENT_TIMESTAMP`              |
-| created_by       | `uuid`        | YES      | -                                |
-| updated_at       | `timestamptz` | NO       | `CURRENT_TIMESTAMP`              |
-| updated_by       | `uuid`        | YES      | -                                |
-| deleted_at       | `timestamptz` | YES      | -                                |
-| deleted_by       | `uuid`        | YES      | -                                |
-| deletion_reason  | `text`        | YES      | -                                |
-| supervisor_id    | `uuid`        | YES      | -                                |
-| preferred_locale | `varchar`     | YES      | -                                |
-| first_name       | `varchar`     | NO       | -                                |
-| last_name        | `varchar`     | YES      | -                                |
-| provider_id      | `uuid`        | YES      | -                                |
-| auth_user_id     | `text`        | YES      | -                                |
-
-**Indexes:**
-
-- `adm_provider_employees_created_by_idx`: (created_by)
-- `adm_provider_employees_deleted_at_idx`: (deleted_at)
-- `adm_provider_employees_email_uq`: (email)
-- `adm_provider_employees_first_name_idx`: (first_name)
-- `adm_provider_employees_last_name_idx`: (last_name)
-- `adm_provider_employees_permissions_gin`: (permissions)
-- `adm_provider_employees_status_active_idx`: (status)
-- `adm_provider_employees_updated_by_idx`: (updated_by)
-- `idx_adm_provider_employees_provider`: (provider_id)
-
-### adm_providers
-
-**Row Count:** ~4
-
-| Column          | Type          | Nullable | Default                          |
-| --------------- | ------------- | -------- | -------------------------------- |
-| id              | `uuid`        | NO       | `uuid_generate_v4()`             |
-| code            | `varchar`     | NO       | -                                |
-| name            | `varchar`     | NO       | -                                |
-| country_code    | `character`   | YES      | -                                |
-| is_internal     | `boolean`     | NO       | `true`                           |
-| settings        | `jsonb`       | NO       | `'{}'::jsonb`                    |
-| metadata        | `jsonb`       | NO       | `'{}'::jsonb`                    |
-| status          | `varchar`     | NO       | `'active'::character varying...` |
-| created_at      | `timestamptz` | NO       | `now()`                          |
-| created_by      | `uuid`        | YES      | -                                |
-| updated_at      | `timestamptz` | NO       | `now()`                          |
-| updated_by      | `uuid`        | YES      | -                                |
-| deleted_at      | `timestamptz` | YES      | -                                |
-| deleted_by      | `uuid`        | YES      | -                                |
-| deletion_reason | `text`        | YES      | -                                |
-| is_headquarters | `boolean`     | NO       | `false`                          |
-
-**CHECK Constraints:**
-
-- `adm_providers_status_check`: ((status)::text = ANY ((ARRAY['active'::character varying, 'suspended'::character varying, 'inactive...
-
-**Indexes:**
-
-- `adm_providers_code_unique`: (code)
-- `idx_adm_providers_code`: (code)
-- `idx_adm_providers_country`: (country_code)
-- `idx_adm_providers_headquarters`: (is_headquarters)
-- `idx_adm_providers_internal`: (is_internal)
-- `idx_adm_providers_status`: (status)
-
 ### adm_role_permissions
 
 **Row Count:** ~0
@@ -523,12 +430,12 @@
 | id                            | `uuid`         | NO       | `uuid_generate_v4()`                |
 | name                          | `text`         | NO       | -                                   |
 | country_code                  | `varchar`      | NO       | -                                   |
-| auth_organization_id          | `text`         | YES      | -                                   |
 | vat_rate                      | `numeric`      | YES      | -                                   |
 | default_currency              | `character`    | NO       | `'EUR'::character varying...`       |
 | timezone                      | `text`         | NO       | `'Europe/Paris'::character vary...` |
 | created_at                    | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`                 |
 | updated_at                    | `timestamptz`  | NO       | `CURRENT_TIMESTAMP`                 |
+| tenant_type                   | `varchar`      | NO       | `'client'::character varying...`    |
 | deleted_at                    | `timestamptz`  | YES      | -                                   |
 | subdomain                     | `varchar`      | YES      | -                                   |
 | status                        | `USER-DEFINED` | NO       | `'trialing'::tenant_status`         |
@@ -553,8 +460,6 @@
 
 **Indexes:**
 
-- `adm_tenants_auth_org_unique`: (auth_organization_id)
-- `adm_tenants_auth_organization_id_idx`: (auth_organization_id)
 - `adm_tenants_country_code_idx`: (country_code)
 - `adm_tenants_default_currency_idx`: (default_currency)
 - `adm_tenants_deleted_at_idx`: (deleted_at)
@@ -764,7 +669,7 @@
 | Column                   | Type           | Nullable | Default             |
 | ------------------------ | -------------- | -------- | ------------------- |
 | id                       | `uuid`         | NO       | `gen_random_uuid()` |
-| provider_id              | `uuid`         | YES      | -                   |
+| tenant_id                | `uuid`         | YES      | -                   |
 | code                     | `varchar`      | NO       | -                   |
 | is_recurring             | `boolean`      | NO       | -                   |
 | billing_interval         | `USER-DEFINED` | YES      | -                   |
@@ -790,8 +695,8 @@
 **Indexes:**
 
 - `idx_bil_addons_category`: (category)
-- `idx_bil_addons_provider`: (provider_id)
-- `uq_bil_addons_code_provider`: (code, provider_id)
+- `idx_bil_addons_provider`: (tenant_id)
+- `uq_bil_addons_code_provider`: (code, tenant_id)
 
 ### bil_amendments
 
@@ -804,7 +709,6 @@
 | tenant_id            | `uuid`         | NO       | -                                         |
 | subscription_id      | `uuid`         | NO       | -                                         |
 | schedule_id          | `uuid`         | YES      | -                                         |
-| provider_id          | `uuid`         | NO       | -                                         |
 | amendment_type       | `USER-DEFINED` | NO       | -                                         |
 | status               | `USER-DEFINED` | NO       | `'draft'::amendment_status`               |
 | old_plan_id          | `uuid`         | YES      | -                                         |
@@ -842,7 +746,7 @@
 **Indexes:**
 
 - `idx_bil_amendments_effective_date`: (effective_date)
-- `idx_bil_amendments_provider_id`: (provider_id)
+- `idx_bil_amendments_provider_id`: (tenant_id)
 - `idx_bil_amendments_reference`: (amendment_reference)
 - `idx_bil_amendments_schedule_id`: (schedule_id)
 - `idx_bil_amendments_status`: (status)
@@ -931,7 +835,7 @@
 | Column                     | Type          | Nullable | Default             |
 | -------------------------- | ------------- | -------- | ------------------- |
 | id                         | `uuid`        | NO       | `gen_random_uuid()` |
-| provider_id                | `uuid`        | NO       | -                   |
+| tenant_id                  | `uuid`        | NO       | -                   |
 | code                       | `varchar`     | NO       | -                   |
 | name_translations          | `jsonb`       | NO       | -                   |
 | description_translations   | `jsonb`       | YES      | -                   |
@@ -976,9 +880,9 @@
 **Indexes:**
 
 - `idx_bil_offer_rules_active`: (is_active)
-- `idx_bil_offer_rules_provider`: (provider_id)
+- `idx_bil_offer_rules_provider`: (tenant_id)
 - `idx_bil_offer_rules_type`: (offer_type)
-- `uq_bil_offer_rules_code_provider`: (code, provider_id)
+- `uq_bil_offer_rules_code_provider`: (code, tenant_id)
 
 ### bil_payment_methods
 
@@ -1028,7 +932,7 @@
 | Column                   | Type           | Nullable | Default             |
 | ------------------------ | -------------- | -------- | ------------------- |
 | id                       | `uuid`         | NO       | `gen_random_uuid()` |
-| provider_id              | `uuid`         | YES      | -                   |
+| tenant_id                | `uuid`         | YES      | -                   |
 | code                     | `varchar`      | NO       | -                   |
 | billing_interval         | `USER-DEFINED` | NO       | -                   |
 | max_vehicles             | `integer`      | YES      | -                   |
@@ -1057,8 +961,8 @@
 **Indexes:**
 
 - `idx_bil_plans_active`: (is_active)
-- `idx_bil_plans_provider`: (provider_id)
-- `uq_bil_plans_code_provider`: (code, provider_id)
+- `idx_bil_plans_provider`: (tenant_id)
+- `uq_bil_plans_code_provider`: (code, tenant_id)
 
 ### bil_promotion_usage
 
@@ -1111,7 +1015,7 @@
 | Column                   | Type           | Nullable | Default             |
 | ------------------------ | -------------- | -------- | ------------------- |
 | id                       | `uuid`         | NO       | `gen_random_uuid()` |
-| provider_id              | `uuid`         | YES      | -                   |
+| tenant_id                | `uuid`         | YES      | -                   |
 | code                     | `varchar`      | NO       | -                   |
 | service_type             | `varchar`      | NO       | -                   |
 | billing_interval         | `USER-DEFINED` | YES      | -                   |
@@ -1137,9 +1041,9 @@
 
 **Indexes:**
 
-- `idx_bil_services_provider`: (provider_id)
+- `idx_bil_services_provider`: (tenant_id)
 - `idx_bil_services_type`: (service_type)
-- `uq_bil_services_code_provider`: (code, provider_id)
+- `uq_bil_services_code_provider`: (code, tenant_id)
 
 ### bil_settings
 
@@ -1157,18 +1061,18 @@
 | is_system      | `boolean`     | NO       | `false`                          |
 | is_active      | `boolean`     | NO       | `true`                           |
 | description    | `text`        | YES      | -                                |
-| provider_id    | `uuid`        | YES      | -                                |
+| tenant_id      | `uuid`        | YES      | -                                |
 | created_at     | `timestamptz` | YES      | `now()`                          |
 | updated_at     | `timestamptz` | YES      | `now()`                          |
 
 **Indexes:**
 
-- `bil_settings_setting_key_provider_id_key`: (setting_key, provider_id)
+- `bil_settings_setting_key_provider_id_key`: (setting_key, tenant_id)
 - `idx_bil_settings_active`: (is_active)
 - `idx_bil_settings_category`: (category)
 - `idx_bil_settings_key`: (setting_key)
 - `idx_bil_settings_key_global`: (setting_key)
-- `idx_bil_settings_provider`: (provider_id)
+- `idx_bil_settings_provider`: (tenant_id)
 
 ### bil_subscription_schedule_phases
 
@@ -1179,7 +1083,7 @@
 | id                 | `uuid`         | NO       | `gen_random_uuid()`                       |
 | schedule_id        | `uuid`         | NO       | -                                         |
 | plan_id            | `uuid`         | YES      | -                                         |
-| provider_id        | `uuid`         | NO       | -                                         |
+| tenant_id          | `uuid`         | NO       | -                                         |
 | phase_number       | `integer`      | NO       | -                                         |
 | phase_name         | `varchar`      | YES      | -                                         |
 | start_date         | `date`         | NO       | -                                         |
@@ -1208,7 +1112,7 @@
 **Indexes:**
 
 - `idx_bil_schedule_phases_plan_id`: (plan_id)
-- `idx_bil_schedule_phases_provider_id`: (provider_id)
+- `idx_bil_schedule_phases_provider_id`: (tenant_id)
 - `idx_bil_schedule_phases_schedule_id`: (schedule_id)
 - `idx_bil_schedule_phases_unique`: (schedule_id, phase_number)
 
@@ -1222,7 +1126,6 @@
 | schedule_reference     | `varchar`      | NO       | -                                 |
 | tenant_id              | `uuid`         | NO       | -                                 |
 | order_id               | `uuid`         | YES      | -                                 |
-| provider_id            | `uuid`         | NO       | -                                 |
 | stripe_schedule_id     | `varchar`      | YES      | -                                 |
 | stripe_customer_id     | `varchar`      | YES      | -                                 |
 | stripe_subscription_id | `varchar`      | YES      | -                                 |
@@ -1250,7 +1153,7 @@
 **Indexes:**
 
 - `idx_bil_schedules_order_id`: (order_id)
-- `idx_bil_schedules_provider_id`: (provider_id)
+- `idx_bil_schedules_provider_id`: (tenant_id)
 - `idx_bil_schedules_reference`: (schedule_reference)
 - `idx_bil_schedules_status`: (status)
 - `idx_bil_schedules_stripe_schedule_id`: (stripe_schedule_id)
@@ -1569,7 +1472,7 @@
 | id               | `uuid`        | NO       | `gen_random_uuid()` |
 | lead_id          | `uuid`        | YES      | -                   |
 | opportunity_id   | `uuid`        | YES      | -                   |
-| provider_id      | `uuid`        | NO       | -                   |
+| tenant_id        | `uuid`        | NO       | -                   |
 | activity_type    | `varchar`     | NO       | -                   |
 | subject          | `varchar`     | NO       | -                   |
 | description      | `text`        | YES      | -                   |
@@ -1592,7 +1495,7 @@
 - `idx_activities_date`: (activity_date DESC)
 - `idx_activities_lead`: (lead_id)
 - `idx_activities_opportunity`: (opportunity_id)
-- `idx_activities_provider`: (provider_id)
+- `idx_activities_provider`: (tenant_id)
 - `idx_activities_type`: (activity_type)
 
 ### crm_addresses
@@ -1611,11 +1514,11 @@
 | address_type | `USER-DEFINED` | YES      | -                    |
 | is_default   | `boolean`      | NO       | `false`              |
 | created_at   | `timestamptz`  | NO       | `now()`              |
-| provider_id  | `uuid`         | YES      | -                    |
+| tenant_id    | `uuid`         | YES      | -                    |
 
 **Indexes:**
 
-- `idx_crm_addresses_provider_id`: (provider_id)
+- `idx_crm_addresses_provider_id`: (tenant_id)
 
 ### crm_agreements
 
@@ -1649,7 +1552,7 @@
 | created_at               | `timestamptz`  | NO       | `now()`                          |
 | updated_at               | `timestamptz`  | NO       | `now()`                          |
 | deleted_at               | `timestamptz`  | YES      | -                                |
-| provider_id              | `uuid`         | YES      | -                                |
+| tenant_id                | `uuid`         | YES      | -                                |
 | provider_envelope_url    | `text`         | YES      | -                                |
 | client_signatory_title   | `varchar`      | YES      | -                                |
 | client_signature_ip      | `inet`         | YES      | -                                |
@@ -1671,7 +1574,7 @@
 - `idx_crm_agreements_expiry_date`: (expiry_date)
 - `idx_crm_agreements_order_id`: (order_id)
 - `idx_crm_agreements_provider_envelope_id`: (provider_envelope_id)
-- `idx_crm_agreements_provider_id`: (provider_id)
+- `idx_crm_agreements_provider_id`: (tenant_id)
 - `idx_crm_agreements_status`: (status)
 
 ### crm_blacklist
@@ -1681,7 +1584,7 @@
 | Column           | Type          | Nullable | Default             |
 | ---------------- | ------------- | -------- | ------------------- |
 | id               | `uuid`        | NO       | `gen_random_uuid()` |
-| provider_id      | `uuid`        | NO       | -                   |
+| tenant_id        | `uuid`        | NO       | -                   |
 | email            | `varchar`     | NO       | -                   |
 | reason           | `varchar`     | NO       | -                   |
 | reason_comment   | `text`        | YES      | -                   |
@@ -1694,8 +1597,8 @@
 **Indexes:**
 
 - `idx_crm_blacklist_email`: (email)
-- `idx_crm_blacklist_provider`: (provider_id)
-- `uq_blacklist_email_provider`: (email, provider_id)
+- `idx_crm_blacklist_provider`: (tenant_id)
+- `uq_blacklist_email_provider`: (email, tenant_id)
 
 ### crm_countries
 
@@ -1719,7 +1622,7 @@
 | country_preposition_en | `varchar`     | YES      | `'in'::character varying...` |
 | country_gdpr           | `boolean`     | NO       | `false`                      |
 | is_system              | `boolean`     | NO       | `true`                       |
-| provider_id            | `uuid`        | YES      | -                            |
+| tenant_id              | `uuid`        | YES      | -                            |
 | phone_prefix           | `varchar`     | YES      | -                            |
 | phone_example          | `varchar`     | YES      | -                            |
 | phone_min_digits       | `integer`     | YES      | `8`                          |
@@ -1727,7 +1630,7 @@
 
 **CHECK Constraints:**
 
-- `chk_crm_countries_hybrid`: (((is_system = true) AND (provider_id IS NULL)) OR ((is_system = false) AND (provider_id IS NOT NULL...
+- `chk_crm_countries_hybrid`: (((is_system = true) AND (tenant_id IS NULL)) OR ((is_system = false) AND (tenant_id IS NOT NULL...
 - `chk_notification_locale`: ((notification_locale)::text = ANY ((ARRAY['en'::character varying, 'fr'::character varying, 'ar'::c...
 
 **Indexes:**
@@ -1737,7 +1640,7 @@
 - `idx_crm_countries_expansion`: (is_operational, display_order)
 - `idx_crm_countries_gdpr`: (country_gdpr)
 - `idx_crm_countries_operational`: (is_operational)
-- `idx_crm_countries_provider_id`: (provider_id)
+- `idx_crm_countries_provider_id`: (tenant_id)
 - `idx_crm_countries_visible`: (is_visible)
 - `idx_crm_countries_visible_order`: (is_visible, display_order)
 
@@ -1760,13 +1663,13 @@
 | performed_by_name | `varchar`     | YES      | -                   |
 | created_at        | `timestamptz` | YES      | `now()`             |
 | updated_at        | `timestamptz` | YES      | `now()`             |
-| provider_id       | `uuid`        | YES      | -                   |
+| tenant_id         | `uuid`        | YES      | -                   |
 
 **Indexes:**
 
 - `idx_crm_lead_activities_created_at`: (created_at DESC)
 - `idx_crm_lead_activities_lead_id`: (lead_id)
-- `idx_crm_lead_activities_provider_id`: (provider_id)
+- `idx_crm_lead_activities_provider_id`: (tenant_id)
 - `idx_crm_lead_activities_type`: (activity_type)
 
 ### crm_lead_sources
@@ -1779,19 +1682,19 @@
 | is_active                | `boolean`     | NO       | `true`               |
 | created_at               | `timestamptz` | NO       | `now()`              |
 | is_system                | `boolean`     | NO       | `true`               |
-| provider_id              | `uuid`        | YES      | -                    |
+| tenant_id                | `uuid`        | YES      | -                    |
 | name_translations        | `jsonb`       | NO       | -                    |
 | description_translations | `jsonb`       | NO       | -                    |
 
 **CHECK Constraints:**
 
 - `chk_crm_lead_sources_description_translations_type`: (jsonb_typeof(description_translations) = 'object'::text)
-- `chk_crm_lead_sources_hybrid`: (((is_system = true) AND (provider_id IS NULL)) OR ((is_system = false) AND (provider_id IS NOT NULL...
+- `chk_crm_lead_sources_hybrid`: (((is_system = true) AND (tenant_id IS NULL)) OR ((is_system = false) AND (tenant_id IS NOT NULL...
 - `chk_crm_lead_sources_name_translations_type`: (jsonb_typeof(name_translations) = 'object'::text)
 
 **Indexes:**
 
-- `idx_crm_lead_sources_provider_id`: (provider_id)
+- `idx_crm_lead_sources_provider_id`: (tenant_id)
 
 ### crm_leads
 
@@ -1845,7 +1748,6 @@
 | priority                         | `varchar`      | YES      | `'medium'::character varying...` |
 | consent_ip                       | `varchar`      | YES      | -                                |
 | last_activity_at                 | `timestamptz`  | YES      | -                                |
-| provider_id                      | `uuid`         | YES      | -                                |
 | stage_entered_at                 | `timestamptz`  | YES      | `now()`                          |
 | loss_reason_code                 | `varchar`      | YES      | -                                |
 | loss_reason_detail               | `text`         | YES      | -                                |
@@ -1921,7 +1823,7 @@
 - `idx_crm_leads_payment_link_expires`: (payment_link_expires_at)
 - `idx_crm_leads_payment_pending`: (status, payment_link_expires_at)
 - `idx_crm_leads_priority`: (priority)
-- `idx_crm_leads_provider_id`: (provider_id)
+- `idx_crm_leads_provider_id`: (tenant_id)
 - `idx_crm_leads_qualification_score`: (qualification_score)
 - `idx_crm_leads_reschedule_token`: (reschedule_token)
 - `idx_crm_leads_stage_entered`: (stage_entered_at DESC)
@@ -1939,7 +1841,7 @@
 | Column                  | Type          | Nullable | Default                      |
 | ----------------------- | ------------- | -------- | ---------------------------- |
 | id                      | `uuid`        | NO       | `gen_random_uuid()`          |
-| provider_id             | `uuid`        | NO       | -                            |
+| tenant_id               | `uuid`        | NO       | -                            |
 | email                   | `varchar`     | NO       | -                            |
 | country_code            | `varchar`     | NO       | -                            |
 | email_verified_at       | `timestamptz` | NO       | -                            |
@@ -1965,9 +1867,9 @@
 - `crm_nurturing_resume_token_key`: (resume_token)
 - `idx_crm_nurturing_email`: (email)
 - `idx_crm_nurturing_nurturing`: (nurturing_step, last_nurturing_at)
-- `idx_crm_nurturing_provider`: (provider_id)
+- `idx_crm_nurturing_provider`: (tenant_id)
 - `idx_crm_nurturing_resume_token`: (resume_token)
-- `uq_nurturing_email_provider`: (email, provider_id)
+- `uq_nurturing_email_provider`: (email, tenant_id)
 
 ### crm_opportunities
 
@@ -2007,7 +1909,7 @@
 | stage_entered_at    | `timestamptz`  | NO       | `now()`                      |
 | max_days_in_stage   | `integer`      | YES      | `14`                         |
 | loss_reason         | `varchar`      | YES      | -                            |
-| provider_id         | `uuid`         | YES      | -                            |
+| tenant_id           | `uuid`         | YES      | -                            |
 
 **CHECK Constraints:**
 
@@ -2026,7 +1928,7 @@
 - `crm_opportunities_updated_by_idx`: (updated_by)
 - `idx_crm_opportunities_lead_id`: (lead_id)
 - `idx_crm_opportunities_pipeline_id`: (pipeline_id)
-- `idx_crm_opportunities_provider_id`: (provider_id)
+- `idx_crm_opportunities_provider_id`: (tenant_id)
 
 ### crm_orders
 
@@ -2058,7 +1960,7 @@
 | renewal_date             | `date`         | YES      | -                                     |
 | notice_period_days       | `integer`      | YES      | -                                     |
 | renewed_from_contract_id | `uuid`         | YES      | -                                     |
-| provider_id              | `uuid`         | NO       | -                                     |
+| tenant_id                | `uuid`         | NO       | -                                     |
 | plan_id                  | `uuid`         | YES      | -                                     |
 | subscription_id          | `uuid`         | YES      | -                                     |
 | company_name             | `text`         | YES      | -                                     |
@@ -2109,11 +2011,11 @@
 - `idx_crm_orders_fulfillment_status`: (fulfillment_status)
 - `idx_crm_orders_opportunity_id`: (opportunity_id)
 - `idx_crm_orders_order_type`: (order_type)
-- `idx_crm_orders_provider_id`: (provider_id)
+- `idx_crm_orders_provider_id`: (tenant_id)
 - `idx_crm_orders_quote_id`: (quote_id)
 - `idx_crm_orders_reference_unique`: (order_reference)
 - `idx_crm_orders_subscription_id`: (subscription_id)
-- `idx_crm_orders_tenant`: (provider_id)
+- `idx_crm_orders_tenant`: (tenant_id)
 
 ### crm_pipelines
 
@@ -2127,7 +2029,7 @@
 | is_default               | `boolean`     | NO       | `false`              |
 | is_active                | `boolean`     | NO       | `true`               |
 | created_at               | `timestamptz` | NO       | `now()`              |
-| provider_id              | `uuid`        | YES      | -                    |
+| tenant_id                | `uuid`        | YES      | -                    |
 | name_translations        | `jsonb`       | NO       | -                    |
 | description_translations | `jsonb`       | NO       | -                    |
 
@@ -2138,7 +2040,7 @@
 
 **Indexes:**
 
-- `idx_crm_pipelines_provider_id`: (provider_id)
+- `idx_crm_pipelines_provider_id`: (tenant_id)
 
 ### crm_quote_approvals
 
@@ -2204,7 +2106,7 @@
 | metadata             | `jsonb`        | NO       | `'{}'::jsonb`                  |
 | created_at           | `timestamptz`  | NO       | `now()`                        |
 | updated_at           | `timestamptz`  | NO       | `now()`                        |
-| provider_id          | `uuid`         | YES      | -                              |
+| tenant_id            | `uuid`         | YES      | -                              |
 | addon_id             | `uuid`         | YES      | -                              |
 | service_id           | `uuid`         | YES      | -                              |
 | line_discount_amount | `numeric`      | YES      | `0`                            |
@@ -2219,7 +2121,7 @@
 
 - `idx_crm_quote_items_item_type`: (item_type)
 - `idx_crm_quote_items_plan_id`: (plan_id)
-- `idx_crm_quote_items_provider_id`: (provider_id)
+- `idx_crm_quote_items_provider_id`: (tenant_id)
 - `idx_crm_quote_items_quote_id`: (quote_id)
 
 ### crm_quotes
@@ -2259,7 +2161,7 @@
 | created_at               | `timestamptz`  | NO       | `now()`                     |
 | updated_at               | `timestamptz`  | NO       | `now()`                     |
 | deleted_at               | `timestamptz`  | YES      | -                           |
-| provider_id              | `uuid`         | YES      | -                           |
+| tenant_id                | `uuid`         | YES      | -                           |
 | sent_at                  | `timestamptz`  | YES      | -                           |
 | first_viewed_at          | `timestamptz`  | YES      | -                           |
 | last_viewed_at           | `timestamptz`  | YES      | -                           |
@@ -2302,7 +2204,7 @@
 - `idx_crm_quotes_lead_id`: (lead_id)
 - `idx_crm_quotes_opportunity_id`: (opportunity_id)
 - `idx_crm_quotes_parent_quote_id`: (parent_quote_id)
-- `idx_crm_quotes_provider_id`: (provider_id)
+- `idx_crm_quotes_provider_id`: (tenant_id)
 - `idx_crm_quotes_public_token`: (public_token)
 - `idx_crm_quotes_status`: (status)
 - `idx_crm_quotes_valid_until`: (valid_until)
@@ -2336,11 +2238,11 @@
 | help_text         | `text`        | YES      | -                   |
 | documentation_url | `varchar`     | YES      | -                   |
 | default_value     | `jsonb`       | YES      | -                   |
-| provider_id       | `uuid`        | YES      | -                   |
+| tenant_id         | `uuid`        | YES      | -                   |
 
 **CHECK Constraints:**
 
-- `chk_crm_settings_hybrid`: (((is_system = true) AND (provider_id IS NULL)) OR ((is_system = false) AND (provider_id IS NOT NULL...
+- `chk_crm_settings_hybrid`: (((is_system = true) AND (tenant_id IS NULL)) OR ((is_system = false) AND (tenant_id IS NOT NULL...
 - `crm_settings_category_check`: ((category)::text = ANY ((ARRAY['scoring'::character varying, 'assignment'::character varying, 'qual...
 - `crm_settings_data_type_check`: ((data_type)::text = ANY ((ARRAY['object'::character varying, 'array'::character varying, 'string'::...
 
@@ -2352,7 +2254,7 @@
 - `idx_crm_settings_deleted`: (deleted_at)
 - `idx_crm_settings_display_order`: (display_order)
 - `idx_crm_settings_key`: (setting_key)
-- `idx_crm_settings_provider_id`: (provider_id)
+- `idx_crm_settings_provider_id`: (tenant_id)
 - `idx_crm_settings_updated_by`: (updated_by)
 - `idx_crm_settings_value`: (setting_value)
 
