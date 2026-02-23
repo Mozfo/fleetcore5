@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Settings } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 
 export default function AdminClientLayout({
@@ -32,6 +32,12 @@ export default function AdminClientLayout({
       href: "/adm/organizations",
       icon: Building2,
       current: pathname.startsWith("/adm/organizations"),
+    },
+    {
+      name: "Settings",
+      href: "/adm/settings",
+      icon: Settings,
+      current: pathname.startsWith("/adm/settings"),
     },
   ];
 
