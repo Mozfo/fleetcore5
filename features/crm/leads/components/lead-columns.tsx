@@ -165,7 +165,7 @@ export function getLeadColumns(
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title={t("leads.table.columns.client_account")}
+          title={t("leads.table.columns.lead_account")}
         />
       ),
       cell: ({ row }) => {
@@ -193,7 +193,7 @@ export function getLeadColumns(
           </div>
         );
       },
-      meta: { label: t("leads.table.columns.client_account") },
+      meta: { label: t("leads.table.columns.lead_account") },
       size: 200,
     },
 
@@ -269,11 +269,8 @@ export function getLeadColumns(
           title={t("leads.table.columns.company")}
         />
       ),
-      enableColumnFilter: true,
       meta: {
         label: t("leads.table.columns.company"),
-        variant: "text",
-        placeholder: t("leads.filters.search"),
       },
       size: 180,
     },

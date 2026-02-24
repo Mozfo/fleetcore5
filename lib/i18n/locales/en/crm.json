@@ -432,7 +432,7 @@
       "created_at": "Created",
       "columns": {
         "ref": "Ref",
-        "client_account": "Client Account",
+        "lead_account": "Lead Account",
         "code": "Code",
         "contact": "Contact",
         "email": "Email",
