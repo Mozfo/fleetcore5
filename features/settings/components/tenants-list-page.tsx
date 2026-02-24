@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  Download,
-  FileSpreadsheet,
-  Mail,
-  RefreshCw,
-  Send,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { Download, FileSpreadsheet, Plus, Building2 } from "lucide-react";
+import { Power, Trash2 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 
@@ -24,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import { DataTable, type TableDensity } from "@/components/ui/table/data-table";
 import {
   DataTableBulkActions,
@@ -35,17 +29,19 @@ import { DataTableToolbar } from "@/components/ui/table/data-table-toolbar";
 import { exportTableToCSV, exportTableToExcel } from "@/lib/utils/table-export";
 import { useTablePreferences } from "@/hooks/use-table-preferences";
 
-import { getInvitationsColumns } from "./invitations-columns";
-import { InviteFormDialog } from "./invite-form";
-import { useInvitationsTable } from "../hooks/use-invitations-table";
+import { getTenantsColumns } from "./tenants-columns";
+import { CreateTenantDialog } from "./create-tenant-dialog";
+import { useTenantsTable } from "../hooks/use-tenants-table";
 
-export function InvitationsListPage() {
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [deleteInvId, setDeleteInvId] = React.useState<string | null>(null);
+export function TenantsListPage() {
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [deleteTenantId, setDeleteTenantId] = React.useState<string | null>(
+    null
+  );
+  const { localizedPath } = useLocalizedPath();
 
   // Table preferences
-  const { preferences, save: savePreferences } =
-    useTablePreferences("invitations");
+  const { preferences, save: savePreferences } = useTablePreferences("tenants");
   const [density, setDensity] = React.useState<TableDensity>(
     preferences.density ?? "normal"
   );
@@ -58,37 +54,23 @@ export function InvitationsListPage() {
     [savePreferences]
   );
 
-  const handleResend = React.useCallback((invitationId: string) => {
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/admin/invitations/${invitationId}/resend`,
-          {
-            method: "POST",
-          }
-        );
-        if (!res.ok) throw new Error(await res.text());
-        toast.success("Invitation resent");
-      } catch {
-        toast.error("Failed to resend invitation");
-      }
-    })();
-  }, []);
-
-  const handleRevoke = React.useCallback(
-    (invitationId: string) => {
+  const handleToggleStatus = React.useCallback(
+    (tenantId: string, currentStatus: string) => {
+      const newStatus = currentStatus === "active" ? "suspended" : "active";
       void (async () => {
         try {
-          const res = await fetch(`/api/admin/invitations/${invitationId}`, {
+          const res = await fetch(`/api/admin/tenants/${tenantId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "canceled" }),
+            body: JSON.stringify({ status: newStatus }),
           });
           if (!res.ok) throw new Error(await res.text());
-          toast.success("Invitation revoked");
+          toast.success(
+            `Tenant ${newStatus === "active" ? "activated" : "suspended"}`
+          );
           await refetch();
         } catch {
-          toast.error("Failed to revoke invitation");
+          toast.error("Failed to update tenant status");
         }
       })();
     },
@@ -98,43 +80,43 @@ export function InvitationsListPage() {
 
   const columns = React.useMemo(
     () =>
-      getInvitationsColumns({
-        onResend: handleResend,
-        onRevoke: handleRevoke,
-        onDelete: (id) => setDeleteInvId(id),
+      getTenantsColumns({
+        localizedPath,
+        onToggleStatus: handleToggleStatus,
+        onDelete: (id) => setDeleteTenantId(id),
       }),
-    [handleResend, handleRevoke]
+    [localizedPath, handleToggleStatus]
   );
 
-  const { table, isLoading, isError, total, refetch } = useInvitationsTable({
+  const { table, isLoading, isError, total, refetch } = useTenantsTable({
     columns,
   });
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
   const handleDelete = React.useCallback(() => {
-    if (!deleteInvId) return;
+    if (!deleteTenantId) return;
     void (async () => {
       try {
-        const res = await fetch(`/api/admin/invitations/${deleteInvId}`, {
+        const res = await fetch(`/api/admin/tenants/${deleteTenantId}`, {
           method: "DELETE",
         });
         if (!res.ok) throw new Error(await res.text());
-        toast.success("Invitation deleted");
-        setDeleteInvId(null);
+        toast.success("Tenant deleted");
+        setDeleteTenantId(null);
         await refetch();
       } catch {
-        toast.error("Failed to delete invitation");
+        toast.error("Failed to delete tenant");
       }
     })();
-  }, [deleteInvId, refetch]);
+  }, [deleteTenantId, refetch]);
 
   // Bulk actions
   const bulkActions: BulkAction[] = React.useMemo(
     () => [
       {
-        label: "Resend",
-        icon: RefreshCw,
+        label: "Suspend",
+        icon: Power,
         onClick: () => {
           void (async () => {
             const ids = table
@@ -142,17 +124,22 @@ export function InvitationsListPage() {
               .rows.map((r) => r.original.id);
             await Promise.allSettled(
               ids.map((id) =>
-                fetch(`/api/admin/invitations/${id}/resend`, { method: "POST" })
+                fetch(`/api/admin/tenants/${id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ status: "suspended" }),
+                })
               )
             );
-            toast.success(`${ids.length} invitations resent`);
+            toast.success(`${ids.length} tenants suspended`);
             table.resetRowSelection();
+            await refetch();
           })();
         },
       },
       {
-        label: "Revoke",
-        icon: XCircle,
+        label: "Activate",
+        icon: Power,
         onClick: () => {
           void (async () => {
             const ids = table
@@ -160,14 +147,14 @@ export function InvitationsListPage() {
               .rows.map((r) => r.original.id);
             await Promise.allSettled(
               ids.map((id) =>
-                fetch(`/api/admin/invitations/${id}`, {
+                fetch(`/api/admin/tenants/${id}`, {
                   method: "PATCH",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ status: "canceled" }),
+                  body: JSON.stringify({ status: "active" }),
                 })
               )
             );
-            toast.success(`${ids.length} invitations revoked`);
+            toast.success(`${ids.length} tenants activated`);
             table.resetRowSelection();
             await refetch();
           })();
@@ -184,10 +171,10 @@ export function InvitationsListPage() {
               .rows.map((r) => r.original.id);
             await Promise.allSettled(
               ids.map((id) =>
-                fetch(`/api/admin/invitations/${id}`, { method: "DELETE" })
+                fetch(`/api/admin/tenants/${id}`, { method: "DELETE" })
               )
             );
-            toast.success(`${ids.length} invitations deleted`);
+            toast.success(`${ids.length} tenants deleted`);
             table.resetRowSelection();
             await refetch();
           })();
@@ -198,13 +185,13 @@ export function InvitationsListPage() {
   );
 
   if (isLoading) {
-    return <DataTableSkeleton columnCount={9} filterCount={1} rowCount={5} />;
+    return <DataTableSkeleton columnCount={9} filterCount={2} rowCount={6} />;
   }
 
   if (isError) {
     return (
       <div className="flex h-24 items-center justify-center">
-        <p className="text-destructive text-sm">Failed to load invitations.</p>
+        <p className="text-destructive text-sm">Failed to load tenants.</p>
       </div>
     );
   }
@@ -213,21 +200,21 @@ export function InvitationsListPage() {
     return (
       <>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Invitations</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Tenants</h1>
         </div>
         <EmptyState
-          icon={<Mail className="size-16" />}
-          title="No invitations sent"
-          description="Send your first invitation to onboard team members."
+          icon={<Building2 className="size-16" />}
+          title="No tenants yet"
+          description="Create your first tenant to get started with multi-tenant management."
           action={{
-            label: "Send your first invitation",
-            onClick: () => setDialogOpen(true),
-            icon: <Send className="size-4" />,
+            label: "Create your first tenant",
+            onClick: () => setCreateOpen(true),
+            icon: <Plus className="size-4" />,
           }}
         />
-        <InviteFormDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
+        <CreateTenantDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
           onSuccess={refetch}
         />
       </>
@@ -237,10 +224,10 @@ export function InvitationsListPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Invitations</h1>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Send className="mr-2 size-4" />
-          Send Invitation
+        <h1 className="text-2xl font-bold tracking-tight">Tenants</h1>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="mr-2 size-4" />
+          Create Tenant
         </Button>
       </div>
 
@@ -267,7 +254,7 @@ export function InvitationsListPage() {
             className="h-8"
             onClick={() =>
               exportTableToCSV(table, {
-                filename: "invitations",
+                filename: "tenants",
                 onlySelected: selectedCount > 0,
               })
             }
@@ -281,7 +268,7 @@ export function InvitationsListPage() {
             className="h-8"
             onClick={() =>
               exportTableToExcel(table, {
-                filename: "invitations",
+                filename: "tenants",
                 onlySelected: selectedCount > 0,
               })
             }
@@ -292,24 +279,24 @@ export function InvitationsListPage() {
         </DataTableToolbar>
       </DataTable>
 
-      <InviteFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
+      <CreateTenantDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
         onSuccess={refetch}
       />
 
       <AlertDialog
-        open={deleteInvId !== null}
+        open={deleteTenantId !== null}
         onOpenChange={(open) => {
-          if (!open) setDeleteInvId(null);
+          if (!open) setDeleteTenantId(null);
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invitation</AlertDialogTitle>
+            <AlertDialogTitle>Delete Tenant</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the invitation. The recipient will no
-              longer be able to accept it.
+              This will permanently delete the tenant and all associated data.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

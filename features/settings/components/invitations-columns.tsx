@@ -1,8 +1,18 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import { MoreHorizontal, RefreshCw, Trash2, XCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/ui/table/data-table-column-header";
 import type { SettingsInvitation } from "../types/invitation.types";
 
@@ -22,12 +32,52 @@ const STATUS_VARIANT: Record<
   rejected: "secondary",
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  "org:adm_admin": "Admin",
+  "org:owner": "Owner",
+  admin: "Admin",
+  member: "Member",
+};
+
 function isExpired(expiresAt: string): boolean {
   return new Date(expiresAt) < new Date();
 }
 
-export function getInvitationsColumns(): ColumnDef<SettingsInvitation>[] {
+interface GetInvitationsColumnsOptions {
+  onResend?: (invitationId: string) => void;
+  onRevoke?: (invitationId: string) => void;
+  onDelete?: (invitationId: string) => void;
+}
+
+export function getInvitationsColumns(
+  options?: GetInvitationsColumnsOptions
+): ColumnDef<SettingsInvitation>[] {
+  const { onResend, onRevoke, onDelete } = options ?? {};
   return [
+    // Select
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 40,
+    },
     // Email
     {
       accessorKey: "email",
@@ -39,18 +89,18 @@ export function getInvitationsColumns(): ColumnDef<SettingsInvitation>[] {
       ),
       meta: { label: "Email" },
     },
-    // Organization
+    // Tenant
     {
-      accessorKey: "organizationName",
+      accessorKey: "tenantName",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Organization" />
+        <DataTableColumnHeader column={column} title="Tenant" />
       ),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.getValue("organizationName")}
+          {row.getValue("tenantName")}
         </span>
       ),
-      meta: { label: "Organization" },
+      meta: { label: "Tenant" },
     },
     // Role
     {
@@ -59,8 +109,8 @@ export function getInvitationsColumns(): ColumnDef<SettingsInvitation>[] {
         <DataTableColumnHeader column={column} title="Role" />
       ),
       cell: ({ row }) => {
-        const role = row.getValue<string | null>("role");
-        return <Badge variant="outline">{role ?? "member"}</Badge>;
+        const role = row.getValue<string | null>("role") ?? "member";
+        return <Badge variant="outline">{ROLE_LABELS[role] ?? role}</Badge>;
       },
       meta: { label: "Role" },
     },
@@ -130,6 +180,49 @@ export function getInvitationsColumns(): ColumnDef<SettingsInvitation>[] {
         </span>
       ),
       meta: { label: "Created" },
+    },
+    // Actions
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const invitation = row.original;
+        const isPending = invitation.status === "pending";
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8">
+                <MoreHorizontal className="size-4" />
+                <span className="sr-only">Actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {isPending && (
+                <>
+                  <DropdownMenuItem onClick={() => onResend?.(invitation.id)}>
+                    <RefreshCw className="mr-2 size-4" />
+                    Resend
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRevoke?.(invitation.id)}>
+                    <XCircle className="mr-2 size-4" />
+                    Revoke
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => onDelete?.(invitation.id)}
+              >
+                <Trash2 className="mr-2 size-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+      size: 40,
     },
   ];
 }
