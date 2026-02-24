@@ -340,6 +340,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  ::placeholder {
+    opacity: 0.4;
+  }
 
   .font-display {
     font-weight: var(--display-weight);

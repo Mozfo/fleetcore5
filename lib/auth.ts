@@ -60,6 +60,10 @@ export const auth = betterAuth({
     },
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes — avoids DB lookup on every getSession()
+    },
   },
 
   account: {
@@ -94,11 +98,32 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
+      const firstName = user.name?.split(" ")[0] ?? "";
+      const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <div style="background-color: #1a1a2e; padding: 24px 32px; text-align: center;">
+            <span style="font-size: 24px; font-weight: 700; color: #ffffff; text-decoration: none;">FleetCore</span>
+          </div>
+          <div style="padding: 32px;">
+            <p style="color: #525f7f; font-size: 16px; line-height: 24px;">Hi${firstName ? ` ${firstName}` : ""},</p>
+            <p style="color: #525f7f; font-size: 16px; line-height: 24px;">We received a request to reset your password for your FleetCore account.</p>
+            <p style="color: #525f7f; font-size: 16px; line-height: 24px;">Click the button below to reset your password:</p>
+            <p style="margin: 28px 0; text-align: center;">
+              <a href="${url}" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">Reset Password</a>
+            </p>
+            <p style="color: #525f7f; font-size: 16px; line-height: 24px;">This link will expire in <strong>24 hours</strong>.</p>
+            <p style="color: #666; font-size: 14px; line-height: 22px;">If you didn't request this password reset, please ignore this email or contact support if you have concerns.</p>
+            <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 24px 0;" />
+            <p style="color: #8898aa; font-size: 12px; line-height: 16px;">FleetCore — Fleet Management Platform</p>
+          </div>
+        </div>
+      `.trim();
+
       await getResend().emails.send({
         from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
         to: user.email,
         subject: "Reset your FleetCore password",
-        html: `<p>Click <a href="${url}">here</a> to reset your password.</p>`,
+        html,
       });
     },
   },
@@ -195,6 +220,15 @@ export const auth = betterAuth({
         },
         after: async (session) => {
           try {
+            // Update last_login_at on adm_members for this user
+            await prisma.adm_members.updateMany({
+              where: {
+                auth_user_id: session.userId,
+                deleted_at: null,
+              },
+              data: { last_login_at: new Date() },
+            });
+
             await prisma.adm_audit_logs.create({
               data: {
                 tenant_id: "00000000-0000-0000-0000-000000000000", // system tenant placeholder
@@ -271,20 +305,38 @@ export const auth = betterAuth({
         const inviteUrl = buildAppUrl(
           `/${defaultLocale}/accept-invitation?id=${id}`
         );
+        const html = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+            <div style="background-color: #1a1a2e; padding: 24px 32px; text-align: center;">
+              <span style="font-size: 24px; font-weight: 700; color: #ffffff; text-decoration: none;">FleetCore</span>
+            </div>
+            <div style="padding: 32px;">
+              <h2 style="color: #1a1a1a; font-size: 20px; margin: 0 0 16px;">You've been invited to FleetCore</h2>
+              <p style="color: #525f7f; font-size: 16px; line-height: 24px;">Click the button below to accept the invitation and set up your account:</p>
+              <p style="margin: 28px 0; text-align: center;">
+                <a href="${inviteUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">Accept Invitation</a>
+              </p>
+              <p style="color: #666; font-size: 14px; line-height: 22px;">This invitation expires in 7 days. If you didn't expect this email, you can ignore it.</p>
+              <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 24px 0;" />
+              <p style="color: #8898aa; font-size: 12px; line-height: 16px;">FleetCore — Fleet Management Platform</p>
+            </div>
+          </div>
+        `.trim();
+
         await getResend().emails.send({
           from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
           to: email,
           subject: "You've been invited to FleetCore",
-          html: `<p>You've been invited to join FleetCore. <a href="${inviteUrl}">Accept invitation</a></p>`,
+          html,
         });
       },
 
-      // ── Hook: sync auth_member → clt_members on invitation acceptance ──────
+      // ── Hook: sync auth_member → adm_members on invitation acceptance ──────
       organizationHooks: {
         afterAcceptInvitation: async ({ member, user }) => {
           try {
-            // Check if clt_members entry already exists for this user+tenant
-            const existing = await prisma.clt_members.findFirst({
+            // Check if adm_members entry already exists for this user+tenant
+            const existing = await prisma.adm_members.findFirst({
               where: {
                 auth_user_id: user.id,
                 tenant_id: member.organizationId,
@@ -292,7 +344,7 @@ export const auth = betterAuth({
             });
 
             if (existing) {
-              return; // clt_members already exists for this user+tenant
+              return; // adm_members already exists for this user+tenant
             }
 
             // Parse name into first/last
@@ -310,7 +362,7 @@ export const auth = betterAuth({
             };
             const businessRole = ORG_ROLE_MAP[member.role] ?? "member";
 
-            await prisma.clt_members.create({
+            await prisma.adm_members.create({
               data: {
                 tenant_id: member.organizationId,
                 auth_user_id: user.id,
