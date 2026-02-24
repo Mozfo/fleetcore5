@@ -4,15 +4,15 @@ import { useList } from "@refinedev/core";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { useDataTable } from "@/hooks/use-data-table";
-import type { SettingsInvitation } from "../types/invitation.types";
+import type { SettingsTenant } from "../types/tenant.types";
 
-interface UseInvitationsTableProps {
-  columns: ColumnDef<SettingsInvitation>[];
+interface UseTenantsTableProps {
+  columns: ColumnDef<SettingsTenant>[];
 }
 
-export function useInvitationsTable({ columns }: UseInvitationsTableProps) {
-  const { query, result } = useList<SettingsInvitation>({
-    resource: "invitations",
+export function useTenantsTable({ columns }: UseTenantsTableProps) {
+  const { query, result } = useList<SettingsTenant>({
+    resource: "tenants",
   });
 
   const data = result.data;

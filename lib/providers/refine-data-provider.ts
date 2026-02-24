@@ -50,6 +50,15 @@ const RESOURCE_CONFIG: Record<string, ResourceConfig> = {
   leads: {
     apiPath: "/crm/leads",
   },
+  tenants: {
+    apiPath: "/api/admin/tenants",
+  },
+  members: {
+    apiPath: "/api/admin/members",
+  },
+  invitations: {
+    apiPath: "/api/admin/invitations",
+  },
 };
 
 function getResourceConfig(resource: string): ResourceConfig {
@@ -84,7 +93,9 @@ async function safeJson(res: Response): Promise<Record<string, unknown>> {
  * All API routes return { success, data, pagination?, error? }.
  */
 async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  // Support absolute paths for non-v1 API routes (e.g. /api/admin/*)
+  const url = path.startsWith("/api/") ? path : `${API_URL}${path}`;
+  const res = await fetch(url, {
     ...init,
     headers: {
       "Content-Type": "application/json",

@@ -26,4 +26,33 @@ export const fleetcoreResources: ResourceProps[] = [
       audit: ["create", "update", "delete"],
     },
   },
+  {
+    name: "tenants",
+    list: "/admin/tenants",
+    show: "/admin/tenants/:id",
+    meta: {
+      label: "Tenants",
+      canDelete: true,
+      parent: "admin",
+    },
+  },
+  {
+    name: "members",
+    list: "/admin/members",
+    show: "/admin/members/:id",
+    meta: {
+      label: "Members",
+      canDelete: true,
+      parent: "admin",
+    },
+  },
+  {
+    name: "invitations",
+    list: "/admin/invitations",
+    meta: {
+      label: "Invitations",
+      canDelete: true,
+      parent: "admin",
+    },
+  },
 ];

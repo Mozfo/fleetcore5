@@ -4,15 +4,15 @@ import { useList } from "@refinedev/core";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { useDataTable } from "@/hooks/use-data-table";
-import type { SettingsInvitation } from "../types/invitation.types";
+import type { SettingsMember } from "../types/member.types";
 
-interface UseInvitationsTableProps {
-  columns: ColumnDef<SettingsInvitation>[];
+interface UseMembersTableProps {
+  columns: ColumnDef<SettingsMember>[];
 }
 
-export function useInvitationsTable({ columns }: UseInvitationsTableProps) {
-  const { query, result } = useList<SettingsInvitation>({
-    resource: "invitations",
+export function useMembersTable({ columns }: UseMembersTableProps) {
+  const { query, result } = useList<SettingsMember>({
+    resource: "members",
   });
 
   const data = result.data;
@@ -27,6 +27,7 @@ export function useInvitationsTable({ columns }: UseInvitationsTableProps) {
     getRowId: (row) => row.id,
     initialState: {
       pagination: { pageIndex: 0, pageSize: 20 },
+      columnVisibility: { select: true },
     },
   });
 
@@ -34,6 +35,7 @@ export function useInvitationsTable({ columns }: UseInvitationsTableProps) {
     table,
     isLoading: query.isLoading,
     isError: query.isError,
+    errorMessage: query.error?.message ?? null,
     total,
     refetch: query.refetch,
   };
