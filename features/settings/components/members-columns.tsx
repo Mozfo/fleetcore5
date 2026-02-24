@@ -2,6 +2,8 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import {
+  ChevronDown,
+  ChevronRight,
   KeyRound,
   MoreHorizontal,
   Pencil,
@@ -101,6 +103,29 @@ export function getMembersColumns({
       enableSorting: false,
       enableHiding: false,
       size: 40,
+    },
+    // Expand toggle
+    {
+      id: "expand",
+      header: () => null,
+      cell: ({ row }) => {
+        if (!row.getCanExpand()) return null;
+        return (
+          <button
+            className="flex items-center"
+            onClick={row.getToggleExpandedHandler()}
+          >
+            {row.getIsExpanded() ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
+          </button>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+      size: 32,
     },
     // Name with Avatar
     {

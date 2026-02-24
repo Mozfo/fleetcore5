@@ -31,6 +31,7 @@ import { useTablePreferences } from "@/hooks/use-table-preferences";
 
 import { getTenantsColumns } from "./tenants-columns";
 import { CreateTenantDialog } from "./create-tenant-dialog";
+import { TenantExpandedRow } from "./tenant-expanded-row";
 import { useTenantsTable } from "../hooks/use-tenants-table";
 
 export function TenantsListPage() {
@@ -226,6 +227,7 @@ export function TenantsListPage() {
       <DataTable
         table={table}
         density={density}
+        renderExpandedRow={(row) => <TenantExpandedRow tenant={row.original} />}
         actionBar={
           <DataTableBulkActions
             selectedCount={selectedCount}

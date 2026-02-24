@@ -36,6 +36,7 @@ import { exportTableToCSV, exportTableToExcel } from "@/lib/utils/table-export";
 import { useTablePreferences } from "@/hooks/use-table-preferences";
 
 import { getInvitationsColumns } from "./invitations-columns";
+import { InvitationExpandedRow } from "./invitation-expanded-row";
 import { InviteFormDialog } from "./invite-form";
 import { useInvitationsTable } from "../hooks/use-invitations-table";
 
@@ -239,6 +240,9 @@ export function InvitationsListPage() {
       <DataTable
         table={table}
         density={density}
+        renderExpandedRow={(row) => (
+          <InvitationExpandedRow invitation={row.original} />
+        )}
         actionBar={
           <DataTableBulkActions
             selectedCount={selectedCount}

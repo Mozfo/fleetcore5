@@ -1,7 +1,14 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, RefreshCw, Trash2, XCircle } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  MoreHorizontal,
+  RefreshCw,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,6 +84,29 @@ export function getInvitationsColumns(
       enableSorting: false,
       enableHiding: false,
       size: 40,
+    },
+    // Expand toggle
+    {
+      id: "expand",
+      header: () => null,
+      cell: ({ row }) => {
+        if (!row.getCanExpand()) return null;
+        return (
+          <button
+            className="flex items-center"
+            onClick={row.getToggleExpandedHandler()}
+          >
+            {row.getIsExpanded() ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
+          </button>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+      size: 32,
     },
     // Email
     {

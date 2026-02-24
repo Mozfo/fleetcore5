@@ -39,6 +39,7 @@ import { useTablePreferences } from "@/hooks/use-table-preferences";
 
 import { getMembersColumns } from "./members-columns";
 import { CreateMemberDialog } from "./create-member-dialog";
+import { MemberExpandedRow } from "./member-expanded-row";
 import { ResetPasswordDialog } from "./reset-password-dialog";
 import { useMembersTable } from "../hooks/use-members-table";
 
@@ -267,6 +268,7 @@ export function MembersListPage() {
       <DataTable
         table={table}
         density={density}
+        renderExpandedRow={(row) => <MemberExpandedRow member={row.original} />}
         actionBar={
           <DataTableBulkActions
             selectedCount={selectedCount}

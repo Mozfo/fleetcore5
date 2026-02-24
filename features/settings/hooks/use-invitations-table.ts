@@ -25,6 +25,7 @@ export function useInvitationsTable({ columns }: UseInvitationsTableProps) {
     pageCount,
     shallow: true,
     getRowId: (row) => row.id,
+    getRowCanExpand: () => true,
     initialState: {
       pagination: { pageIndex: 0, pageSize: 20 },
     },

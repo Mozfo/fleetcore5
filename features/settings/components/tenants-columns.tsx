@@ -1,7 +1,15 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, MoreHorizontal, Pencil, Power, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  MoreHorizontal,
+  Pencil,
+  Power,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +94,29 @@ export function getTenantsColumns({
       enableSorting: false,
       enableHiding: false,
       size: 40,
+    },
+    // Expand toggle
+    {
+      id: "expand",
+      header: () => null,
+      cell: ({ row }) => {
+        if (!row.getCanExpand()) return null;
+        return (
+          <button
+            className="flex items-center"
+            onClick={row.getToggleExpandedHandler()}
+          >
+            {row.getIsExpanded() ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
+          </button>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+      size: 32,
     },
     // Name with country flag
     {
