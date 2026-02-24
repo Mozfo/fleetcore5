@@ -124,7 +124,6 @@ export function getMembersColumns({
         );
       },
       enableSorting: false,
-      enableHiding: false,
       size: 32,
     },
     // Name with Avatar

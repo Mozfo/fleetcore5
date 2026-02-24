@@ -30,7 +30,8 @@
     "search_columns": "Search columns...",
     "no_columns_found": "No columns found.",
     "bulk_clear_selection": "Clear selection",
-    "no_results": "No results."
+    "no_results": "No results.",
+    "expand_rows": "Expand Rows"
   },
   "yes": "Yes",
   "no": "No",

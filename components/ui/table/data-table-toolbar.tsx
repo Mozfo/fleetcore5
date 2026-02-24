@@ -15,10 +15,13 @@ import { X } from "lucide-react";
 
 interface DataTableToolbarProps<TData> extends React.ComponentProps<"div"> {
   table: Table<TData>;
+  /** Rendered between Search and faceted filters (e.g. primary CTA button). */
+  action?: React.ReactNode;
 }
 
 export function DataTableToolbar<TData>({
   table,
+  action,
   children,
   className,
   ...props
@@ -52,6 +55,7 @@ export function DataTableToolbar<TData>({
           onChange={(e) => table.setGlobalFilter(e.target.value)}
           className="h-8 w-40 lg:w-64"
         />
+        {action}
         {columns.map((column) => (
           <DataTableToolbarFilter key={column.id} column={column} />
         ))}

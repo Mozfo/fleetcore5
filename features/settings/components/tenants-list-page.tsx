@@ -24,6 +24,7 @@ import {
   type BulkAction,
 } from "@/components/ui/table/data-table-bulk-actions";
 import { DataTableDensityToggle } from "@/components/ui/table/data-table-density-toggle";
+import { DataTableExpandToggle } from "@/components/ui/table/data-table-expand-toggle";
 import { DataTableSkeleton } from "@/components/ui/table/data-table-skeleton";
 import { DataTableToolbar } from "@/components/ui/table/data-table-toolbar";
 import { exportTableToCSV, exportTableToExcel } from "@/lib/utils/table-export";
@@ -47,10 +48,22 @@ export function TenantsListPage() {
     preferences.density ?? "normal"
   );
 
+  const [expandEnabled, setExpandEnabled] = React.useState(
+    preferences.expandEnabled ?? false
+  );
+
   const handleDensityChange = React.useCallback(
     (d: TableDensity) => {
       setDensity(d);
       savePreferences({ density: d });
+    },
+    [savePreferences]
+  );
+
+  const handleExpandToggle = React.useCallback(
+    (enabled: boolean) => {
+      setExpandEnabled(enabled);
+      savePreferences({ expandEnabled: enabled });
     },
     [savePreferences]
   );
@@ -94,6 +107,12 @@ export function TenantsListPage() {
   });
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+
+  // Sync expand toggle with table state
+  React.useEffect(() => {
+    table.getColumn("expand")?.toggleVisibility(expandEnabled);
+    if (!expandEnabled) table.toggleAllRowsExpanded(false);
+  }, [expandEnabled, table]);
 
   const handleDelete = React.useCallback(() => {
     if (!deleteTenantId) return;
@@ -227,7 +246,11 @@ export function TenantsListPage() {
       <DataTable
         table={table}
         density={density}
-        renderExpandedRow={(row) => <TenantExpandedRow tenant={row.original} />}
+        renderExpandedRow={
+          expandEnabled
+            ? (row) => <TenantExpandedRow tenant={row.original} />
+            : undefined
+        }
         actionBar={
           <DataTableBulkActions
             selectedCount={selectedCount}
@@ -237,14 +260,22 @@ export function TenantsListPage() {
           />
         }
       >
-        <DataTableToolbar table={table}>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 size-4" />
-            Create Tenant
-          </Button>
+        <DataTableToolbar
+          table={table}
+          action={
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 size-4" />
+              Create Tenant
+            </Button>
+          }
+        >
           <DataTableDensityToggle
             density={density}
             onDensityChange={handleDensityChange}
+          />
+          <DataTableExpandToggle
+            expandEnabled={expandEnabled}
+            onExpandEnabledChange={handleExpandToggle}
           />
           <Button
             variant="outline"

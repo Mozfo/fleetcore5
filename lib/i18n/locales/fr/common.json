@@ -30,7 +30,8 @@
     "search_columns": "Rechercher des colonnes...",
     "no_columns_found": "Aucune colonne trouvée.",
     "bulk_clear_selection": "Effacer la sélection",
-    "no_results": "Aucun résultat."
+    "no_results": "Aucun résultat.",
+    "expand_rows": "Détails des lignes"
   },
   "yes": "Oui",
   "no": "Non",

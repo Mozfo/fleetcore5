@@ -32,6 +32,7 @@ import {
   type BulkAction,
 } from "@/components/ui/table/data-table-bulk-actions";
 import { DataTableDensityToggle } from "@/components/ui/table/data-table-density-toggle";
+import { DataTableExpandToggle } from "@/components/ui/table/data-table-expand-toggle";
 import { DataTableSkeleton } from "@/components/ui/table/data-table-skeleton";
 import { DataTableToolbar } from "@/components/ui/table/data-table-toolbar";
 import { exportTableToCSV, exportTableToExcel } from "@/lib/utils/table-export";
@@ -63,6 +64,18 @@ export function MembersListPage() {
     (d: TableDensity) => {
       setDensity(d);
       savePreferences({ density: d });
+    },
+    [savePreferences]
+  );
+
+  const [expandEnabled, setExpandEnabled] = React.useState(
+    preferences.expandEnabled ?? false
+  );
+
+  const handleExpandToggle = React.useCallback(
+    (enabled: boolean) => {
+      setExpandEnabled(enabled);
+      savePreferences({ expandEnabled: enabled });
     },
     [savePreferences]
   );
@@ -130,6 +143,12 @@ export function MembersListPage() {
     });
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+
+  // Sync expand toggle with table state
+  React.useEffect(() => {
+    table.getColumn("expand")?.toggleVisibility(expandEnabled);
+    if (!expandEnabled) table.toggleAllRowsExpanded(false);
+  }, [expandEnabled, table]);
 
   // Bulk actions
   const bulkActions: BulkAction[] = React.useMemo(
@@ -268,7 +287,11 @@ export function MembersListPage() {
       <DataTable
         table={table}
         density={density}
-        renderExpandedRow={(row) => <MemberExpandedRow member={row.original} />}
+        renderExpandedRow={
+          expandEnabled
+            ? (row) => <MemberExpandedRow member={row.original} />
+            : undefined
+        }
         actionBar={
           <DataTableBulkActions
             selectedCount={selectedCount}
@@ -278,14 +301,22 @@ export function MembersListPage() {
           />
         }
       >
-        <DataTableToolbar table={table}>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 size-4" />
-            Add Member
-          </Button>
+        <DataTableToolbar
+          table={table}
+          action={
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 size-4" />
+              Add Member
+            </Button>
+          }
+        >
           <DataTableDensityToggle
             density={density}
             onDensityChange={handleDensityChange}
+          />
+          <DataTableExpandToggle
+            expandEnabled={expandEnabled}
+            onExpandEnabledChange={handleExpandToggle}
           />
           <Button
             variant="outline"

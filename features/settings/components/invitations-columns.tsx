@@ -105,7 +105,6 @@ export function getInvitationsColumns(
         );
       },
       enableSorting: false,
-      enableHiding: false,
       size: 32,
     },
     // Email

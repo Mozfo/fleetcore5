@@ -115,7 +115,6 @@ export function getTenantsColumns({
         );
       },
       enableSorting: false,
-      enableHiding: false,
       size: 32,
     },
     // Name with country flag

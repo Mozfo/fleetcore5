@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/sheet";
 import { DataTable, type TableDensity } from "@/components/ui/table/data-table";
 import { DataTableDensityToggle } from "@/components/ui/table/data-table-density-toggle";
+import { DataTableExpandToggle } from "@/components/ui/table/data-table-expand-toggle";
 import { DataTableSkeleton } from "@/components/ui/table/data-table-skeleton";
 import { DataTableToolbar } from "@/components/ui/table/data-table-toolbar";
 import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
@@ -90,6 +91,9 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(
     preferences.sidebarOpen ?? true
   );
+  const [expandEnabled, setExpandEnabled] = React.useState(
+    preferences.expandEnabled ?? false
+  );
 
   const handleDensityChange = React.useCallback(
     (d: TableDensity) => {
@@ -106,6 +110,14 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
       return next;
     });
   }, [savePreferences]);
+
+  const handleExpandToggle = React.useCallback(
+    (enabled: boolean) => {
+      setExpandEnabled(enabled);
+      savePreferences({ expandEnabled: enabled });
+    },
+    [savePreferences]
+  );
 
   const columns = React.useMemo(
     () =>
@@ -127,6 +139,12 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
   React.useEffect(() => {
     onTotalChange?.(total);
   }, [total, onTotalChange]);
+
+  // Sync expand toggle with table state
+  React.useEffect(() => {
+    table.getColumn("expand")?.toggleVisibility(expandEnabled);
+    if (!expandEnabled) table.toggleAllRowsExpanded(false);
+  }, [expandEnabled, table]);
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
@@ -321,7 +339,11 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
         <DataTable
           table={table}
           density={density}
-          renderExpandedRow={(row) => <LeadExpandedRow lead={row.original} />}
+          renderExpandedRow={
+            expandEnabled
+              ? (row) => <LeadExpandedRow lead={row.original} />
+              : undefined
+          }
           getRowClassName={(row) => computeRowIndicator(row.original)}
           actionBar={
             <BulkActionsBar
@@ -337,7 +359,15 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
             />
           }
         >
-          <DataTableToolbar table={table}>
+          <DataTableToolbar
+            table={table}
+            action={
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="mr-2 size-4" />
+                {t("leads.actions.new_lead")}
+              </Button>
+            }
+          >
             {/* Sidebar toggle (desktop) */}
             <Button
               variant="outline"
@@ -357,13 +387,13 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
             >
               <Filter className="size-4" />
             </Button>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 size-4" />
-              {t("leads.actions.new_lead")}
-            </Button>
             <DataTableDensityToggle
               density={density}
               onDensityChange={handleDensityChange}
+            />
+            <DataTableExpandToggle
+              expandEnabled={expandEnabled}
+              onExpandEnabledChange={handleExpandToggle}
             />
             <Button
               variant="outline"

@@ -14,6 +14,7 @@ interface TablePreferences {
   columnOrder?: ColumnOrderState;
   columnPinning?: ColumnPinningState;
   density?: TableDensity;
+  expandEnabled?: boolean;
   sidebarOpen?: boolean;
 }
 

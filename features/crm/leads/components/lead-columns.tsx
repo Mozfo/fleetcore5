@@ -121,7 +121,7 @@ export function getLeadColumns(
 
     // ── Expander ───────────────────────────────────────────────────────
     {
-      id: "expander",
+      id: "expand",
       header: () => null,
       cell: ({ row }) => {
         if (!row.getCanExpand()) return null;
@@ -139,7 +139,6 @@ export function getLeadColumns(
         );
       },
       enableSorting: false,
-      enableHiding: false,
       enableColumnFilter: false,
       enableResizing: false,
       enablePinning: false,
