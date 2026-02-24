@@ -83,7 +83,8 @@ export function getLeadColumns(
   t: TranslationFn,
   statuses: LeadStatusConfig[],
   onEdit?: (leadId: string) => void,
-  onDelete?: (leadId: string) => void
+  onDelete?: (leadId: string) => void,
+  localizedPath?: (path: string) => string
 ): ColumnDef<Lead>[] {
   const statusOptions: Option[] = statuses.map((s) => ({
     label: s.label_en,
@@ -176,11 +177,22 @@ export function getLeadColumns(
           lead.qualification_score !== undefined
             ? `${t("leads.table.columns.score")}: ${lead.qualification_score}/100`
             : undefined;
+        const code = lead.lead_code ?? "—";
+        const href = localizedPath
+          ? localizedPath(`/crm/leads/${lead.id}`)
+          : undefined;
         return (
           <div className="flex items-center gap-1.5">
-            <span className="text-primary font-mono font-medium">
-              {lead.lead_code ?? "—"}
-            </span>
+            {href ? (
+              <Link
+                href={href}
+                className="text-primary font-mono font-medium hover:underline"
+              >
+                {code}
+              </Link>
+            ) : (
+              <span className="text-primary font-mono font-medium">{code}</span>
+            )}
             {dotColor && (
               <span
                 title={scoreTitle}

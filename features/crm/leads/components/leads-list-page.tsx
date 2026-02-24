@@ -45,6 +45,7 @@ import { DataTableDensityToggle } from "@/components/ui/table/data-table-density
 import { DataTableSkeleton } from "@/components/ui/table/data-table-skeleton";
 import { DataTableToolbar } from "@/components/ui/table/data-table-toolbar";
 import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
+import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
 import { cn } from "@/lib/utils";
 import { exportTableToCSV, exportTableToExcel } from "@/lib/utils/table-export";
 import { useTablePreferences } from "@/hooks/use-table-preferences";
@@ -63,6 +64,7 @@ interface LeadsListPageProps {
 
 export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
   const { t } = useTranslation("crm");
+  const { localizedPath } = useLocalizedPath();
   const { statuses, isLoading: statusesLoading } = useLeadStatuses();
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editLeadId, setEditLeadId] = React.useState<string | null>(null);
@@ -111,9 +113,10 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
         t,
         statuses,
         (id) => setEditLeadId(id),
-        (id) => setDeleteLeadId(id)
+        (id) => setDeleteLeadId(id),
+        localizedPath
       ),
-    [t, statuses]
+    [t, statuses, localizedPath]
   );
 
   const { table, isLoading, isError, total } = useLeadsTable({
