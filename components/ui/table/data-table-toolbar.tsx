@@ -2,6 +2,7 @@
 
 import type { Column, Table } from "@tanstack/react-table";
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 
 import { DataTableDateFilter } from "@/components/ui/table/data-table-date-filter";
 import { DataTableFacetedFilter } from "@/components/ui/table/data-table-faceted-filter";
@@ -22,6 +23,7 @@ export function DataTableToolbar<TData>({
   className,
   ...props
 }: DataTableToolbarProps<TData>) {
+  const { t } = useTranslation("common");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const columns = React.useMemo(
@@ -45,7 +47,7 @@ export function DataTableToolbar<TData>({
     >
       <div className="flex flex-1 flex-wrap items-center gap-2">
         <Input
-          placeholder="Search all columns..."
+          placeholder={t("table.search_placeholder")}
           value={(table.getState().globalFilter as string) ?? ""}
           onChange={(e) => table.setGlobalFilter(e.target.value)}
           className="h-8 w-40 lg:w-64"
@@ -62,7 +64,7 @@ export function DataTableToolbar<TData>({
             onClick={onReset}
           >
             <X />
-            Reset
+            {t("table.reset")}
           </Button>
         )}
       </div>

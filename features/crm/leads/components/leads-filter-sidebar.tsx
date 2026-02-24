@@ -19,6 +19,7 @@ import { useLeadStages } from "@/lib/hooks/useLeadStages";
 import { LEAD_STAGE_VALUES } from "@/types/crm";
 
 import { SIDEBAR_FILTER_PARSERS } from "../hooks/use-leads-table";
+import { useSidebarFilterData } from "../hooks/use-sidebar-filter-data";
 
 // ── Static option lists ──────────────────────────────────────────────────
 
@@ -128,6 +129,7 @@ export function LeadsFilterSidebar() {
   const { t } = useTranslation("crm");
   const { stages } = useLeadStages();
   const { options: fleetSizeOptions } = useFleetSizeOptions();
+  const { countryCodes, platformCodes } = useSidebarFilterData();
 
   const [values, setValues] = useQueryStates(SIDEBAR_FILTER_PARSERS);
 
@@ -404,16 +406,14 @@ export function LeadsFilterSidebar() {
             activeCount={arrayCount("country_code")}
           >
             <div className="flex flex-wrap gap-1">
-              {["AE", "SA", "QA", "KW", "BH", "OM", "FR", "GB", "US"].map(
-                (code) => (
-                  <ToggleFilterButton
-                    key={code}
-                    label={code}
-                    active={isSelected("country_code", code)}
-                    onClick={() => toggleMulti("country_code", code)}
-                  />
-                )
-              )}
+              {countryCodes.map((code) => (
+                <ToggleFilterButton
+                  key={code}
+                  label={code}
+                  active={isSelected("country_code", code)}
+                  onClick={() => toggleMulti("country_code", code)}
+                />
+              ))}
             </div>
           </FilterCategory>
 
@@ -709,7 +709,7 @@ export function LeadsFilterSidebar() {
             activeCount={arrayCount("platforms_used")}
           >
             <div className="flex flex-wrap gap-1">
-              {["uber", "bolt", "careem", "freenow", "lyft"].map((platform) => (
+              {platformCodes.map((platform) => (
                 <ToggleFilterButton
                   key={platform}
                   label={platform.charAt(0).toUpperCase() + platform.slice(1)}

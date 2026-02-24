@@ -51,9 +51,9 @@ function formatDate(value: unknown): string {
   return isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
 }
 
-function formatBoolean(value: unknown): string {
-  if (value === true) return "Yes";
-  if (value === false) return "No";
+function formatBoolean(value: unknown, t: TranslationFn): string {
+  if (value === true) return t("yes");
+  if (value === false) return t("no");
   return "—";
 }
 
@@ -1093,7 +1093,7 @@ export function getLeadColumns(
           title={t("leads.table.columns.wizard_completed")}
         />
       ),
-      cell: ({ row }) => formatBoolean(row.original.wizard_completed),
+      cell: ({ row }) => formatBoolean(row.original.wizard_completed, t),
       meta: {
         label: t("leads.table.columns.wizard_completed"),
         className: "hidden md:table-cell",
@@ -1140,7 +1140,7 @@ export function getLeadColumns(
           title={t("leads.table.columns.email_verified")}
         />
       ),
-      cell: ({ row }) => formatBoolean(row.original.email_verified),
+      cell: ({ row }) => formatBoolean(row.original.email_verified, t),
       meta: { label: t("leads.table.columns.email_verified") },
       size: 80,
     },
@@ -1204,7 +1204,7 @@ export function getLeadColumns(
           title={t("leads.table.columns.attendance_confirmed")}
         />
       ),
-      cell: ({ row }) => formatBoolean(row.original.attendance_confirmed),
+      cell: ({ row }) => formatBoolean(row.original.attendance_confirmed, t),
       meta: { label: t("leads.table.columns.attendance_confirmed") },
       size: 80,
     },
@@ -1301,7 +1301,7 @@ export function getLeadColumns(
           title={t("leads.table.columns.callback_requested")}
         />
       ),
-      cell: ({ row }) => formatBoolean(row.original.callback_requested),
+      cell: ({ row }) => formatBoolean(row.original.callback_requested, t),
       meta: {
         label: t("leads.table.columns.callback_requested"),
         className: "hidden md:table-cell",

@@ -112,7 +112,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     variant="secondary"
                     className="rounded-sm px-1 font-normal"
                   >
-                    {selectedValues.size} selected
+                    {t("table.filter_selected", { count: selectedValues.size })}
                   </Badge>
                 ) : (
                   options
@@ -175,7 +175,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     onSelect={() => onReset()}
                     className="justify-center text-center"
                   >
-                    Clear filters
+                    {t("table.filter_clear")}
                   </CommandItem>
                 </CommandGroup>
               </>
