@@ -321,7 +321,6 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     keepPinnedRows: true,
     // Expanding
     enableExpanding: true,
-    getRowCanExpand: () => true,
     // Grouping
     enableGrouping: true,
     groupedColumnMode: "reorder" as const,

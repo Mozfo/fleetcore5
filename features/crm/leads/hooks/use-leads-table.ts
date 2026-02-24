@@ -281,6 +281,7 @@ export function useLeadsTable({
     pageCount,
     shallow: true,
     getRowId: (row) => row.id,
+    getRowCanExpand: () => true,
     initialState: {
       pagination: { pageIndex: 0, pageSize: initialPageSize },
       columnVisibility: savedColumnVisibility ?? DEFAULT_COLUMN_VISIBILITY,

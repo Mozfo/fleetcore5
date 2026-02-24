@@ -190,7 +190,11 @@
       "delete_coming_soon": "Fonctionnalité Supprimer bientôt disponible",
       "pin_top": "Épingler en haut",
       "pin_bottom": "Épingler en bas",
-      "unpin_row": "Désépingler"
+      "unpin_row": "Désépingler",
+      "deleted": "Lead supprimé avec succès",
+      "delete_failed": "Échec de la suppression du lead",
+      "delete_confirm_title": "Supprimer ce lead ?",
+      "delete_confirm_desc": "Cette action est irréversible. Le lead et ses données associées seront définitivement supprimés."
     },
     "status_change": {
       "success": "Statut du lead mis à jour avec succès",

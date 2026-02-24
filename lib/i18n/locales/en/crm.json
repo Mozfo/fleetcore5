@@ -190,7 +190,11 @@
       "delete_coming_soon": "Delete feature coming soon",
       "pin_top": "Pin to Top",
       "pin_bottom": "Pin to Bottom",
-      "unpin_row": "Unpin Row"
+      "unpin_row": "Unpin Row",
+      "deleted": "Lead deleted successfully",
+      "delete_failed": "Failed to delete lead",
+      "delete_confirm_title": "Delete this lead?",
+      "delete_confirm_desc": "This action cannot be undone. The lead and its associated data will be permanently removed."
     },
     "status_change": {
       "success": "Lead status updated successfully",

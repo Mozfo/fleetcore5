@@ -82,7 +82,8 @@ function truncate(value: unknown, max = 80): string {
 export function getLeadColumns(
   t: TranslationFn,
   statuses: LeadStatusConfig[],
-  onEdit?: (leadId: string) => void
+  onEdit?: (leadId: string) => void,
+  onDelete?: (leadId: string) => void
 ): ColumnDef<Lead>[] {
   const statusOptions: Option[] = statuses.map((s) => ({
     label: s.label_en,
@@ -1491,7 +1492,10 @@ export function getLeadColumns(
                 </>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => onDelete?.(lead.id)}
+              >
                 <Trash2 className="mr-2 size-4" />
                 {t("leads.actions.delete")}
               </DropdownMenuItem>

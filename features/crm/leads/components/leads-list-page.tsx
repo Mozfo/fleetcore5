@@ -5,9 +5,35 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { BulkActionsBar } from "@/components/crm/leads/BulkActionsBar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -40,7 +66,19 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
   const { statuses, isLoading: statusesLoading } = useLeadStatuses();
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editLeadId, setEditLeadId] = React.useState<string | null>(null);
+  const [deleteLeadId, setDeleteLeadId] = React.useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
+
+  // Bulk action states
+  const [bulkAssignOpen, setBulkAssignOpen] = React.useState(false);
+  const [bulkStatusOpen, setBulkStatusOpen] = React.useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const [bulkAssignee, setBulkAssignee] = React.useState("");
+  const [bulkNewStatus, setBulkNewStatus] = React.useState("");
+  const [bulkLoading, setBulkLoading] = React.useState(false);
+  const [assignableMembers, setAssignableMembers] = React.useState<
+    { id: string; name: string }[]
+  >([]);
 
   // Table preferences (localStorage persistence)
   const { preferences, save: savePreferences } = useTablePreferences("leads");
@@ -68,7 +106,13 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
   }, [savePreferences]);
 
   const columns = React.useMemo(
-    () => getLeadColumns(t, statuses, (id) => setEditLeadId(id)),
+    () =>
+      getLeadColumns(
+        t,
+        statuses,
+        (id) => setEditLeadId(id),
+        (id) => setDeleteLeadId(id)
+      ),
     [t, statuses]
   );
 
@@ -82,6 +126,141 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
   }, [total, onTotalChange]);
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+
+  // ── Single delete handler ────────────────────────────────────────────────
+  const handleDeleteLead = React.useCallback(async () => {
+    if (!deleteLeadId) return;
+    try {
+      const res = await fetch(`/api/v1/crm/leads/${deleteLeadId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success(t("leads.actions.deleted"));
+      table.resetRowSelection();
+    } catch {
+      toast.error(t("leads.actions.delete_failed"));
+    } finally {
+      setDeleteLeadId(null);
+    }
+  }, [deleteLeadId, t, table]);
+
+  // ── Bulk action helpers ──────────────────────────────────────────────────
+  const getSelectedIds = React.useCallback(
+    () => table.getFilteredSelectedRowModel().rows.map((r) => r.original.id),
+    [table]
+  );
+
+  const handleBulkAssignOpen = React.useCallback(async () => {
+    try {
+      const res = await fetch(
+        "/api/admin/members?role=admin,commercial&status=active"
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const members = (data.members ?? data ?? []).map(
+          (m: {
+            id: string;
+            first_name?: string;
+            last_name?: string;
+            email?: string;
+          }) => ({
+            id: m.id,
+            name:
+              [m.first_name, m.last_name].filter(Boolean).join(" ") ||
+              m.email ||
+              m.id,
+          })
+        );
+        setAssignableMembers(members);
+      }
+    } catch {
+      /* silently fallback to empty list */
+    }
+    setBulkAssignee("");
+    setBulkAssignOpen(true);
+  }, []);
+
+  const handleBulkAssign = React.useCallback(async () => {
+    if (!bulkAssignee) return;
+    const ids = getSelectedIds();
+    setBulkLoading(true);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) =>
+          fetch(`/api/v1/crm/leads/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ assigned_to: bulkAssignee }),
+          })
+        )
+      );
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      toast.success(
+        t("leads.bulk_actions.toast.assign_success", { count: succeeded })
+      );
+      table.resetRowSelection();
+    } catch {
+      toast.error(t("leads.bulk_actions.toast.assign_error"));
+    } finally {
+      setBulkLoading(false);
+      setBulkAssignOpen(false);
+    }
+  }, [bulkAssignee, getSelectedIds, t, table]);
+
+  const handleBulkStatusChange = React.useCallback(async () => {
+    if (!bulkNewStatus) return;
+    const ids = getSelectedIds();
+    setBulkLoading(true);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) =>
+          fetch(`/api/v1/crm/leads/${id}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: bulkNewStatus }),
+          })
+        )
+      );
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      toast.success(
+        t("leads.bulk_actions.toast.status_success", { count: succeeded })
+      );
+      table.resetRowSelection();
+    } catch {
+      toast.error(t("leads.bulk_actions.toast.status_error"));
+    } finally {
+      setBulkLoading(false);
+      setBulkStatusOpen(false);
+    }
+  }, [bulkNewStatus, getSelectedIds, t, table]);
+
+  const handleBulkExport = React.useCallback(() => {
+    exportTableToCSV(table, {
+      filename: "leads-selection",
+      onlySelected: true,
+    });
+    toast.success(t("leads.bulk_actions.toast.export_success"));
+  }, [table, t]);
+
+  const handleBulkDelete = React.useCallback(async () => {
+    const ids = getSelectedIds();
+    setBulkLoading(true);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) => fetch(`/api/v1/crm/leads/${id}`, { method: "DELETE" }))
+      );
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      toast.success(
+        t("leads.bulk_actions.toast.delete_success", { count: succeeded })
+      );
+      table.resetRowSelection();
+    } catch {
+      toast.error(t("leads.bulk_actions.toast.delete_error"));
+    } finally {
+      setBulkLoading(false);
+      setBulkDeleteOpen(false);
+    }
+  }, [getSelectedIds, t, table]);
 
   if (statusesLoading || isLoading) {
     return <DataTableSkeleton columnCount={9} filterCount={3} rowCount={10} />;
@@ -144,10 +323,13 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
           actionBar={
             <BulkActionsBar
               selectedCount={selectedCount}
-              onAssign={() => toast.info("Coming soon")}
-              onChangeStatus={() => toast.info("Coming soon")}
-              onExport={() => toast.info("Coming soon")}
-              onDelete={() => toast.info("Coming soon")}
+              onAssign={handleBulkAssignOpen}
+              onChangeStatus={() => {
+                setBulkNewStatus("");
+                setBulkStatusOpen(true);
+              }}
+              onExport={handleBulkExport}
+              onDelete={() => setBulkDeleteOpen(true)}
               onClearSelection={() => table.toggleAllRowsSelected(false)}
             />
           }
@@ -209,6 +391,175 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
               {t("leads.actions.new_lead")}
             </Button>
           </DataTableToolbar>
+
+          <AlertDialog
+            open={deleteLeadId !== null}
+            onOpenChange={(open) => {
+              if (!open) setDeleteLeadId(null);
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t("leads.actions.delete_confirm_title")}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("leads.actions.delete_confirm_desc")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive hover:bg-destructive/90 text-white"
+                  onClick={handleDeleteLead}
+                >
+                  {t("leads.actions.delete")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Bulk Assign Dialog */}
+          <Dialog open={bulkAssignOpen} onOpenChange={setBulkAssignOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {t("leads.bulk_actions.assign_modal.title", {
+                    count: selectedCount,
+                  })}
+                </DialogTitle>
+                <DialogDescription>
+                  {t("leads.bulk_actions.assign_modal.description")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Label>
+                  {t("leads.bulk_actions.assign_modal.select_assignee")}
+                </Label>
+                <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue
+                      placeholder={t(
+                        "leads.bulk_actions.assign_modal.select_assignee"
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assignableMembers.length === 0 ? (
+                      <SelectItem value="_empty" disabled>
+                        {t("leads.bulk_actions.assign_modal.no_members")}
+                      </SelectItem>
+                    ) : (
+                      assignableMembers.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setBulkAssignOpen(false)}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  onClick={handleBulkAssign}
+                  disabled={!bulkAssignee || bulkLoading}
+                >
+                  {bulkLoading
+                    ? t("leads.bulk_actions.assign_modal.assigning")
+                    : t("leads.bulk_actions.assign")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Bulk Status Change Dialog */}
+          <Dialog open={bulkStatusOpen} onOpenChange={setBulkStatusOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {t("leads.bulk_actions.status_modal.title", {
+                    count: selectedCount,
+                  })}
+                </DialogTitle>
+                <DialogDescription>
+                  {t("leads.bulk_actions.status_modal.description")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Label>
+                  {t("leads.bulk_actions.status_modal.select_status")}
+                </Label>
+                <Select value={bulkNewStatus} onValueChange={setBulkNewStatus}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue
+                      placeholder={t(
+                        "leads.bulk_actions.status_modal.select_status"
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuses.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setBulkStatusOpen(false)}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  onClick={handleBulkStatusChange}
+                  disabled={!bulkNewStatus || bulkLoading}
+                >
+                  {bulkLoading
+                    ? t("leads.bulk_actions.status_modal.updating")
+                    : t("leads.bulk_actions.status_modal.update")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Bulk Delete AlertDialog */}
+          <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t("leads.bulk_actions.delete_modal.title", {
+                    count: selectedCount,
+                  })}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("leads.bulk_actions.delete_modal.warning", {
+                    count: selectedCount,
+                  })}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive hover:bg-destructive/90 text-white"
+                  onClick={handleBulkDelete}
+                  disabled={bulkLoading}
+                >
+                  {bulkLoading
+                    ? t("leads.bulk_actions.delete_modal.deleting")
+                    : t("leads.bulk_actions.delete")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <LeadsCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
           <LeadsEditDrawer

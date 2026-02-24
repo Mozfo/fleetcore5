@@ -154,8 +154,8 @@ export function DataTableColumnHeader<TData, TValue>({
             {(canSort || canPin || canGroup) && <DropdownMenuSeparator />}
             <DropdownMenuCheckboxItem
               className="[&_svg]:text-muted-foreground relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
-              checked={!column.getIsVisible()}
-              onClick={() => column.toggleVisibility(false)}
+              checked={column.getIsVisible()}
+              onClick={() => column.toggleVisibility(!column.getIsVisible())}
             >
               <EyeOff />
               {t("table.column_hide")}
