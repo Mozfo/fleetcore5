@@ -18,8 +18,9 @@ import { Resend } from "resend";
 import { EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME } from "@/lib/config/email.config";
 import { URLS, buildAppUrl } from "@/lib/config/urls.config";
 import { defaultLocale } from "@/lib/i18n/locales";
+import { sendNotification } from "@/lib/notifications";
 
-// ── Resend singleton (lazy) ────────────────────────────────────────────────────
+// ── Resend singleton (lazy) — used by Better Auth invitation hook ────────────
 
 let _resend: Resend | null = null;
 
@@ -99,31 +100,10 @@ export const auth = betterAuth({
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
       const firstName = user.name?.split(" ")[0] ?? "";
-      const html = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
-          <div style="background-color: #1a1a2e; padding: 24px 32px; text-align: center;">
-            <span style="font-size: 24px; font-weight: 700; color: #ffffff; text-decoration: none;">FleetCore</span>
-          </div>
-          <div style="padding: 32px;">
-            <p style="color: #525f7f; font-size: 16px; line-height: 24px;">Hi${firstName ? ` ${firstName}` : ""},</p>
-            <p style="color: #525f7f; font-size: 16px; line-height: 24px;">We received a request to reset your password for your FleetCore account.</p>
-            <p style="color: #525f7f; font-size: 16px; line-height: 24px;">Click the button below to reset your password:</p>
-            <p style="margin: 28px 0; text-align: center;">
-              <a href="${url}" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">Reset Password</a>
-            </p>
-            <p style="color: #525f7f; font-size: 16px; line-height: 24px;">This link will expire in <strong>24 hours</strong>.</p>
-            <p style="color: #666; font-size: 14px; line-height: 22px;">If you didn't request this password reset, please ignore this email or contact support if you have concerns.</p>
-            <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 24px 0;" />
-            <p style="color: #8898aa; font-size: 12px; line-height: 16px;">FleetCore — Fleet Management Platform</p>
-          </div>
-        </div>
-      `.trim();
-
-      await getResend().emails.send({
-        from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
-        to: user.email,
-        subject: "Reset your FleetCore password",
-        html,
+      await sendNotification("admin.member.password_reset", user.email, {
+        first_name: firstName,
+        reset_link: url,
+        expiry_hours: "24",
       });
     },
   },
