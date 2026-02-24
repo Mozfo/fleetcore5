@@ -240,9 +240,7 @@ export function MembersListPage() {
   if (total === 0) {
     return (
       <>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Members</h1>
-        </div>
+        <h1 className="text-lg font-semibold tracking-tight">Members</h1>
         <EmptyState
           icon={<Users className="size-16" />}
           title="No members yet"
@@ -264,13 +262,7 @@ export function MembersListPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Members</h1>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 size-4" />
-          Add Member
-        </Button>
-      </div>
+      <h1 className="text-lg font-semibold tracking-tight">Members</h1>
 
       <DataTable
         table={table}
@@ -285,6 +277,10 @@ export function MembersListPage() {
         }
       >
         <DataTableToolbar table={table}>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 size-4" />
+            Add Member
+          </Button>
           <DataTableDensityToggle
             density={density}
             onDensityChange={handleDensityChange}

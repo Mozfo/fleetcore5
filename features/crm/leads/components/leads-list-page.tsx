@@ -354,6 +354,10 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
             >
               <Filter className="size-4" />
             </Button>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 size-4" />
+              {t("leads.actions.new_lead")}
+            </Button>
             <DataTableDensityToggle
               density={density}
               onDensityChange={handleDensityChange}
@@ -385,10 +389,6 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
             >
               <FileSpreadsheet className="mr-2 size-4" />
               Excel
-            </Button>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 size-4" />
-              {t("leads.actions.new_lead")}
             </Button>
           </DataTableToolbar>
 

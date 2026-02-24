@@ -199,9 +199,7 @@ export function TenantsListPage() {
   if (total === 0) {
     return (
       <>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Tenants</h1>
-        </div>
+        <h1 className="text-lg font-semibold tracking-tight">Tenants</h1>
         <EmptyState
           icon={<Building2 className="size-16" />}
           title="No tenants yet"
@@ -223,13 +221,7 @@ export function TenantsListPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Tenants</h1>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 size-4" />
-          Create Tenant
-        </Button>
-      </div>
+      <h1 className="text-lg font-semibold tracking-tight">Tenants</h1>
 
       <DataTable
         table={table}
@@ -244,6 +236,10 @@ export function TenantsListPage() {
         }
       >
         <DataTableToolbar table={table}>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 size-4" />
+            Create Tenant
+          </Button>
           <DataTableDensityToggle
             density={density}
             onDensityChange={handleDensityChange}

@@ -212,9 +212,7 @@ export function InvitationsListPage() {
   if (total === 0) {
     return (
       <>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Invitations</h1>
-        </div>
+        <h1 className="text-lg font-semibold tracking-tight">Invitations</h1>
         <EmptyState
           icon={<Mail className="size-16" />}
           title="No invitations sent"
@@ -236,13 +234,7 @@ export function InvitationsListPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Invitations</h1>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Send className="mr-2 size-4" />
-          Send Invitation
-        </Button>
-      </div>
+      <h1 className="text-lg font-semibold tracking-tight">Invitations</h1>
 
       <DataTable
         table={table}
@@ -257,6 +249,10 @@ export function InvitationsListPage() {
         }
       >
         <DataTableToolbar table={table}>
+          <Button size="sm" onClick={() => setDialogOpen(true)}>
+            <Send className="mr-2 size-4" />
+            Send Invitation
+          </Button>
           <DataTableDensityToggle
             density={density}
             onDensityChange={handleDensityChange}
