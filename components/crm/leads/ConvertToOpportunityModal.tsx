@@ -285,7 +285,7 @@ export function ConvertToOpportunityModal({
                   <Label htmlFor="notes">
                     {t("leads.convert.notes")}{" "}
                     <span className="text-muted-foreground font-normal">
-                      ({t("common:optional")})
+                      ({t("common:optional", "optional")})
                     </span>
                   </Label>
                   <Textarea
@@ -330,7 +330,7 @@ export function ConvertToOpportunityModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            {t("common:cancel")}
+            {t("common:cancel", "Cancel")}
           </Button>
           {isEligible && (
             <Button
@@ -344,7 +344,7 @@ export function ConvertToOpportunityModal({
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("common:converting")}
+                  {t("common:converting", "Converting...")}
                 </>
               ) : (
                 <>

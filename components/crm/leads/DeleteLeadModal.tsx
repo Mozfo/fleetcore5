@@ -218,7 +218,7 @@ export function DeleteLeadModal({
             disabled={isLoading}
             data-testid="delete-lead-cancel"
           >
-            {t("common:cancel")}
+            {t("common:cancel", "Cancel")}
           </Button>
           <Button
             variant="destructive"

@@ -117,7 +117,7 @@ export function BulkAssignModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            {t("common:cancel")}
+            {t("common:cancel", "Cancel")}
           </Button>
           <Button
             onClick={handleConfirm}

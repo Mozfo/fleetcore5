@@ -269,7 +269,7 @@ export function QualifyModal({
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t("leads.qualify.notes")}{" "}
                 <span className="text-muted-foreground font-normal">
-                  ({t("common:optional")})
+                  ({t("common:optional", "optional")})
                 </span>
               </label>
               <Textarea
@@ -305,7 +305,7 @@ export function QualifyModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            {t("common:cancel")}
+            {t("common:cancel", "Cancel")}
           </Button>
           {canQualify && (
             <Button
@@ -315,7 +315,7 @@ export function QualifyModal({
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("common:saving")}
+                  {t("common:saving", "Saving...")}
                 </>
               ) : (
                 <>

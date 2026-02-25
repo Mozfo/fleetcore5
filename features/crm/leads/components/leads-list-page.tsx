@@ -441,7 +441,9 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogCancel>
+                  {t("common:cancel", "Cancel")}
+                </AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive hover:bg-destructive/90 text-white"
                   onClick={handleDeleteLead}
@@ -497,7 +499,7 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
                   variant="outline"
                   onClick={() => setBulkAssignOpen(false)}
                 >
-                  {t("common.cancel")}
+                  {t("common:cancel", "Cancel")}
                 </Button>
                 <Button
                   onClick={handleBulkAssign}
@@ -550,7 +552,7 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
                   variant="outline"
                   onClick={() => setBulkStatusOpen(false)}
                 >
-                  {t("common.cancel")}
+                  {t("common:cancel", "Cancel")}
                 </Button>
                 <Button
                   onClick={handleBulkStatusChange}
@@ -580,7 +582,9 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogCancel>
+                  {t("common:cancel", "Cancel")}
+                </AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive hover:bg-destructive/90 text-white"
                   onClick={handleBulkDelete}

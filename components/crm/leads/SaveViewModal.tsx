@@ -164,9 +164,9 @@ export function SaveViewModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            {t("common:cancel")}
+            {t("common:cancel", "Cancel")}
           </Button>
-          <Button onClick={handleSave}>{t("common:save")}</Button>
+          <Button onClick={handleSave}>{t("common:save", "Save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
