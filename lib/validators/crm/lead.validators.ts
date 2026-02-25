@@ -211,9 +211,11 @@ export const LeadCreationResponseSchema = z.object({
     id: z.string().uuid(),
     lead_code: z.string(),
     email: z.string().email(),
-    // V6.3: 8 statuts
+    // V6.6: 10 statuts
     status: z.enum([
       "new",
+      "email_verified",
+      "callback_requested",
       "demo",
       "proposal_sent",
       "payment_pending",
@@ -395,12 +397,14 @@ export const UpdateLeadSchema = z.object({
     z.string().max(5000, "Message too long").trim().nullable().optional()
   ),
 
-  // V6.3: 8 statuts
+  // V6.6: 10 statuts
   status: z.preprocess(
     emptyToNull,
     z
       .enum([
         "new",
+        "email_verified",
+        "callback_requested",
         "demo",
         "proposal_sent",
         "payment_pending",
@@ -410,7 +414,7 @@ export const UpdateLeadSchema = z.object({
         "disqualified",
       ])
       .describe(
-        "Status must be: new, demo, proposal_sent, payment_pending, converted, lost, nurturing, or disqualified."
+        "Status must be: new, email_verified, callback_requested, demo, proposal_sent, payment_pending, converted, lost, nurturing, or disqualified."
       )
       .nullable()
       .optional()

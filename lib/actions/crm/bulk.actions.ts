@@ -22,11 +22,13 @@ const BulkAssignSchema = z.object({
   assigneeId: z.string().uuid("Invalid assignee ID"),
 });
 
-// V6.3: 8 statuts (removed demo_scheduled, qualified, demo_completed)
+// V6.6: 10 statuts (added email_verified, callback_requested)
 const BulkStatusSchema = z.object({
   leadIds: z.array(z.string().uuid()).min(1, "At least one lead required"),
   status: z.enum([
     "new",
+    "email_verified",
+    "callback_requested",
     "demo",
     "proposal_sent",
     "payment_pending",
@@ -77,7 +79,7 @@ export async function bulkAssignLeadsAction(
     }
 
     // 3. Verify assignee exists and is a member
-    const assignee = await db.clt_members.findUnique({
+    const assignee = await db.adm_members.findUnique({
       where: { id: assigneeId },
       select: { id: true },
     });

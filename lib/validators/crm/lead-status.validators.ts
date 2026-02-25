@@ -8,15 +8,17 @@
 import { z } from "zod";
 
 /**
- * 8 statuts V6.3 du workflow lead (one-call close)
- * Source: crm_settings.lead_status_workflow
+ * 10 statuts V6.6 du workflow lead
+ * Source: crm_settings.lead_status_workflow + DB CHECK constraint
  *
  * V6.3: Suppression qualified/demo_completed (one-call close philosophy)
- * demo_scheduled → demo (renommé)
+ * V6.6: Added email_verified, callback_requested
  */
 export const leadStatusEnum = z.enum([
   "new",
-  "demo", // V6.3: Renommé depuis demo_scheduled
+  "email_verified",
+  "callback_requested",
+  "demo",
   "proposal_sent",
   "payment_pending",
   "converted",
