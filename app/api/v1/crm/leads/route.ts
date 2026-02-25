@@ -27,6 +27,7 @@ import { ZodError } from "zod";
 import { db } from "@/lib/prisma";
 import { requireCrmApiAuth } from "@/lib/auth/api-guard";
 import { AppError } from "@/lib/core/errors";
+import { logger } from "@/lib/logger";
 
 // ── Security: Allowed sort fields (must match DataTable sortable columns) ────
 const ALLOWED_SORT_FIELDS = new Set([
@@ -241,6 +242,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generic server error
+    logger.error({ err: error }, "[POST /crm/leads] Unhandled error");
     return NextResponse.json(
       {
         success: false,
