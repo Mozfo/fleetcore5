@@ -13,16 +13,17 @@ interface UseTenantsTableProps {
 export function useTenantsTable({ columns }: UseTenantsTableProps) {
   const { query, result } = useList<SettingsTenant>({
     resource: "tenants",
+    pagination: { mode: "off" },
   });
 
   const data = result.data;
   const total = result.total ?? 0;
-  const pageCount = Math.ceil(total / 20) || 1;
 
   const { table } = useDataTable({
     data,
     columns,
-    pageCount,
+    pageCount: -1,
+    clientSide: true,
     shallow: true,
     getRowId: (row) => row.id,
     getRowCanExpand: () => true,

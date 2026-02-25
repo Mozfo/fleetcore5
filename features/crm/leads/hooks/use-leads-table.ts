@@ -13,6 +13,7 @@ import {
 import * as React from "react";
 
 import { useDataTable } from "@/hooks/use-data-table";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getSortingStateParser } from "@/lib/parsers";
 import type { Lead } from "../types/lead.types";
 
@@ -256,10 +257,35 @@ export function useLeadsTable({
     [sidebarValues]
   );
 
+  // ── Global search (toolbar input → debounced server-side search) ──────
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const debouncedSetSearch = useDebouncedCallback(
+    (value: string) => setDebouncedSearch(value),
+    300
+  );
+  const handleSearchChange = React.useCallback(
+    (value: string) => debouncedSetSearch(value),
+    [debouncedSetSearch]
+  );
+
+  const searchFilter = React.useMemo<CrudFilter[]>(
+    () =>
+      debouncedSearch
+        ? [
+            {
+              field: "q",
+              operator: "contains" as const,
+              value: debouncedSearch,
+            },
+          ]
+        : [],
+    [debouncedSearch]
+  );
+
   // ── Merge all filters ─────────────────────────────────────────────────
   const filters = React.useMemo<CrudFilter[]>(
-    () => [...columnFilters, ...sidebarFilters],
-    [columnFilters, sidebarFilters]
+    () => [...columnFilters, ...sidebarFilters, ...searchFilter],
+    [columnFilters, sidebarFilters, searchFilter]
   );
 
   // ── Refine data fetching ──────────────────────────────────────────────
@@ -282,6 +308,7 @@ export function useLeadsTable({
     shallow: true,
     getRowId: (row) => row.id,
     getRowCanExpand: () => true,
+    onSearchChange: handleSearchChange,
     initialState: {
       pagination: { pageIndex: 0, pageSize: initialPageSize },
       columnVisibility: savedColumnVisibility ?? DEFAULT_COLUMN_VISIBILITY,

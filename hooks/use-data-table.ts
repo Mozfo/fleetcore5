@@ -28,7 +28,7 @@ import {
 
 import type { FilterFn } from "@tanstack/react-table";
 
-import { fuzzyFilter } from "@/lib/table-filters";
+import { fuzzyFilter, facetedFilter } from "@/lib/table-filters";
 import {
   type Parser,
   type UseQueryStateOptions,
@@ -70,6 +70,10 @@ interface UseDataTableProps<TData>
   throttleMs?: number;
   clearOnDefault?: boolean;
   enableAdvancedFilter?: boolean;
+  /** When true, TanStack handles filtering/sorting/pagination client-side (for small datasets). */
+  clientSide?: boolean;
+  /** Called when the global search (toolbar input) changes. Use for server-side search. */
+  onSearchChange?: (value: string) => void;
   scroll?: boolean;
   shallow?: boolean;
   startTransition?: React.TransitionStartFunction;
@@ -85,6 +89,8 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     throttleMs = THROTTLE_MS,
     clearOnDefault = false,
     enableAdvancedFilter = false,
+    clientSide = false,
+    onSearchChange,
     scroll = false,
     shallow = true,
     startTransition,
@@ -134,7 +140,14 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   const [rowPinning, setRowPinning] = React.useState<RowPinningState>(
     initialState?.rowPinning ?? { top: [], bottom: [] }
   );
-  const [globalFilter, setGlobalFilter] = React.useState<string>("");
+  const [globalFilter, setGlobalFilterRaw] = React.useState<string>("");
+  const setGlobalFilter = React.useCallback(
+    (value: string) => {
+      setGlobalFilterRaw(value);
+      onSearchChange?.(value);
+    },
+    [onSearchChange]
+  );
 
   const [page, setPage] = useQueryState(
     PAGE_KEY,
@@ -289,7 +302,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     ...tableProps,
     columns,
     initialState,
-    pageCount,
+    ...(clientSide ? {} : { pageCount }),
     state: {
       pagination,
       sorting,
@@ -308,7 +321,10 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
       enableColumnFilter: false,
     },
     // Filtering
-    filterFns: { fuzzy: fuzzyFilter as FilterFn<TData> },
+    filterFns: {
+      fuzzy: fuzzyFilter as FilterFn<TData>,
+      faceted: facetedFilter as FilterFn<TData>,
+    },
     globalFilterFn: fuzzyFilter as FilterFn<TData>,
     // Resizing
     enableColumnResizing: true,
@@ -346,9 +362,9 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getExpandedRowModel: getExpandedRowModel(),
     getGroupedRowModel: getGroupedRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
+    manualPagination: !clientSide,
+    manualSorting: !clientSide,
+    manualFiltering: !clientSide,
   });
 
   return { table, shallow, debounceMs, throttleMs };

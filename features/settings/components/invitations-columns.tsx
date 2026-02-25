@@ -10,6 +10,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { facetedFilter } from "@/lib/table-filters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -169,6 +170,7 @@ export function getInvitationsColumns(
           { label: "Rejected", value: "rejected" },
         ],
       },
+      filterFn: facetedFilter,
       enableColumnFilter: true,
     },
     // Inviter

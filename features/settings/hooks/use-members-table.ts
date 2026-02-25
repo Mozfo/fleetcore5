@@ -13,16 +13,17 @@ interface UseMembersTableProps {
 export function useMembersTable({ columns }: UseMembersTableProps) {
   const { query, result } = useList<SettingsMember>({
     resource: "members",
+    pagination: { mode: "off" },
   });
 
   const data = result.data;
   const total = result.total ?? 0;
-  const pageCount = Math.ceil(total / 20) || 1;
 
   const { table } = useDataTable({
     data,
     columns,
-    pageCount,
+    pageCount: -1,
+    clientSide: true,
     shallow: true,
     getRowId: (row) => row.id,
     getRowCanExpand: () => true,

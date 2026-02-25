@@ -27,6 +27,17 @@ export const fuzzyFilter: FilterFn<unknown> = (
   return itemRank.passed;
 };
 
+/**
+ * Filter function for faceted (multi-select) column filters.
+ * Checks if the row's column value is included in the selected filter values array.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const facetedFilter: FilterFn<any> = (row, columnId, filterValue) => {
+  if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+  const rowValue = row.getValue(columnId);
+  return filterValue.includes(String(rowValue));
+};
+
 export const fuzzySort: SortingFn<unknown> = (rowA, rowB, columnId) => {
   let dir = 0;
   if (rowA.columnFiltersMeta[columnId]) {

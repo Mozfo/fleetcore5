@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { facetedFilter } from "@/lib/table-filters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -187,6 +188,7 @@ export function getTenantsColumns({
           { label: "Client", value: "client" },
         ],
       },
+      filterFn: facetedFilter,
       enableColumnFilter: true,
     },
     // Status
@@ -214,6 +216,7 @@ export function getTenantsColumns({
           { label: "Cancelled", value: "cancelled" },
         ],
       },
+      filterFn: facetedFilter,
       enableColumnFilter: true,
     },
     // Member count

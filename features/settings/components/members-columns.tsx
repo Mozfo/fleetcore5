@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { facetedFilter } from "@/lib/table-filters";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -185,6 +186,7 @@ export function getMembersColumns({
           { label: "Member", value: "member" },
         ],
       },
+      filterFn: facetedFilter,
       enableColumnFilter: true,
     },
     // Tenant
@@ -241,6 +243,7 @@ export function getMembersColumns({
           { label: "Suspended", value: "suspended" },
         ],
       },
+      filterFn: facetedFilter,
       enableColumnFilter: true,
     },
     // 2FA
