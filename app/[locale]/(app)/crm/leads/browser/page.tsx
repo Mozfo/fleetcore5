@@ -45,7 +45,7 @@ const fetchAllLeads = cache(
         orderBy: { created_at: "desc" },
         take: 200,
       }),
-      db.clt_members.findMany({
+      db.adm_members.findMany({
         where: {
           status: "active",
           deleted_at: null,

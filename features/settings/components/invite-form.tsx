@@ -5,18 +5,25 @@ import { Send } from "lucide-react";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -24,103 +31,161 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  createInvitationSchema,
-  type CreateInvitationInput,
-} from "../schemas/invitation.schema";
+import { Textarea } from "@/components/ui/textarea";
 
-interface OrgOption {
+interface TenantOption {
   id: string;
   name: string;
 }
 
 interface InviteFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export function InviteForm({ onSuccess }: InviteFormProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [orgs, setOrgs] = React.useState<OrgOption[]>([]);
+const inviteFormSchema = z.object({
+  emails: z.string().min(1, "At least one email is required"),
+  tenantId: z.string().uuid("Please select a tenant"),
+  role: z.enum(["member", "admin", "org:adm_admin"]),
+});
 
-  // Fetch organizations for the select
+type InviteFormInput = z.infer<typeof inviteFormSchema>;
+
+function parseEmails(raw: string): string[] {
+  return raw
+    .split(/[,\n;]+/)
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export function InviteFormDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: InviteFormProps) {
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [tenants, setTenants] = React.useState<TenantOption[]>([]);
+
   React.useEffect(() => {
-    async function loadOrgs() {
+    if (!open) return;
+    async function loadTenants() {
       try {
-        const res = await fetch("/api/adm/settings/organizations");
+        const res = await fetch("/api/admin/tenants");
         if (!res.ok) return;
         const json = await res.json();
-        setOrgs(
-          json.data.map((o: { id: string; name: string }) => ({
-            id: o.id,
-            name: o.name,
+        setTenants(
+          json.data.map((t: { id: string; name: string }) => ({
+            id: t.id,
+            name: t.name,
           }))
         );
       } catch {
         // Non-blocking
       }
     }
-    void loadOrgs();
-  }, []);
+    void loadTenants();
+  }, [open]);
 
-  const form = useForm<CreateInvitationInput>({
-    resolver: zodResolver(createInvitationSchema),
+  const form = useForm<InviteFormInput>({
+    resolver: zodResolver(inviteFormSchema),
     defaultValues: {
-      email: "",
-      organizationId: "",
+      emails: "",
+      tenantId: "",
       role: "member",
     },
   });
 
-  async function onSubmit(values: CreateInvitationInput) {
-    setIsSubmitting(true);
-    try {
-      const res = await fetch("/api/adm/settings/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+  async function onSubmit(values: InviteFormInput) {
+    const emails = parseEmails(values.emails);
+    const invalidEmails = emails.filter((e) => !isValidEmail(e));
+
+    if (emails.length === 0) {
+      form.setError("emails", {
+        message: "At least one valid email is required",
       });
-      const json = await res.json();
-      if (!res.ok) {
-        toast.error(json.error ?? "Failed to send invitation");
-        return;
-      }
-      toast.success("Invitation sent successfully");
-      form.reset();
-      onSuccess?.();
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setIsSubmitting(false);
+      return;
     }
+
+    if (invalidEmails.length > 0) {
+      form.setError("emails", {
+        message: `Invalid emails: ${invalidEmails.join(", ")}`,
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    let successCount = 0;
+    const errors: string[] = [];
+
+    for (const email of emails) {
+      try {
+        const res = await fetch("/api/admin/invitations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            tenantId: values.tenantId,
+            role: values.role,
+          }),
+        });
+        const json = await res.json();
+        if (res.ok) {
+          successCount++;
+        } else {
+          errors.push(`${email}: ${json.error ?? "Failed"}`);
+        }
+      } catch {
+        errors.push(`${email}: Network error`);
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} invitation(s) sent successfully`);
+      form.reset();
+      onOpenChange(false);
+      onSuccess?.();
+    }
+    if (errors.length > 0) {
+      toast.error(errors.join("\n"));
+    }
+
+    setIsSubmitting(false);
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Send className="size-5" />
-          Send Invitation
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Send className="size-5" />
+            Send Invitations
+          </DialogTitle>
+        </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-col gap-4 sm:flex-row sm:items-end"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="emails"
               render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Email</FormLabel>
+                <FormItem>
+                  <FormLabel>Emails</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="user@example.com"
+                    <Textarea
+                      className="placeholder:opacity-50"
+                      placeholder={"user1@example.com\nuser2@example.com"}
+                      rows={3}
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    One or more emails separated by commas, semicolons, or new
+                    lines.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -128,20 +193,20 @@ export function InviteForm({ onSuccess }: InviteFormProps) {
 
             <FormField
               control={form.control}
-              name="organizationId"
+              name="tenantId"
               render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Organization</FormLabel>
+                <FormItem>
+                  <FormLabel>Tenant</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select org" />
+                        <SelectValue placeholder="Select tenant" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {orgs.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
+                      {tenants.map((tenant) => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -155,12 +220,9 @@ export function InviteForm({ onSuccess }: InviteFormProps) {
               control={form.control}
               name="role"
               render={({ field }) => (
-                <FormItem className="w-40">
+                <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Role" />
@@ -177,13 +239,23 @@ export function InviteForm({ onSuccess }: InviteFormProps) {
               )}
             />
 
-            <Button type="submit" disabled={isSubmitting} className="shrink-0">
-              <Send className="mr-2 size-4" />
-              {isSubmitting ? "Sending..." : "Invite"}
-            </Button>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                <Send className="mr-2 size-4" />
+                {isSubmitting ? "Sending..." : "Send Invitations"}
+              </Button>
+            </DialogFooter>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -144,7 +144,7 @@ export class NotificationLogRepository extends BaseRepository<adm_notification_l
   /**
    * Find logs by recipient ID
    *
-   * @param recipientId - Recipient member ID (clt_members.id)
+   * @param recipientId - Recipient member ID (adm_members.id)
    * @param tenantId - Optional tenant ID for filtering
    * @param options - Pagination options
    * @returns Paginated list of notification logs

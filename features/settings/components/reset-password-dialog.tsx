@@ -31,18 +31,15 @@ export function ResetPasswordDialog({
     if (!userId) return;
     setIsLoading(true);
     try {
-      const res = await fetch(
-        `/api/adm/settings/users/${userId}/reset-password`,
-        { method: "POST" }
-      );
+      const res = await fetch(`/api/admin/members/${userId}/reset-password`, {
+        method: "POST",
+      });
       const json = await res.json();
       if (!res.ok) {
         toast.error(json.error ?? "Failed to reset password");
         return;
       }
-      toast.success(`Password reset. Temporary: ${json.tempPassword}`, {
-        duration: 15000,
-      });
+      toast.success("Password reset email sent to the member");
       onOpenChange(false);
     } catch {
       toast.error("Network error");
@@ -57,14 +54,14 @@ export function ResetPasswordDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Reset Password</AlertDialogTitle>
           <AlertDialogDescription>
-            This will generate a temporary password. Share it securely with the
-            user. The user should change it on their next login.
+            This will send a password reset link to the member&apos;s email
+            address. They will be able to set a new password.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={handleReset} disabled={isLoading}>
-            {isLoading ? "Resetting..." : "Reset Password"}
+            {isLoading ? "Sending..." : "Send Reset Link"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

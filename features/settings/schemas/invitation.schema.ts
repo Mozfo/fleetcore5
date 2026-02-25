@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
-  organizationId: z.string().uuid("Invalid organization"),
+  tenantId: z.string().uuid("Please select a tenant"),
   role: z.enum(["member", "admin", "org:adm_admin"]),
 });
 

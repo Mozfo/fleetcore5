@@ -39,7 +39,7 @@ async function testCreateOpportunityWithAssignedTo(): Promise<void> {
     }
 
     // Get a valid employee for assigned_to
-    const employee = await db.clt_members.findFirst({
+    const employee = await db.adm_members.findFirst({
       where: { tenant_id: lead.tenant_id, deleted_at: null },
       select: { id: true },
     });
@@ -115,7 +115,7 @@ async function testCreateActivityOnLead(): Promise<void> {
     }
 
     // Get an employee for created_by
-    const employee = await db.clt_members.findFirst({
+    const employee = await db.adm_members.findFirst({
       where: { tenant_id: lead.tenant_id, deleted_at: null },
       select: { id: true },
     });
@@ -194,7 +194,7 @@ async function testCreateActivityOnOpportunity(): Promise<void> {
     }
 
     // Get an employee for created_by
-    const employee = await db.clt_members.findFirst({
+    const employee = await db.adm_members.findFirst({
       where: { tenant_id: opportunity.tenant_id, deleted_at: null },
       select: { id: true },
     });

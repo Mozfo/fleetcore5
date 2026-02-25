@@ -195,7 +195,7 @@ export class PostgresContainerManager {
     await this.prismaClient.$executeRaw`TRUNCATE TABLE adm_roles CASCADE`;
 
     // Core admin tables
-    await this.prismaClient.$executeRaw`TRUNCATE TABLE clt_members CASCADE`;
+    await this.prismaClient.$executeRaw`TRUNCATE TABLE adm_members CASCADE`;
     await this.prismaClient.$executeRaw`TRUNCATE TABLE adm_tenants CASCADE`;
 
     // Seed minimal test data
@@ -216,13 +216,13 @@ export class PostgresContainerManager {
 
     // Create SYSTEM user (used for all automated operations - audit trail best practice)
     await this.prismaClient.$executeRaw`
-      INSERT INTO clt_members (id, tenant_id, email, auth_user_id, phone)
+      INSERT INTO adm_members (id, tenant_id, email, auth_user_id, phone)
       VALUES (${SYSTEM_USER_ID}::uuid, ${SYSTEM_TENANT_ID}::uuid, 'system@fleetcore.internal', ${SYSTEM_USER_ID}::uuid, '+33000000000')
     `;
 
     // Create SYSTEM provider employee (used for tenant lifecycle events)
     await this.prismaClient.$executeRaw`
-      INSERT INTO clt_members (id, auth_user_id, first_name, last_name, email, status)
+      INSERT INTO adm_members (id, auth_user_id, first_name, last_name, email, status)
       VALUES (${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, ${SYSTEM_PROVIDER_EMPLOYEE_ID}::uuid, 'System', NULL, 'system@fleetcore.internal', 'active')
     `;
 
@@ -234,13 +234,13 @@ export class PostgresContainerManager {
 
     // Create test provider employee (required for sent_by in invitations)
     await this.prismaClient.$executeRaw`
-      INSERT INTO clt_members (id, auth_user_id, first_name, last_name, email, status)
+      INSERT INTO adm_members (id, auth_user_id, first_name, last_name, email, status)
       VALUES (${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, ${TEST_DATA.PROVIDER_EMPLOYEE_ID}::uuid, 'Test', 'Admin', 'admin@fleetcore.com', 'active')
     `;
 
     // Create test member
     await this.prismaClient.$executeRaw`
-      INSERT INTO clt_members (id, tenant_id, email, auth_user_id, phone)
+      INSERT INTO adm_members (id, tenant_id, email, auth_user_id, phone)
       VALUES (${TEST_DATA.MEMBER_ID}::uuid, ${TEST_DATA.ACTIVE_TENANT_ID}::uuid, 'test@example.com', ${TEST_DATA.MEMBER_ID}::uuid, '+33612345678')
     `;
 

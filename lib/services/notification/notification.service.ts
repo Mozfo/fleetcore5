@@ -191,7 +191,7 @@ export class NotificationService extends BaseService {
    * Select template with ZÉRO HARDCODING locale cascade (6 levels)
    *
    * ALGORITHME CASCADE :
-   * 1. clt_members.preferred_language (user preference)
+   * 1. adm_members.preferred_language (user preference)
    * 2. adm_tenant_settings.default_locale (future - tenant default)
    * 3. adm_tenants.country_code → dir_country_locales.primary_locale
    * 4. crm_leads.country_code → dir_country_locales.primary_locale
@@ -259,8 +259,8 @@ export class NotificationService extends BaseService {
    * CASCADE 2 HELPER: Get user's preferred locale
    *
    * Checks BOTH:
-   * 1. clt_members.preferred_language (for tenant members)
-   * 2. clt_members.preferred_language (for FleetCore employees without tenant)
+   * 1. adm_members.preferred_language (for tenant members)
+   * 2. adm_members.preferred_language (for FleetCore employees without tenant)
    *
    * @param userId - User UUID (can be member ID or auth_user_id for employees)
    * @returns Locale string or null if not configured
@@ -270,8 +270,8 @@ export class NotificationService extends BaseService {
    */
   private async getUserPreferredLocale(userId: string): Promise<string | null> {
     try {
-      // Check clt_members first (tenant members)
-      const member = await this.prisma.clt_members.findUnique({
+      // Check adm_members first (tenant members)
+      const member = await this.prisma.adm_members.findUnique({
         where: { id: userId },
         select: { preferred_language: true },
       });
@@ -280,8 +280,8 @@ export class NotificationService extends BaseService {
         return member.preferred_language;
       }
 
-      // Fallback: Check clt_members by auth_user_id (FleetCore staff without tenant)
-      const memberByAuth = await this.prisma.clt_members.findFirst({
+      // Fallback: Check adm_members by auth_user_id (FleetCore staff without tenant)
+      const memberByAuth = await this.prisma.adm_members.findFirst({
         where: { auth_user_id: userId },
         select: { preferred_language: true },
       });

@@ -247,7 +247,7 @@ export function DataTable<TData>({
       <div className="relative flex flex-1">
         <div className="absolute inset-0 flex overflow-hidden rounded-lg border">
           <ScrollArea ref={scrollAreaRef} className="h-full w-full">
-            <Table noWrapper style={{ width: table.getCenterTotalSize() }}>
+            <Table noWrapper style={{ minWidth: table.getCenterTotalSize() }}>
               <TableHeader className="bg-muted sticky top-0 z-10">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>

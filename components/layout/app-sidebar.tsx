@@ -13,6 +13,11 @@ import { useCrmFeatureFlags } from "@/lib/hooks/useCrmFeatureFlags";
 import { hasPermission as checkPermission } from "@/lib/config/permissions";
 import { useIsTablet } from "@/hooks/use-mobile";
 import type { ModuleConfig, SubNavItem } from "@/lib/config/modules";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import {
   Sidebar,
@@ -200,19 +205,32 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                                 <DropdownMenuLabel>
                                   {t(mod.labelKey)}
                                 </DropdownMenuLabel>
-                                {visibleSubs.map((sub) => (
-                                  <DropdownMenuItem
-                                    className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10! active:bg-[var(--primary)]/10!"
-                                    key={sub.key}
-                                    asChild
-                                  >
-                                    <Link
-                                      href={localizedPath(sub.href.slice(1))}
+                                {visibleSubs.map((sub) =>
+                                  sub.disabled ? (
+                                    <DropdownMenuItem
+                                      className="text-muted-foreground cursor-not-allowed opacity-50"
+                                      key={sub.key}
+                                      disabled
                                     >
                                       {t(sub.labelKey)}
-                                    </Link>
-                                  </DropdownMenuItem>
-                                ))}
+                                      <span className="text-muted-foreground ml-auto text-[10px]">
+                                        Coming soon
+                                      </span>
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10! active:bg-[var(--primary)]/10!"
+                                      key={sub.key}
+                                      asChild
+                                    >
+                                      <Link
+                                        href={localizedPath(sub.href.slice(1))}
+                                      >
+                                        {t(sub.labelKey)}
+                                      </Link>
+                                    </DropdownMenuItem>
+                                  )
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -236,17 +254,32 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                               <SidebarMenuSub>
                                 {visibleSubs.map((sub) => (
                                   <SidebarMenuSubItem key={sub.key}>
-                                    <SidebarMenuSubButton
-                                      className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10 active:bg-[var(--primary)]/10"
-                                      isActive={isSubNavActive(sub)}
-                                      asChild
-                                    >
-                                      <Link
-                                        href={localizedPath(sub.href.slice(1))}
+                                    {sub.disabled ? (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <SidebarMenuSubButton className="text-muted-foreground cursor-not-allowed opacity-50">
+                                            <span>{t(sub.labelKey)}</span>
+                                          </SidebarMenuSubButton>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right">
+                                          Coming soon
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    ) : (
+                                      <SidebarMenuSubButton
+                                        className="hover:text-foreground active:text-foreground hover:bg-[var(--primary)]/10 active:bg-[var(--primary)]/10"
+                                        isActive={isSubNavActive(sub)}
+                                        asChild
                                       >
-                                        <span>{t(sub.labelKey)}</span>
-                                      </Link>
-                                    </SidebarMenuSubButton>
+                                        <Link
+                                          href={localizedPath(
+                                            sub.href.slice(1)
+                                          )}
+                                        >
+                                          <span>{t(sub.labelKey)}</span>
+                                        </Link>
+                                      </SidebarMenuSubButton>
+                                    )}
                                   </SidebarMenuSubItem>
                                 ))}
                               </SidebarMenuSub>

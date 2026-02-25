@@ -42,7 +42,7 @@ async function main() {
 
   // ── Resolve CEO email from DB ────────────────────────────────────────────
   log("Resolving CEO...");
-  const ceo = await prisma.clt_members.findFirst({
+  const ceo = await prisma.adm_members.findFirst({
     where: {
       tenant_id: hqId,
       status: "active",

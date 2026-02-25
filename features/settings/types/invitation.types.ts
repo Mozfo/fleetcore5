@@ -4,8 +4,8 @@ export interface SettingsInvitation {
   email: string;
   role: string | null;
   status: string;
-  organizationId: string;
-  organizationName: string;
+  tenantId: string;
+  tenantName: string;
   inviterName: string | null;
   expiresAt: string;
   createdAt: string;

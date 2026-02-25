@@ -245,7 +245,7 @@ export async function createActivityAction(
     }
 
     // 7. Get current member ID for created_by
-    const member = await db.clt_members.findFirst({
+    const member = await db.adm_members.findFirst({
       where: {
         auth_user_id: userId,
         tenant_id: session.orgId,

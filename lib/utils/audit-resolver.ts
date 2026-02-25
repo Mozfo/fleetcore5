@@ -3,10 +3,10 @@
  *
  * Resolves auth session IDs to database UUIDs for audit logging.
  * Required because adm_audit_logs has FK constraints to tables
- * (adm_tenants, clt_members) whose primary keys differ from the auth session IDs.
+ * (adm_tenants, adm_members) whose primary keys differ from the auth session IDs.
  *
  * Uses shared-ID pattern: auth_organization.id = adm_tenants.id
- * Queries match auth_user_id (Better Auth) on clt_members.
+ * Queries match auth_user_id (Better Auth) on adm_members.
  *
  * @module lib/utils/audit-resolver
  */
@@ -60,7 +60,7 @@ export async function resolveTenantId(
 }
 
 /**
- * Resolve user ID to clt_members UUID.
+ * Resolve user ID to adm_members UUID.
  * Resolves auth_user_id (Better Auth) to the member record.
  *
  * @param userId - User ID from auth session
@@ -72,7 +72,7 @@ export async function resolveMemberId(
   tenantId?: string
 ): Promise<MemberLookupResult | null> {
   try {
-    const member = await db.clt_members.findFirst({
+    const member = await db.adm_members.findFirst({
       where: {
         auth_user_id: userId,
         ...(tenantId ? { tenant_id: tenantId } : {}),
@@ -90,7 +90,7 @@ export async function resolveMemberId(
 }
 
 /**
- * Resolve user ID to clt_members UUID.
+ * Resolve user ID to adm_members UUID.
  * Resolves auth_user_id (Better Auth) to the member record (employee lookup).
  *
  * @param userId - User ID from auth session
@@ -100,7 +100,7 @@ export async function resolveEmployeeId(
   userId: string
 ): Promise<EmployeeLookupResult | null> {
   try {
-    const member = await db.clt_members.findFirst({
+    const member = await db.adm_members.findFirst({
       where: {
         auth_user_id: userId,
         deleted_at: null,

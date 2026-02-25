@@ -24,7 +24,7 @@ async function main() {
   });
 
   // System User (for automated operations audit trail)
-  const systemUser = await prisma.clt_members.upsert({
+  const systemUser = await prisma.adm_members.upsert({
     where: { id: "00000000-0000-0000-0000-000000000001" },
     update: {},
     create: {
@@ -83,7 +83,7 @@ async function main() {
   // ===================================
   console.log("👥 Creating members...");
 
-  const dubaiAdmin = await prisma.clt_members.upsert({
+  const dubaiAdmin = await prisma.adm_members.upsert({
     where: { id: "660e8400-e29b-41d4-a716-446655440001" },
     update: {},
     create: {
@@ -102,7 +102,7 @@ async function main() {
     },
   });
 
-  const parisAdmin = await prisma.clt_members.upsert({
+  const parisAdmin = await prisma.adm_members.upsert({
     where: { id: "660e8400-e29b-41d4-a716-446655440002" },
     update: {},
     create: {

@@ -14,7 +14,7 @@ import type {
   crm_lead_activities,
   crm_countries,
   dir_country_locales,
-  clt_members,
+  adm_members,
   crm_lead_sources,
 } from "@prisma/client";
 
@@ -76,7 +76,7 @@ export interface CountryWithLocale {
  */
 export interface LeadWithRelations extends crm_leads {
   assigned_member: Pick<
-    clt_members,
+    adm_members,
     "id" | "first_name" | "last_name" | "email"
   > | null;
   crm_lead_sources: Pick<crm_lead_sources, "id" | "name_translations"> | null;

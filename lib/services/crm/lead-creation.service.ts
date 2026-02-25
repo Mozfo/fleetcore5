@@ -51,7 +51,7 @@ export interface LeadCreationResult {
 
 /**
  * Eligible employee structure for assignment
- * Matches clt_members table structure
+ * Matches adm_members table structure
  */
 interface EligibleEmployee {
   id: string;
@@ -194,7 +194,7 @@ export class LeadCreationService {
     const priority = await this.determinePriority(scoring.qualification_score);
 
     // STEP 4: Fetch active members for assignment
-    const activeEmployees = await prisma.clt_members.findMany({
+    const activeEmployees = await prisma.adm_members.findMany({
       where: {
         status: "active",
         deleted_at: null,

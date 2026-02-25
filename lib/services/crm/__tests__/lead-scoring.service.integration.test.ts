@@ -55,7 +55,7 @@ describeIntegration("LeadScoringService Integration Tests", () => {
     testProviderId = tenant.id;
 
     // Create test employee for assignment
-    const employee = await prisma.clt_members.create({
+    const employee = await prisma.adm_members.create({
       data: {
         email: `test-scoring-${Date.now()}@fleetcore.test`,
         first_name: "Test",
@@ -103,7 +103,7 @@ describeIntegration("LeadScoringService Integration Tests", () => {
     // Cleanup test employee
     if (testEmployeeId) {
       try {
-        await prisma.clt_members.delete({
+        await prisma.adm_members.delete({
           where: { id: testEmployeeId },
         });
       } catch {

@@ -445,7 +445,7 @@ export class LeadRepository
 
       const creators =
         creatorIds.length > 0
-          ? await this.prisma.clt_members.findMany({
+          ? await this.prisma.adm_members.findMany({
               where: { id: { in: creatorIds } },
               select: { id: true, first_name: true, last_name: true },
             })

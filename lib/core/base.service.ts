@@ -260,7 +260,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    * @param options.tenantId - Tenant ID for multi-tenant isolation
    * @param options.action - Action performed (create, update, delete, restore, etc.)
    * @param options.entityId - ID of the entity affected
-   * @param options.memberId - Member who performed the action (clt_members.id)
+   * @param options.memberId - Member who performed the action (adm_members.id)
    * @param options.authUserId - Optional auth user ID for correlation
    * @param options.changes - Optional object with before/after values
    * @param options.snapshot - Optional full entity snapshot
@@ -333,7 +333,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    *
    * @param data - Entity data to create
    * @param tenantId - Tenant ID for multi-tenant isolation
-   * @param memberId - Member performing the creation (clt_members.id)
+   * @param memberId - Member performing the creation (adm_members.id)
    * @param authUserId - Optional auth user ID for audit trail
    * @returns Created entity with typed fields
    *
@@ -401,7 +401,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    * @param id - Entity ID to update
    * @param data - Partial update data
    * @param tenantId - Tenant ID for multi-tenant isolation
-   * @param memberId - Member performing the update (clt_members.id)
+   * @param memberId - Member performing the update (adm_members.id)
    * @param authUserId - Optional auth user ID for audit trail
    * @returns Updated entity with typed fields
    *
@@ -480,7 +480,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    *
    * @param id - Entity ID to soft delete
    * @param tenantId - Tenant ID for multi-tenant isolation
-   * @param memberId - Member performing the deletion (clt_members.id)
+   * @param memberId - Member performing the deletion (adm_members.id)
    * @param authUserId - Optional auth user ID for audit trail
    * @param reason - Optional deletion reason (stored in deletion_reason column)
    *
@@ -542,7 +542,7 @@ export abstract class BaseService<T = Record<string, unknown>> {
    *
    * @param id - Entity ID to restore
    * @param tenantId - Tenant ID for multi-tenant isolation
-   * @param memberId - Member performing the restoration (clt_members.id)
+   * @param memberId - Member performing the restoration (adm_members.id)
    * @param authUserId - Optional auth user ID for audit trail
    * @param reason - Optional restoration reason (for audit trail)
    * @returns Restored entity with typed fields

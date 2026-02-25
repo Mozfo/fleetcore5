@@ -3,7 +3,7 @@
  *
  * Simplified schema containing only tables needed for BaseService/BaseRepository tests:
  * - adm_tenants (for validateTenant tests)
- * - clt_members (for soft-delete/restore tests) - V6.2-3 rename from adm_members
+ * - adm_members (for soft-delete/restore tests)
  * - adm_audit_logs (for audit logging tests)
  * - flt_drivers (example entity for testing soft-delete/restore)
  *
@@ -40,13 +40,13 @@ model adm_tenants {
   updated_at              DateTime              @default(now())
   updated_by              String                @default("system")
   deleted_at              DateTime?
-  clt_members             clt_members[]
+  adm_members             adm_members[]
   adm_audit_logs          adm_audit_logs[]
   flt_drivers             flt_drivers[]
 }
 
-// V6.2-3: Renamed from adm_members to clt_members (Module CLT)
-model clt_members {
+// adm_members — Admin module members
+model adm_members {
   id                      String                @id @default(cuid())
   tenant_id               String
   auth_user_id            String?               @unique
@@ -86,7 +86,7 @@ model adm_audit_logs {
   session_id              String?
   auth_user_id            String?
   adm_tenants             adm_tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  clt_members             clt_members?          @relation(fields: [member_id], references: [id])
+  adm_members             adm_members?          @relation(fields: [member_id], references: [id])
 }
 
 // Example entity for testing soft-delete/restore

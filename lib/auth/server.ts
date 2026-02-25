@@ -9,6 +9,7 @@
  */
 
 import { headers } from "next/headers";
+import { cache } from "react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -21,6 +22,8 @@ export interface AuthSession {
   orgId: string | null;
   /** User's role in the active organization (from auth_member) */
   orgRole: string | null;
+  /** Whether active org is headquarters */
+  isHq: boolean;
   /** User profile data */
   user: {
     id: string;
@@ -50,45 +53,65 @@ export interface TenantContext {
 /**
  * Get the current authenticated session.
  *
- * Replaces: `const { userId, orgId } = await auth()`.
+ * Wrapped with React.cache() to deduplicate within the same server request.
+ * Combined with Better Auth cookieCache, this avoids redundant DB calls.
+ *
  * Returns null if not authenticated (no throw).
  */
-export async function getSession(): Promise<AuthSession | null> {
-  const result = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!result) return null;
-
-  const { user, session } = result;
-  const orgId = session.activeOrganizationId ?? null;
-
-  // Fetch org role from auth_member if user has an active organization
-  let orgRole: string | null = null;
-  if (orgId) {
-    const member = await prisma.auth_member.findFirst({
-      where: {
-        user_id: user.id,
-        organization_id: orgId,
-      },
-      select: { role: true },
+export const getSession = cache(
+  async function getSession(): Promise<AuthSession | null> {
+    const result = await auth.api.getSession({
+      headers: await headers(),
     });
-    orgRole = member?.role ?? null;
-  }
 
-  return {
-    userId: user.id,
-    orgId,
-    orgRole,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      emailVerified: user.emailVerified,
-      image: user.image ?? null,
-    },
-  };
-}
+    if (!result) return null;
+
+    const { user, session } = result;
+    const orgId = session.activeOrganizationId ?? null;
+
+    // Fetch org role + org metadata in PARALLEL (not sequential)
+    let orgRole: string | null = null;
+    let isHq = false;
+
+    if (orgId) {
+      const [member, org] = await Promise.all([
+        prisma.auth_member.findFirst({
+          where: { user_id: user.id, organization_id: orgId },
+          select: { role: true },
+        }),
+        prisma.auth_organization.findUnique({
+          where: { id: orgId },
+          select: { metadata: true },
+        }),
+      ]);
+
+      orgRole = member?.role ?? null;
+
+      if (org?.metadata) {
+        try {
+          const meta = JSON.parse(org.metadata) as Record<string, unknown>;
+          isHq = meta?.is_headquarters === true;
+        } catch {
+          // Invalid JSON in metadata
+        }
+      }
+    }
+
+    return {
+      userId: user.id,
+      orgId,
+      orgRole,
+      isHq,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        image: user.image ?? null,
+      },
+    };
+  }
+);
 
 // -- Auth Guards --------------------------------------------------------------
 
@@ -123,32 +146,11 @@ export async function requireCrmAuth(): Promise<CrmAuthSession> {
     throw new Error("AUTH: No active organization");
   }
 
-  // DB-driven HQ check -- replaces FLEETCORE_ADMIN_ORG_ID env var
-  const org = await prisma.auth_organization.findUnique({
-    where: { id: session.orgId },
-    select: { metadata: true },
-  });
-
-  if (!org) {
-    throw new Error("AUTH: Organization not found");
-  }
-
-  // metadata is a String? field -- parse as JSON
-  let isHq = false;
-  if (org.metadata) {
-    try {
-      const meta = JSON.parse(org.metadata) as Record<string, unknown>;
-      isHq = meta?.is_headquarters === true;
-    } catch {
-      // Invalid JSON in metadata -- not HQ
-    }
-  }
-
-  if (!isHq) {
+  // isHq is already resolved in getSession() — no extra DB query needed
+  if (!session.isHq) {
     throw new Error("AUTH: Not a headquarters organization");
   }
 
-  // Safe assertion: orgId verified non-null above (line 124 throws if null)
   return session as CrmAuthSession;
 }
 

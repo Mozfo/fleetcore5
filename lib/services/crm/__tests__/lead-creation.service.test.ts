@@ -247,8 +247,8 @@ describe("LeadCreationService", () => {
       return Promise.resolve(null);
     });
 
-    // Mock prisma.clt_members.findMany
-    vi.spyOn(prisma.clt_members, "findMany").mockResolvedValue([mockEmployee]);
+    // Mock prisma.adm_members.findMany
+    vi.spyOn(prisma.adm_members, "findMany").mockResolvedValue([mockEmployee]);
 
     // Note: lead_code generation removed - PostgreSQL trigger (trg_set_lead_code) handles it
     // Format: L-XXXXXX (random alphanumeric, no sequential numbers for security)
@@ -624,7 +624,7 @@ describe("LeadCreationService", () => {
 
     it("should handle no available employees gracefully", async () => {
       // Mock empty employees
-      vi.spyOn(prisma.clt_members, "findMany").mockResolvedValue([]);
+      vi.spyOn(prisma.adm_members, "findMany").mockResolvedValue([]);
 
       const input: CreateLeadInput = {
         email: "noassign@test.com",

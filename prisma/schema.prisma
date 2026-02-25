@@ -27,7 +27,7 @@ model adm_audit_logs {
   new_values      Json?
   retention_until DateTime?      @db.Timestamptz(6)
   tags            String[]       @default([])
-  clt_members     clt_members?   @relation(fields: [member_id], references: [id])
+  adm_members     adm_members?   @relation(fields: [member_id], references: [id])
   adm_tenants     adm_tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 
   @@index([changes], map: "adm_audit_logs_changes_gin", type: Gin)
@@ -56,7 +56,7 @@ model adm_invitations {
   sent_by               String            @db.Uuid
   created_at            DateTime          @default(now()) @db.Timestamptz(6)
   updated_at            DateTime          @default(now()) @db.Timestamptz(6)
-  clt_members           clt_members?      @relation(fields: [accepted_by_member_id], references: [id], map: "fk_adm_invitations_accepted_by")
+  adm_members           adm_members?      @relation(fields: [accepted_by_member_id], references: [id], map: "fk_adm_invitations_accepted_by")
   adm_tenants           adm_tenants       @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_adm_invitations_tenant")
 }
 
@@ -82,13 +82,13 @@ model adm_member_roles {
   scope_type        scope_type?
   scope_id          String?      @db.Uuid
   priority          Int?         @default(0)
-  migzzno           clt_members? @relation("M_63d3ka", fields: [created_by], references: [id])
-  mmk6x6z           clt_members? @relation("M_yxttad", fields: [deleted_by], references: [id])
-  meqd2ua           clt_members  @relation("M_l29jw", fields: [member_id], references: [id], onDelete: Cascade)
+  migzzno           adm_members? @relation("M_63d3ka", fields: [created_by], references: [id])
+  mmk6x6z           adm_members? @relation("M_yxttad", fields: [deleted_by], references: [id])
+  meqd2ua           adm_members  @relation("M_l29jw", fields: [member_id], references: [id], onDelete: Cascade)
   adm_roles         adm_roles    @relation(fields: [role_id], references: [id], onDelete: Cascade)
   adm_tenants       adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mqr44k7           clt_members? @relation("M_edh8gt", fields: [updated_by], references: [id])
-  mkt8pp6           clt_members? @relation("M_7rwncc", fields: [assigned_by], references: [id], map: "fk_adm_member_roles_assigned_by")
+  mqr44k7           adm_members? @relation("M_edh8gt", fields: [updated_by], references: [id])
+  mkt8pp6           adm_members? @relation("M_7rwncc", fields: [assigned_by], references: [id], map: "fk_adm_member_roles_assigned_by")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -107,11 +107,11 @@ model adm_member_sessions {
   expires_at  DateTime    @db.Timestamptz(6)
   revoked_at  DateTime?   @db.Timestamptz(6)
   created_at  DateTime    @default(now()) @db.Timestamptz(6)
-  clt_members clt_members @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_adm_member_sessions_member")
+  adm_members adm_members @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_adm_member_sessions_member")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model clt_members {
+model adm_members {
   id                       String                         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id                String                         @db.Uuid
   email                    String                         @db.Citext
@@ -147,14 +147,14 @@ model clt_members {
   mnu12cx                  adm_member_roles[]             @relation("M_edh8gt")
   mfa8yn6                  adm_member_roles[]             @relation("M_7rwncc")
   adm_member_sessions      adm_member_sessions[]
-  mye3m4o                  clt_members?                   @relation("M_34756q", fields: [created_by], references: [id])
-  lstmy9y06f               clt_members[]                  @relation("M_34756q")
-  m6n3apz                  clt_members?                   @relation("M_x44ab7", fields: [deleted_by], references: [id])
-  lstm4a0v1y               clt_members[]                  @relation("M_x44ab7")
+  mye3m4o                  adm_members?                   @relation("M_34756q", fields: [created_by], references: [id])
+  lstmy9y06f               adm_members[]                  @relation("M_34756q")
+  m6n3apz                  adm_members?                   @relation("M_x44ab7", fields: [deleted_by], references: [id])
+  lstm4a0v1y               adm_members[]                  @relation("M_x44ab7")
   adm_tenants              adm_tenants                    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mscwaxx                  clt_members?                   @relation("M_beba39", fields: [updated_by], references: [id])
-  lstmpztv9w               clt_members[]                  @relation("M_beba39")
-  rcks0ew                  adm_roles?                     @relation("R__yz9vrz", fields: [default_role_id], references: [id], map: "fk_clt_members_default_role")
+  mscwaxx                  adm_members?                   @relation("M_beba39", fields: [updated_by], references: [id])
+  lstmpztv9w               adm_members[]                  @relation("M_beba39")
+  rcks0ew                  adm_roles?                     @relation("R__yz9vrz", fields: [default_role_id], references: [id], map: "fk_adm_members_default_role")
   matpo0q                  adm_notification_logs[]        @relation("M_1wlxkb")
   mu7h8tx                  adm_notification_logs[]        @relation("M_vwj2os")
   mxxbfwn                  adm_notification_logs[]        @relation("M_e1v7ag")
@@ -310,7 +310,7 @@ model clt_members {
   @@index([deleted_at])
   @@index([email])
   @@index([last_login_at])
-  @@index([metadata], map: "clt_members_metadata_gin", type: Gin)
+  @@index([metadata], map: "adm_members_metadata_gin", type: Gin)
   @@index([tenant_id])
   @@index([updated_by])
 }
@@ -347,11 +347,11 @@ model adm_notification_logs {
   deleted_at      DateTime?            @db.Timestamptz(6)
   deleted_by      String?              @db.Uuid
   deletion_reason String?
-  m93za0h         clt_members?         @relation("M_1wlxkb", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_created_by")
-  mvx7mu6         clt_members?         @relation("M_vwj2os", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_deleted_by")
-  mjpgsny         clt_members?         @relation("M_e1v7ag", fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_recipient_id")
+  m93za0h         adm_members?         @relation("M_1wlxkb", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_created_by")
+  mvx7mu6         adm_members?         @relation("M_vwj2os", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_deleted_by")
+  mjpgsny         adm_members?         @relation("M_e1v7ag", fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_recipient_id")
   adm_tenants     adm_tenants?         @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_adm_notification_logs_tenant")
-  mhe3ex0         clt_members?         @relation("M_a6q2gu", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_updated_by")
+  mhe3ex0         adm_members?         @relation("M_a6q2gu", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_adm_notification_logs_updated_by")
 
   @@index([channel], map: "idx_adm_notification_logs_channel")
   @@index([created_at], map: "idx_adm_notification_logs_created_at")
@@ -413,7 +413,7 @@ model adm_role_versions {
   changed_by           String?      @db.Uuid
   change_reason        String?
   created_at           DateTime     @default(now()) @db.Timestamptz(6)
-  clt_members          clt_members? @relation(fields: [changed_by], references: [id], map: "fk_adm_role_versions_changed_by")
+  adm_members          adm_members? @relation(fields: [changed_by], references: [id], map: "fk_adm_role_versions_changed_by")
   adm_roles            adm_roles    @relation(fields: [role_id], references: [id], onDelete: Cascade, map: "fk_adm_role_versions_role")
 }
 
@@ -441,13 +441,13 @@ model adm_roles {
   name_translations        Json
   description_translations Json?
   adm_member_roles         adm_member_roles[]
-  rw8cvxh                  clt_members[]          @relation("R__yz9vrz")
+  rw8cvxh                  adm_members[]          @relation("R__yz9vrz")
   adm_role_permissions     adm_role_permissions[]
   adm_role_versions        adm_role_versions[]
-  mvlzui3                  clt_members?           @relation("M_l5n085", fields: [created_by], references: [id])
-  m9f72ck                  clt_members?           @relation("M_jvjwmi", fields: [deleted_by], references: [id])
+  mvlzui3                  adm_members?           @relation("M_l5n085", fields: [created_by], references: [id])
+  m9f72ck                  adm_members?           @relation("M_jvjwmi", fields: [deleted_by], references: [id])
   adm_tenants              adm_tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mv502ki                  clt_members?           @relation("M_tfr54o", fields: [updated_by], references: [id])
+  mv502ki                  adm_members?           @relation("M_tfr54o", fields: [updated_by], references: [id])
   adm_roles                adm_roles?             @relation("adm_rolesToadm_roles", fields: [parent_role_id], references: [id], map: "fk_adm_roles_parent")
   other_adm_roles          adm_roles[]            @relation("adm_rolesToadm_roles")
 
@@ -506,10 +506,10 @@ model adm_tenant_vehicle_classes {
   name_translations        Json
   description_translations Json?
   dir_vehicle_classes      dir_vehicle_classes? @relation(fields: [based_on_class_id], references: [id], onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_based_on")
-  m70w94a                  clt_members          @relation("M_bke6r4", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_created_by")
-  my0anqd                  clt_members?         @relation("M_tgsq3j", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_deleted_by")
+  m70w94a                  adm_members          @relation("M_bke6r4", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_created_by")
+  my0anqd                  adm_members?         @relation("M_tgsq3j", fields: [deleted_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_deleted_by")
   adm_tenants              adm_tenants          @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_tenant")
-  mfb0e0t                  clt_members?         @relation("M_juibnn", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_updated_by")
+  mfb0e0t                  adm_members?         @relation("M_juibnn", fields: [updated_by], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_adm_tenant_vehicle_classes_updated_by")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -551,7 +551,7 @@ model adm_tenants {
   adm_audit_logs                adm_audit_logs[]
   adm_invitations               adm_invitations[]
   adm_member_roles              adm_member_roles[]
-  clt_members                   clt_members[]
+  adm_members                   adm_members[]
   adm_notification_logs         adm_notification_logs[]
   adm_roles                     adm_roles[]
   adm_tenant_lifecycle_events   adm_tenant_lifecycle_events[]
@@ -1317,7 +1317,7 @@ model crm_activities {
   created_by        String?            @db.Uuid
   created_at        DateTime?          @default(now()) @db.Timestamptz(6)
   updated_at        DateTime?          @default(now()) @db.Timestamptz(6)
-  created_by_member clt_members?       @relation("crm_activities_creator", fields: [created_by], references: [id])
+  created_by_member adm_members?       @relation("crm_activities_creator", fields: [created_by], references: [id])
   crm_leads         crm_leads?         @relation(fields: [lead_id], references: [id], onDelete: Cascade, map: "crm_activities_lead_id_fkey")
   crm_opportunities crm_opportunities? @relation(fields: [opportunity_id], references: [id], onDelete: Cascade, map: "crm_activities_opportunity_id_fkey")
 
@@ -1545,9 +1545,9 @@ model crm_orders {
   crm_quotes_from_order      crm_quotes[]                 @relation("crm_quotes_converted_order")
   crm_quotes_quote           crm_quotes?                  @relation("crm_orders_quote", fields: [quote_id], references: [id], onDelete: SetNull, map: "crm_orders_quote_id_fkey")
   crm_opportunities          crm_opportunities?           @relation("crm_orders_opportunity", fields: [opportunity_id], references: [id], onDelete: SetNull, map: "crm_orders_opportunity_id_fkey")
-  clt_members_created_by     clt_members?                 @relation("M_b83s6b", fields: [created_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_created_by_fkey")
-  clt_members_deleted_by     clt_members?                 @relation("M_tt34oc", fields: [deleted_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_deleted_by_fkey")
-  clt_members_updated_by     clt_members?                 @relation("M_ji7x2u", fields: [updated_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_updated_by_fkey")
+  adm_members_created_by     adm_members?                 @relation("M_b83s6b", fields: [created_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_created_by_fkey")
+  adm_members_deleted_by     adm_members?                 @relation("M_tt34oc", fields: [deleted_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_deleted_by_fkey")
+  adm_members_updated_by     adm_members?                 @relation("M_ji7x2u", fields: [updated_by], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "crm_orders_updated_by_fkey")
   crm_addresses              crm_addresses?               @relation("crm_orders_billing_address", fields: [billing_address_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_billing_address")
   crm_leads                  crm_leads                    @relation(fields: [lead_id], references: [id], onUpdate: Cascade, onDelete: SetNull, map: "fk_crm_orders_lead")
   bil_billing_plans          bil_billing_plans?           @relation(fields: [plan_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_plan")
@@ -1815,7 +1815,7 @@ model crm_leads {
   recovery_notification_clicked_at DateTime?             @db.Timestamptz(6)
   whatsapp_number                  String?               @db.VarChar(50)
   // Relations
-  assigned_member                  clt_members?          @relation("crm_leads_assigned", fields: [assigned_to], references: [id])
+  assigned_member                  adm_members?          @relation("crm_leads_assigned", fields: [assigned_to], references: [id])
   crm_activities                   crm_activities[]
   crm_lead_activities              crm_lead_activities[]
   crm_countries                    crm_countries?        @relation(fields: [country_code], references: [country_code], onDelete: Restrict, map: "fk_crm_leads_country")
@@ -1901,11 +1901,11 @@ model crm_opportunities {
   max_days_in_stage   Int?               @default(14)
   crm_activities      crm_activities[]
   xqh1y8s             crm_leads[]        @relation("X_wp88t7")
-  mfiaerr             clt_members?       @relation("M_ibz5tf", fields: [assigned_to], references: [id])
-  msnr7al             clt_members?       @relation("M_ds7hn1", fields: [created_by], references: [id])
-  m1c5xtw             clt_members?       @relation("M_r8zf7m", fields: [deleted_by], references: [id])
+  mfiaerr             adm_members?       @relation("M_ibz5tf", fields: [assigned_to], references: [id])
+  msnr7al             adm_members?       @relation("M_ds7hn1", fields: [created_by], references: [id])
+  m1c5xtw             adm_members?       @relation("M_r8zf7m", fields: [deleted_by], references: [id])
   xva1wvf             crm_leads          @relation("X_giac7o", fields: [lead_id], references: [id], onDelete: Cascade)
-  mkdn2e2             clt_members?       @relation("M_m2bmjk", fields: [updated_by], references: [id])
+  mkdn2e2             adm_members?       @relation("M_m2bmjk", fields: [updated_by], references: [id])
   crm_pipelines       crm_pipelines?     @relation(fields: [pipeline_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_pipeline")
   bil_billing_plans   bil_billing_plans? @relation(fields: [plan_id], references: [id], onUpdate: NoAction, map: "fk_crm_opportunities_plan")
   // Quote-to-Cash relations
@@ -2499,7 +2499,7 @@ model doc_document_versions {
   created_at          DateTime      @default(now()) @db.Timestamptz(6)
   created_by          String        @db.Uuid
   change_reason       String?
-  clt_members         clt_members   @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_document_versions_created_by")
+  adm_members         adm_members   @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_document_versions_created_by")
   doc_documents       doc_documents @relation(fields: [document_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_doc_document_versions_document")
 }
 
@@ -2537,12 +2537,12 @@ model doc_documents {
   deletion_reason          String?
   doc_document_versions    doc_document_versions[]
   adm_tenants              adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  m8tyf64                  clt_members?            @relation("M_i33hqq", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_created_by")
-  ml5ypyd                  clt_members?            @relation("M_bwtndr", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_deleted_by")
+  m8tyf64                  adm_members?            @relation("M_i33hqq", fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_created_by")
+  ml5ypyd                  adm_members?            @relation("M_bwtndr", fields: [deleted_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_deleted_by")
   doc_document_types       doc_document_types      @relation(fields: [document_type], references: [code], onUpdate: NoAction, map: "fk_doc_documents_document_type")
   doc_entity_types         doc_entity_types        @relation(fields: [entity_type], references: [code], onUpdate: NoAction, map: "fk_doc_documents_entity_type")
-  mjua9l                   clt_members?            @relation("M_9szcu7", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_updated_by")
-  mwdazbw                  clt_members?            @relation("M_z47z6e", fields: [verified_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_verified_by")
+  mjua9l                   adm_members?            @relation("M_9szcu7", fields: [updated_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_updated_by")
+  mwdazbw                  adm_members?            @relation("M_z47z6e", fields: [verified_by], references: [id], onUpdate: NoAction, map: "fk_doc_documents_verified_by")
   rid_driver_documents     rid_driver_documents[]
 
   @@index([created_at])
@@ -2611,10 +2611,10 @@ model fin_accounts {
   iban                       String?
   swift_bic                  String?
   description                String?
-  m30zij5                    clt_members?                 @relation("M_rxloyf", fields: [created_by], references: [id])
-  mx0wnnm                    clt_members?                 @relation("M_d3l7w8", fields: [deleted_by], references: [id])
+  m30zij5                    adm_members?                 @relation("M_rxloyf", fields: [created_by], references: [id])
+  mx0wnnm                    adm_members?                 @relation("M_d3l7w8", fields: [deleted_by], references: [id])
   adm_tenants                adm_tenants                  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mbb3nfo                    clt_members?                 @relation("M_yte846", fields: [updated_by], references: [id])
+  mbb3nfo                    adm_members?                 @relation("M_yte846", fields: [updated_by], references: [id])
   fin_account_types          fin_account_types            @relation(fields: [account_type], references: [code], map: "fk_fin_accounts_account_type")
   fin_driver_payment_batches fin_driver_payment_batches[]
   fin_driver_payments        fin_driver_payments[]
@@ -2661,10 +2661,10 @@ model fin_driver_payment_batches {
   sent_at                    DateTime?                  @db.Timestamptz(6)
   processed_at               DateTime?                  @db.Timestamptz(6)
   error_details              Json?
-  m5hswcd                    clt_members?               @relation("M_yaypj", fields: [created_by], references: [id])
-  moi48s4                    clt_members?               @relation("M_t1m6ey", fields: [deleted_by], references: [id])
+  m5hswcd                    adm_members?               @relation("M_yaypj", fields: [created_by], references: [id])
+  moi48s4                    adm_members?               @relation("M_t1m6ey", fields: [deleted_by], references: [id])
   adm_tenants                adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  m2sb8k6                    clt_members?               @relation("M_7bt670", fields: [updated_by], references: [id])
+  m2sb8k6                    adm_members?               @relation("M_7bt670", fields: [updated_by], references: [id])
   fin_accounts               fin_accounts?              @relation(fields: [payout_account_id], references: [id], onDelete: Restrict, map: "fk_fin_driver_payment_batches_payout_account")
   fin_payment_batch_statuses fin_payment_batch_statuses @relation(fields: [status], references: [code], map: "fk_fin_driver_payment_batches_status")
   fin_driver_payments        fin_driver_payments[]
@@ -2711,12 +2711,12 @@ model fin_driver_payments {
   failed_at                  DateTime?                  @db.Timestamptz(6)
   cancelled_at               DateTime?                  @db.Timestamptz(6)
   notes                      String?
-  mn417n7                    clt_members?               @relation("M_vimqxf", fields: [created_by], references: [id])
-  mhx5p7g                    clt_members?               @relation("M_1iplsy", fields: [deleted_by], references: [id])
+  mn417n7                    adm_members?               @relation("M_vimqxf", fields: [created_by], references: [id])
+  mhx5p7g                    adm_members?               @relation("M_1iplsy", fields: [deleted_by], references: [id])
   rid_drivers                rid_drivers                @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   fin_driver_payment_batches fin_driver_payment_batches @relation(fields: [payment_batch_id], references: [id], onDelete: Cascade)
   adm_tenants                adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mve5cjq                    clt_members?               @relation("M_n8im0w", fields: [updated_by], references: [id])
+  mve5cjq                    adm_members?               @relation("M_n8im0w", fields: [updated_by], references: [id])
   fin_accounts               fin_accounts?              @relation(fields: [payout_account_id], references: [id], map: "fk_fin_driver_payments_payout_account")
   fin_payment_statuses       fin_payment_statuses       @relation(fields: [status], references: [code], map: "fk_fin_driver_payments_status")
   fin_toll_transactions      fin_toll_transactions[]
@@ -2774,11 +2774,11 @@ model fin_toll_transactions {
   payment_batch_id           String?                     @db.Uuid
   driver_payment_id          String?                     @db.Uuid
   trip_id                    String?                     @db.Uuid
-  mlo1ofc                    clt_members?                @relation("M_egobz6", fields: [created_by], references: [id])
-  mjd58fb                    clt_members?                @relation("M_qkikvh", fields: [deleted_by], references: [id])
+  mlo1ofc                    adm_members?                @relation("M_egobz6", fields: [created_by], references: [id])
+  mjd58fb                    adm_members?                @relation("M_qkikvh", fields: [deleted_by], references: [id])
   rid_drivers                rid_drivers                 @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   adm_tenants                adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mty5tbv                    clt_members?                @relation("M_mqsgvp", fields: [updated_by], references: [id])
+  mty5tbv                    adm_members?                @relation("M_mqsgvp", fields: [updated_by], references: [id])
   flt_vehicles               flt_vehicles                @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
   fin_driver_payments        fin_driver_payments?        @relation(fields: [driver_payment_id], references: [id], map: "fk_fin_toll_transactions_driver_payment")
   fin_driver_payment_batches fin_driver_payment_batches? @relation(fields: [payment_batch_id], references: [id], map: "fk_fin_toll_transactions_payment_batch")
@@ -2810,8 +2810,8 @@ model fin_traffic_fine_disputes {
   created_at           DateTime            @default(now()) @db.Timestamptz(6)
   updated_at           DateTime            @default(now()) @db.Timestamptz(6)
   xdupy85              fin_traffic_fines   @relation("X_xrqr7b", fields: [fine_id], references: [id], onDelete: Cascade, map: "fk_fin_traffic_fine_disputes_fine")
-  mylosli              clt_members?        @relation("M_vvxbqs", fields: [reviewed_by], references: [id], map: "fk_fin_traffic_fine_disputes_reviewed_by")
-  m76mito              clt_members         @relation("M_8geo42", fields: [submitted_by], references: [id], onDelete: Cascade, map: "fk_fin_traffic_fine_disputes_submitted_by")
+  mylosli              adm_members?        @relation("M_vvxbqs", fields: [reviewed_by], references: [id], map: "fk_fin_traffic_fine_disputes_reviewed_by")
+  m76mito              adm_members         @relation("M_8geo42", fields: [submitted_by], references: [id], onDelete: Cascade, map: "fk_fin_traffic_fine_disputes_submitted_by")
   x67sqmj              fin_traffic_fines[] @relation("X_1izzin")
 }
 
@@ -2848,11 +2848,11 @@ model fin_traffic_fines {
   driver_payment_id   String?                     @db.Uuid
   dispute_id          String?                     @db.Uuid
   xd19nzq             fin_traffic_fine_disputes[] @relation("X_xrqr7b")
-  m7wj8zq             clt_members?                @relation("M_kom41s", fields: [created_by], references: [id])
-  mx4nnux             clt_members?                @relation("M_9bb12p", fields: [deleted_by], references: [id])
+  m7wj8zq             adm_members?                @relation("M_kom41s", fields: [created_by], references: [id])
+  mx4nnux             adm_members?                @relation("M_9bb12p", fields: [deleted_by], references: [id])
   rid_drivers         rid_drivers                 @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   adm_tenants         adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mg6ndw9             clt_members?                @relation("M_cehz59", fields: [updated_by], references: [id])
+  mg6ndw9             adm_members?                @relation("M_cehz59", fields: [updated_by], references: [id])
   flt_vehicles        flt_vehicles                @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
   xsrtacw             fin_traffic_fine_disputes?  @relation("X_1izzin", fields: [dispute_id], references: [id], map: "fk_fin_traffic_fines_dispute")
   fin_driver_payments fin_driver_payments?        @relation(fields: [driver_payment_id], references: [id], map: "fk_fin_traffic_fines_driver_payment")
@@ -2918,16 +2918,16 @@ model fin_transactions {
   validated_by               String?                     @db.Uuid
   validated_at               DateTime?                   @db.Timestamptz(6)
   xicgodv                    fin_accounts                @relation("X_gb6ymw", fields: [account_id], references: [id], onDelete: Cascade)
-  mdbzzls                    clt_members?                @relation("M_yd3ie", fields: [created_by], references: [id])
-  mrp6x8v                    clt_members?                @relation("M_uya8mv", fields: [deleted_by], references: [id])
+  mdbzzls                    adm_members?                @relation("M_yd3ie", fields: [created_by], references: [id])
+  mrp6x8v                    adm_members?                @relation("M_uya8mv", fields: [deleted_by], references: [id])
   adm_tenants                adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mlm44ib                    clt_members?                @relation("M_98h8ex", fields: [updated_by], references: [id])
+  mlm44ib                    adm_members?                @relation("M_98h8ex", fields: [updated_by], references: [id])
   fin_transaction_categories fin_transaction_categories? @relation(fields: [category_id], references: [id], map: "fk_fin_transactions_category")
   xitpp7e                    fin_accounts?               @relation("X_82qf4v", fields: [counterparty_account_id], references: [id], map: "fk_fin_transactions_counterparty")
   bil_payment_methods        bil_payment_methods?        @relation(fields: [payment_method_id], references: [id], map: "fk_fin_transactions_payment_method")
   dir_transaction_statuses   dir_transaction_statuses    @relation(fields: [status], references: [code], map: "fk_fin_transactions_status")
   dir_transaction_types      dir_transaction_types       @relation(fields: [transaction_type], references: [code], map: "fk_fin_transactions_transaction_type")
-  myhl352                    clt_members?                @relation("M_nbijw", fields: [validated_by], references: [id], map: "fk_fin_transactions_validated_by")
+  myhl352                    adm_members?                @relation("M_nbijw", fields: [validated_by], references: [id], map: "fk_fin_transactions_validated_by")
 
   @@index([account_id])
   @@index([created_by])
@@ -2977,9 +2977,9 @@ model flt_vehicle_assignments {
   rid_drivers            rid_drivers              @relation(fields: [driver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_assignments_driver_id")
   adm_tenants            adm_tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_assignments_tenant_id")
   flt_vehicles           flt_vehicles             @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_assignments_vehicle_id")
-  md8ynmt                clt_members?             @relation("M_kidcbl", fields: [created_by], references: [id])
-  mrs897u                clt_members?             @relation("M_9hjssw", fields: [deleted_by], references: [id])
-  mlj2sjc                clt_members?             @relation("M_c897f2", fields: [updated_by], references: [id])
+  md8ynmt                adm_members?             @relation("M_kidcbl", fields: [created_by], references: [id])
+  mrs897u                adm_members?             @relation("M_9hjssw", fields: [deleted_by], references: [id])
+  mlj2sjc                adm_members?             @relation("M_c897f2", fields: [updated_by], references: [id])
   flt_vehicle_equipments flt_vehicle_equipments[]
   flt_vehicle_events     flt_vehicle_events[]
 
@@ -3077,9 +3077,9 @@ model flt_vehicle_events {
   rid_drivers             rid_drivers?             @relation(fields: [driver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_events_driver_id")
   adm_tenants             adm_tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_events_tenant_id")
   flt_vehicles            flt_vehicles             @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_events_vehicle_id")
-  mr13x84                 clt_members?             @relation("M_6t5nd2", fields: [created_by], references: [id])
-  me02zmj                 clt_members?             @relation("M_n6rhrf", fields: [deleted_by], references: [id])
-  mzb824n                 clt_members?             @relation("M_1gyhjh", fields: [updated_by], references: [id])
+  mr13x84                 adm_members?             @relation("M_6t5nd2", fields: [created_by], references: [id])
+  me02zmj                 adm_members?             @relation("M_n6rhrf", fields: [deleted_by], references: [id])
+  mzb824n                 adm_members?             @relation("M_1gyhjh", fields: [updated_by], references: [id])
 
   @@index([created_at(sort: Desc)])
   @@index([created_by])
@@ -3153,10 +3153,10 @@ model flt_vehicle_expenses {
   rid_drivers            rid_drivers? @relation(fields: [driver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_expenses_driver_id")
   adm_tenants            adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_expenses_tenant_id")
   flt_vehicles           flt_vehicles @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_expenses_vehicle_id")
-  mssqop6                clt_members? @relation("M_hko51g", fields: [created_by], references: [id])
-  m176gfb                clt_members? @relation("M_cf9031", fields: [deleted_by], references: [id])
+  mssqop6                adm_members? @relation("M_hko51g", fields: [created_by], references: [id])
+  m176gfb                adm_members? @relation("M_cf9031", fields: [deleted_by], references: [id])
   trp_trips              trp_trips?   @relation(fields: [ride_id], references: [id], onUpdate: NoAction)
-  mkimjsn                clt_members? @relation("M_9ak04x", fields: [updated_by], references: [id])
+  mkimjsn                adm_members? @relation("M_9ak04x", fields: [updated_by], references: [id])
 
   @@index([created_at(sort: Desc)])
   @@index([created_by])
@@ -3281,9 +3281,9 @@ model flt_vehicle_insurances {
   other_flt_vehicle_insurances flt_vehicle_insurances[] @relation("X_vefbxn")
   adm_tenants                  adm_tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_insurances_tenant_id")
   flt_vehicles                 flt_vehicles             @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_insurances_vehicle_id")
-  m72ybhw                      clt_members?             @relation("M_3678hy", fields: [created_by], references: [id])
-  mxy8lcr                      clt_members?             @relation("M_qtpwmj", fields: [deleted_by], references: [id])
-  mfd2gef                      clt_members?             @relation("M_53wwel", fields: [updated_by], references: [id])
+  m72ybhw                      adm_members?             @relation("M_3678hy", fields: [created_by], references: [id])
+  mxy8lcr                      adm_members?             @relation("M_qtpwmj", fields: [deleted_by], references: [id])
+  mfd2gef                      adm_members?             @relation("M_53wwel", fields: [updated_by], references: [id])
 
   @@index([created_at(sort: Desc)])
   @@index([metadata], type: Gin)
@@ -3355,8 +3355,8 @@ model flt_vehicle_maintenance {
   deletion_reason           String?
   adm_tenants               adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicle_maintenance_tenant_id")
   flt_vehicles              flt_vehicles                @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicle_maintenance_vehicle_id")
-  mwrijny                   clt_members?                @relation("M_4i9ics", fields: [created_by], references: [id])
-  moheerf                   clt_members?                @relation("M_csdn9b", fields: [updated_by], references: [id])
+  mwrijny                   adm_members?                @relation("M_4i9ics", fields: [created_by], references: [id])
+  moheerf                   adm_members?                @relation("M_csdn9b", fields: [updated_by], references: [id])
   sch_maintenance_schedules sch_maintenance_schedules[]
 
   @@index([created_at(sort: Desc)])
@@ -3440,9 +3440,9 @@ model flt_vehicles {
   dir_vehicle_statuses          dir_vehicle_statuses?       @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicles_status_id")
   adm_tenants                   adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_flt_vehicles_tenant_id")
   dir_vehicle_classes           dir_vehicle_classes?        @relation(fields: [vehicle_class_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flt_vehicles_vehicle_class_id")
-  mueoscx                       clt_members?                @relation("M_5i2lxn", fields: [created_by], references: [id])
-  mern8g                        clt_members?                @relation("M_ohuj6u", fields: [deleted_by], references: [id])
-  mm4knge                       clt_members?                @relation("M_2s1iyw", fields: [updated_by], references: [id])
+  mueoscx                       adm_members?                @relation("M_5i2lxn", fields: [created_by], references: [id])
+  mern8g                        adm_members?                @relation("M_ohuj6u", fields: [deleted_by], references: [id])
+  mm4knge                       adm_members?                @relation("M_2s1iyw", fields: [updated_by], references: [id])
   sch_maintenance_schedules     sch_maintenance_schedules[]
   trp_trips                     trp_trips[]
 
@@ -3485,14 +3485,14 @@ model rev_driver_revenues {
   validated_by        String?                     @db.Uuid
   validated_at        DateTime?                   @db.Timestamptz(6)
   adjustment_reason   String?
-  mq42rlh             clt_members?                @relation("M_sil6z5", fields: [created_by], references: [id], map: "fk_rev_driver_revenues_created_by")
-  mex4596             clt_members?                @relation("M_1hby5c", fields: [deleted_by], references: [id], map: "fk_rev_driver_revenues_deleted_by")
+  mq42rlh             adm_members?                @relation("M_sil6z5", fields: [created_by], references: [id], map: "fk_rev_driver_revenues_created_by")
+  mex4596             adm_members?                @relation("M_1hby5c", fields: [deleted_by], references: [id], map: "fk_rev_driver_revenues_deleted_by")
   rid_drivers         rid_drivers                 @relation(fields: [driver_id], references: [id], map: "fk_rev_driver_revenues_driver")
   rev_revenue_imports rev_revenue_imports?        @relation(fields: [import_id], references: [id], onDelete: Restrict, map: "fk_rev_driver_revenues_import")
   dir_platforms       dir_platforms?              @relation(fields: [platform_id], references: [id], onDelete: Restrict, map: "fk_rev_driver_revenues_platform")
   adm_tenants         adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_rev_driver_revenues_tenant")
-  mye6wi0             clt_members?                @relation("M_k8h22m", fields: [updated_by], references: [id], map: "fk_rev_driver_revenues_updated_by")
-  mrn8t97             clt_members?                @relation("M_kfvgt1", fields: [validated_by], references: [id], map: "fk_rev_driver_revenues_validated_by")
+  mye6wi0             adm_members?                @relation("M_k8h22m", fields: [updated_by], references: [id], map: "fk_rev_driver_revenues_updated_by")
+  mrn8t97             adm_members?                @relation("M_kfvgt1", fields: [validated_by], references: [id], map: "fk_rev_driver_revenues_validated_by")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -3548,14 +3548,14 @@ model rev_reconciliations {
   requires_action          Boolean?                   @default(false)
   driver_id                String?                    @db.Uuid
   rev_reconciliation_lines rev_reconciliation_lines[]
-  mqr0wsj                  clt_members?               @relation("M_x20liv", fields: [assigned_to], references: [id], map: "fk_rev_reconciliations_assigned_to")
-  mhj1tef                  clt_members?               @relation("M_xxhwsx", fields: [created_by], references: [id], map: "fk_rev_reconciliations_created_by")
-  mni53g8                  clt_members?               @relation("M_73p01q", fields: [deleted_by], references: [id], map: "fk_rev_reconciliations_deleted_by")
+  mqr0wsj                  adm_members?               @relation("M_x20liv", fields: [assigned_to], references: [id], map: "fk_rev_reconciliations_assigned_to")
+  mhj1tef                  adm_members?               @relation("M_xxhwsx", fields: [created_by], references: [id], map: "fk_rev_reconciliations_created_by")
+  mni53g8                  adm_members?               @relation("M_73p01q", fields: [deleted_by], references: [id], map: "fk_rev_reconciliations_deleted_by")
   rid_drivers              rid_drivers?               @relation(fields: [driver_id], references: [id], onDelete: Restrict, map: "fk_rev_reconciliations_driver")
   rev_revenue_imports      rev_revenue_imports        @relation(fields: [import_id], references: [id], map: "fk_rev_reconciliations_import")
-  mducnqn                  clt_members?               @relation("M_2ma42x", fields: [resolved_by], references: [id], map: "fk_rev_reconciliations_resolved_by")
+  mducnqn                  adm_members?               @relation("M_2ma42x", fields: [resolved_by], references: [id], map: "fk_rev_reconciliations_resolved_by")
   adm_tenants              adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_rev_reconciliations_tenant")
-  mpt5yay                  clt_members?               @relation("M_sti09o", fields: [updated_by], references: [id], map: "fk_rev_reconciliations_updated_by")
+  mpt5yay                  adm_members?               @relation("M_sti09o", fields: [updated_by], references: [id], map: "fk_rev_reconciliations_updated_by")
   trp_settlements          trp_settlements[]
 
   @@index([created_by])
@@ -3601,11 +3601,11 @@ model rev_revenue_imports {
   last_error              String?
   rev_driver_revenues     rev_driver_revenues[]
   rev_reconciliations     rev_reconciliations[]
-  mn4oz1u                 clt_members?                @relation("M_vhyzis", fields: [created_by], references: [id], map: "fk_rev_revenue_imports_created_by")
-  mhwhxst                 clt_members?                @relation("M_1i1ueb", fields: [deleted_by], references: [id], map: "fk_rev_revenue_imports_deleted_by")
+  mn4oz1u                 adm_members?                @relation("M_vhyzis", fields: [created_by], references: [id], map: "fk_rev_revenue_imports_created_by")
+  mhwhxst                 adm_members?                @relation("M_1i1ueb", fields: [deleted_by], references: [id], map: "fk_rev_revenue_imports_deleted_by")
   dir_platforms           dir_platforms?              @relation(fields: [platform_id], references: [id], onDelete: Restrict, map: "fk_rev_revenue_imports_platform")
   adm_tenants             adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "fk_rev_revenue_imports_tenant")
-  mvet3yd                 clt_members?                @relation("M_n7uum9", fields: [updated_by], references: [id], map: "fk_rev_revenue_imports_updated_by")
+  mvet3yd                 adm_members?                @relation("M_n7uum9", fields: [updated_by], references: [id], map: "fk_rev_revenue_imports_updated_by")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -3665,16 +3665,16 @@ model rid_driver_blacklists {
   notification_method         String?             @db.VarChar(50)
   acknowledgment_received     Boolean?            @default(false)
   acknowledgment_date         DateTime?           @db.Timestamptz(6)
-  mf4upq5                     clt_members?        @relation("M_jegzb", fields: [appeal_reviewed_by], references: [id], onUpdate: NoAction)
-  mks3nk2                     clt_members?        @relation("M_rzh008", fields: [created_by], references: [id])
-  mw3wufm                     clt_members?        @relation("M_owjhzg", fields: [decided_by], references: [id], onUpdate: NoAction)
-  mbm7cc7                     clt_members?        @relation("M_lvcwc1", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "rid_driver_blacklists_decision_reviewed_by_fkey")
-  m97thkf                     clt_members?        @relation("M_20g549", fields: [deleted_by], references: [id])
+  mf4upq5                     adm_members?        @relation("M_jegzb", fields: [appeal_reviewed_by], references: [id], onUpdate: NoAction)
+  mks3nk2                     adm_members?        @relation("M_rzh008", fields: [created_by], references: [id])
+  mw3wufm                     adm_members?        @relation("M_owjhzg", fields: [decided_by], references: [id], onUpdate: NoAction)
+  mbm7cc7                     adm_members?        @relation("M_lvcwc1", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "rid_driver_blacklists_decision_reviewed_by_fkey")
+  m97thkf                     adm_members?        @relation("M_20g549", fields: [deleted_by], references: [id])
   rid_drivers                 rid_drivers         @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  m68504x                     clt_members?        @relation("M_pdqhw5", fields: [legal_reviewed_by], references: [id], onUpdate: NoAction)
-  mizdskd                     clt_members?        @relation("M_x4dee5", fields: [reinstated_by], references: [id], onUpdate: NoAction)
+  m68504x                     adm_members?        @relation("M_pdqhw5", fields: [legal_reviewed_by], references: [id], onUpdate: NoAction)
+  mizdskd                     adm_members?        @relation("M_x4dee5", fields: [reinstated_by], references: [id], onUpdate: NoAction)
   adm_tenants                 adm_tenants         @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mchzinj                     clt_members?        @relation("M_jpcv3p", fields: [updated_by], references: [id])
+  mchzinj                     adm_members?        @relation("M_jpcv3p", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -3730,15 +3730,15 @@ model rid_driver_cooperation_terms {
   termination_reason                 String?
   termination_initiated_by           String?                        @db.Uuid
   early_termination_penalty          Decimal?                       @db.Decimal(12, 2)
-  mujj7md                            clt_members?                   @relation("M_8vpcbp", fields: [created_by], references: [id])
-  mahnp8a                            clt_members?                   @relation("M_l47sss", fields: [deleted_by], references: [id])
+  mujj7md                            adm_members?                   @relation("M_8vpcbp", fields: [created_by], references: [id])
+  mahnp8a                            adm_members?                   @relation("M_l47sss", fields: [deleted_by], references: [id])
   rid_drivers                        rid_drivers                    @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  mgnlqs8                            clt_members?                   @relation("M_3tku7i", fields: [legal_reviewed_by], references: [id], onUpdate: NoAction)
+  mgnlqs8                            adm_members?                   @relation("M_3tku7i", fields: [legal_reviewed_by], references: [id], onUpdate: NoAction)
   rid_driver_cooperation_terms       rid_driver_cooperation_terms?  @relation("X_mngod3", fields: [previous_version_id], references: [id], onUpdate: NoAction, map: "rid_driver_cooperation_terms_previous_version_fkey")
   other_rid_driver_cooperation_terms rid_driver_cooperation_terms[] @relation("X_mngod3")
   adm_tenants                        adm_tenants                    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mbcvvfn                            clt_members?                   @relation("M_hi3n19", fields: [termination_initiated_by], references: [id], onUpdate: NoAction, map: "rid_driver_cooperation_terms_termination_by_fkey")
-  mw7gpg8                            clt_members?                   @relation("M_ll7f6", fields: [updated_by], references: [id])
+  mbcvvfn                            adm_members?                   @relation("M_hi3n19", fields: [termination_initiated_by], references: [id], onUpdate: NoAction, map: "rid_driver_cooperation_terms_termination_by_fkey")
+  mw7gpg8                            adm_members?                   @relation("M_ll7f6", fields: [updated_by], references: [id])
 
   @@index([accepted_at])
   @@index([created_by])
@@ -3785,15 +3785,15 @@ model rid_driver_documents {
   replacement_reason         String?
   ocr_data                   Json?
   confidence_score           Decimal?                      @db.Decimal(5, 2)
-  mcwkhiu                    clt_members?                  @relation("M_1ohxv4", fields: [created_by], references: [id])
-  mh3cnln                    clt_members?                  @relation("M_sbf79d", fields: [deleted_by], references: [id])
+  mcwkhiu                    adm_members?                  @relation("M_1ohxv4", fields: [created_by], references: [id])
+  mh3cnln                    adm_members?                  @relation("M_sbf79d", fields: [deleted_by], references: [id])
   doc_documents              doc_documents                 @relation(fields: [document_id], references: [id], onDelete: Cascade)
   rid_drivers                rid_drivers                   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   rid_driver_documents       rid_driver_documents?         @relation("X_bn441r", fields: [replaced_document_id], references: [id], onUpdate: NoAction, map: "rid_driver_documents_replaced_document_fkey")
   other_rid_driver_documents rid_driver_documents[]        @relation("X_bn441r")
   adm_tenants                adm_tenants                   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  m4mgcmb                    clt_members?                  @relation("M_6lm71f", fields: [updated_by], references: [id])
-  mgk2wc2                    clt_members?                  @relation("M_nrg8s8", fields: [verified_by], references: [id])
+  m4mgcmb                    adm_members?                  @relation("M_6lm71f", fields: [updated_by], references: [id])
+  mgk2wc2                    adm_members?                  @relation("M_nrg8s8", fields: [verified_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -3819,11 +3819,11 @@ model rid_driver_languages {
   deleted_at      DateTime?    @db.Timestamptz(6)
   deleted_by      String?      @db.Uuid
   deletion_reason String?
-  m18a5kd         clt_members? @relation("M_cgcp83", fields: [created_by], references: [id])
-  mv87aou         clt_members? @relation("M_sku7mk", fields: [deleted_by], references: [id])
+  m18a5kd         adm_members? @relation("M_cgcp83", fields: [created_by], references: [id])
+  mv87aou         adm_members? @relation("M_sku7mk", fields: [deleted_by], references: [id])
   rid_drivers     rid_drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   adm_tenants     adm_tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  m9ieagw         clt_members? @relation("M_kqgu4m", fields: [updated_by], references: [id])
+  m9ieagw         adm_members? @relation("M_kqgu4m", fields: [updated_by], references: [id])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -3881,12 +3881,12 @@ model rid_driver_performances {
   penalties_deducted        Decimal?       @default(0) @db.Decimal(12, 2)
   total_distance_km         Decimal?       @default(0) @db.Decimal(10, 2)
   hours_logged              Decimal?       @db.Decimal(7, 2)
-  mfk3n2j                   clt_members?   @relation("M_i78cvv", fields: [created_by], references: [id])
-  mph39s4                   clt_members?   @relation("M_bsos8m", fields: [deleted_by], references: [id])
+  mfk3n2j                   adm_members?   @relation("M_i78cvv", fields: [created_by], references: [id])
+  mph39s4                   adm_members?   @relation("M_bsos8m", fields: [deleted_by], references: [id])
   rid_drivers               rid_drivers    @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   dir_platforms             dir_platforms? @relation(fields: [platform_id], references: [id], onUpdate: NoAction)
   adm_tenants               adm_tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mnu7rz2                   clt_members?   @relation("M_9x47zc", fields: [updated_by], references: [id])
+  mnu7rz2                   adm_members?   @relation("M_9x47zc", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -3943,18 +3943,18 @@ model rid_driver_requests {
   manager_notified_at       DateTime?            @db.Timestamptz(6)
   notification_method       String?              @db.VarChar(50)
   attachments               Json?                @default("[]")
-  mrs6uz                    clt_members?         @relation("M_bzuqip", fields: [approved_by], references: [id], onUpdate: NoAction)
-  mb47aoi                   clt_members?         @relation("M_3v8z8", fields: [assigned_to], references: [id], onUpdate: NoAction)
-  mph0wwc                   clt_members?         @relation("M_t5n1oa", fields: [created_by], references: [id])
-  mfk5zyb                   clt_members?         @relation("M_ua3g7", fields: [deleted_by], references: [id])
+  mrs6uz                    adm_members?         @relation("M_bzuqip", fields: [approved_by], references: [id], onUpdate: NoAction)
+  mb47aoi                   adm_members?         @relation("M_3v8z8", fields: [assigned_to], references: [id], onUpdate: NoAction)
+  mph0wwc                   adm_members?         @relation("M_t5n1oa", fields: [created_by], references: [id])
+  mfk5zyb                   adm_members?         @relation("M_ua3g7", fields: [deleted_by], references: [id])
   rid_drivers               rid_drivers          @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  mi74nf2                   clt_members?         @relation("M_pehzv8", fields: [escalated_to], references: [id], onUpdate: NoAction)
-  mmvvhtc                   clt_members?         @relation("M_avgi52", fields: [hr_approved_by], references: [id], onUpdate: NoAction)
-  meebnqr                   clt_members?         @relation("M_h7juab", fields: [manager_approved_by], references: [id], onUpdate: NoAction)
-  mlch9xe                   clt_members?         @relation("M_wkjtl4", fields: [rejected_by], references: [id], onUpdate: NoAction)
-  m1mh69n                   clt_members?         @relation("M_cujpxd", fields: [reviewed_by], references: [id], onUpdate: NoAction)
+  mi74nf2                   adm_members?         @relation("M_pehzv8", fields: [escalated_to], references: [id], onUpdate: NoAction)
+  mmvvhtc                   adm_members?         @relation("M_avgi52", fields: [hr_approved_by], references: [id], onUpdate: NoAction)
+  meebnqr                   adm_members?         @relation("M_h7juab", fields: [manager_approved_by], references: [id], onUpdate: NoAction)
+  mlch9xe                   adm_members?         @relation("M_wkjtl4", fields: [rejected_by], references: [id], onUpdate: NoAction)
+  m1mh69n                   adm_members?         @relation("M_cujpxd", fields: [reviewed_by], references: [id], onUpdate: NoAction)
   adm_tenants               adm_tenants          @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mxr51sv                   clt_members?         @relation("M_kviwrr", fields: [updated_by], references: [id])
+  mxr51sv                   adm_members?         @relation("M_kviwrr", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -4028,12 +4028,12 @@ model rid_driver_training {
   driver_rating                    Decimal?         @db.Decimal(3, 2)
   feedback_submitted_at            DateTime?        @db.Timestamptz(6)
   description_translations         Json?
-  mz1hode                          clt_members?     @relation("M_jl6a78", fields: [created_by], references: [id])
-  m5zp8h9                          clt_members?     @relation("M_aequx9", fields: [deleted_by], references: [id])
+  mz1hode                          adm_members?     @relation("M_jl6a78", fields: [created_by], references: [id])
+  m5zp8h9                          adm_members?     @relation("M_aequx9", fields: [deleted_by], references: [id])
   rid_drivers                      rid_drivers      @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  mlcfn6t                          clt_members?     @relation("M_e52aqn", fields: [evaluated_by], references: [id], onUpdate: NoAction)
+  mlcfn6t                          adm_members?     @relation("M_e52aqn", fields: [evaluated_by], references: [id], onUpdate: NoAction)
   adm_tenants                      adm_tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mrpi8p7                          clt_members?     @relation("M_bb25ap", fields: [updated_by], references: [id])
+  mrpi8p7                          adm_members?     @relation("M_bb25ap", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -4239,9 +4239,9 @@ model sch_goals {
   sch_goal_achievements       sch_goal_achievements[]
   sch_goal_types              sch_goal_types?         @relation(fields: [goal_type_id], references: [id], onUpdate: NoAction, map: "fk_goals_goal_type")
   adm_tenants                 adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_goals_tenant")
-  mbrejh8                     clt_members?            @relation("M_1b1p7a", fields: [created_by], references: [id])
-  mt9sddf                     clt_members?            @relation("M_vayubr", fields: [deleted_by], references: [id])
-  mk1iodr                     clt_members?            @relation("M_9l5u3t", fields: [updated_by], references: [id])
+  mbrejh8                     adm_members?            @relation("M_1b1p7a", fields: [created_by], references: [id])
+  mt9sddf                     adm_members?            @relation("M_vayubr", fields: [deleted_by], references: [id])
+  mk1iodr                     adm_members?            @relation("M_9l5u3t", fields: [updated_by], references: [id])
 
   @@index([achievement_date], map: "idx_goals_achievement_date")
   @@index([progress_percent, status], map: "idx_goals_progress_status")
@@ -4319,12 +4319,12 @@ model sch_maintenance_schedules {
   dir_maintenance_types           dir_maintenance_types?      @relation(fields: [maintenance_type_id], references: [id], onUpdate: NoAction, map: "fk_maintenance_schedules_maintenance_type")
   sch_maintenance_schedules       sch_maintenance_schedules?  @relation("X_vqjrj9", fields: [rescheduled_from], references: [id], onUpdate: NoAction, map: "fk_maintenance_schedules_rescheduled_from")
   other_sch_maintenance_schedules sch_maintenance_schedules[] @relation("X_vqjrj9")
-  mut6gfl                         clt_members?                @relation("M_tjeb57", fields: [scheduled_by], references: [id], onUpdate: NoAction, map: "fk_maintenance_schedules_scheduled_by")
+  mut6gfl                         adm_members?                @relation("M_tjeb57", fields: [scheduled_by], references: [id], onUpdate: NoAction, map: "fk_maintenance_schedules_scheduled_by")
   adm_tenants                     adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_maintenance_schedules_tenant")
   flt_vehicles                    flt_vehicles                @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_maintenance_schedules_vehicle")
-  m4eaj9w                         clt_members?                @relation("M_e2vqg6", fields: [created_by], references: [id])
-  mplmlul                         clt_members?                @relation("M_qyb6eh", fields: [deleted_by], references: [id])
-  m3vtlmn                         clt_members?                @relation("M_mczvcp", fields: [updated_by], references: [id])
+  m4eaj9w                         adm_members?                @relation("M_e2vqg6", fields: [created_by], references: [id])
+  mplmlul                         adm_members?                @relation("M_qyb6eh", fields: [deleted_by], references: [id])
+  m3vtlmn                         adm_members?                @relation("M_mczvcp", fields: [updated_by], references: [id])
 
   @@index([odometer_reading], map: "idx_maintenance_schedules_odometer")
   @@index([reminder_sent_at], map: "idx_maintenance_schedules_reminder_sent")
@@ -4392,15 +4392,15 @@ model sch_shifts {
   approved_at            DateTime?        @db.Timestamptz(6)
   cancellation_reason    String?          @db.VarChar(255)
   replacement_driver_id  String?          @db.Uuid
-  m8bwrnc                clt_members?     @relation("M_mxzpam", fields: [approved_by], references: [id], onUpdate: NoAction, map: "fk_shifts_approved_by")
+  m8bwrnc                adm_members?     @relation("M_mxzpam", fields: [approved_by], references: [id], onUpdate: NoAction, map: "fk_shifts_approved_by")
   xq3skz                 rid_drivers      @relation("X_w4waib", fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shifts_driver")
   sch_locations          sch_locations?   @relation(fields: [location_id], references: [id], onUpdate: NoAction, map: "fk_shifts_location")
   x70lql6                rid_drivers?     @relation("X_ekt20w", fields: [replacement_driver_id], references: [id], onUpdate: NoAction, map: "fk_shifts_replacement_driver")
   sch_shift_types        sch_shift_types? @relation(fields: [shift_type_id], references: [id], onUpdate: NoAction, map: "fk_shifts_shift_type")
   adm_tenants            adm_tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_shifts_tenant")
-  maxzvbl                clt_members?     @relation("M_k4ibzp", fields: [created_by], references: [id])
-  mj1x9sw                clt_members?     @relation("M_kwokuy", fields: [deleted_by], references: [id])
-  m2nvqf2                clt_members?     @relation("M_semgw8", fields: [updated_by], references: [id])
+  maxzvbl                adm_members?     @relation("M_k4ibzp", fields: [created_by], references: [id])
+  mj1x9sw                adm_members?     @relation("M_kwokuy", fields: [deleted_by], references: [id])
+  m2nvqf2                adm_members?     @relation("M_semgw8", fields: [updated_by], references: [id])
 
   @@index([start_time(sort: Desc)], map: "idx_sch_shifts_start_time")
   @@index([check_in_at], map: "idx_shifts_checkin")
@@ -4428,7 +4428,7 @@ model sch_task_comments {
   is_internal  Boolean?          @default(false)
   metadata     Json?
   created_at   DateTime?         @default(now()) @db.Timestamptz(6)
-  clt_members  clt_members       @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_comments_author")
+  adm_members  adm_members       @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_comments_author")
   sch_tasks    sch_tasks         @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_comments_task")
 
   @@index([author_id], map: "idx_task_comments_author")
@@ -4446,7 +4446,7 @@ model sch_task_history {
   change_reason String?
   metadata      Json?
   created_at    DateTime?        @default(now()) @db.Timestamptz(6)
-  clt_members   clt_members      @relation(fields: [changed_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_history_changed_by")
+  adm_members   adm_members      @relation(fields: [changed_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_history_changed_by")
   sch_tasks     sch_tasks        @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_task_history_task")
 
   @@index([change_type], map: "idx_task_history_change_type")
@@ -4533,18 +4533,18 @@ model sch_tasks {
   status                     task_status?        @default(pending)
   sch_task_comments          sch_task_comments[]
   sch_task_history           sch_task_history[]
-  matlkuk                    clt_members?        @relation("M_k8wmgq", fields: [assigned_by], references: [id], onUpdate: NoAction, map: "fk_tasks_assigned_by")
-  mocm07k                    clt_members?        @relation("M_flzuga", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_tasks_assigned_to")
-  mb4yqx9                    clt_members?        @relation("M_k4xq0p", fields: [completed_by], references: [id], onUpdate: NoAction, map: "fk_tasks_completed_by")
-  mftewk0                    clt_members?        @relation("M_fghkdy", fields: [escalated_to], references: [id], onUpdate: NoAction, map: "fk_tasks_escalated_to")
+  matlkuk                    adm_members?        @relation("M_k8wmgq", fields: [assigned_by], references: [id], onUpdate: NoAction, map: "fk_tasks_assigned_by")
+  mocm07k                    adm_members?        @relation("M_flzuga", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "fk_tasks_assigned_to")
+  mb4yqx9                    adm_members?        @relation("M_k4xq0p", fields: [completed_by], references: [id], onUpdate: NoAction, map: "fk_tasks_completed_by")
+  mftewk0                    adm_members?        @relation("M_fghkdy", fields: [escalated_to], references: [id], onUpdate: NoAction, map: "fk_tasks_escalated_to")
   sch_tasks                  sch_tasks?          @relation("sch_tasksTosch_tasks", fields: [parent_task_id], references: [id], onUpdate: NoAction, map: "fk_tasks_parent_task")
   other_sch_tasks            sch_tasks[]         @relation("sch_tasksTosch_tasks")
   sch_task_types             sch_task_types?     @relation(fields: [task_type_id], references: [id], onUpdate: NoAction, map: "fk_tasks_task_type")
   adm_tenants                adm_tenants         @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tasks_tenant")
-  m138w1a                    clt_members?        @relation("M_w5r3ck", fields: [verified_by], references: [id], onUpdate: NoAction, map: "fk_tasks_verified_by")
-  m8ab9ii                    clt_members?        @relation("M_261krg", fields: [created_by], references: [id])
-  mwqvnc5                    clt_members?        @relation("M_rtvkd1", fields: [deleted_by], references: [id])
-  mgkfef1                    clt_members?        @relation("M_642k53", fields: [updated_by], references: [id])
+  m138w1a                    adm_members?        @relation("M_w5r3ck", fields: [verified_by], references: [id], onUpdate: NoAction, map: "fk_tasks_verified_by")
+  m8ab9ii                    adm_members?        @relation("M_261krg", fields: [created_by], references: [id])
+  mwqvnc5                    adm_members?        @relation("M_rtvkd1", fields: [deleted_by], references: [id])
+  mgkfef1                    adm_members?        @relation("M_642k53", fields: [updated_by], references: [id])
 
   @@index([created_by], map: "idx_sch_tasks_created_by")
   @@index([deleted_at], map: "idx_sch_tasks_deleted_at")
@@ -4672,10 +4672,10 @@ model sup_ticket_messages {
   translation               Json?
   sup_ticket_messages       sup_ticket_messages?  @relation("X_iy9pyz", fields: [parent_message_id], references: [id], onUpdate: NoAction, map: "fk_sup_messages_parent")
   other_sup_ticket_messages sup_ticket_messages[] @relation("X_iy9pyz")
-  mcqz5lb                   clt_members?          @relation("M_3ngxt7", fields: [created_by], references: [id])
-  mh8xzj6                   clt_members?          @relation("M_xne2xo", fields: [deleted_by], references: [id])
+  mcqz5lb                   adm_members?          @relation("M_3ngxt7", fields: [created_by], references: [id])
+  mh8xzj6                   adm_members?          @relation("M_xne2xo", fields: [deleted_by], references: [id])
   sup_tickets               sup_tickets           @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
-  m4gv0os                   clt_members?          @relation("M_bxl2pq", fields: [updated_by], references: [id])
+  m4gv0os                   adm_members?          @relation("M_bxl2pq", fields: [updated_by], references: [id])
 
   @@index([created_by])
   @@index([deleted_at])
@@ -4738,11 +4738,11 @@ model sup_tickets {
   priority              ticket_priority?        @default(medium)
   sup_customer_feedback sup_customer_feedback[]
   sup_ticket_messages   sup_ticket_messages[]
-  mgq93v5               clt_members             @relation("M_ec93g5", fields: [raised_by], references: [id], onUpdate: NoAction, map: "fk_sup_tickets_member")
-  mweda2v               clt_members?            @relation("M_7cuayb", fields: [created_by], references: [id])
-  m2eg4ye               clt_members?            @relation("M_xoclwc", fields: [deleted_by], references: [id])
+  mgq93v5               adm_members             @relation("M_ec93g5", fields: [raised_by], references: [id], onUpdate: NoAction, map: "fk_sup_tickets_member")
+  mweda2v               adm_members?            @relation("M_7cuayb", fields: [created_by], references: [id])
+  m2eg4ye               adm_members?            @relation("M_xoclwc", fields: [deleted_by], references: [id])
   adm_tenants           adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  mo4956c               clt_members?            @relation("M_fmyfuu", fields: [updated_by], references: [id])
+  mo4956c               adm_members?            @relation("M_fmyfuu", fields: [updated_by], references: [id])
 
   @@index([assigned_to])
   @@index([created_at])
@@ -4802,9 +4802,9 @@ model trp_client_invoices {
   payment_method           trp_payment_method?
   trp_client_invoice_lines trp_client_invoice_lines[]
   adm_tenants              adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_invoices_tenant")
-  mqil34g                  clt_members?               @relation("M_s42vg6", fields: [created_by], references: [id])
-  meiltq7                  clt_members?               @relation("M_1vu9ob", fields: [deleted_by], references: [id])
-  mysp80z                  clt_members?               @relation("M_jtyqjn", fields: [updated_by], references: [id])
+  mqil34g                  adm_members?               @relation("M_s42vg6", fields: [created_by], references: [id])
+  meiltq7                  adm_members?               @relation("M_1vu9ob", fields: [deleted_by], references: [id])
+  mysp80z                  adm_members?               @relation("M_jtyqjn", fields: [updated_by], references: [id])
 
   @@index([client_id, status, invoice_date], map: "idx_client_invoices_client_status_date")
   @@index([paid_at], map: "idx_client_invoices_paid_at")
@@ -4863,9 +4863,9 @@ model trp_platform_accounts {
   trp_platform_account_keys trp_platform_account_keys[]
   dir_platforms             dir_platforms               @relation(fields: [platform_id], references: [id], onUpdate: NoAction, map: "fk_platform_accounts_platform")
   adm_tenants               adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_platform_accounts_tenant")
-  mgxogtk                   clt_members?                @relation("M_9qb4de", fields: [created_by], references: [id])
-  mo3ig13                   clt_members?                @relation("M_vavsh9", fields: [deleted_by], references: [id])
-  mp7slq3                   clt_members?                @relation("M_i0f99x", fields: [updated_by], references: [id])
+  mgxogtk                   adm_members?                @relation("M_9qb4de", fields: [created_by], references: [id])
+  mo3ig13                   adm_members?                @relation("M_vavsh9", fields: [deleted_by], references: [id])
+  mp7slq3                   adm_members?                @relation("M_i0f99x", fields: [updated_by], references: [id])
   trp_settlements           trp_settlements[]
   trp_trips                 trp_trips[]
 
@@ -4918,9 +4918,9 @@ model trp_settlements {
   adm_tenants            adm_tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_settlements_tenant")
   trp_trips              trp_trips              @relation(fields: [trip_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_settlements_trip")
   rev_reconciliations    rev_reconciliations?   @relation(fields: [reconciliation_id], references: [id], map: "fk_trp_settlements_reconciliation")
-  m6y9h5s                clt_members?           @relation("M_771c4m", fields: [created_by], references: [id])
-  my2xfov                clt_members?           @relation("M_msvszv", fields: [deleted_by], references: [id])
-  mf8dm2b                clt_members?           @relation("M_132srx", fields: [updated_by], references: [id])
+  m6y9h5s                adm_members?           @relation("M_771c4m", fields: [created_by], references: [id])
+  my2xfov                adm_members?           @relation("M_msvszv", fields: [deleted_by], references: [id])
+  mf8dm2b                adm_members?           @relation("M_132srx", fields: [updated_by], references: [id])
 
   @@index([reconciled], map: "idx_settlements_not_reconciled")
   @@index([platform_account_id, settlement_date], map: "idx_settlements_platform_account_date")

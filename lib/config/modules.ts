@@ -29,6 +29,7 @@ export interface SubNavItem {
   labelKey: string; // i18n key
   href: string;
   permission?: Permission;
+  disabled?: boolean; // Grey out with "Coming soon" tooltip
 }
 
 export interface ModuleConfig {
@@ -199,6 +200,12 @@ export const MODULES: ModuleConfig[] = [
         href: "/settings/crm",
         permission: "settings:view",
       },
+      {
+        key: "settings_company_profile",
+        labelKey: "modules.settings_company_profile",
+        href: "/settings/company-profile",
+        permission: "settings:view",
+      },
     ],
   },
   {
@@ -209,9 +216,21 @@ export const MODULES: ModuleConfig[] = [
     permission: "admin:view",
     subNav: [
       {
-        key: "users",
-        labelKey: "modules.admin_users",
-        href: "/admin/users",
+        key: "tenants",
+        labelKey: "modules.admin_tenants",
+        href: "/admin/tenants",
+        permission: "admin:view",
+      },
+      {
+        key: "members",
+        labelKey: "modules.admin_members",
+        href: "/admin/members",
+        permission: "admin:view",
+      },
+      {
+        key: "invitations",
+        labelKey: "modules.admin_invitations",
+        href: "/admin/invitations",
         permission: "admin:view",
       },
       {
@@ -219,18 +238,21 @@ export const MODULES: ModuleConfig[] = [
         labelKey: "modules.admin_roles",
         href: "/admin/roles",
         permission: "admin:view",
+        disabled: true,
       },
       {
         key: "audit",
         labelKey: "modules.admin_audit",
         href: "/admin/audit",
         permission: "admin:view",
+        disabled: true,
       },
       {
         key: "notifications",
         labelKey: "modules.admin_notifications",
         href: "/admin/notifications",
         permission: "admin:view",
+        disabled: true,
       },
     ],
   },
