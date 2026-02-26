@@ -342,6 +342,49 @@ export const memberPasswordResetTranslations = {
 } as const;
 
 // ============================================================================
+// MEMBER INVITATION
+// ============================================================================
+
+export const memberInvitationTranslations = {
+  en: {
+    preview: "You've been invited to FleetCore",
+    invitedTo: "has invited you to join",
+    onFleetCore: "on FleetCore.",
+    invitedToFleetCore: "You've been invited to join FleetCore.",
+    clickButton:
+      "Click the button below to accept the invitation and set up your account:",
+    acceptButton: "Accept Invitation",
+    linkExpiry: "This invitation expires in",
+    days: "days",
+    didntExpect: "If you didn't expect this email, you can safely ignore it.",
+  },
+  fr: {
+    preview: "Vous avez été invité sur FleetCore",
+    invitedTo: "vous a invité à rejoindre",
+    onFleetCore: "sur FleetCore.",
+    invitedToFleetCore: "Vous avez été invité à rejoindre FleetCore.",
+    clickButton:
+      "Cliquez sur le bouton ci-dessous pour accepter l'invitation et créer votre compte :",
+    acceptButton: "Accepter l'invitation",
+    linkExpiry: "Cette invitation expire dans",
+    days: "jours",
+    didntExpect:
+      "Si vous n'attendiez pas cet email, vous pouvez l'ignorer en toute sécurité.",
+  },
+  ar: {
+    preview: "تمت دعوتك إلى FleetCore",
+    invitedTo: "دعاك للانضمام إلى",
+    onFleetCore: "على FleetCore.",
+    invitedToFleetCore: "تمت دعوتك للانضمام إلى FleetCore.",
+    clickButton: "انقر على الزر أدناه لقبول الدعوة وإنشاء حسابك:",
+    acceptButton: "قبول الدعوة",
+    linkExpiry: "ستنتهي هذه الدعوة خلال",
+    days: "يوم",
+    didntExpect: "إذا لم تكن تتوقع هذا البريد الإلكتروني، يمكنك تجاهله بأمان.",
+  },
+} as const;
+
+// ============================================================================
 // SALES REP ASSIGNMENT
 // ============================================================================
 

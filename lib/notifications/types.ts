@@ -103,6 +103,12 @@ export const NOTIFICATION_REGISTRY = {
     priority: "high" as NotificationPriority,
     description: "Sent to new team member after account creation",
   },
+  "admin.member.invitation": {
+    templateCode: "member_invitation",
+    channels: ["email"] as NotificationChannel[],
+    priority: "high" as NotificationPriority,
+    description: "Invitation email for new team member",
+  },
   "admin.member.password_reset": {
     templateCode: "member_password_reset",
     channels: ["email"] as NotificationChannel[],
@@ -243,6 +249,17 @@ export interface MemberWelcomePayload {
 }
 
 /**
+ * Member Invitation Payload
+ * @see emails/templates/MemberInvitation.tsx
+ */
+export interface MemberInvitationPayload {
+  inviter_name: string;
+  tenant_name: string;
+  invite_url: string;
+  expiry_days: string;
+}
+
+/**
  * Member Password Reset Payload
  * @see emails/templates/MemberPasswordReset.tsx
  */
@@ -370,6 +387,7 @@ export interface NotificationPayloadMap {
   "crm.sales.assignment": SalesRepAssignmentPayload;
   "crm.lead.email_verification": EmailVerificationCodePayload;
   "admin.member.welcome": MemberWelcomePayload;
+  "admin.member.invitation": MemberInvitationPayload;
   "admin.member.password_reset": MemberPasswordResetPayload;
   "fleet.vehicle.inspection_reminder": VehicleInspectionReminderPayload;
   "fleet.vehicle.insurance_expiry": InsuranceExpiryAlertPayload;

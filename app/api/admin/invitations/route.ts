@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireCrmApiAuth } from "@/lib/auth/api-guard";
 import { prisma } from "@/lib/prisma";
 import { createInvitationSchema } from "@/features/settings/schemas/invitation.schema";
-import { sendInvitationEmail } from "@/lib/services/notification/invitation-email";
+import { sendNotification } from "@/lib/notifications";
+import { buildAppUrl } from "@/lib/config/urls.config";
+import { defaultLocale } from "@/lib/i18n/locales";
 import type { SettingsInvitation } from "@/features/settings/types/invitation.types";
 
 export const dynamic = "force-dynamic";
@@ -106,7 +108,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Fetch org + inviter names in parallel, then send email
+    // Fetch org + inviter names in parallel, then send via standard framework
     const [org, inviter] = await Promise.all([
       prisma.auth_organization.findUnique({
         where: { id: tenantId },
@@ -118,18 +120,29 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    const emailResult = await sendInvitationEmail({
-      email: email.toLowerCase(),
-      invitationId: invId,
-      tenantId,
-      tenantName: org?.name ?? undefined,
-      inviterName: inviter?.name ?? undefined,
-    });
+    const inviteUrl = buildAppUrl(
+      `/${defaultLocale}/accept-invitation?id=${invId}`
+    );
+
+    const notifResult = await sendNotification(
+      "admin.member.invitation",
+      email.toLowerCase(),
+      {
+        inviter_name: inviter?.name ?? "Admin",
+        tenant_name: org?.name ?? "FleetCore",
+        invite_url: inviteUrl,
+        expiry_days: "7",
+      },
+      {
+        tenantId,
+        idempotencyKey: `member_invitation_${invId}`,
+      }
+    );
 
     return NextResponse.json({
       success: true,
       invitationId: invId,
-      emailSent: emailResult.emailSent,
+      emailSent: notifResult.success,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal error";
