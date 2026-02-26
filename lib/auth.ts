@@ -14,24 +14,9 @@ import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins/organization";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
-import { Resend } from "resend";
-import { EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME } from "@/lib/config/email.config";
 import { URLS, buildAppUrl } from "@/lib/config/urls.config";
 import { defaultLocale } from "@/lib/i18n/locales";
 import { sendNotification } from "@/lib/notifications";
-
-// ── Resend singleton (lazy) — used by Better Auth invitation hook ────────────
-
-let _resend: Resend | null = null;
-
-function getResend(): Resend {
-  if (!_resend) {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
-    _resend = new Resend(apiKey);
-  }
-  return _resend;
-}
 
 // ── Auth instance ──────────────────────────────────────────────────────────────
 
@@ -100,11 +85,18 @@ export const auth = betterAuth({
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
       const firstName = user.name?.split(" ")[0] ?? "";
-      await sendNotification("admin.member.password_reset", user.email, {
-        first_name: firstName,
-        reset_link: url,
-        expiry_hours: "24",
-      });
+      await sendNotification(
+        "admin.member.password_reset",
+        user.email,
+        {
+          first_name: firstName,
+          reset_link: url,
+          expiry_hours: "24",
+        },
+        {
+          processImmediately: true,
+        }
+      );
     },
   },
 
@@ -281,30 +273,20 @@ export const auth = betterAuth({
         const inviteUrl = buildAppUrl(
           `/${defaultLocale}/accept-invitation?id=${id}`
         );
-        const html = `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
-            <div style="background-color: #1a1a2e; padding: 24px 32px; text-align: center;">
-              <span style="font-size: 24px; font-weight: 700; color: #ffffff; text-decoration: none;">FleetCore</span>
-            </div>
-            <div style="padding: 32px;">
-              <h2 style="color: #1a1a1a; font-size: 20px; margin: 0 0 16px;">You've been invited to FleetCore</h2>
-              <p style="color: #525f7f; font-size: 16px; line-height: 24px;">Click the button below to accept the invitation and set up your account:</p>
-              <p style="margin: 28px 0; text-align: center;">
-                <a href="${inviteUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">Accept Invitation</a>
-              </p>
-              <p style="color: #666; font-size: 14px; line-height: 22px;">This invitation expires in 7 days. If you didn't expect this email, you can ignore it.</p>
-              <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 24px 0;" />
-              <p style="color: #8898aa; font-size: 12px; line-height: 16px;">FleetCore — Fleet Management Platform</p>
-            </div>
-          </div>
-        `.trim();
-
-        await getResend().emails.send({
-          from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
-          to: email,
-          subject: "You've been invited to FleetCore",
-          html,
-        });
+        await sendNotification(
+          "admin.member.invitation",
+          email,
+          {
+            inviter_name: "Admin",
+            tenant_name: "FleetCore",
+            invite_url: inviteUrl,
+            expiry_days: "7",
+          },
+          {
+            idempotencyKey: `ba_invitation_${id}`,
+            processImmediately: true,
+          }
+        );
       },
 
       // ── Hook: sync auth_member → adm_members on invitation acceptance ──────

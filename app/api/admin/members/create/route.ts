@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireCrmApiAuth } from "@/lib/auth/api-guard";
 import { prisma } from "@/lib/prisma";
 import { createMemberSchema } from "@/features/settings/schemas/member.schema";
-import { sendInvitationEmail } from "@/lib/services/notification/invitation-email";
+import { sendNotification } from "@/lib/notifications";
+import { buildAppUrl } from "@/lib/config/urls.config";
+import { defaultLocale } from "@/lib/i18n/locales";
 
 export const dynamic = "force-dynamic";
 
@@ -107,14 +109,25 @@ export async function POST(req: NextRequest) {
         }),
       ]);
 
-      const emailResult = await sendInvitationEmail({
-        email: email.toLowerCase(),
-        invitationId,
-        tenantId,
-        tenantName: org?.name ?? undefined,
-        inviterName: inviter?.name ?? undefined,
-      });
-      emailSent = emailResult.emailSent;
+      const inviteUrl = buildAppUrl(
+        `/${defaultLocale}/accept-invitation?id=${invitationId}`
+      );
+      const notifResult = await sendNotification(
+        "admin.member.invitation",
+        email.toLowerCase(),
+        {
+          inviter_name: inviter?.name ?? "Admin",
+          tenant_name: org?.name ?? "FleetCore",
+          invite_url: inviteUrl,
+          expiry_days: "7",
+        },
+        {
+          tenantId,
+          idempotencyKey: `member_invitation_${invitationId}`,
+          processImmediately: true,
+        }
+      );
+      emailSent = notifResult.success;
     }
 
     // Audit log

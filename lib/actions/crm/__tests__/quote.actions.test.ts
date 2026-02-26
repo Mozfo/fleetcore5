@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 // Test constant for admin org ID
-const TEST_ADMIN_ORG_ID = "org_admin_test";
+const TEST_ADMIN_ORG_ID = "550e8400-e29b-41d4-a716-446655440001";
 
 // =============================================================================
 // HOISTED MOCKS - vi.hoisted for mocks used in vi.mock factories
@@ -285,7 +285,7 @@ function setupNonAdminAuth() {
 function setupAdminNoProvider() {
   mockAuth.mockResolvedValue({
     userId: TEST_USER_ID,
-    orgId: ADMIN_ORG_ID,
+    orgId: null,
   });
   mockGetCurrentTenantId.mockResolvedValue(null);
 }
@@ -384,7 +384,7 @@ describe("quote.actions.ts", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toContain("Provider context required");
+        expect(result.error).toContain("Tenant context required");
       }
     });
 

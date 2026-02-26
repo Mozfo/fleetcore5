@@ -22,9 +22,9 @@ describe("sendNotification Façade - Type Safety Tests", () => {
   // ==========================================================================
 
   describe("NOTIFICATION_REGISTRY", () => {
-    it("contains all 14 notification types", () => {
+    it("contains all 15 notification types", () => {
       const types = Object.keys(NOTIFICATION_REGISTRY);
-      expect(types).toHaveLength(14);
+      expect(types).toHaveLength(15);
     });
 
     it("has correct structure for each type", () => {

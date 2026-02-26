@@ -136,6 +136,7 @@ export async function POST(req: NextRequest) {
       {
         tenantId,
         idempotencyKey: `member_invitation_${invId}`,
+        processImmediately: true,
       }
     );
 

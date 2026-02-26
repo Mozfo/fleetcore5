@@ -521,15 +521,11 @@ describe("CustomerConversionService", () => {
       );
     });
 
-    it("should update tenant with organization ID (stored in auth_organization_id column)", async () => {
-      await service.convertLeadToCustomer(mockCheckoutSession);
+    it("should return auth organization ID in result (Shared-ID pattern)", async () => {
+      const result = await service.convertLeadToCustomer(mockCheckoutSession);
 
-      expect(prisma.adm_tenants.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: "tenant-uuid-123" },
-          data: { auth_organization_id: "org_auth_123" },
-        })
-      );
+      expect(result.success).toBe(true);
+      expect(result.authOrgId).toBe("org_auth_123");
     });
 
     it("should continue if auth organization creation fails", async () => {

@@ -31,6 +31,9 @@ vi.mock("@/lib/prisma", () => ({
     crm_lead_activities: {
       create: vi.fn(),
     },
+    adm_tenants: {
+      findFirst: vi.fn(),
+    },
     $transaction: vi.fn((fn) => fn(prisma)),
   },
 }));
@@ -225,6 +228,14 @@ describe("PaymentLinkService", () => {
 
     vi.mocked(prisma.crm_leads.update).mockResolvedValue({} as never);
     vi.mocked(prisma.crm_lead_activities.create).mockResolvedValue({} as never);
+    // HQ tenant fallback for leads without tenant_id
+    vi.mocked(
+      (
+        prisma as unknown as {
+          adm_tenants: { findFirst: ReturnType<typeof vi.fn> };
+        }
+      ).adm_tenants.findFirst
+    ).mockResolvedValue({ id: "hq-tenant-uuid" } as never);
   });
 
   afterEach(() => {

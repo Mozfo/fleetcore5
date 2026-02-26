@@ -233,7 +233,7 @@ describe("VerificationService", () => {
       );
 
       expect(authService.inviteAdmin).toHaveBeenCalledWith({
-        organizationId: "org_auth_123",
+        organizationId: "tenant-uuid-123",
         email: "admin@testcompany.com",
         name: "John Doe",
         role: "org:provider_admin",
@@ -269,10 +269,10 @@ describe("VerificationService", () => {
       expect(result.adminInvitationSent).toBe(false);
     });
 
-    it("should skip invitation if no organization ID", async () => {
+    it("should skip invitation if tenant ID is null (Shared-ID edge case)", async () => {
       vi.mocked(prisma.adm_tenants.findUnique).mockResolvedValue({
         ...mockTenantValid,
-        auth_organization_id: null,
+        id: null,
       } as never);
 
       const result = await service.submitVerification(
