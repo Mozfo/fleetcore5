@@ -6,8 +6,16 @@ import { useTranslation } from "react-i18next";
 import PageContainer from "@/components/layout/page-container";
 import { ViewToggle, type ViewMode } from "@/components/crm/leads/ViewToggle";
 
-import { LeadsListPage } from "./leads-list-page";
-import { LeadsKanbanPage } from "./leads-kanban-page";
+import dynamic from "next/dynamic";
+
+const LeadsListPage = dynamic(
+  () => import("./leads-list-page").then((mod) => mod.LeadsListPage),
+  { ssr: false }
+);
+const LeadsKanbanPage = dynamic(
+  () => import("./leads-kanban-page").then((mod) => mod.LeadsKanbanPage),
+  { ssr: false }
+);
 
 const VIEW_MODE_STORAGE_KEY = "crm_leads_view";
 

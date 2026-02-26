@@ -2,7 +2,15 @@
 
 import { useUser } from "@/lib/auth/client";
 import { useTranslation } from "react-i18next";
-import { DashboardGrid } from "@/components/app/widgets";
+import dynamic from "next/dynamic";
+
+const DashboardGrid = dynamic(
+  () =>
+    import("@/components/app/widgets/DashboardGrid").then(
+      (mod) => mod.DashboardGrid
+    ),
+  { ssr: false }
+);
 import { FCPageHeader } from "@/components/fc";
 import { Loader2 } from "lucide-react";
 

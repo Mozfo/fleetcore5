@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./config";
 
@@ -10,23 +10,11 @@ interface I18nProviderProps {
 }
 
 export function I18nProvider({ children, locale }: I18nProviderProps) {
-  const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
-    const initI18n = async () => {
-      if (i18n.language !== locale) {
-        await i18n.changeLanguage(locale);
-      }
-      setIsLoading(false);
-    };
-
-    // Use void to explicitly mark as fire-and-forget in useEffect
-    void initI18n();
+    if (i18n.language !== locale) {
+      void i18n.changeLanguage(locale);
+    }
   }, [locale]);
-
-  if (isLoading) {
-    return null; // ou un loading spinner
-  }
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
 }

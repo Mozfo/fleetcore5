@@ -17,7 +17,12 @@ import { QuickSearch } from "./QuickSearch";
 import { StatsCards } from "./StatsCards";
 import { ReportsTable } from "./ReportsTable";
 import { ExportButton } from "./ExportButton";
-import { ChartSection } from "./ChartSection";
+import dynamic from "next/dynamic";
+
+const ChartSection = dynamic(
+  () => import("./ChartSection").then((mod) => mod.ChartSection),
+  { ssr: false }
+);
 import { ColdLeadsFilter, type ColdLeadsFilterState } from "./ColdLeadsFilter";
 import { Loader2 } from "lucide-react";
 
