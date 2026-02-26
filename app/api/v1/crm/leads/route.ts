@@ -127,7 +127,26 @@ const ALLOWED_SORT_FIELDS = new Set([
 export async function POST(request: NextRequest) {
   try {
     // STEP 1: Authenticate via direct auth helper
-    const { userId, orgId } = await requireCrmApiAuth();
+    const { userId } = await requireCrmApiAuth();
+
+    // STEP 1b: Resolve tenant_id from the current user's adm_members record
+    const member = await db.adm_members.findFirst({
+      where: { auth_user_id: userId, deleted_at: null },
+      select: { tenant_id: true },
+    });
+    if (!member) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "MEMBER_NOT_FOUND",
+            message: "No member profile found for the current user",
+          },
+        },
+        { status: 403 }
+      );
+    }
+    const tenantId = member.tenant_id;
 
     // STEP 2: Parse request body
     const body = await request.json();
@@ -136,12 +155,11 @@ export async function POST(request: NextRequest) {
     const validatedData = CreateLeadSchema.parse(body);
 
     // STEP 4: Create lead (orchestrated)
-    // Note: orgId passed as context identifier (not tenant - prospects have no tenant)
     const leadCreationService = new LeadCreationService();
     const result = await leadCreationService.createLead(
       validatedData,
-      orgId, // FleetCore Admin org context
-      userId // created_by
+      tenantId, // tenant_id from adm_members (the team managing this lead)
+      userId // created_by (auth user ID)
     );
 
     // STEP 6: Success response
