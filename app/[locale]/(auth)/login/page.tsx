@@ -74,7 +74,6 @@ function LoginForm() {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     setError("");
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const { error: signInError } = await authClient.signIn.email({
       email: data.email,

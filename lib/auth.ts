@@ -110,11 +110,7 @@ export const auth = betterAuth({
 
   rateLimit: {
     enabled: true,
-    storage: "database",
-    modelName: "auth_rate_limit",
-    fields: {
-      lastRequest: "last_request",
-    },
+    storage: "memory",
     customRules: {
       "/sign-in/email": { max: 5, window: 60 },
       "/sign-up/email": { max: 3, window: 60 },
@@ -200,28 +196,28 @@ export const auth = betterAuth({
         },
         after: async (session) => {
           try {
-            // Update last_login_at on adm_members for this user
-            await prisma.adm_members.updateMany({
-              where: {
-                auth_user_id: session.userId,
-                deleted_at: null,
-              },
-              data: { last_login_at: new Date() },
-            });
-
-            await prisma.adm_audit_logs.create({
-              data: {
-                tenant_id: "00000000-0000-0000-0000-000000000000", // system tenant placeholder
-                entity: "session",
-                entity_id: session.id,
-                action: "login",
-                ip_address: session.ipAddress ?? null,
-                user_agent: session.userAgent ?? null,
-                new_values: { userId: session.userId },
-                severity: "info",
-                category: "operational",
-              },
-            });
+            await Promise.all([
+              prisma.adm_members.updateMany({
+                where: {
+                  auth_user_id: session.userId,
+                  deleted_at: null,
+                },
+                data: { last_login_at: new Date() },
+              }),
+              prisma.adm_audit_logs.create({
+                data: {
+                  tenant_id: "00000000-0000-0000-0000-000000000000",
+                  entity: "session",
+                  entity_id: session.id,
+                  action: "login",
+                  ip_address: session.ipAddress ?? null,
+                  user_agent: session.userAgent ?? null,
+                  new_values: { userId: session.userId },
+                  severity: "info",
+                  category: "operational",
+                },
+              }),
+            ]);
           } catch {
             // Non-blocking: login audit failure must not break auth flow
           }
