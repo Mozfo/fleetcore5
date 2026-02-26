@@ -32,6 +32,13 @@ export interface AuthSession {
     emailVerified: boolean;
     image: string | null;
   };
+  /** Active organization details (for client hydration) */
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    logo: string | null;
+  } | null;
 }
 
 /** Narrowed session for CRM — orgId guaranteed non-null */
@@ -73,6 +80,8 @@ export const getSession = cache(
     let orgRole: string | null = null;
     let isHq = false;
 
+    let organization: AuthSession["organization"] = null;
+
     if (orgId) {
       const [member, org] = await Promise.all([
         prisma.auth_member.findFirst({
@@ -81,18 +90,27 @@ export const getSession = cache(
         }),
         prisma.auth_organization.findUnique({
           where: { id: orgId },
-          select: { metadata: true },
+          select: { name: true, slug: true, logo: true, metadata: true },
         }),
       ]);
 
       orgRole = member?.role ?? null;
 
-      if (org?.metadata) {
-        try {
-          const meta = JSON.parse(org.metadata) as Record<string, unknown>;
-          isHq = meta?.is_headquarters === true;
-        } catch {
-          // Invalid JSON in metadata
+      if (org) {
+        organization = {
+          id: orgId,
+          name: org.name,
+          slug: org.slug,
+          logo: org.logo ?? null,
+        };
+
+        if (org.metadata) {
+          try {
+            const meta = JSON.parse(org.metadata) as Record<string, unknown>;
+            isHq = meta?.is_headquarters === true;
+          } catch {
+            // Invalid JSON in metadata
+          }
         }
       }
     }
@@ -109,6 +127,7 @@ export const getSession = cache(
         emailVerified: user.emailVerified,
         image: user.image ?? null,
       },
+      organization,
     };
   }
 );

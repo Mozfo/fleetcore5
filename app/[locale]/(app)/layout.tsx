@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth/server";
+import { getSession } from "@/lib/auth/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Toaster } from "sonner";
@@ -6,6 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
 import { RefineProvider } from "@/components/providers/refine-provider";
+import { ServerAuthProvider } from "@/components/providers/server-auth-provider";
 
 export default async function AppLayout({
   children,
@@ -14,10 +15,10 @@ export default async function AppLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const user = await getCurrentUser();
+  const session = await getSession();
   const { locale } = await params;
 
-  if (!user) {
+  if (!session) {
     redirect(`/${locale}/login`);
   }
 
@@ -25,7 +26,7 @@ export default async function AppLayout({
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
   return (
-    <>
+    <ServerAuthProvider session={session}>
       <SidebarProvider
         defaultOpen={defaultOpen}
         style={
@@ -52,6 +53,6 @@ export default async function AppLayout({
         </RefineProvider>
       </SidebarProvider>
       <Toaster position="top-right" richColors />
-    </>
+    </ServerAuthProvider>
   );
 }
