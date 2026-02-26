@@ -2,6 +2,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   serverExternalPackages: [
     "pino",
     "pino-pretty",
@@ -48,6 +49,9 @@ export default withSentryConfig(nextConfig, {
 
   // Automatically tree-shake Sentry logger statements to reduce bundle size
   disableLogger: true,
+
+  // NOTE: Sentry webpack.treeshake is NOT effective with Next.js 16 Turbopack builds.
+  // Sentry bundle reduction requires @sentry/nextjs Turbopack support (not yet available).
 
   // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
   // See the following for more information:
