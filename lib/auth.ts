@@ -16,7 +16,6 @@ import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { URLS, buildAppUrl } from "@/lib/config/urls.config";
 import { defaultLocale } from "@/lib/i18n/locales";
-import { sendNotification } from "@/lib/notifications";
 
 // ── Auth instance ──────────────────────────────────────────────────────────────
 
@@ -84,6 +83,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
+      const { sendNotification } = await import("@/lib/notifications");
       const firstName = user.name?.split(" ")[0] ?? "";
       await sendNotification(
         "admin.member.password_reset",
@@ -270,6 +270,7 @@ export const auth = betterAuth({
         },
       },
       sendInvitationEmail: async ({ email, id }) => {
+        const { sendNotification } = await import("@/lib/notifications");
         const inviteUrl = buildAppUrl(
           `/${defaultLocale}/accept-invitation?id=${id}`
         );

@@ -113,7 +113,7 @@ export default function middleware(req: NextRequest) {
   // ─── 3. Protected page routes — cookie check → redirect login ──────────
   const isProtectedPage =
     pathname.startsWith("/adm") ||
-    /^\/(en|fr)\/(dashboard|crm|settings)/.test(pathname);
+    /^\/(en|fr)\/(dashboard|crm|settings|admin)/.test(pathname);
 
   if (isProtectedPage) {
     const token = getSessionCookie(req);
