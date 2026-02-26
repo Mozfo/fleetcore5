@@ -234,10 +234,12 @@ export function LeadsCreateDialog({
           type: "success",
           message: t("leads.toast.success_created"),
         },
-        errorNotification: {
+        errorNotification: (error) => ({
           type: "error",
-          message: t("leads.toast.error_generic"),
-        },
+          message:
+            (error as unknown as { message?: string })?.message ||
+            t("leads.toast.error_generic"),
+        }),
       },
       {
         onSuccess: () => {

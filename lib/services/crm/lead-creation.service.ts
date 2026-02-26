@@ -287,8 +287,8 @@ export class LeadCreationService {
 
     const lead = await this.leadRepo.create(
       leadData,
-      createdBy ?? "",
-      tenantId
+      createdBy ?? ""
+      // No tenantId — CRM leads are prospects, tenant_id is set only on conversion
     );
 
     // STEP 7: Send notification to assigned sales rep (if assigned)
