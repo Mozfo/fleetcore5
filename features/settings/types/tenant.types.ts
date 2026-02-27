@@ -4,6 +4,7 @@ export interface SettingsTenant {
   name: string;
   slug: string;
   tenantType: string;
+  tenantCode: string | null;
   countryCode: string;
   defaultCurrency: string;
   status: string;

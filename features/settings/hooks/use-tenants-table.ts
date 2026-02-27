@@ -35,6 +35,7 @@ export function useTenantsTable({ columns }: UseTenantsTableProps) {
   const { query, result } = useList<SettingsTenant>({
     resource: "tenants",
     pagination: { mode: "off" },
+    queryOptions: { refetchInterval: 30_000 },
   });
 
   const data = result.data;

@@ -121,12 +121,17 @@ export function TenantsListPage() {
         const res = await fetch(`/api/admin/tenants/${deleteTenantId}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+          const json = await res.json();
+          toast.error(json.error ?? "Failed to delete tenant");
+          setDeleteTenantId(null);
+          return;
+        }
         toast.success("Tenant deleted");
         setDeleteTenantId(null);
         await refetch();
       } catch {
-        toast.error("Failed to delete tenant");
+        toast.error("Network error");
       }
     })();
   }, [deleteTenantId, refetch]);
@@ -189,12 +194,40 @@ export function TenantsListPage() {
             const ids = table
               .getFilteredSelectedRowModel()
               .rows.map((r) => r.original.id);
-            await Promise.allSettled(
-              ids.map((id) =>
-                fetch(`/api/admin/tenants/${id}`, { method: "DELETE" })
-              )
+            const results = await Promise.allSettled(
+              ids.map(async (id) => {
+                const res = await fetch(`/api/admin/tenants/${id}`, {
+                  method: "DELETE",
+                });
+                if (!res.ok) {
+                  const json = await res.json();
+                  throw new Error(json.error ?? "Delete failed");
+                }
+              })
             );
-            toast.success(`${ids.length} tenants deleted`);
+            const succeeded = results.filter(
+              (r) => r.status === "fulfilled"
+            ).length;
+            const failed = results.filter(
+              (r): r is PromiseRejectedResult => r.status === "rejected"
+            );
+            if (succeeded > 0) {
+              toast.success(
+                succeeded === 1
+                  ? "1 tenant deleted"
+                  : `${succeeded} tenants deleted`
+              );
+            }
+            if (failed.length > 0) {
+              const reason = failed[0].reason;
+              const msg =
+                reason instanceof Error ? reason.message : "Delete failed";
+              toast.error(
+                failed.length === 1
+                  ? msg
+                  : `${failed.length} tenants could not be deleted: ${msg}`
+              );
+            }
             table.resetRowSelection();
             await refetch();
           })();

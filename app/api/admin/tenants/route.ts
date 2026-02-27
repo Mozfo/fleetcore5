@@ -10,7 +10,7 @@ export async function GET() {
   try {
     await requireCrmApiAuth();
 
-    // Fetch orgs, tenants, and member counts in parallel
+    // Fetch orgs, tenants (including soft-deleted), and member counts in parallel
     const [orgs, tenants, memberCounts] = await Promise.all([
       prisma.auth_organization.findMany({
         orderBy: { created_at: "desc" },
@@ -23,6 +23,8 @@ export async function GET() {
           default_currency: true,
           status: true,
           timezone: true,
+          tenant_code: true,
+          deleted_at: true,
         },
       }),
       prisma.adm_members.groupBy({
@@ -37,21 +39,27 @@ export async function GET() {
       memberCounts.map((c) => [c.tenant_id, c._count.id])
     );
 
-    const data: SettingsTenant[] = orgs.map((o) => {
-      const t = tenantMap.get(o.id);
-      return {
-        id: o.id,
-        name: o.name,
-        slug: o.slug ?? "",
-        tenantType: t?.tenant_type ?? "unknown",
-        countryCode: t?.country_code ?? "",
-        defaultCurrency: t?.default_currency ?? "",
-        status: t?.status ?? "unknown",
-        timezone: t?.timezone ?? "",
-        memberCount: countMap.get(o.id) ?? 0,
-        createdAt: o.created_at.toISOString(),
-      };
-    });
+    // Include orgs that have an adm_tenants row (active + soft-deleted)
+    const data: SettingsTenant[] = orgs
+      .filter((o) => tenantMap.has(o.id))
+      .map((o) => {
+        const t = tenantMap.get(o.id);
+        if (!t) throw new Error(`Tenant not found for org ${o.id}`);
+        const isCancelled = t.deleted_at !== null;
+        return {
+          id: o.id,
+          name: o.name,
+          slug: o.slug ?? "",
+          tenantType: t.tenant_type ?? "unknown",
+          tenantCode: t.tenant_code ?? null,
+          countryCode: t.country_code ?? "",
+          defaultCurrency: t.default_currency ?? "",
+          status: isCancelled ? "cancelled" : (t.status ?? "unknown"),
+          timezone: t.timezone ?? "",
+          memberCount: countMap.get(o.id) ?? 0,
+          createdAt: o.created_at.toISOString(),
+        };
+      });
 
     return NextResponse.json({
       success: true,

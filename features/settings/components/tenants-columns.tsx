@@ -34,7 +34,9 @@ function formatDate(value: unknown): string {
 
 /** Convert ISO 3166-1 alpha-2 country code to flag emoji */
 function countryFlag(code: string): string {
+  if (!code || code.length !== 2) return "🌍";
   const upper = code.toUpperCase();
+  if (upper === "XX") return "🌍";
   const codePoints = [...upper].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65);
   return String.fromCodePoint(...codePoints);
 }
@@ -46,6 +48,7 @@ const TENANT_TYPE_VARIANT: Record<
   headquarters: "info",
   division: "secondary",
   client: "default",
+  expansion: "outline",
 };
 
 const STATUS_VARIANT: Record<
@@ -139,6 +142,24 @@ export function getTenantsColumns({
       },
       meta: { label: "Name" },
     },
+    // Tenant Code
+    {
+      accessorKey: "tenantCode",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Tenant Code" />
+      ),
+      cell: ({ row }) => {
+        const code = row.getValue<string | null>("tenantCode");
+        return code ? (
+          <span className="text-muted-foreground font-mono text-sm">
+            {code}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">{"\u2014"}</span>
+        );
+      },
+      meta: { label: "Tenant Code" },
+    },
     // Country
     {
       accessorKey: "countryCode",
@@ -186,6 +207,7 @@ export function getTenantsColumns({
           { label: "Headquarters", value: "headquarters" },
           { label: "Division", value: "division" },
           { label: "Client", value: "client" },
+          { label: "Expansion", value: "expansion" },
         ],
       },
       filterFn: facetedFilter,
