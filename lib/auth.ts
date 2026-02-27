@@ -188,7 +188,10 @@ export const auth = betterAuth({
         },
         after: async (session) => {
           try {
-            await Promise.all([
+            // Resolve tenant from user's membership (org set by before hook)
+            const tenantId = session.activeOrganizationId as string | undefined;
+
+            const tasks: Promise<unknown>[] = [
               prisma.adm_members.updateMany({
                 where: {
                   auth_user_id: session.userId,
@@ -196,20 +199,28 @@ export const auth = betterAuth({
                 },
                 data: { last_login_at: new Date() },
               }),
-              prisma.adm_audit_logs.create({
-                data: {
-                  tenant_id: "00000000-0000-0000-0000-000000000000",
-                  entity: "session",
-                  entity_id: session.id,
-                  action: "login",
-                  ip_address: session.ipAddress ?? null,
-                  user_agent: session.userAgent ?? null,
-                  new_values: { userId: session.userId },
-                  severity: "info",
-                  category: "operational",
-                },
-              }),
-            ]);
+            ];
+
+            // Only create audit log if user has a valid tenant
+            if (tenantId) {
+              tasks.push(
+                prisma.adm_audit_logs.create({
+                  data: {
+                    tenant_id: tenantId,
+                    entity: "session",
+                    entity_id: session.id,
+                    action: "login",
+                    ip_address: session.ipAddress ?? null,
+                    user_agent: session.userAgent ?? null,
+                    new_values: { userId: session.userId },
+                    severity: "info",
+                    category: "operational",
+                  },
+                })
+              );
+            }
+
+            await Promise.all(tasks);
           } catch {
             // Non-blocking: login audit failure must not break auth flow
           }
