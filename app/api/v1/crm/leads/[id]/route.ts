@@ -27,6 +27,7 @@ import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { requireCrmApiAuth } from "@/lib/auth/api-guard";
 import { AppError } from "@/lib/core/errors";
+import { getValidFleetSizeValues } from "@/lib/helpers/fleet-size.server";
 
 /**
  * GET /api/v1/crm/leads/[id]
@@ -271,6 +272,23 @@ export async function PATCH(
 
     // STEP 5: Validate with Zod
     const validatedData = UpdateLeadSchema.parse(body);
+
+    // STEP 5b: Dynamic fleet_size validation against crm_settings
+    if (validatedData.fleet_size) {
+      const validSizes = await getValidFleetSizeValues();
+      if (!validSizes.includes(validatedData.fleet_size)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "VALIDATION_ERROR",
+              message: `Invalid fleet_size "${validatedData.fleet_size}". Valid values: ${validSizes.join(", ")}`,
+            },
+          },
+          { status: 422 }
+        );
+      }
+    }
 
     // Handle assigned_to_id -> assigned_to mapping
     // Frontend may send assigned_to_id, map it to assigned_to for database

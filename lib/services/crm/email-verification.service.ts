@@ -26,6 +26,7 @@ import { PrismaClient } from "@prisma/client";
 import { prisma as defaultPrisma } from "@/lib/prisma";
 import { NotificationQueueService } from "@/lib/services/notification/queue.service";
 import { logger } from "@/lib/logger";
+import { resolveTenantByCountry } from "@/lib/helpers/tenant-routing.server";
 import {
   WizardLeadService,
   wizardLeadService as defaultWizardLeadService,
@@ -474,19 +475,24 @@ export class EmailVerificationService {
           },
         });
       } else {
+        // V7: Resolve tenant from country before creating lead
+        const resolvedCountry = country_code?.toUpperCase() || "XX";
+        const tenantId = await resolveTenantByCountry(resolvedCountry);
+
         // Create new lead with minimal data (wizard step 1)
         lead = await this.prisma.crm_leads.create({
           data: {
             email: email.toLowerCase(),
             status: "new",
             lead_stage: "top_of_funnel", // V6.4: Set initial stage
-            source: "web", // Web form (detail in metadata)
+            source: "website", // Web form (must match crm_leads_source_check constraint)
             // V6.4-3: Store homepage language for email notifications
             language: locale,
             email_verified: false,
             email_verification_code: hashedCode,
             email_verification_expires_at: expiresAt,
             email_verification_attempts: 0,
+            tenant_id: tenantId,
             ...(country_code && { country_code: country_code.toUpperCase() }),
             // V6.4: GeoIP tracking for spam detection
             ...(ip_address && { ip_address }),

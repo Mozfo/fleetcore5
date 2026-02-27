@@ -159,8 +159,9 @@ describeIntegration("NotificationService Integration Tests", () => {
         last_name: "Test",
         phone: "+971500000001",
         country_code: "AE",
+        tenant_id: testTenantId, // V7: tenant_id required
         status: "new",
-        source: "web",
+        source: "website",
       },
     });
     testLeadId = lead.id;

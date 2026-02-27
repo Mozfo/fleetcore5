@@ -280,17 +280,7 @@ export class LeadQualificationService {
       recommendation,
     };
 
-    // 5. Resolve tenant_id for activity log
-    let activityTenantId = lead.tenant_id;
-    if (!activityTenantId) {
-      const hqTenant = await prisma.adm_tenants.findFirst({
-        where: { tenant_type: "headquarters" },
-        select: { id: true },
-      });
-      activityTenantId = hqTenant?.id ?? null;
-    }
-
-    // 6. Update lead and create activity in transaction
+    // 5. Update lead and create activity in transaction
     await prisma.$transaction(async (tx) => {
       // Update lead with qualification data
       await tx.crm_leads.update({
@@ -303,20 +293,18 @@ export class LeadQualificationService {
         },
       });
 
-      // Create activity
-      if (activityTenantId) {
-        await tx.crm_lead_activities.create({
-          data: {
-            tenant_id: activityTenantId,
-            lead_id: leadId,
-            activity_type: "lead_qualified",
-            title: `Lead qualified with CPT score: ${total}/100`,
-            description: `Recommendation: ${recommendation}. Challenges: ${cpt.challenges.score}, Priority: ${cpt.priority.score}, Timing: ${cpt.timing.score}`,
-            performed_by: performedBy,
-            created_at: new Date(),
-          },
-        });
-      }
+      // Create activity (tenant_id always set since V7 country routing)
+      await tx.crm_lead_activities.create({
+        data: {
+          tenant_id: lead.tenant_id,
+          lead_id: leadId,
+          activity_type: "lead_qualified",
+          title: `Lead qualified with CPT score: ${total}/100`,
+          description: `Recommendation: ${recommendation}. Challenges: ${cpt.challenges.score}, Priority: ${cpt.priority.score}, Timing: ${cpt.timing.score}`,
+          performed_by: performedBy,
+          created_at: new Date(),
+        },
+      });
     });
 
     logger.info(

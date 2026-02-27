@@ -141,7 +141,7 @@ export async function GET(request: Request) {
           created_at: { lte: twentyFourHoursAgo },
           deleted_at: null,
           status: { in: ["new", "email_verified"] },
-          tenant_id: { not: null },
+          // tenant_id is always set (V7 country routing)
         },
         take: 50,
       });

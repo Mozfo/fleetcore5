@@ -21,6 +21,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import { getValidFleetSizeValues } from "@/lib/helpers/fleet-size.server";
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -29,9 +30,7 @@ import { z } from "zod";
 const completeWizardSchema = z.object({
   company_name: z.string().min(1),
   phone: z.string().min(1),
-  fleet_size: z.enum(["2-10", "11-50", "50+"], {
-    message: "Invalid fleet size",
-  }),
+  fleet_size: z.string().min(1, "Fleet size is required"),
   gdpr_consent: z.boolean().optional().default(false),
   wizard_completed: z.literal(true),
 });
@@ -78,6 +77,21 @@ export async function PATCH(
           },
         },
         { status: 400 }
+      );
+    }
+
+    // Dynamic fleet_size validation against crm_settings
+    const validSizes = await getValidFleetSizeValues();
+    if (!validSizes.includes(validationResult.data.fleet_size)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: `Invalid fleet_size "${validationResult.data.fleet_size}". Valid values: ${validSizes.join(", ")}`,
+          },
+        },
+        { status: 422 }
       );
     }
 

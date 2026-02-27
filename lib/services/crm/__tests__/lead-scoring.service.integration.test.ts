@@ -151,6 +151,7 @@ describeIntegration("LeadScoringService Integration Tests", () => {
       lead_stage: "top_of_funnel",
       source_id: testSourceId,
       country_code: "FR", // Default to FR which exists
+      tenant_id: "7ad8173c-68c5-41d3-9918-686e4e941cc0", // FleetCore Admin HQ (test)
       ...overrides,
     };
 

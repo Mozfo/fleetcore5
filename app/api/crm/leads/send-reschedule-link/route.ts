@@ -152,21 +152,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Resolve tenant_id for activity log (use lead's tenant or fallback to HQ)
-    let activityTenantId = lead.tenant_id;
-    if (!activityTenantId) {
-      const hqTenant = await prisma.adm_tenants.findFirst({
-        where: { tenant_type: "headquarters" },
-        select: { id: true },
-      });
-      activityTenantId = hqTenant?.id ?? null;
-    }
-
-    // Log activity
-    if (activityTenantId) {
+    // Log activity (tenant_id always set since V7 country routing)
+    {
       await prisma.crm_lead_activities.create({
         data: {
-          tenant_id: activityTenantId,
+          tenant_id: lead.tenant_id,
           lead_id: lead.id,
           activity_type: "email_sent",
           title: "Reschedule link sent",

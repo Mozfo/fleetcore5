@@ -28,6 +28,8 @@ import { db } from "@/lib/prisma";
 import { requireCrmApiAuth } from "@/lib/auth/api-guard";
 import { AppError } from "@/lib/core/errors";
 import { logger } from "@/lib/logger";
+import { getValidFleetSizeValues } from "@/lib/helpers/fleet-size.server";
+import { resolveTenantByCountry } from "@/lib/helpers/tenant-routing.server";
 
 // ── Security: Allowed sort fields (must match DataTable sortable columns) ────
 const ALLOWED_SORT_FIELDS = new Set([
@@ -129,36 +131,39 @@ export async function POST(request: NextRequest) {
     // STEP 1: Authenticate via direct auth helper
     const { userId } = await requireCrmApiAuth();
 
-    // STEP 1b: Resolve tenant_id from the current user's adm_members record
-    const member = await db.adm_members.findFirst({
-      where: { auth_user_id: userId, deleted_at: null },
-      select: { tenant_id: true },
-    });
-    if (!member) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "MEMBER_NOT_FOUND",
-            message: "No member profile found for the current user",
-          },
-        },
-        { status: 403 }
-      );
-    }
-    const tenantId = member.tenant_id;
-
     // STEP 2: Parse request body
     const body = await request.json();
 
     // STEP 3: Validate with Zod
     const validatedData = CreateLeadSchema.parse(body);
 
+    // STEP 3b: Dynamic fleet_size validation against crm_settings
+    if (validatedData.fleet_size) {
+      const validSizes = await getValidFleetSizeValues();
+      if (!validSizes.includes(validatedData.fleet_size)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "VALIDATION_ERROR",
+              message: `Invalid fleet_size "${validatedData.fleet_size}". Valid values: ${validSizes.join(", ")}`,
+            },
+          },
+          { status: 422 }
+        );
+      }
+    }
+
+    // STEP 3c: V7 — Resolve tenant by lead's country (NOT from session)
+    const tenantId = await resolveTenantByCountry(
+      validatedData.country_code || "XX"
+    );
+
     // STEP 4: Create lead (orchestrated)
     const leadCreationService = new LeadCreationService();
     const result = await leadCreationService.createLead(
       validatedData,
-      tenantId, // tenant_id from adm_members (the team managing this lead)
+      tenantId, // V7: tenant_id from lead's country routing
       userId // created_by (auth user ID)
     );
 

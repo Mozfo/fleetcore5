@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -71,6 +71,29 @@ export default function RequestDemoForm({
     formData.country,
     formData.gdprConsent
   );
+
+  // Fleet size options loaded from crm_settings API
+  const [fleetSizeOptions, setFleetSizeOptions] = useState<
+    { value: string; label_en: string; label_fr: string; label_ar?: string }[]
+  >([]);
+
+  useEffect(() => {
+    fetch("/api/public/fleet-size-options")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setFleetSizeOptions(json.data);
+        }
+      })
+      .catch(() => {
+        // Fallback if API unavailable
+        setFleetSizeOptions([
+          { value: "2-10", label_en: "2-10", label_fr: "2-10" },
+          { value: "11-50", label_en: "11-50", label_fr: "11-50" },
+          { value: "50+", label_en: "50+", label_fr: "50+" },
+        ]);
+      });
+  }, []);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -453,15 +476,19 @@ export default function RequestDemoForm({
                     <option value="">
                       {t("requestDemo.form.selectOption")}
                     </option>
-                    {(
-                      t("requestDemo.form.fleetOptions", {
-                        returnObjects: true,
-                      }) as string[]
-                    ).map((option: string) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
+                    {fleetSizeOptions.map((opt) => {
+                      const label =
+                        i18n.language === "fr"
+                          ? opt.label_fr
+                          : i18n.language === "ar"
+                            ? opt.label_ar || opt.label_en
+                            : opt.label_en;
+                      return (
+                        <option key={opt.value} value={opt.value}>
+                          {label}
+                        </option>
+                      );
+                    })}
                   </select>
                   {errors.fleetSize && (
                     <p className="mt-1 text-xs text-red-500">

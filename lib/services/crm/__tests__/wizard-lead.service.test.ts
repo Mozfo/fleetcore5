@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import type { crm_leads } from "@prisma/client";
-import {
-  WizardLeadService,
-  WIZARD_LEAD_CONSTANTS,
-} from "../wizard-lead.service";
+import { WizardLeadService } from "../wizard-lead.service";
+
+// Mock tenant routing helper
+const MOCK_TENANT_ID = "test-tenant-id-from-routing";
+vi.mock("@/lib/helpers/tenant-routing.server", () => ({
+  resolveTenantByCountry: vi.fn().mockResolvedValue(MOCK_TENANT_ID),
+}));
 
 // Mock prisma
 vi.mock("@/lib/prisma", () => ({
@@ -87,7 +90,7 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     // V6.2: Wizard
     wizard_completed: false,
     // V6.2: Conversion
-    tenant_id: WIZARD_LEAD_CONSTANTS.DEFAULT_TENANT_ID,
+    tenant_id: MOCK_TENANT_ID,
     converted_at: null,
     // V6.2.1: Stripe Payment Link
     stripe_checkout_session_id: null,
@@ -180,7 +183,7 @@ describe("WizardLeadService", () => {
           country_code: mockCountryCode,
           status: "new",
           email_verified: false,
-          tenant_id: WIZARD_LEAD_CONSTANTS.DEFAULT_TENANT_ID,
+          tenant_id: MOCK_TENANT_ID,
           wizard_completed: false,
         }),
       });

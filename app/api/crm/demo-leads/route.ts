@@ -25,6 +25,8 @@ import { EmailVerificationService } from "@/lib/services/crm/email-verification.
 import { GeoIPService } from "@/lib/services/geo/geoip.service";
 import { blacklistService } from "@/lib/services/crm/blacklist.service";
 import { SUPPORT_EMAIL } from "@/lib/config/email.config";
+import { getValidFleetSizeValues } from "@/lib/helpers/fleet-size.server";
+import { resolveTenantByCountry } from "@/lib/helpers/tenant-routing.server";
 
 // ===== ZOD SCHEMAS =====
 
@@ -98,11 +100,13 @@ async function handleWizardStep1(
   const countryCode = body.country_code.toUpperCase().trim();
   const locale = body.locale || "en";
 
+  // V7: Resolve tenant from country for blacklist check + lead creation
+  const tenantId = await resolveTenantByCountry(countryCode);
+
   // V6.6: Check blacklist before processing
-  const DEFAULT_TENANT_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
   const isBlacklisted = await blacklistService.isBlacklisted(
     normalizedEmail,
-    DEFAULT_TENANT_ID
+    tenantId
   );
 
   if (isBlacklisted) {
@@ -246,11 +250,14 @@ async function handleFullForm(
   request: NextRequest,
   body: FullFormBody
 ): Promise<NextResponse> {
+  // V7: Resolve tenant from country for blacklist check + lead creation
+  const countryCode = body.country_code.toUpperCase().trim();
+  const tenantId = await resolveTenantByCountry(countryCode);
+
   // V6.6: Check blacklist before processing
-  const TENANT_ID = "7ad8173c-68c5-41d3-9918-686e4e941cc0";
   const isEmailBlacklisted = await blacklistService.isBlacklisted(
     body.email.toLowerCase().trim(),
-    TENANT_ID
+    tenantId
   );
 
   if (isEmailBlacklisted) {
@@ -349,7 +356,6 @@ async function handleFullForm(
   const normalizedFirstName = body.first_name.trim();
   const normalizedLastName = body.last_name.trim();
   const normalizedCompanyName = body.company_name.trim();
-  const countryCode = body.country_code.toUpperCase().trim();
 
   // 6. Créer le lead DIRECTEMENT (pas de LeadCreationService)
   const lead = await db.crm_leads.create({
@@ -364,10 +370,13 @@ async function handleFullForm(
       message: body.message?.trim() || null,
       country_code: countryCode,
 
+      // V7: Tenant routing by country
+      tenant_id: tenantId,
+
       // Statut initial
       status: "new",
       lead_stage: "top_of_funnel",
-      source: "web", // Web form (detail in metadata.source)
+      source: "website", // Web form (must match crm_leads_source_check constraint)
       // V6.4-3: Store homepage language for email notifications
       language: body.form_locale || "en",
 
@@ -537,6 +546,21 @@ export async function POST(request: NextRequest) {
           },
         },
         { status: 400 }
+      );
+    }
+
+    // Dynamic fleet_size validation against crm_settings
+    const validSizes = await getValidFleetSizeValues();
+    if (!validSizes.includes(parseResult.data.fleet_size)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: `Invalid fleet_size "${parseResult.data.fleet_size}". Valid values: ${validSizes.join(", ")}`,
+          },
+        },
+        { status: 422 }
       );
     }
 

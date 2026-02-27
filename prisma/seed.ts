@@ -205,7 +205,7 @@ async function main() {
   console.log(`✅ Created ${leadSources.length} lead sources`);
 
   // ===================================
-  // CRM_LEADS - FleetCore Internal Leads (NO tenant_id)
+  // CRM_LEADS - FleetCore Internal Leads
   // ===================================
   console.log("📋 Creating CRM leads...");
 
@@ -218,6 +218,7 @@ async function main() {
       phone: "+971501234567",
       company_name: "Emirates Fleet Services",
       country_code: "AE",
+      tenant_id: dubaiOrg.id, // V7: tenant_id required
       fleet_size: "11-50",
       current_software: "Excel",
       message:
@@ -238,6 +239,7 @@ async function main() {
       phone: "+33612345678",
       company_name: "France VTC Premium",
       country_code: "FR",
+      tenant_id: dubaiOrg.id, // V7: tenant_id required
       fleet_size: "11-50",
       current_software: "Custom Solution",
       message: "Looking for VTC management platform with driver payroll",
@@ -260,6 +262,7 @@ async function main() {
       phone: "+971509876543",
       company_name: "Abu Dhabi Luxury Rides",
       country_code: "AE",
+      tenant_id: dubaiOrg.id, // V7: tenant_id required
       fleet_size: "51-100",
       current_software: "Outdated System",
       message: "Enterprise fleet solution needed for 80 vehicles",

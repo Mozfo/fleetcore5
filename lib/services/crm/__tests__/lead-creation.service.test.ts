@@ -317,7 +317,7 @@ describe("LeadCreationService", () => {
           deleted_by: null,
           deletion_reason: null,
           last_activity_at: null,
-          tenant_id: _tenantId ?? null,
+          tenant_id: _tenantId ?? "test-tenant-id",
           // V5: Closing columns (kept)
           stage_entered_at: null,
           loss_reason_code: null,

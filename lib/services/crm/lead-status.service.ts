@@ -290,15 +290,8 @@ export class LeadStatusService {
 
       const previousStatus = lead.status || "new";
 
-      // Resolve tenant_id for activity log
-      let activityTenantId = lead.tenant_id;
-      if (!activityTenantId) {
-        const hqTenant = await prisma.adm_tenants.findFirst({
-          where: { tenant_type: "headquarters" },
-          select: { id: true },
-        });
-        activityTenantId = hqTenant?.id ?? null;
-      }
+      // tenant_id always set since V7 country routing
+      const activityTenantId = lead.tenant_id;
 
       // 2. Validate transition
       const isValidTransition = await this.validateTransition(

@@ -331,17 +331,7 @@ export class PaymentLinkService {
         };
       }
 
-      // 9. Resolve tenant_id for activity log
-      let activityTenantId = lead.tenant_id;
-      if (!activityTenantId) {
-        const hqTenant = await prisma.adm_tenants.findFirst({
-          where: { tenant_type: "headquarters" },
-          select: { id: true },
-        });
-        activityTenantId = hqTenant?.id ?? null;
-      }
-
-      // 10. Update lead and create activity in transaction
+      // 9. Update lead and create activity in transaction
       await prisma.$transaction(async (tx) => {
         // Update lead with Stripe info
         await tx.crm_leads.update({
@@ -355,20 +345,18 @@ export class PaymentLinkService {
           },
         });
 
-        // Create activity
-        if (activityTenantId) {
-          await tx.crm_lead_activities.create({
-            data: {
-              tenant_id: activityTenantId,
-              lead_id: leadId,
-              activity_type: "payment_link_created",
-              title: "Payment link created",
-              description: `Plan: ${planCode}, Billing: ${billingCycle}, Expires: ${expiresAt.toISOString()}`,
-              performed_by: performedBy,
-              created_at: new Date(),
-            },
-          });
-        }
+        // Create activity (tenant_id always set since V7 country routing)
+        await tx.crm_lead_activities.create({
+          data: {
+            tenant_id: lead.tenant_id,
+            lead_id: leadId,
+            activity_type: "payment_link_created",
+            title: "Payment link created",
+            description: `Plan: ${planCode}, Billing: ${billingCycle}, Expires: ${expiresAt.toISOString()}`,
+            performed_by: performedBy,
+            created_at: new Date(),
+          },
+        });
       });
 
       // 11. Update status to payment_pending

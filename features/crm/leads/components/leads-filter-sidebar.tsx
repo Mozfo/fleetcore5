@@ -14,7 +14,10 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ToggleFilterButton } from "@/components/ui/toggle-filter-button";
-import { useFleetSizeOptions } from "@/lib/hooks/useFleetSizeOptions";
+import {
+  useFleetSizeOptions,
+  DEFAULT_FLEET_SIZE_OPTIONS,
+} from "@/lib/hooks/useFleetSizeOptions";
 import { useLeadStages } from "@/lib/hooks/useLeadStages";
 import { LEAD_STAGE_VALUES } from "@/types/crm";
 
@@ -320,25 +323,21 @@ export function LeadsFilterSidebar() {
           >
             <div className="flex flex-wrap gap-1">
               {(fleetSizeOptions.length > 0
-                ? fleetSizeOptions.map((o) => ({
-                    value: o.value,
-                    label: o.label_en,
-                  }))
-                : [
-                    { value: "1-10", label: "1-10" },
-                    { value: "11-50", label: "11-50" },
-                    { value: "51-100", label: "51-100" },
-                    { value: "101-500", label: "101-500" },
-                    { value: "500+", label: "500+" },
-                  ]
-              ).map((opt) => (
-                <ToggleFilterButton
-                  key={opt.value}
-                  label={opt.label}
-                  active={isSelected("fleet_size", opt.value)}
-                  onClick={() => toggleMulti("fleet_size", opt.value)}
-                />
-              ))}
+                ? fleetSizeOptions
+                : DEFAULT_FLEET_SIZE_OPTIONS
+              )
+                .map((o) => ({
+                  value: o.value,
+                  label: o.label_en,
+                }))
+                .map((opt) => (
+                  <ToggleFilterButton
+                    key={opt.value}
+                    label={opt.label}
+                    active={isSelected("fleet_size", opt.value)}
+                    onClick={() => toggleMulti("fleet_size", opt.value)}
+                  />
+                ))}
             </div>
           </FilterCategory>
 

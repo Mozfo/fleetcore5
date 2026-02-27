@@ -360,17 +360,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 8. Resolve tenant_id for activity log (use lead's tenant or fallback to HQ)
-    let activityTenantId = lead.tenant_id;
-    if (!activityTenantId) {
-      const hqTenant = await prisma.adm_tenants.findFirst({
-        where: { tenant_type: "headquarters" },
-        select: { id: true },
-      });
-      activityTenantId = hqTenant?.id ?? null;
-    }
-
-    // 9. Create activity log
+    // 8. Create activity log (tenant_id always set since V7 country routing)
     const activityType =
       CALCOM_ACTIVITY_TYPES[
         payload.triggerEvent as keyof typeof CALCOM_ACTIVITY_TYPES
@@ -380,10 +370,10 @@ export async function POST(request: NextRequest) {
         payload.triggerEvent as keyof typeof CALCOM_ACTIVITY_TITLES
       ] || `Cal.com: ${payload.triggerEvent}`;
 
-    if (activityTenantId) {
+    {
       await prisma.crm_lead_activities.create({
         data: {
-          tenant_id: activityTenantId,
+          tenant_id: lead.tenant_id,
           lead_id: lead.id,
           activity_type: activityType,
           title: activityTitle,
