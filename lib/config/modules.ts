@@ -234,6 +234,12 @@ export const MODULES: ModuleConfig[] = [
         permission: "admin:view",
       },
       {
+        key: "tenant_countries",
+        labelKey: "modules.admin_tenant_countries",
+        href: "/admin/tenant-countries",
+        permission: "admin:view",
+      },
+      {
         key: "roles",
         labelKey: "modules.admin_roles",
         href: "/admin/roles",

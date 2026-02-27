@@ -55,4 +55,13 @@ export const fleetcoreResources: ResourceProps[] = [
       parent: "admin",
     },
   },
+  {
+    name: "tenant-countries",
+    list: "/admin/tenant-countries",
+    meta: {
+      label: "Tenant Countries",
+      canDelete: true,
+      parent: "admin",
+    },
+  },
 ];

@@ -417,6 +417,7 @@
     "admin_tenants": "Tenants",
     "admin_members": "Members",
     "admin_invitations": "Invitations",
+    "admin_tenant_countries": "Country Routing",
     "admin_roles": "Roles & Permissions",
     "admin_audit": "Audit Logs",
     "admin_notifications": "Notifications",

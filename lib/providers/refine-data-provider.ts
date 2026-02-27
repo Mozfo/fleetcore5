@@ -59,6 +59,9 @@ const RESOURCE_CONFIG: Record<string, ResourceConfig> = {
   invitations: {
     apiPath: "/api/admin/invitations",
   },
+  "tenant-countries": {
+    apiPath: "/api/admin/tenant-countries",
+  },
 };
 
 function getResourceConfig(resource: string): ResourceConfig {

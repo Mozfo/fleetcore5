@@ -467,6 +467,7 @@
     "admin_tenants": "Tenants",
     "admin_members": "Membres",
     "admin_invitations": "Invitations",
+    "admin_tenant_countries": "Routage Pays",
     "admin_roles": "Rôles & Permissions",
     "admin_audit": "Journal d'audit",
     "admin_notifications": "Notifications",
