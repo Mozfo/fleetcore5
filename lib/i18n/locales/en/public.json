@@ -373,13 +373,6 @@
       },
       "fleetSize": "Fleet Size",
       "message": "Tell us about your needs (Optional)",
-      "fleetOptions": [
-        "1-10 vehicles",
-        "11-50 vehicles",
-        "51-100 vehicles",
-        "100-500 vehicles",
-        "500+ vehicles"
-      ],
       "selectOption": "Select fleet size",
       "submit": "Request Demo",
       "submitting": "Submitting...",

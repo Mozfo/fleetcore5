@@ -373,13 +373,6 @@
       },
       "fleetSize": "Taille de la flotte",
       "message": "Parlez-nous de vos besoins (Optionnel)",
-      "fleetOptions": [
-        "1-10 véhicules",
-        "11-50 véhicules",
-        "51-100 véhicules",
-        "100-500 véhicules",
-        "500+ véhicules"
-      ],
       "selectOption": "Sélectionnez la taille de la flotte",
       "submit": "Demander une démo",
       "submitting": "Envoi...",
