@@ -237,7 +237,7 @@ export function CreateMemberDialog({
                           <CircleHelp className="text-muted-foreground size-3.5" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          The organization this member belongs to
+                          Select the organization this member will belong to
                         </TooltipContent>
                       </Tooltip>
                     </FormLabel>
@@ -272,7 +272,8 @@ export function CreateMemberDialog({
                           <CircleHelp className="text-muted-foreground size-3.5" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          Admin has full access; Member has limited permissions
+                          Defines the permissions level. Admin has full access,
+                          Member has limited access
                         </TooltipContent>
                       </Tooltip>
                     </FormLabel>
@@ -305,7 +306,8 @@ export function CreateMemberDialog({
                         <CircleHelp className="text-muted-foreground size-3.5" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        Language used for emails and interface
+                        Preferred language for emails and interface. Can be
+                        changed later
                       </TooltipContent>
                     </Tooltip>
                   </FormLabel>

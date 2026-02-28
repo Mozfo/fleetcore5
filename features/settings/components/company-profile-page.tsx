@@ -34,6 +34,12 @@ interface CountryOption {
   flag_emoji: string;
 }
 
+function FieldValue({ value }: { value: string }) {
+  return (
+    <p className="text-foreground truncate py-2 text-sm">{value || "\u2014"}</p>
+  );
+}
+
 export function CompanyProfilePage() {
   const [profile, setProfile] = React.useState<CompanyProfileData | null>(null);
   const [countryCode, setCountryCode] = React.useState("");
@@ -166,51 +172,45 @@ export function CompanyProfilePage() {
   }
 
   const legalFields = LEGAL_FIELDS_BY_COUNTRY[countryCode] ?? [];
+  const selectedCountry = countries.find((c) => c.country_code === countryCode);
+  const countryDisplay = selectedCountry
+    ? `${selectedCountry.flag_emoji} ${selectedCountry.country_name_en}`
+    : countryCode || "\u2014";
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header — title + action buttons */}
+      <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight">Company Profile</h1>
         {isEditing ? (
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
+              size="sm"
               onClick={handleCancel}
               disabled={isSaving}
             >
               <X className="mr-2 size-4" />
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button size="sm" onClick={handleSave} disabled={isSaving}>
               <Save className="mr-2 size-4" />
               {isSaving ? "Saving..." : "Save"}
             </Button>
           </div>
         ) : (
-          <Button onClick={handleEdit}>
+          <Button variant="outline" size="sm" onClick={handleEdit}>
             <Pencil className="mr-2 size-4" />
             Edit
           </Button>
         )}
       </div>
 
-      {/* Logo placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ImageIcon className="size-5" />
-            Logo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="border-muted flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-10">
-            <ImageIcon className="text-muted-foreground/40 mb-3 size-12" />
-            <p className="text-muted-foreground text-sm">
-              Logo upload available soon
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Logo — single line informative */}
+      <p className="text-muted-foreground flex items-center gap-2 text-sm">
+        <ImageIcon className="size-4" />
+        Logo upload available soon
+      </p>
 
       {/* Identity */}
       <Card>
@@ -224,44 +224,54 @@ export function CompanyProfilePage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="legal_name">Legal Name</Label>
-              <Input
-                id="legal_name"
-                disabled={!isEditing}
-                value={profile.identity.legal_name}
-                onChange={(e) => updateIdentity("legal_name", e.target.value)}
-              />
+              {isEditing ? (
+                <Input
+                  id="legal_name"
+                  value={profile.identity.legal_name}
+                  onChange={(e) => updateIdentity("legal_name", e.target.value)}
+                />
+              ) : (
+                <FieldValue value={profile.identity.legal_name} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="trade_name">Trade Name</Label>
-              <Input
-                id="trade_name"
-                disabled={!isEditing}
-                value={profile.identity.trade_name}
-                onChange={(e) => updateIdentity("trade_name", e.target.value)}
-              />
+              {isEditing ? (
+                <Input
+                  id="trade_name"
+                  value={profile.identity.trade_name}
+                  onChange={(e) => updateIdentity("trade_name", e.target.value)}
+                />
+              ) : (
+                <FieldValue value={profile.identity.trade_name} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="legal_form">Legal Form</Label>
-              <Input
-                id="legal_form"
-                disabled={!isEditing}
-                className="placeholder:opacity-50"
-                placeholder="SARL, SAS, LLC..."
-                value={profile.identity.legal_form}
-                onChange={(e) => updateIdentity("legal_form", e.target.value)}
-              />
+              {isEditing ? (
+                <Input
+                  id="legal_form"
+                  placeholder="SARL, SAS, LLC..."
+                  value={profile.identity.legal_form}
+                  onChange={(e) => updateIdentity("legal_form", e.target.value)}
+                />
+              ) : (
+                <FieldValue value={profile.identity.legal_form} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                type="url"
-                disabled={!isEditing}
-                className="placeholder:opacity-50"
-                placeholder="https://example.com"
-                value={profile.identity.website}
-                onChange={(e) => updateIdentity("website", e.target.value)}
-              />
+              {isEditing ? (
+                <Input
+                  id="website"
+                  type="url"
+                  placeholder="https://example.com"
+                  value={profile.identity.website}
+                  onChange={(e) => updateIdentity("website", e.target.value)}
+                />
+              ) : (
+                <FieldValue value={profile.identity.website} />
+              )}
             </div>
           </div>
         </CardContent>
@@ -279,49 +289,58 @@ export function CompanyProfilePage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="street">Street</Label>
-              <Input
-                id="street"
-                disabled={!isEditing}
-                value={profile.address.street}
-                onChange={(e) => updateAddress("street", e.target.value)}
-              />
+              {isEditing ? (
+                <Input
+                  id="street"
+                  value={profile.address.street}
+                  onChange={(e) => updateAddress("street", e.target.value)}
+                />
+              ) : (
+                <FieldValue value={profile.address.street} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                disabled={!isEditing}
-                value={profile.address.city}
-                onChange={(e) => updateAddress("city", e.target.value)}
-              />
+              {isEditing ? (
+                <Input
+                  id="city"
+                  value={profile.address.city}
+                  onChange={(e) => updateAddress("city", e.target.value)}
+                />
+              ) : (
+                <FieldValue value={profile.address.city} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="postal_code">Postal Code</Label>
-              <Input
-                id="postal_code"
-                disabled={!isEditing}
-                value={profile.address.postal_code}
-                onChange={(e) => updateAddress("postal_code", e.target.value)}
-              />
+              {isEditing ? (
+                <Input
+                  id="postal_code"
+                  value={profile.address.postal_code}
+                  onChange={(e) => updateAddress("postal_code", e.target.value)}
+                />
+              ) : (
+                <FieldValue value={profile.address.postal_code} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="country">Country</Label>
-              <Select
-                value={countryCode}
-                onValueChange={setCountryCode}
-                disabled={!isEditing}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map((c) => (
-                    <SelectItem key={c.country_code} value={c.country_code}>
-                      {c.flag_emoji} {c.country_name_en}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isEditing ? (
+                <Select value={countryCode} onValueChange={setCountryCode}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((c) => (
+                      <SelectItem key={c.country_code} value={c.country_code}>
+                        {c.flag_emoji} {c.country_name_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <FieldValue value={countryDisplay} />
+              )}
             </div>
           </div>
         </CardContent>
@@ -341,14 +360,16 @@ export function CompanyProfilePage() {
               {legalFields.map((field) => (
                 <div key={field.key} className="space-y-2">
                   <Label htmlFor={field.key}>{field.label}</Label>
-                  <Input
-                    id={field.key}
-                    disabled={!isEditing}
-                    className="placeholder:opacity-50"
-                    placeholder={field.placeholder}
-                    value={profile.legal[field.key] ?? ""}
-                    onChange={(e) => updateLegal(field.key, e.target.value)}
-                  />
+                  {isEditing ? (
+                    <Input
+                      id={field.key}
+                      placeholder={field.placeholder}
+                      value={profile.legal[field.key] ?? ""}
+                      onChange={(e) => updateLegal(field.key, e.target.value)}
+                    />
+                  ) : (
+                    <FieldValue value={profile.legal[field.key] ?? ""} />
+                  )}
                 </div>
               ))}
             </div>
@@ -368,39 +389,48 @@ export function CompanyProfilePage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="primary_email">Primary Email</Label>
-              <Input
-                id="primary_email"
-                type="email"
-                disabled={!isEditing}
-                value={profile.contacts.primary_email}
-                onChange={(e) =>
-                  updateContacts("primary_email", e.target.value)
-                }
-              />
+              {isEditing ? (
+                <Input
+                  id="primary_email"
+                  type="email"
+                  value={profile.contacts.primary_email}
+                  onChange={(e) =>
+                    updateContacts("primary_email", e.target.value)
+                  }
+                />
+              ) : (
+                <FieldValue value={profile.contacts.primary_email} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="primary_phone">Primary Phone</Label>
-              <Input
-                id="primary_phone"
-                type="tel"
-                disabled={!isEditing}
-                value={profile.contacts.primary_phone}
-                onChange={(e) =>
-                  updateContacts("primary_phone", e.target.value)
-                }
-              />
+              {isEditing ? (
+                <Input
+                  id="primary_phone"
+                  type="tel"
+                  value={profile.contacts.primary_phone}
+                  onChange={(e) =>
+                    updateContacts("primary_phone", e.target.value)
+                  }
+                />
+              ) : (
+                <FieldValue value={profile.contacts.primary_phone} />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="billing_email">Billing Email</Label>
-              <Input
-                id="billing_email"
-                type="email"
-                disabled={!isEditing}
-                value={profile.contacts.billing_email}
-                onChange={(e) =>
-                  updateContacts("billing_email", e.target.value)
-                }
-              />
+              {isEditing ? (
+                <Input
+                  id="billing_email"
+                  type="email"
+                  value={profile.contacts.billing_email}
+                  onChange={(e) =>
+                    updateContacts("billing_email", e.target.value)
+                  }
+                />
+              ) : (
+                <FieldValue value={profile.contacts.billing_email} />
+              )}
             </div>
           </div>
         </CardContent>
