@@ -154,7 +154,7 @@ export function LeadSearchCommand({ locale }: LeadSearchCommandProps) {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          className="border-input bg-muted placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:ring-primary/20 h-8 w-48 rounded-md border pr-8 pl-9 text-sm transition-all outline-none focus:w-64 focus:ring-2"
+          className="border-input bg-muted placeholder:text-muted-foreground/50 focus:border-primary focus:bg-background focus:ring-primary/20 h-8 w-48 rounded-md border pr-8 pl-9 text-sm transition-all outline-none focus:w-64 focus:ring-2"
         />
         {query && (
           <button
