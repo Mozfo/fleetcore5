@@ -1,15 +1,15 @@
 /**
- * Lead Qualification Service - V6.3
- * Gestion de la qualification CPT (Challenges, Priority, Timing)
+ * Lead Qualification Service - V7
+ * BANT qualification (Budget, Authority, Need, Timeline)
  *
- * Ce service est le SEUL point d'acces pour:
- * - Charger le framework de qualification depuis crm_settings
- * - Calculer les scores CPT
- * - Determiner la recommandation (proceed/nurture/disqualify)
- * - Auto-update le statut si recommendation = proceed → proposal_sent
+ * This service is the ONLY entry point for:
+ * - Loading BANT framework config from crm_settings.qualification_framework
+ * - Evaluating 4 binary criteria (qualifying / not qualifying)
+ * - Determining result: qualified (4/4), nurturing (3/4), disqualified (<=2/4)
+ * - Fleet size exception: <=2/4 + fleet_size > threshold → nurturing instead of disqualified
+ * - Auto-updating status to "qualified" if result = qualified
  *
- * V6.3: 8 statuts - "qualified" remplacé par "proposal_sent"
- * ZERO HARDCODING: Toutes les regles viennent de crm_settings.qualification_framework
+ * ZERO HARDCODING: All qualifying values and thresholds come from crm_settings.
  *
  * @module lib/services/crm/lead-qualification.service
  */
@@ -26,84 +26,30 @@ import type {
 // ===== TYPES & INTERFACES =====
 
 /**
- * Score weights configuration from crm_settings.qualification_framework.score_weights
+ * BANT criterion configuration from crm_settings
  */
-export interface ScoreWeights {
-  challenges: { high: number; medium: number; low: number };
-  priority: { high: number; medium: number; low: number };
-  timing: { hot: number; warm: number; cool: number; cold: number };
+interface BantCriterionConfig {
+  allowed_values: string[];
+  qualifying_values: string[];
 }
 
 /**
- * Thresholds configuration from crm_settings.qualification_framework.thresholds
- */
-export interface Thresholds {
-  proceed: number;
-  nurture: number;
-}
-
-/**
- * Full qualification framework from crm_settings
+ * Full BANT qualification framework from crm_settings
  */
 export interface QualificationFramework {
   version: string;
   framework: string;
-  questions: unknown[];
-  disqualification_triggers: unknown[];
-  score_weights: ScoreWeights;
-  thresholds: Thresholds;
-}
-
-/**
- * CPT notes stored in qualification_notes (JSON as TEXT)
- */
-export interface QualificationNotes {
-  framework: string;
-  qualified_by: string;
-  qualified_at: string;
-  challenges: {
-    response: string;
-    score: string;
-    points: number;
+  criteria: {
+    budget: BantCriterionConfig;
+    authority: BantCriterionConfig;
+    need: BantCriterionConfig;
+    timeline: BantCriterionConfig;
   };
-  priority: {
-    response: string;
-    score: string;
-    points: number;
-  };
-  timing: {
-    response: string;
-    score: string;
-    points: number;
-  };
-  total_score: number;
-  recommendation: string;
+  fleet_size_exception_threshold: number;
 }
 
 // ===== SERVICE CLASS =====
 
-/**
- * LeadQualificationService - Gestion de la qualification CPT
- *
- * Charge les regles depuis crm_settings.qualification_framework:
- * - score_weights: Points par niveau (high/medium/low, hot/warm/cool/cold)
- * - thresholds: Seuils de decision (proceed >= 70, nurture >= 40)
- *
- * @example
- * ```typescript
- * import { leadQualificationService } from "@/lib/services/crm/lead-qualification.service";
- *
- * const result = await leadQualificationService.qualifyLead(leadId, {
- *   challenges: { response: "Excel nightmare...", score: "high" },
- *   priority: { response: "Budget approved...", score: "high" },
- *   timing: { response: "ASAP", score: "hot" },
- * }, userId);
- *
- * if (result.recommendation === "proceed") {
- *   // V6.3: Status auto-updated to "proposal_sent"
- * }
- * ```
- */
 export class LeadQualificationService {
   private settingsRepo: CrmSettingsRepository;
   private frameworkCache: QualificationFramework | null = null;
@@ -116,10 +62,6 @@ export class LeadQualificationService {
   // FRAMEWORK METHODS
   // ============================================
 
-  /**
-   * Get qualification framework from crm_settings
-   * Uses cache to reduce DB queries
-   */
   async getFramework(): Promise<QualificationFramework> {
     if (this.frameworkCache) {
       return this.frameworkCache;
@@ -134,10 +76,9 @@ export class LeadQualificationService {
       throw new Error("qualification_framework not found in crm_settings");
     }
 
-    // Validate required fields exist
-    if (!setting.score_weights || !setting.thresholds) {
+    if (!setting.criteria) {
       throw new Error(
-        "qualification_framework is missing score_weights or thresholds. Run migration V6.2-6."
+        "qualification_framework is missing criteria. Update crm_settings to V7 BANT format."
       );
     }
 
@@ -145,64 +86,105 @@ export class LeadQualificationService {
     return setting;
   }
 
-  /**
-   * Get score weights from framework
-   */
-  async getScoreWeights(): Promise<ScoreWeights> {
-    const framework = await this.getFramework();
-    return framework.score_weights;
-  }
-
-  /**
-   * Get thresholds from framework
-   */
-  async getThresholds(): Promise<Thresholds> {
-    const framework = await this.getFramework();
-    return framework.thresholds;
-  }
-
   // ============================================
-  // SCORE CALCULATION
+  // BANT EVALUATION
   // ============================================
 
   /**
-   * Calculate total CPT score from responses
+   * Evaluate a single BANT criterion
    */
-  async calculateScore(cpt: QualifyLeadInput): Promise<{
-    total: number;
-    challengesPoints: number;
-    priorityPoints: number;
-    timingPoints: number;
+  private isQualifying(
+    value: string,
+    criterionConfig: BantCriterionConfig
+  ): boolean {
+    return criterionConfig.qualifying_values.includes(value);
+  }
+
+  /**
+   * Evaluate all 4 BANT criteria and return details
+   */
+  async evaluateBant(input: QualifyLeadInput): Promise<{
+    criteria_met: number;
+    details: QualificationResult["details"];
   }> {
-    const weights = await this.getScoreWeights();
+    const framework = await this.getFramework();
+    const { criteria } = framework;
 
-    const challengesPoints = weights.challenges[cpt.challenges.score];
-    const priorityPoints = weights.priority[cpt.priority.score];
-    const timingPoints = weights.timing[cpt.timing.score];
+    const budgetQualifying = this.isQualifying(
+      input.bant_budget,
+      criteria.budget
+    );
+    const authorityQualifying = this.isQualifying(
+      input.bant_authority,
+      criteria.authority
+    );
+    const needQualifying = this.isQualifying(input.bant_need, criteria.need);
+    const timelineQualifying = this.isQualifying(
+      input.bant_timeline,
+      criteria.timeline
+    );
 
-    return {
-      total: challengesPoints + priorityPoints + timingPoints,
-      challengesPoints,
-      priorityPoints,
-      timingPoints,
+    const details: QualificationResult["details"] = {
+      budget: { value: input.bant_budget, qualifying: budgetQualifying },
+      authority: {
+        value: input.bant_authority,
+        qualifying: authorityQualifying,
+      },
+      need: { value: input.bant_need, qualifying: needQualifying },
+      timeline: {
+        value: input.bant_timeline,
+        qualifying: timelineQualifying,
+      },
     };
+
+    const criteria_met = [
+      budgetQualifying,
+      authorityQualifying,
+      needQualifying,
+      timelineQualifying,
+    ].filter(Boolean).length;
+
+    return { criteria_met, details };
   }
 
   /**
-   * Determine recommendation based on score and thresholds
+   * Determine qualification result based on criteria met and fleet size
    */
-  async getRecommendation(
-    score: number
-  ): Promise<"proceed" | "nurture" | "disqualify"> {
-    const thresholds = await this.getThresholds();
-
-    if (score >= thresholds.proceed) {
-      return "proceed";
-    } else if (score >= thresholds.nurture) {
-      return "nurture";
-    } else {
-      return "disqualify";
+  async determineResult(
+    criteriaMet: number,
+    fleetSize: string | null
+  ): Promise<{
+    result: "qualified" | "nurturing" | "disqualified";
+    fleetSizeException: boolean;
+  }> {
+    if (criteriaMet === 4) {
+      return { result: "qualified", fleetSizeException: false };
     }
+
+    if (criteriaMet === 3) {
+      return { result: "nurturing", fleetSizeException: false };
+    }
+
+    // <=2/4: check fleet_size exception
+    const framework = await this.getFramework();
+    const threshold = framework.fleet_size_exception_threshold;
+
+    const numericFleetSize = this.parseFleetSize(fleetSize);
+    if (numericFleetSize > threshold) {
+      return { result: "nurturing", fleetSizeException: true };
+    }
+
+    return { result: "disqualified", fleetSizeException: false };
+  }
+
+  /**
+   * Parse fleet_size string to number for comparison
+   * Handles values like "50+", "100-200", "500+"
+   */
+  private parseFleetSize(fleetSize: string | null): number {
+    if (!fleetSize) return 0;
+    const cleaned = fleetSize.replace(/[^0-9]/g, "");
+    return parseInt(cleaned, 10) || 0;
   }
 
   // ============================================
@@ -210,97 +192,91 @@ export class LeadQualificationService {
   // ============================================
 
   /**
-   * Qualify a lead using CPT framework
+   * Qualify a lead using BANT framework
    *
    * Flow:
-   * 1. Validate lead status (NOT converted/disqualified)
-   * 2. Calculate score from CPT responses
-   * 3. Determine recommendation
-   * 4. Update crm_leads with qualification data
+   * 1. Validate lead exists and status allows qualification
+   * 2. Evaluate 4 BANT criteria
+   * 3. Determine result (qualified / nurturing / disqualified)
+   * 4. Write BANT values + result to crm_leads
    * 5. Create activity in crm_lead_activities
-   * 6. If proceed: auto-update status to "proposal_sent" (V6.3)
-   * 7. Return result with recommendation
-   *
-   * @param leadId - Lead UUID
-   * @param cpt - CPT qualification input
-   * @param performedBy - auth user_id who performed the qualification
-   * @returns QualificationResult with score, recommendation, and status_updated flag
+   * 6. If qualified: auto-update status to "qualified"
+   * 7. Return result
    */
   async qualifyLead(
     leadId: string,
-    cpt: QualifyLeadInput,
+    bant: QualifyLeadInput,
     performedBy: string
   ): Promise<QualificationResult> {
-    // 1. Validate lead exists and status is valid for qualification
+    // 1. Validate lead exists and status allows qualification
     const lead = await prisma.crm_leads.findUnique({
       where: { id: leadId },
-      select: { id: true, status: true, email: true, tenant_id: true },
+      select: {
+        id: true,
+        status: true,
+        email: true,
+        tenant_id: true,
+        fleet_size: true,
+      },
     });
 
     if (!lead) {
       throw new Error(`Lead not found: ${leadId}`);
     }
 
-    // Cannot qualify already converted or disqualified leads
     const invalidStatuses = ["converted", "disqualified"];
     if (lead.status && invalidStatuses.includes(lead.status)) {
       throw new Error(`Cannot qualify lead with status: ${lead.status}`);
     }
 
-    // 2. Calculate score
-    const scoreResult = await this.calculateScore(cpt);
-    const { total, challengesPoints, priorityPoints, timingPoints } =
-      scoreResult;
+    // 2. Evaluate BANT criteria
+    const { criteria_met, details } = await this.evaluateBant(bant);
 
-    // 3. Determine recommendation
-    const recommendation = await this.getRecommendation(total);
+    // 3. Determine result with fleet_size exception
+    const { result, fleetSizeException } = await this.determineResult(
+      criteria_met,
+      lead.fleet_size
+    );
 
-    // 4. Build qualification notes (stored as JSON in TEXT column)
-    const qualifiedAt = new Date();
-    const qualificationNotes: QualificationNotes = {
-      framework: "CPT",
-      qualified_by: performedBy,
-      qualified_at: qualifiedAt.toISOString(),
-      challenges: {
-        response: cpt.challenges.response,
-        score: cpt.challenges.score,
-        points: challengesPoints,
-      },
-      priority: {
-        response: cpt.priority.response,
-        score: cpt.priority.score,
-        points: priorityPoints,
-      },
-      timing: {
-        response: cpt.timing.response,
-        score: cpt.timing.score,
-        points: timingPoints,
-      },
-      total_score: total,
-      recommendation,
-    };
+    // 4. Write to DB in transaction
+    const qualifiedAt = result === "qualified" ? new Date() : null;
 
-    // 5. Update lead and create activity in transaction
+    // Resolve member id from auth user id for bant_qualified_by
+    const member = await prisma.adm_members.findFirst({
+      where: { auth_user_id: performedBy, deleted_at: null },
+      select: { id: true },
+    });
+
     await prisma.$transaction(async (tx) => {
-      // Update lead with qualification data
       await tx.crm_leads.update({
         where: { id: leadId },
         data: {
-          qualification_score: total,
-          qualification_notes: JSON.stringify(qualificationNotes),
-          qualified_date: qualifiedAt,
+          bant_budget: bant.bant_budget,
+          bant_authority: bant.bant_authority,
+          bant_need: bant.bant_need,
+          bant_timeline: bant.bant_timeline,
+          bant_qualified_at: qualifiedAt,
+          bant_qualified_by: member?.id ?? null,
+          qualification_notes: JSON.stringify({
+            framework: "BANT",
+            criteria_met,
+            result,
+            details,
+            fleet_size_exception: fleetSizeException,
+            performed_by: performedBy,
+            performed_at: new Date().toISOString(),
+          }),
           updated_at: new Date(),
         },
       });
 
-      // Create activity (tenant_id always set since V7 country routing)
       await tx.crm_lead_activities.create({
         data: {
           tenant_id: lead.tenant_id,
           lead_id: leadId,
           activity_type: "lead_qualified",
-          title: `Lead qualified with CPT score: ${total}/100`,
-          description: `Recommendation: ${recommendation}. Challenges: ${cpt.challenges.score}, Priority: ${cpt.priority.score}, Timing: ${cpt.timing.score}`,
+          title: `BANT qualification: ${criteria_met}/4 criteria met → ${result}`,
+          description: `B:${bant.bant_budget} A:${bant.bant_authority} N:${bant.bant_need} T:${bant.bant_timeline}${fleetSizeException ? " (fleet size exception applied)" : ""}`,
           performed_by: performedBy,
           created_at: new Date(),
         },
@@ -308,21 +284,16 @@ export class LeadQualificationService {
     });
 
     logger.info(
-      {
-        leadId,
-        score: total,
-        recommendation,
-        performedBy,
-      },
-      "[LeadQualificationService] Lead qualified"
+      { leadId, criteria_met, result, fleetSizeException, performedBy },
+      "[LeadQualificationService] Lead qualified with BANT"
     );
 
-    // 6. V6.3: Auto-update status to "proposal_sent" if recommendation = proceed
+    // 6. Auto-update status if qualified
     let statusUpdated = false;
-    if (recommendation === "proceed") {
+    if (result === "qualified") {
       const statusResult = await leadStatusService.updateStatus(
         leadId,
-        "proposal_sent", // V6.3: qualified status removed
+        "qualified",
         { performedBy }
       );
       statusUpdated = statusResult.success;
@@ -330,29 +301,21 @@ export class LeadQualificationService {
       if (!statusResult.success) {
         logger.warn(
           { leadId, error: statusResult.error },
-          "[LeadQualificationService] Failed to auto-update status to proposal_sent"
+          "[LeadQualificationService] Failed to auto-update status to qualified"
         );
       }
     }
 
-    // 7. Build result
-    const result: QualificationResult = {
+    return {
       success: true,
       leadId,
-      qualification_score: total,
-      recommendation,
+      result,
+      criteria_met,
+      details,
+      fleet_size_exception: fleetSizeException,
       status_updated: statusUpdated,
-      qualified_date: qualifiedAt.toISOString(),
+      qualified_date: qualifiedAt?.toISOString() ?? null,
     };
-
-    // Add suggested action for non-proceed recommendations
-    if (recommendation === "disqualify") {
-      result.suggested_action = "Consider disqualifying this lead";
-    } else if (recommendation === "nurture") {
-      result.suggested_action = "Consider moving this lead to nurturing";
-    }
-
-    return result;
   }
 
   /**
@@ -365,7 +328,4 @@ export class LeadQualificationService {
 
 // ===== SINGLETON INSTANCE =====
 
-/**
- * Default LeadQualificationService instance
- */
 export const leadQualificationService = new LeadQualificationService();

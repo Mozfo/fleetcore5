@@ -312,8 +312,6 @@ export class WizardLeadService {
    * - wizard_completed = true
    * - GDPR fields if consent given
    *
-   * Note: Does NOT change status (remains 'new' until Cal.com webhook)
-   *
    * @param leadId - Lead UUID
    * @param params - Profile data and GDPR consent
    */

@@ -39,7 +39,7 @@ describe("LeadStatusService", () => {
         color: "gray",
         icon: "sparkles",
         description: "Newly created lead",
-        allowed_transitions: ["demo", "nurturing", "disqualified"],
+        transitions_to: ["demo", "nurturing", "disqualified"],
         auto_assign: true,
         sla_hours: 4,
       },
@@ -52,12 +52,7 @@ describe("LeadStatusService", () => {
         color: "blue",
         icon: "calendar",
         description: "Demo scheduled or in progress",
-        allowed_transitions: [
-          "proposal_sent",
-          "nurturing",
-          "lost",
-          "disqualified",
-        ],
+        transitions_to: ["proposal_sent", "nurturing", "lost", "disqualified"],
         auto_assign: false,
         sla_hours: 24,
       },
@@ -70,7 +65,7 @@ describe("LeadStatusService", () => {
         color: "orange",
         icon: "document-text",
         description: "Proposal has been sent",
-        allowed_transitions: ["payment_pending", "lost", "nurturing"],
+        transitions_to: ["payment_pending", "lost", "nurturing"],
         auto_assign: false,
         sla_hours: null,
       },
@@ -83,7 +78,7 @@ describe("LeadStatusService", () => {
         color: "amber",
         icon: "credit-card",
         description: "Waiting for payment",
-        allowed_transitions: ["converted", "lost"],
+        transitions_to: ["converted", "lost"],
         auto_assign: false,
         sla_hours: null,
       },
@@ -96,7 +91,7 @@ describe("LeadStatusService", () => {
         color: "green",
         icon: "badge-check",
         description: "Lead converted to customer",
-        allowed_transitions: [],
+        transitions_to: [],
         auto_assign: false,
         sla_hours: null,
         is_terminal: true,
@@ -111,7 +106,7 @@ describe("LeadStatusService", () => {
         color: "red",
         icon: "x-circle",
         description: "Lead lost",
-        allowed_transitions: ["nurturing"],
+        transitions_to: ["nurturing"],
         auto_assign: false,
         sla_hours: null,
         requires_reason: true,
@@ -125,7 +120,7 @@ describe("LeadStatusService", () => {
         color: "purple",
         icon: "clock",
         description: "Lead in nurturing program",
-        allowed_transitions: ["demo", "proposal_sent", "lost"],
+        transitions_to: ["demo", "proposal_sent", "lost"],
         auto_assign: false,
         sla_hours: null,
       },
@@ -138,7 +133,7 @@ describe("LeadStatusService", () => {
         color: "gray",
         icon: "ban",
         description: "Lead disqualified",
-        allowed_transitions: [],
+        transitions_to: [],
         auto_assign: false,
         sla_hours: null,
         is_terminal: true,
@@ -343,7 +338,7 @@ describe("LeadStatusService", () => {
       expect(isValidDisqualified).toBe(false);
     });
 
-    it("should return allowed_transitions for status", async () => {
+    it("should return transitions_to for status", async () => {
       const transitions = await service.getAllowedTransitions("new");
       expect(transitions).toEqual(["demo", "nurturing", "disqualified"]); // V6.3
 
@@ -362,7 +357,7 @@ describe("LeadStatusService", () => {
         ...mockStatusWorkflow,
         statuses: mockStatusWorkflow.statuses.map((s) =>
           s.value === "new"
-            ? { ...s, allowed_transitions: ["proposal_sent", "lost"] } // V6.3: custom transitions
+            ? { ...s, transitions_to: ["proposal_sent", "lost"] } // V6.3: custom transitions
             : s
         ),
       };
@@ -709,7 +704,7 @@ describe("LeadStatusService", () => {
       expect(config?.value).toBe("converted");
       expect(config?.is_terminal).toBe(true);
       expect(config?.is_won).toBe(true);
-      expect(config?.allowed_transitions).toEqual([]);
+      expect(config?.transitions_to).toEqual([]);
     });
 
     it("should return null for unknown status", async () => {

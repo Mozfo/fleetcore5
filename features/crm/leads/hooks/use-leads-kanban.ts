@@ -8,16 +8,9 @@ import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
 import type { Lead } from "../types/lead.types";
 import { SIDEBAR_FILTER_PARSERS } from "./use-leads-table";
 
-// ── Kanban column order (6 columns, no payment_pending) ────────────────
+// ── Kanban column order (V7: 2 active columns) ────────────────────────
 
-const KANBAN_STATUSES = [
-  "callback_requested",
-  "demo",
-  "proposal_sent",
-  "converted",
-  "lost",
-  "nurturing",
-] as const;
+const KANBAN_STATUSES = ["callback_requested", "qualified"] as const;
 
 export type KanbanStatus = (typeof KANBAN_STATUSES)[number];
 

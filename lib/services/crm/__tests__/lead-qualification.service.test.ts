@@ -17,7 +17,7 @@ vi.mock("@/lib/prisma", () => ({
     crm_lead_activities: {
       create: vi.fn(),
     },
-    adm_tenants: {
+    adm_members: {
       findFirst: vi.fn(),
     },
     $transaction: vi.fn((callback) => callback(prisma)),
@@ -31,71 +31,93 @@ vi.mock("../lead-status.service", () => ({
   },
 }));
 
-describe("LeadQualificationService", () => {
+// Mock logger
+vi.mock("@/lib/logger", () => ({
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
+// ===== BANT FRAMEWORK CONFIG =====
+
+const BANT_FRAMEWORK: QualificationFramework = {
+  version: "7.0.0",
+  framework: "BANT",
+  criteria: {
+    budget: {
+      allowed_values: ["confirmed", "planned", "no_budget", "unknown"],
+      qualifying_values: ["confirmed", "planned"],
+    },
+    authority: {
+      allowed_values: ["decision_maker", "influencer", "user", "unknown"],
+      qualifying_values: ["decision_maker", "influencer"],
+    },
+    need: {
+      allowed_values: ["critical", "important", "nice_to_have", "none"],
+      qualifying_values: ["critical", "important"],
+    },
+    timeline: {
+      allowed_values: ["immediate", "this_quarter", "this_year", "no_timeline"],
+      qualifying_values: ["immediate", "this_quarter"],
+    },
+  },
+  fleet_size_exception_threshold: 50,
+};
+
+// ===== MOCK LEAD =====
+
+const MOCK_LEAD = {
+  id: "lead-uuid-123",
+  status: "callback_requested",
+  email: "test@example.com",
+  tenant_id: "tenant-uuid-123",
+  fleet_size: "20",
+};
+
+const MOCK_MEMBER = { id: "member-uuid-123" };
+
+// ===== HELPERS =====
+
+function bantInput(
+  overrides: Partial<QualifyLeadInput> = {}
+): QualifyLeadInput {
+  return {
+    bant_budget: "confirmed",
+    bant_authority: "decision_maker",
+    bant_need: "critical",
+    bant_timeline: "immediate",
+    ...overrides,
+  };
+}
+
+// ===== TESTS =====
+
+describe("LeadQualificationService (BANT V7)", () => {
   let service: LeadQualificationService;
-
-  // Mock qualification framework from crm_settings (V6.3)
-  const mockQualificationFramework: QualificationFramework = {
-    version: "6.3",
-    framework: "CPT",
-    questions: [
-      { id: "challenges", label_en: "Challenges", label_fr: "Défis" },
-      { id: "priority", label_en: "Priority", label_fr: "Priorité" },
-      { id: "timing", label_en: "Timing", label_fr: "Timing" },
-    ],
-    disqualification_triggers: [],
-    score_weights: {
-      challenges: { high: 40, medium: 25, low: 10 },
-      priority: { high: 30, medium: 20, low: 10 },
-      timing: { hot: 30, warm: 20, cool: 10, cold: 0 },
-    },
-    thresholds: {
-      proceed: 70,
-      nurture: 40,
-    },
-  };
-
-  const mockLead = {
-    id: "lead-uuid-123",
-    status: "new",
-    email: "test@example.com",
-  };
 
   beforeEach(() => {
     service = new LeadQualificationService();
-    service.clearCache();
+    vi.clearAllMocks();
 
-    // Mock settingsRepo.getSettingValue
-    vi.spyOn(service["settingsRepo"], "getSettingValue").mockImplementation(
-      (key: string) => {
-        if (key === "qualification_framework") {
-          return Promise.resolve(mockQualificationFramework);
-        }
-        return Promise.resolve(null);
-      }
+    // Default mock: settings repo returns BANT framework
+    vi.spyOn(service["settingsRepo"], "getSettingValue").mockResolvedValue(
+      BANT_FRAMEWORK
     );
 
-    // Default mock for prisma.crm_leads.findUnique
-    vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(mockLead as never);
-    vi.mocked(prisma.crm_leads.update).mockResolvedValue(mockLead as never);
-    vi.mocked(prisma.crm_lead_activities.create).mockResolvedValue({
-      id: "activity-1",
-    } as never);
-    // HQ tenant fallback for leads without tenant_id
-    vi.mocked(
-      (
-        prisma as unknown as {
-          adm_tenants: { findFirst: ReturnType<typeof vi.fn> };
-        }
-      ).adm_tenants.findFirst
-    ).mockResolvedValue({ id: "hq-tenant-uuid" } as never);
+    // Default mock: lead exists
+    vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(
+      MOCK_LEAD as never
+    );
 
-    // Mock leadStatusService - V6.3: qualified → proposal_sent
+    // Default mock: member found
+    vi.mocked(prisma.adm_members.findFirst).mockResolvedValue(
+      MOCK_MEMBER as never
+    );
+
+    // Default mock: status update succeeds
     vi.mocked(leadStatusService.updateStatus).mockResolvedValue({
       success: true,
-      leadId: mockLead.id,
-      previousStatus: "new",
-      newStatus: "proposal_sent",
+      leadId: MOCK_LEAD.id,
+      previousStatus: "callback_requested",
+      newStatus: "qualified",
     });
   });
 
@@ -103,376 +125,275 @@ describe("LeadQualificationService", () => {
     vi.restoreAllMocks();
   });
 
-  // ===== SUITE 1: Framework Loading (3 tests) =====
+  // ===== SUITE 1: BANT Evaluation =====
 
-  describe("Framework Loading", () => {
-    it("should load qualification_framework from crm_settings", async () => {
-      const framework = await service.getFramework();
+  describe("evaluateBant", () => {
+    it("should return 4/4 when all criteria are qualifying", async () => {
+      const result = await service.evaluateBant(bantInput());
+      expect(result.criteria_met).toBe(4);
+      expect(result.details.budget.qualifying).toBe(true);
+      expect(result.details.authority.qualifying).toBe(true);
+      expect(result.details.need.qualifying).toBe(true);
+      expect(result.details.timeline.qualifying).toBe(true);
+    });
 
-      expect(framework).toBeDefined();
-      expect(framework.version).toBe("6.3");
-      expect(framework.framework).toBe("CPT");
-      expect(framework.score_weights).toBeDefined();
-      expect(framework.thresholds).toBeDefined();
-      expect(service["settingsRepo"].getSettingValue).toHaveBeenCalledWith(
-        "qualification_framework"
+    it("should return 3/4 when one criterion is not qualifying", async () => {
+      const result = await service.evaluateBant(
+        bantInput({ bant_budget: "no_budget" })
+      );
+      expect(result.criteria_met).toBe(3);
+      expect(result.details.budget.qualifying).toBe(false);
+    });
+
+    it("should return 2/4 when two criteria are not qualifying", async () => {
+      const result = await service.evaluateBant(
+        bantInput({ bant_budget: "unknown", bant_timeline: "no_timeline" })
+      );
+      expect(result.criteria_met).toBe(2);
+    });
+
+    it("should return 0/4 when no criteria qualify", async () => {
+      const result = await service.evaluateBant({
+        bant_budget: "unknown",
+        bant_authority: "unknown",
+        bant_need: "none",
+        bant_timeline: "no_timeline",
+      });
+      expect(result.criteria_met).toBe(0);
+    });
+
+    it("should accept planned budget as qualifying", async () => {
+      const result = await service.evaluateBant(
+        bantInput({ bant_budget: "planned" })
+      );
+      expect(result.details.budget.qualifying).toBe(true);
+      expect(result.criteria_met).toBe(4);
+    });
+
+    it("should accept influencer as qualifying for authority", async () => {
+      const result = await service.evaluateBant(
+        bantInput({ bant_authority: "influencer" })
+      );
+      expect(result.details.authority.qualifying).toBe(true);
+    });
+  });
+
+  // ===== SUITE 2: Result Determination =====
+
+  describe("determineResult", () => {
+    it("should return qualified for 4/4 criteria", async () => {
+      const { result } = await service.determineResult(4, "20");
+      expect(result).toBe("qualified");
+    });
+
+    it("should return nurturing for 3/4 criteria", async () => {
+      const { result } = await service.determineResult(3, "20");
+      expect(result).toBe("nurturing");
+    });
+
+    it("should return disqualified for <=2/4 criteria with small fleet", async () => {
+      const { result } = await service.determineResult(2, "20");
+      expect(result).toBe("disqualified");
+    });
+
+    it("should return nurturing for <=2/4 criteria with fleet > 50 (exception)", async () => {
+      const { result, fleetSizeException } = await service.determineResult(
+        2,
+        "100"
+      );
+      expect(result).toBe("nurturing");
+      expect(fleetSizeException).toBe(true);
+    });
+
+    it("should return nurturing for 0/4 criteria with fleet > 50", async () => {
+      const { result, fleetSizeException } = await service.determineResult(
+        0,
+        "500+"
+      );
+      expect(result).toBe("nurturing");
+      expect(fleetSizeException).toBe(true);
+    });
+
+    it("should handle null fleet_size as 0", async () => {
+      const { result } = await service.determineResult(1, null);
+      expect(result).toBe("disqualified");
+    });
+
+    it("should handle fleet_size with + suffix", async () => {
+      const { result, fleetSizeException } = await service.determineResult(
+        2,
+        "51+"
+      );
+      expect(result).toBe("nurturing");
+      expect(fleetSizeException).toBe(true);
+    });
+  });
+
+  // ===== SUITE 3: Full Qualification Flow =====
+
+  describe("qualifyLead", () => {
+    it("should qualify lead with 4/4 and update status", async () => {
+      const result = await service.qualifyLead(
+        MOCK_LEAD.id,
+        bantInput(),
+        "user-uuid-123"
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBe("qualified");
+      expect(result.criteria_met).toBe(4);
+      expect(result.status_updated).toBe(true);
+      expect(result.qualified_date).not.toBeNull();
+      expect(result.fleet_size_exception).toBe(false);
+    });
+
+    it("should return nurturing for 3/4 without auto-status update", async () => {
+      const result = await service.qualifyLead(
+        MOCK_LEAD.id,
+        bantInput({ bant_budget: "no_budget" }),
+        "user-uuid-123"
+      );
+
+      expect(result.result).toBe("nurturing");
+      expect(result.criteria_met).toBe(3);
+      expect(result.status_updated).toBe(false);
+      expect(result.qualified_date).toBeNull();
+      // Should NOT call updateStatus for nurturing
+      expect(leadStatusService.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it("should return disqualified for 2/4 with small fleet", async () => {
+      const result = await service.qualifyLead(
+        MOCK_LEAD.id,
+        bantInput({ bant_budget: "unknown", bant_timeline: "no_timeline" }),
+        "user-uuid-123"
+      );
+
+      expect(result.result).toBe("disqualified");
+      expect(result.criteria_met).toBe(2);
+      expect(result.fleet_size_exception).toBe(false);
+    });
+
+    it("should apply fleet_size exception for <=2/4 with large fleet", async () => {
+      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
+        ...MOCK_LEAD,
+        fleet_size: "100",
+      } as never);
+
+      const result = await service.qualifyLead(
+        MOCK_LEAD.id,
+        bantInput({ bant_budget: "unknown", bant_timeline: "no_timeline" }),
+        "user-uuid-123"
+      );
+
+      expect(result.result).toBe("nurturing");
+      expect(result.fleet_size_exception).toBe(true);
+    });
+
+    it("should throw for converted lead", async () => {
+      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
+        ...MOCK_LEAD,
+        status: "converted",
+      } as never);
+
+      await expect(
+        service.qualifyLead(MOCK_LEAD.id, bantInput(), "user-uuid-123")
+      ).rejects.toThrow("Cannot qualify lead with status: converted");
+    });
+
+    it("should throw for disqualified lead", async () => {
+      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
+        ...MOCK_LEAD,
+        status: "disqualified",
+      } as never);
+
+      await expect(
+        service.qualifyLead(MOCK_LEAD.id, bantInput(), "user-uuid-123")
+      ).rejects.toThrow("Cannot qualify lead with status: disqualified");
+    });
+
+    it("should throw for non-existent lead", async () => {
+      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(null);
+
+      await expect(
+        service.qualifyLead("nonexistent", bantInput(), "user-uuid-123")
+      ).rejects.toThrow("Lead not found: nonexistent");
+    });
+
+    it("should write BANT values to crm_leads", async () => {
+      await service.qualifyLead(MOCK_LEAD.id, bantInput(), "user-uuid-123");
+
+      expect(prisma.crm_leads.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            bant_budget: "confirmed",
+            bant_authority: "decision_maker",
+            bant_need: "critical",
+            bant_timeline: "immediate",
+            bant_qualified_by: MOCK_MEMBER.id,
+          }),
+        })
       );
     });
 
-    it("should throw if qualification_framework not found", async () => {
+    it("should create activity log", async () => {
+      await service.qualifyLead(MOCK_LEAD.id, bantInput(), "user-uuid-123");
+
+      expect(prisma.crm_lead_activities.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            activity_type: "lead_qualified",
+            lead_id: MOCK_LEAD.id,
+            tenant_id: MOCK_LEAD.tenant_id,
+          }),
+        })
+      );
+    });
+  });
+
+  // ===== SUITE 4: Framework Loading =====
+
+  describe("getFramework", () => {
+    it("should load framework from crm_settings", async () => {
+      const framework = await service.getFramework();
+      expect(framework.framework).toBe("BANT");
+      expect(framework.criteria.budget.qualifying_values).toContain(
+        "confirmed"
+      );
+    });
+
+    it("should cache framework after first load", async () => {
+      await service.getFramework();
+      await service.getFramework();
+
+      expect(service["settingsRepo"].getSettingValue).toHaveBeenCalledTimes(1);
+    });
+
+    it("should throw if framework not found", async () => {
       vi.spyOn(service["settingsRepo"], "getSettingValue").mockResolvedValue(
         null
       );
-      service.clearCache();
 
       await expect(service.getFramework()).rejects.toThrow(
         "qualification_framework not found in crm_settings"
       );
     });
 
-    it("should cache framework after first load", async () => {
-      // First call
-      await service.getFramework();
-      // Second call
-      await service.getFramework();
-
-      // Should only call settings repo once
-      expect(service["settingsRepo"].getSettingValue).toHaveBeenCalledTimes(1);
-    });
-
-    it("should throw if framework missing score_weights", async () => {
-      const incompleteFramework = {
-        ...mockQualificationFramework,
-        score_weights: undefined,
-      };
-      vi.spyOn(service["settingsRepo"], "getSettingValue").mockResolvedValue(
-        incompleteFramework
-      );
-      service.clearCache();
-
-      await expect(service.getFramework()).rejects.toThrow(
-        "qualification_framework is missing score_weights or thresholds"
-      );
-    });
-  });
-
-  // ===== SUITE 2: Score Calculation (4 tests) =====
-
-  describe("Score Calculation", () => {
-    it("should calculate max score (100) for high/high/hot", async () => {
-      const cpt: QualifyLeadInput = {
-        challenges: { response: "Major pain points", score: "high" },
-        priority: { response: "Budget approved", score: "high" },
-        timing: { response: "ASAP", score: "hot" },
-      };
-
-      const result = await service.calculateScore(cpt);
-
-      // high challenges (40) + high priority (30) + hot timing (30) = 100
-      expect(result.total).toBe(100);
-      expect(result.challengesPoints).toBe(40);
-      expect(result.priorityPoints).toBe(30);
-      expect(result.timingPoints).toBe(30);
-    });
-
-    it("should calculate min score for low/low/cold", async () => {
-      const cpt: QualifyLeadInput = {
-        challenges: { response: "No issues", score: "low" },
-        priority: { response: "No budget", score: "low" },
-        timing: { response: "Maybe next year", score: "cold" },
-      };
-
-      const result = await service.calculateScore(cpt);
-
-      // low challenges (10) + low priority (10) + cold timing (0) = 20
-      expect(result.total).toBe(20);
-      expect(result.challengesPoints).toBe(10);
-      expect(result.priorityPoints).toBe(10);
-      expect(result.timingPoints).toBe(0);
-    });
-
-    it("should use score_weights from settings", async () => {
-      // Modify settings to verify they are used
-      const customFramework = {
-        ...mockQualificationFramework,
-        score_weights: {
-          challenges: { high: 50, medium: 30, low: 15 },
-          priority: { high: 35, medium: 25, low: 15 },
-          timing: { hot: 35, warm: 25, cool: 15, cold: 5 },
-        },
-      };
-      vi.spyOn(service["settingsRepo"], "getSettingValue").mockResolvedValue(
-        customFramework
-      );
-      service.clearCache();
-
-      const cpt: QualifyLeadInput = {
-        challenges: { response: "Test", score: "high" },
-        priority: { response: "Test", score: "high" },
-        timing: { response: "Test", score: "hot" },
-      };
-
-      const result = await service.calculateScore(cpt);
-
-      // Custom weights: 50 + 35 + 35 = 120
-      expect(result.total).toBe(120);
-    });
-
-    it("should return individual points per criterion", async () => {
-      const cpt: QualifyLeadInput = {
-        challenges: { response: "Medium pain", score: "medium" },
-        priority: { response: "Some budget", score: "medium" },
-        timing: { response: "Q2", score: "warm" },
-      };
-
-      const result = await service.calculateScore(cpt);
-
-      expect(result.challengesPoints).toBe(25);
-      expect(result.priorityPoints).toBe(20);
-      expect(result.timingPoints).toBe(20);
-      expect(result.total).toBe(65);
-    });
-  });
-
-  // ===== SUITE 3: Recommendation Logic (3 tests) =====
-
-  describe("Recommendation Logic", () => {
-    it("should return 'proceed' when score >= thresholds.proceed (70)", async () => {
-      const recommendation = await service.getRecommendation(70);
-      expect(recommendation).toBe("proceed");
-
-      const higherRecommendation = await service.getRecommendation(85);
-      expect(higherRecommendation).toBe("proceed");
-
-      const exactRecommendation = await service.getRecommendation(100);
-      expect(exactRecommendation).toBe("proceed");
-    });
-
-    it("should return 'nurture' when score >= thresholds.nurture (40) and < proceed", async () => {
-      const recommendation = await service.getRecommendation(40);
-      expect(recommendation).toBe("nurture");
-
-      const midRecommendation = await service.getRecommendation(55);
-      expect(midRecommendation).toBe("nurture");
-
-      const highNurture = await service.getRecommendation(69);
-      expect(highNurture).toBe("nurture");
-    });
-
-    it("should return 'disqualify' when score < thresholds.nurture", async () => {
-      const recommendation = await service.getRecommendation(39);
-      expect(recommendation).toBe("disqualify");
-
-      const lowRecommendation = await service.getRecommendation(20);
-      expect(lowRecommendation).toBe("disqualify");
-
-      const zeroRecommendation = await service.getRecommendation(0);
-      expect(zeroRecommendation).toBe("disqualify");
-    });
-  });
-
-  // ===== SUITE 4: Qualification Flow (6 tests) =====
-
-  describe("Qualification Flow", () => {
-    const validCpt: QualifyLeadInput = {
-      challenges: { response: "Excel nightmare, 3h/week", score: "high" },
-      priority: { response: "Budget approved Q1", score: "high" },
-      timing: { response: "Want to start ASAP", score: "hot" },
-    };
-
-    it("should qualify lead and store qualification_notes JSON", async () => {
-      const result = await service.qualifyLead(mockLead.id, validCpt, "user-1");
-
-      expect(result.success).toBe(true);
-      expect(result.leadId).toBe(mockLead.id);
-      expect(result.qualification_score).toBe(100);
-      expect(result.recommendation).toBe("proceed");
-      expect(result.qualified_date).toBeDefined();
-
-      // Verify update was called with qualification_notes as JSON string
-      expect(prisma.crm_leads.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: mockLead.id },
-          data: expect.objectContaining({
-            qualification_score: 100,
-            qualification_notes: expect.stringContaining('"framework":"CPT"'),
-          }),
-        })
-      );
-    });
-
-    it("should auto-update status to 'proposal_sent' when recommendation=proceed (V6.3)", async () => {
-      const result = await service.qualifyLead(mockLead.id, validCpt, "user-1");
-
-      expect(result.status_updated).toBe(true);
-      // V6.3: qualified status removed, use proposal_sent instead
-      expect(leadStatusService.updateStatus).toHaveBeenCalledWith(
-        mockLead.id,
-        "proposal_sent",
-        { performedBy: "user-1" }
-      );
-    });
-
-    it("should NOT auto-update status when recommendation=nurture", async () => {
-      const nurtureCpt: QualifyLeadInput = {
-        challenges: { response: "Some issues", score: "medium" },
-        priority: { response: "Maybe budget", score: "medium" },
-        timing: { response: "Q3", score: "warm" },
-      };
-
-      // Score = 25 + 20 + 20 = 65 (nurture range)
-      const result = await service.qualifyLead(
-        mockLead.id,
-        nurtureCpt,
-        "user-1"
-      );
-
-      expect(result.recommendation).toBe("nurture");
-      expect(result.status_updated).toBe(false);
-      expect(result.suggested_action).toBe(
-        "Consider moving this lead to nurturing"
-      );
-      expect(leadStatusService.updateStatus).not.toHaveBeenCalled();
-    });
-
-    it("should NOT auto-update status when recommendation=disqualify", async () => {
-      const disqualifyCpt: QualifyLeadInput = {
-        challenges: { response: "No problems", score: "low" },
-        priority: { response: "No budget", score: "low" },
-        timing: { response: "Not interested", score: "cold" },
-      };
-
-      // Score = 10 + 10 + 0 = 20 (disqualify range)
-      const result = await service.qualifyLead(
-        mockLead.id,
-        disqualifyCpt,
-        "user-1"
-      );
-
-      expect(result.recommendation).toBe("disqualify");
-      expect(result.status_updated).toBe(false);
-      expect(result.suggested_action).toBe("Consider disqualifying this lead");
-      expect(leadStatusService.updateStatus).not.toHaveBeenCalled();
-    });
-
-    it("should throw for already converted lead", async () => {
-      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
-        ...mockLead,
-        status: "converted",
-      } as never);
-
-      await expect(
-        service.qualifyLead(mockLead.id, validCpt, "user-1")
-      ).rejects.toThrow("Cannot qualify lead with status: converted");
-    });
-
-    it("should throw for already disqualified lead", async () => {
-      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
-        ...mockLead,
-        status: "disqualified",
-      } as never);
-
-      await expect(
-        service.qualifyLead(mockLead.id, validCpt, "user-1")
-      ).rejects.toThrow("Cannot qualify lead with status: disqualified");
-    });
-
-    it("should create crm_lead_activities entry", async () => {
-      await service.qualifyLead(mockLead.id, validCpt, "user-1");
-
-      expect(prisma.crm_lead_activities.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            lead_id: mockLead.id,
-            activity_type: "lead_qualified",
-            title: expect.stringContaining("Lead qualified with CPT score"),
-            performed_by: "user-1",
-          }),
-        })
-      );
-    });
-
-    it("should throw if lead not found", async () => {
-      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue(null);
-
-      await expect(
-        service.qualifyLead("non-existent-id", validCpt, "user-1")
-      ).rejects.toThrow("Lead not found: non-existent-id");
-    });
-  });
-
-  // ===== SUITE 5: Score Weights & Thresholds (2 tests) =====
-
-  describe("Score Weights & Thresholds", () => {
-    it("should get score weights from framework", async () => {
-      const weights = await service.getScoreWeights();
-
-      expect(weights.challenges).toEqual({ high: 40, medium: 25, low: 10 });
-      expect(weights.priority).toEqual({ high: 30, medium: 20, low: 10 });
-      expect(weights.timing).toEqual({ hot: 30, warm: 20, cool: 10, cold: 0 });
-    });
-
-    it("should get thresholds from framework", async () => {
-      const thresholds = await service.getThresholds();
-
-      expect(thresholds.proceed).toBe(70);
-      expect(thresholds.nurture).toBe(40);
-    });
-  });
-
-  // ===== SUITE 6: Edge Cases (3 tests) =====
-
-  describe("Edge Cases", () => {
-    it("should handle status update failure gracefully", async () => {
-      vi.mocked(leadStatusService.updateStatus).mockResolvedValue({
-        success: false,
-        leadId: mockLead.id,
-        previousStatus: "new",
-        newStatus: "proposal_sent", // V6.3
-        error: "Invalid transition",
+    it("should throw if criteria missing", async () => {
+      vi.spyOn(service["settingsRepo"], "getSettingValue").mockResolvedValue({
+        version: "7.0.0",
+        framework: "BANT",
       });
 
-      const cpt: QualifyLeadInput = {
-        challenges: { response: "Test", score: "high" },
-        priority: { response: "Test", score: "high" },
-        timing: { response: "Test", score: "hot" },
-      };
-
-      const result = await service.qualifyLead(mockLead.id, cpt, "user-1");
-
-      // Should still succeed but status_updated should be false
-      expect(result.success).toBe(true);
-      expect(result.status_updated).toBe(false);
+      await expect(service.getFramework()).rejects.toThrow("missing criteria");
     });
 
-    it("should clear cache when clearCache() is called", async () => {
-      // First load to populate cache
+    it("should clear cache on clearCache()", async () => {
       await service.getFramework();
-      expect(service["settingsRepo"].getSettingValue).toHaveBeenCalledTimes(1);
-
-      // Clear cache
       service.clearCache();
-
-      // Second load should call settings repo again
       await service.getFramework();
+
       expect(service["settingsRepo"].getSettingValue).toHaveBeenCalledTimes(2);
-    });
-
-    it("should handle lead with null status", async () => {
-      vi.mocked(prisma.crm_leads.findUnique).mockResolvedValue({
-        ...mockLead,
-        status: null,
-      } as never);
-
-      const cpt: QualifyLeadInput = {
-        challenges: { response: "Test", score: "high" },
-        priority: { response: "Test", score: "high" },
-        timing: { response: "Test", score: "hot" },
-      };
-
-      // Should not throw - null status is valid for qualification
-      const result = await service.qualifyLead(mockLead.id, cpt, "user-1");
-      expect(result.success).toBe(true);
     });
   });
 });

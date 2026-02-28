@@ -3,7 +3,6 @@
  *
  * V6.6 - Request callback (Wizard Step 4 alternative)
  *
- * When user prefers a callback instead of booking a Cal.com slot.
  * Sets callback_requested = true, status = 'callback_requested'.
  *
  * Prerequisites:

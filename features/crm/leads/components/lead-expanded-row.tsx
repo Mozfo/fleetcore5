@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Calendar,
-  CalendarX,
-  Clock,
-  Flame,
-  Snowflake,
-  UserPlus,
-} from "lucide-react";
+import { CalendarX, Clock, Flame, Snowflake, UserPlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { Lead } from "../types/lead.types";
@@ -23,7 +16,6 @@ const ICON_MAP: Record<
   React.ComponentType<{ className?: string }>
 > = {
   CalendarX,
-  Calendar,
   Flame,
   Snowflake,
   Clock,

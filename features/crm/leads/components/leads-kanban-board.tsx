@@ -116,7 +116,7 @@ export function LeadsKanbanBoardComponent({
 function KanbanSkeleton() {
   return (
     <div className="flex gap-2 pb-4">
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: 2 }).map((_, i) => (
         <div
           key={i}
           className="bg-accent flex flex-1 flex-col gap-2 rounded-lg p-1.5"

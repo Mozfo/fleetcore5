@@ -38,7 +38,6 @@ import {
   getScoreBarColor,
   getScoreColor,
   isCallbackOverdue,
-  isMeetingMissed,
 } from "../lib/lead-insight";
 
 type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
@@ -1016,65 +1015,6 @@ export function getLeadColumns(
       size: 140,
     },
 
-    // ── Booking (V6.2: CAL.COM) ───────────────────────────────────────
-    {
-      id: "booking_slot_at",
-      accessorKey: "booking_slot_at",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.booking_slot_at")}
-        />
-      ),
-      cell: ({ row }) => {
-        const lead = row.original;
-        const missed = isMeetingMissed(lead);
-        return (
-          <div className="flex items-center gap-1.5">
-            <span>{formatDate(lead.booking_slot_at)}</span>
-            {missed && (
-              <Badge
-                variant="outline"
-                className="border-transparent bg-red-100 px-1 py-0 text-[10px] text-red-700 dark:bg-red-900 dark:text-red-300"
-              >
-                {t("leads.table.insight.missed")}
-              </Badge>
-            )}
-          </div>
-        );
-      },
-      meta: {
-        label: t("leads.table.columns.booking_slot_at"),
-        className: "hidden md:table-cell",
-      },
-      size: 180,
-    },
-    {
-      id: "booking_confirmed_at",
-      accessorKey: "booking_confirmed_at",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.booking_confirmed_at")}
-        />
-      ),
-      cell: ({ row }) => formatDate(row.original.booking_confirmed_at),
-      meta: { label: t("leads.table.columns.booking_confirmed_at") },
-      size: 150,
-    },
-    {
-      id: "booking_calcom_uid",
-      accessorKey: "booking_calcom_uid",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.booking_calcom_uid")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.booking_calcom_uid") },
-      size: 140,
-    },
-
     // ── Wizard & Platforms (V6.2) ─────────────────────────────────────
     {
       id: "platforms_used",
@@ -1243,20 +1183,6 @@ export function getLeadColumns(
       cell: ({ row }) => formatDate(row.original.j1_reminder_sent_at),
       meta: { label: t("leads.table.columns.j1_reminder_sent_at") },
       size: 150,
-    },
-
-    // ── Reschedule (V6.3.3) ───────────────────────────────────────────
-    {
-      id: "reschedule_token",
-      accessorKey: "reschedule_token",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.reschedule_token")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.reschedule_token") },
-      size: 100,
     },
 
     // ── GeoIP detection (V6.4) ────────────────────────────────────────

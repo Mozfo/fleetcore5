@@ -1,6 +1,6 @@
 /**
  * Lead Status & Qualification Validators
- * V6.3: Validation schemas for status transitions and CPT qualification
+ * V7: BANT qualification
  *
  * @module lib/validators/crm/lead-status.validators
  */
@@ -8,21 +8,16 @@
 import { z } from "zod";
 
 /**
- * 10 statuts V6.6 du workflow lead
+ * V7 Lead statuses
  * Source: crm_settings.lead_status_workflow + DB CHECK constraint
- *
- * V6.3: Suppression qualified/demo_completed (one-call close philosophy)
- * V6.6: Added email_verified, callback_requested
  */
 export const leadStatusEnum = z.enum([
   "new",
   "email_verified",
   "callback_requested",
-  "demo",
-  "proposal_sent",
+  "qualified",
   "payment_pending",
   "converted",
-  "lost",
   "nurturing",
   "disqualified",
 ]);
@@ -30,88 +25,67 @@ export const leadStatusEnum = z.enum([
 export type LeadStatus = z.infer<typeof leadStatusEnum>;
 
 /**
- * Update status request validation (V6.3)
- *
- * - status: Le nouveau statut cible
- * - loss_reason_code: Obligatoire si status = lost ou disqualified
- * - nurturing_reason_code: Obligatoire si status = nurturing (V6.3)
- * - reason_detail: Détail optionnel si la raison a requires_detail = true
- * - triggered_by: Source de la transition (V6.3: lead_action_only pour nurturing→demo)
- *
- * @example
- * const body = {
- *   status: "lost",
- *   loss_reason_code: "chose_competitor",
- *   reason_detail: "Went with Tourmo"
- * };
+ * Update status request validation
  */
 export const updateStatusSchema = z.object({
   status: leadStatusEnum,
   loss_reason_code: z.string().min(1).max(50).optional(),
-  nurturing_reason_code: z.string().min(1).max(50).optional(), // V6.3
+  nurturing_reason_code: z.string().min(1).max(50).optional(),
   reason_detail: z.string().max(500).optional(),
-  triggered_by: z.enum(["commercial", "lead", "system"]).optional(), // V6.3
+  triggered_by: z.enum(["commercial", "lead", "system"]).optional(),
 });
 
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
 
-/**
- * CPT Score levels
- */
-export const cptChallengesScore = z.enum(["high", "medium", "low"]);
-export const cptPriorityScore = z.enum(["high", "medium", "low"]);
-export const cptTimingScore = z.enum(["hot", "warm", "cool", "cold"]);
+// ===== BANT Qualification Enums =====
+
+export const bantBudgetEnum = z.enum([
+  "confirmed",
+  "planned",
+  "no_budget",
+  "unknown",
+]);
+
+export const bantAuthorityEnum = z.enum([
+  "decision_maker",
+  "influencer",
+  "user",
+  "unknown",
+]);
+
+export const bantNeedEnum = z.enum([
+  "critical",
+  "important",
+  "nice_to_have",
+  "none",
+]);
+
+export const bantTimelineEnum = z.enum([
+  "immediate",
+  "this_quarter",
+  "this_year",
+  "no_timeline",
+]);
 
 /**
- * CPT Qualification request validation
+ * BANT Qualification request validation (V7)
  *
- * Framework CPT (Challenges, Priority, Timing):
- * - challenges: Pain points et problemes a resoudre
- * - priority: Budget et autorite de decision
- * - timing: Quand ils veulent implementer
- *
- * Chaque critere a:
- * - response: Texte libre decrivant la reponse du prospect
- * - score: Niveau de qualification (high/medium/low ou hot/warm/cool/cold)
+ * 4 binary criteria — no numeric scoring.
+ * Qualifying values per criterion loaded from crm_settings.qualification_framework.
  *
  * @example
  * const body = {
- *   challenges: {
- *     response: "Excel nightmare, 3 hours/week reconciliation",
- *     score: "high"
- *   },
- *   priority: {
- *     response: "Budget approved Q1",
- *     score: "high"
- *   },
- *   timing: {
- *     response: "Want to start ASAP",
- *     score: "hot"
- *   }
+ *   bant_budget: "confirmed",
+ *   bant_authority: "decision_maker",
+ *   bant_need: "critical",
+ *   bant_timeline: "immediate"
  * };
  */
 export const qualifyLeadSchema = z.object({
-  challenges: z.object({
-    response: z
-      .string()
-      .min(1, "Response required")
-      .max(1000, "Response too long"),
-    score: cptChallengesScore,
-  }),
-  priority: z.object({
-    response: z
-      .string()
-      .min(1, "Response required")
-      .max(1000, "Response too long"),
-    score: cptPriorityScore,
-  }),
-  timing: z.object({
-    response: z
-      .string()
-      .min(1, "Response required")
-      .max(1000, "Response too long"),
-    score: cptTimingScore,
-  }),
+  bant_budget: bantBudgetEnum,
+  bant_authority: bantAuthorityEnum,
+  bant_need: bantNeedEnum,
+  bant_timeline: bantTimelineEnum,
 });
 
 export type QualifyLeadInput = z.infer<typeof qualifyLeadSchema>;
@@ -130,9 +104,15 @@ export interface StatusTransitionResult {
 export interface QualificationResult {
   success: boolean;
   leadId: string;
-  qualification_score: number;
-  recommendation: "proceed" | "nurture" | "disqualify";
-  suggested_action?: string;
+  result: "qualified" | "nurturing" | "disqualified";
+  criteria_met: number;
+  details: {
+    budget: { value: string; qualifying: boolean };
+    authority: { value: string; qualifying: boolean };
+    need: { value: string; qualifying: boolean };
+    timeline: { value: string; qualifying: boolean };
+  };
+  fleet_size_exception: boolean;
   status_updated: boolean;
-  qualified_date: string;
+  qualified_date: string | null;
 }

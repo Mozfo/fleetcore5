@@ -16,13 +16,9 @@ export const STATUS_COLOR_MAP: Record<string, { bg: string; text: string }> = {
     bg: "bg-amber-100 dark:bg-amber-900",
     text: "text-amber-700 dark:text-amber-300",
   },
-  demo: {
+  qualified: {
     bg: "bg-blue-100 dark:bg-blue-900",
     text: "text-blue-700 dark:text-blue-300",
-  },
-  proposal_sent: {
-    bg: "bg-orange-100 dark:bg-orange-900",
-    text: "text-orange-700 dark:text-orange-300",
   },
   payment_pending: {
     bg: "bg-yellow-100 dark:bg-yellow-900",
@@ -31,10 +27,6 @@ export const STATUS_COLOR_MAP: Record<string, { bg: string; text: string }> = {
   converted: {
     bg: "bg-green-100 dark:bg-green-900",
     text: "text-green-700 dark:text-green-300",
-  },
-  lost: {
-    bg: "bg-red-100 dark:bg-red-900",
-    text: "text-red-700 dark:text-red-300",
   },
   nurturing: {
     bg: "bg-purple-100 dark:bg-purple-900",
@@ -119,7 +111,7 @@ export function getScoreDotColor(
 
 // ── Row indicator (border-left) ──────────────────────────────────────────
 
-const TERMINAL_STATUSES = new Set(["converted", "lost", "disqualified"]);
+const TERMINAL_STATUSES = new Set(["converted", "disqualified"]);
 
 /**
  * Compute border-left Tailwind class for a table row.
@@ -141,25 +133,7 @@ export function computeRowIndicator(lead: Lead): string {
     }
   }
 
-  // 2. Meeting missed → RED
-  if (lead.booking_slot_at && isActive) {
-    if (new Date(lead.booking_slot_at) < now) {
-      return "border-l-4 border-l-red-500";
-    }
-  }
-
-  // 3. Meeting soon (within 48h) → BLUE
-  if (lead.booking_slot_at && isActive) {
-    const bookingDate = new Date(lead.booking_slot_at);
-    const hours = Math.floor(
-      (bookingDate.getTime() - now.getTime()) / 3_600_000
-    );
-    if (hours > 0 && hours <= 48) {
-      return "border-l-4 border-l-blue-500";
-    }
-  }
-
-  // 4. Hot lead (score >= 80) → GREEN
+  // 2. Hot lead (score >= 80) → GREEN
   if (
     lead.qualification_score !== null &&
     lead.qualification_score !== undefined &&
@@ -187,7 +161,6 @@ export function computeRowIndicator(lead: Lead): string {
 /** Lucide icon name for each insight rule. */
 export type InsightIcon =
   | "CalendarX"
-  | "Calendar"
   | "Flame"
   | "Snowflake"
   | "Clock"
@@ -239,33 +212,7 @@ export function computeAllLeadInsights(lead: Lead): LeadInsight[] {
     }
   }
 
-  // 2. Meeting missed
-  if (lead.booking_slot_at && isActive) {
-    const bookingDate = new Date(lead.booking_slot_at);
-    if (bookingDate < now) {
-      insights.push({
-        key: "meeting_missed",
-        color: "text-red-600",
-        icon: "CalendarX",
-      });
-    }
-  }
-
-  // 3. Meeting soon (within 48h)
-  if (lead.booking_slot_at && isActive) {
-    const bookingDate = new Date(lead.booking_slot_at);
-    const hours = hoursBetween(now, bookingDate);
-    if (hours > 0 && hours <= 48) {
-      insights.push({
-        key: "meeting_soon",
-        params: { hours },
-        color: "text-blue-600",
-        icon: "Calendar",
-      });
-    }
-  }
-
-  // 4. Hot lead
+  // 2. Hot lead
   if (
     lead.qualification_score !== null &&
     lead.qualification_score !== undefined &&
@@ -338,12 +285,6 @@ export function isCallbackOverdue(lead: Lead): boolean {
   return new Date(lead.callback_requested_at) < new Date();
 }
 
-export function isMeetingMissed(lead: Lead): boolean {
-  if (!lead.booking_slot_at) return false;
-  if (TERMINAL_STATUSES.has(lead.status)) return false;
-  return new Date(lead.booking_slot_at) < new Date();
-}
-
 export function hasUrgency(lead: Lead): boolean {
-  return isCallbackOverdue(lead) || isMeetingMissed(lead);
+  return isCallbackOverdue(lead);
 }

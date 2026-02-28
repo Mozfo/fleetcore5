@@ -281,7 +281,7 @@ export default function BookDemoProfilePage() {
       const result = await response.json();
 
       if (result.success) {
-        // V6.6: Profile → Schedule (Cal.com booking)
+        // Profile completed → redirect to callback request
         router.push(`/${locale}/book-demo/schedule?leadId=${leadId}`);
       } else {
         setSubmitError(

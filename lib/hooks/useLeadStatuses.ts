@@ -54,7 +54,7 @@ interface SettingApiResponse {
 }
 
 // ============================================================
-// DEFAULTS (fallback si API indisponible) - V6.6 10 statuts
+// DEFAULTS (fallback si API indisponible) - V7 statuses
 // ============================================================
 
 export const DEFAULT_LEAD_STATUSES: LeadStatusConfig[] = [
@@ -67,7 +67,7 @@ export const DEFAULT_LEAD_STATUSES: LeadStatusConfig[] = [
     icon: "sparkles",
     order: 1,
     is_initial: true,
-    transitions_to: ["email_verified", "demo", "nurturing", "disqualified"],
+    transitions_to: ["email_verified"],
   },
   {
     value: "email_verified",
@@ -77,7 +77,7 @@ export const DEFAULT_LEAD_STATUSES: LeadStatusConfig[] = [
     color: "cyan",
     icon: "check-circle",
     order: 2,
-    transitions_to: ["callback_requested", "demo"],
+    transitions_to: ["callback_requested", "nurturing", "disqualified"],
   },
   {
     value: "callback_requested",
@@ -87,37 +87,17 @@ export const DEFAULT_LEAD_STATUSES: LeadStatusConfig[] = [
     color: "amber",
     icon: "phone",
     order: 3,
-    transitions_to: ["demo", "disqualified", "lost"],
+    transitions_to: ["qualified", "nurturing", "disqualified"],
   },
   {
-    value: "demo",
-    label_en: "Demo",
-    label_fr: "Démo",
-    label_ar: "عرض توضيحي",
+    value: "qualified",
+    label_en: "Qualified",
+    label_fr: "Qualifié",
+    label_ar: "مؤهل",
     color: "blue",
-    icon: "calendar",
+    icon: "badge-check",
     order: 4,
-    transitions_to: ["proposal_sent", "nurturing", "lost", "disqualified"],
-  },
-  {
-    value: "proposal_sent",
-    label_en: "Proposal Sent",
-    label_fr: "Proposition envoyée",
-    label_ar: "تم إرسال العرض",
-    color: "orange",
-    icon: "document-text",
-    order: 5,
-    transitions_to: ["payment_pending", "lost", "nurturing"],
-  },
-  {
-    value: "payment_pending",
-    label_en: "Payment Pending",
-    label_fr: "Paiement en attente",
-    label_ar: "في انتظار الدفع",
-    color: "yellow",
-    icon: "credit-card",
-    order: 6,
-    transitions_to: ["converted", "lost"],
+    transitions_to: ["converted", "nurturing", "disqualified"],
   },
   {
     value: "converted",
@@ -126,20 +106,10 @@ export const DEFAULT_LEAD_STATUSES: LeadStatusConfig[] = [
     label_ar: "تم التحويل",
     color: "green",
     icon: "badge-check",
-    order: 7,
+    order: 5,
     is_terminal: true,
     is_success: true,
     transitions_to: [],
-  },
-  {
-    value: "lost",
-    label_en: "Lost",
-    label_fr: "Perdu",
-    label_ar: "خسر",
-    color: "red",
-    icon: "x-circle",
-    order: 8,
-    transitions_to: ["nurturing"],
   },
   {
     value: "nurturing",
@@ -148,17 +118,17 @@ export const DEFAULT_LEAD_STATUSES: LeadStatusConfig[] = [
     label_ar: "رعاية",
     color: "purple",
     icon: "clock",
-    order: 9,
-    transitions_to: ["demo", "proposal_sent", "lost"],
+    order: 6,
+    transitions_to: ["callback_requested", "disqualified"],
   },
   {
     value: "disqualified",
     label_en: "Disqualified",
     label_fr: "Disqualifié",
     label_ar: "غير مؤهل",
-    color: "gray",
+    color: "red",
     icon: "ban",
-    order: 10,
+    order: 7,
     is_terminal: true,
     transitions_to: [],
   },

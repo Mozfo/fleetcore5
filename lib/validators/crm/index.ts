@@ -110,14 +110,15 @@ export {
 } from "./settings.validators";
 
 // =============================================================================
-// LEAD STATUS & QUALIFICATION VALIDATORS (V6.2-6)
+// LEAD STATUS & QUALIFICATION VALIDATORS (V7 BANT)
 // =============================================================================
 export {
   // Enums
   leadStatusEnum,
-  cptChallengesScore,
-  cptPriorityScore,
-  cptTimingScore,
+  bantBudgetEnum,
+  bantAuthorityEnum,
+  bantNeedEnum,
+  bantTimelineEnum,
   // Schemas
   updateStatusSchema,
   qualifyLeadSchema,

@@ -29,7 +29,6 @@ import {
   Loader2,
   ArrowRightCircle,
 } from "lucide-react";
-import Cal, { getCalApi } from "@calcom/embed-react";
 import { toast } from "sonner";
 import { useInvalidate } from "@refinedev/core";
 
@@ -45,16 +44,6 @@ import { getStatusSectionBg } from "@/lib/utils/status-colors";
 import { getStatusConfig } from "@/lib/config/pipeline-status";
 import type { Lead } from "@/types/crm";
 import type { PendingTransition } from "@/features/crm/leads/hooks/use-leads-kanban";
-
-// ── Cal.com booking links per locale ──────────────────────────────────
-
-const CALCOM_ORIGIN =
-  process.env.NEXT_PUBLIC_CALCOM_ORIGIN || "https://app.cal.eu";
-
-const CALCOM_SLUGS: Record<string, string> = {
-  en: "fleetcore/30min",
-  fr: "fleetcore/30min-fr",
-};
 
 // ── Action definitions ────────────────────────────────────────────────
 
@@ -194,20 +183,11 @@ const AUTO_CONFIRM_STATUSES = new Set(["converted", "callback_requested"]);
 
 // ── Component ─────────────────────────────────────────────────────────
 
-export interface BookingData {
-  startTime: string;
-  endTime: string;
-  title: string;
-}
-
 interface LeadStatusActionsProps {
   lead: Lead;
   onStatusChanged: () => void;
   pendingTransition?: PendingTransition | null;
   onTransitionCancel?: () => void;
-  showCalEmbed?: boolean;
-  onShowCalEmbed?: (show: boolean) => void;
-  onBookingSuccess?: (data: BookingData) => void;
 }
 
 export function LeadStatusActions({
@@ -215,9 +195,6 @@ export function LeadStatusActions({
   onStatusChanged,
   pendingTransition,
   onTransitionCancel,
-  showCalEmbed,
-  onShowCalEmbed,
-  onBookingSuccess,
 }: LeadStatusActionsProps) {
   const { t } = useTranslation("crm");
   const params = useParams();
@@ -260,40 +237,6 @@ export function LeadStatusActions({
     }, 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingTransition?.toStatus]);
-
-  // ── Cal.com embed: UI config + booking event listener ──────────────
-  useEffect(() => {
-    if (!showCalEmbed) return;
-    let dismissed = false;
-
-    void (async () => {
-      const cal = await getCalApi({ namespace: "fleetcore-demo" });
-
-      // Workaround for #9577 — force hideEventTypeDetails via "ui" API
-      cal("ui", {
-        hideEventTypeDetails: true,
-        layout: "week_view",
-      });
-
-      // Listen for successful booking → bubble up to parent
-      cal("on", {
-        action: "bookingSuccessfulV2",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        callback: (e: any) => {
-          if (dismissed) return;
-          dismissed = true;
-
-          // Auto-dismiss Cal embed after 3 seconds
-          setTimeout(() => {
-            onShowCalEmbed?.(false);
-          }, 3000);
-
-          // Bubble booking data to parent (LeadDrawer handles status update + UI)
-          onBookingSuccess?.(e.detail.data);
-        },
-      });
-    })();
-  }, [showCalEmbed, onShowCalEmbed, onBookingSuccess]);
 
   // ── Handle drag confirm (TransitionActionSection logic) ────────────
 
@@ -345,11 +288,6 @@ export function LeadStatusActions({
 
   const handleActionClick = (action: ActionDef) => {
     if (action.isDisabled) return;
-
-    if (action.isExternal) {
-      onShowCalEmbed?.(true);
-      return;
-    }
 
     if (action.needsConfirm) {
       setSelectedAction(selectedAction === action.id ? null : action.id);
@@ -558,45 +496,6 @@ export function LeadStatusActions({
             </Button>
           </div>
         )}
-      </div>
-    );
-  }
-
-  // ── Cal.com inline embed mode ─────────────────────────────────────
-
-  if (showCalEmbed) {
-    const slug = CALCOM_SLUGS[locale] || CALCOM_SLUGS.en;
-    const guestName = [lead.first_name, lead.last_name]
-      .filter(Boolean)
-      .join(" ");
-
-    return (
-      <div ref={containerRef} className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-foreground text-xs font-semibold tracking-wider uppercase">
-            {t("leads.step_actions.book_demo")}
-          </h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onShowCalEmbed?.(false)}
-          >
-            {t("leads.step_actions.cancel")}
-          </Button>
-        </div>
-        <Cal
-          namespace="fleetcore-demo"
-          calLink={slug}
-          calOrigin={CALCOM_ORIGIN}
-          embedJsUrl={`${CALCOM_ORIGIN}/embed/embed.js`}
-          config={{
-            theme: "light",
-            locale,
-            ...(guestName && { name: guestName }),
-            ...(lead.email && { email: lead.email }),
-          }}
-          style={{ width: "100%", height: "100%", overflow: "auto" }}
-        />
       </div>
     );
   }

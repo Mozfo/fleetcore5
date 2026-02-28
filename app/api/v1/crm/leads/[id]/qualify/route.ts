@@ -1,17 +1,18 @@
 /**
  * /api/v1/crm/leads/[id]/qualify
- * CPT Qualification with auto-status update
+ * BANT Qualification with auto-status update (V7)
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * INTERNAL CRM API - FleetCore Admin Backoffice (V6.3)
+ * INTERNAL CRM API - FleetCore Admin Backoffice
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Context: Qualifies a lead using CPT framework (Challenges, Priority, Timing).
- * Score weights and thresholds are loaded from crm_settings.qualification_framework.
+ * Qualifies a lead using BANT framework (Budget, Authority, Need, Timeline).
+ * Qualifying values loaded from crm_settings.qualification_framework.
  *
  * Auto-Status Update:
- * - If recommendation = "proceed" (score >= 70): auto-update status to "proposal_sent" (V6.3)
- * - If recommendation = "nurture" or "disqualify": suggestion only, no auto-update
+ * - 4/4 criteria met → status updated to "qualified"
+ * - 3/4 criteria met → nurturing (no auto-update)
+ * - <=2/4 criteria met → disqualified (unless fleet_size > threshold → nurturing)
  *
  * Authentication: Middleware validates userId + FleetCore Admin org + CRM role
  *
@@ -27,42 +28,23 @@ import { AppError } from "@/lib/core/errors";
 
 /**
  * POST /api/v1/crm/leads/[id]/qualify
- * Qualify lead using CPT framework
- *
- * Authentication: Via middleware (FleetCore Admin + CRM role)
+ * Qualify lead using BANT framework
  *
  * Request Body:
  * {
- *   challenges: { response: string, score: "high" | "medium" | "low" },
- *   priority: { response: string, score: "high" | "medium" | "low" },
- *   timing: { response: string, score: "hot" | "warm" | "cool" | "cold" }
+ *   bant_budget: "confirmed" | "planned" | "no_budget" | "unknown",
+ *   bant_authority: "decision_maker" | "influencer" | "user" | "unknown",
+ *   bant_need: "critical" | "important" | "nice_to_have" | "none",
+ *   bant_timeline: "immediate" | "this_quarter" | "this_year" | "no_timeline"
  * }
  *
- * Response 200: Qualification complete
+ * Response 200:
  * {
  *   success: true,
  *   data: {
- *     leadId: string,
- *     qualification_score: number (0-100),
- *     recommendation: "proceed" | "nurture" | "disqualify",
- *     status_updated: boolean,
- *     suggested_action?: string,
- *     qualified_date: string (ISO)
+ *     leadId, result, criteria_met, details, fleet_size_exception,
+ *     status_updated, qualified_date
  *   }
- * }
- *
- * Response 400: Validation error or business logic error
- * Response 401: Unauthorized
- * Response 404: Lead not found
- * Response 500: Internal server error
- *
- * @example
- * // Qualify a lead
- * POST /api/v1/crm/leads/123/qualify
- * {
- *   "challenges": { "response": "Excel nightmare, 3h/week", "score": "high" },
- *   "priority": { "response": "Budget approved Q1", "score": "high" },
- *   "timing": { "response": "Want to start ASAP", "score": "hot" }
  * }
  */
 export async function POST(
@@ -70,11 +52,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // STEP 1: Authenticate via direct auth helper
     const { userId } = await requireCrmApiAuth();
     const { id } = await params;
 
-    // STEP 2: Validate ID format
+    // Validate UUID format
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
@@ -90,7 +71,7 @@ export async function POST(
       );
     }
 
-    // STEP 3: Parse and validate request body with Zod safeParse
+    // Parse and validate BANT input
     const body = await request.json();
     const parseResult = qualifyLeadSchema.safeParse(body);
 
@@ -100,7 +81,7 @@ export async function POST(
           success: false,
           error: {
             code: "VALIDATION_ERROR",
-            message: "Invalid input data",
+            message: "Invalid BANT input data",
             details: parseResult.error.issues,
           },
         },
@@ -108,33 +89,35 @@ export async function POST(
       );
     }
 
-    // STEP 4: Call service to qualify lead
+    // Call BANT qualification service
     const result = await leadQualificationService.qualifyLead(
       id,
       parseResult.data,
       userId
     );
 
-    // STEP 5: Success response
     logger.info(
       {
         leadId: id,
         userId,
-        score: result.qualification_score,
-        recommendation: result.recommendation,
+        result: result.result,
+        criteriaMet: result.criteria_met,
         statusUpdated: result.status_updated,
       },
-      "[CRM Lead Qualify] Lead qualified"
+      "[CRM Lead Qualify] Lead qualified with BANT"
     );
+
+    const messages: Record<string, string> = {
+      qualified: `Lead qualified (${result.criteria_met}/4 BANT criteria met). Status updated to 'qualified'.`,
+      nurturing: `Lead moved to nurturing (${result.criteria_met}/4 BANT criteria met).${result.fleet_size_exception ? " Fleet size exception applied." : ""}`,
+      disqualified: `Lead disqualified (${result.criteria_met}/4 BANT criteria met).`,
+    };
 
     return NextResponse.json(
       {
         success: true,
         data: result,
-        message:
-          result.recommendation === "proceed"
-            ? `Lead qualified with score ${result.qualification_score}/100. Status updated to 'proposal_sent'.`
-            : `Lead qualified with score ${result.qualification_score}/100. Recommendation: ${result.recommendation}.`,
+        message: messages[result.result],
       },
       { status: 200 }
     );
@@ -149,40 +132,30 @@ export async function POST(
       );
     }
 
-    // Handle business logic errors (e.g., "Cannot qualify converted lead")
     if (error instanceof Error) {
-      // Check if it's a "not found" error
       if (error.message.includes("not found")) {
         return NextResponse.json(
           {
             success: false,
-            error: {
-              code: "NOT_FOUND",
-              message: error.message,
-            },
+            error: { code: "NOT_FOUND", message: error.message },
           },
           { status: 404 }
         );
       }
 
-      // Check if it's a business logic error (cannot qualify X status)
       if (error.message.includes("Cannot qualify")) {
         return NextResponse.json(
           {
             success: false,
-            error: {
-              code: "BUSINESS_ERROR",
-              message: error.message,
-            },
+            error: { code: "BUSINESS_ERROR", message: error.message },
           },
           { status: 400 }
         );
       }
 
-      // Check if it's a missing settings error
       if (
         error.message.includes("not found in crm_settings") ||
-        error.message.includes("missing score_weights")
+        error.message.includes("missing criteria")
       ) {
         logger.error({ error }, "[CRM Lead Qualify] Configuration error");
         return NextResponse.json(
@@ -191,7 +164,7 @@ export async function POST(
             error: {
               code: "CONFIGURATION_ERROR",
               message:
-                "CRM settings not properly configured. Contact administrator.",
+                "CRM qualification settings not properly configured. Contact administrator.",
             },
           },
           { status: 500 }

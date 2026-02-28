@@ -1,11 +1,10 @@
 /**
  * GET /api/crm/leads/check-email?email=xxx
  *
- * V6.6 - Check if email exists in crm_leads, has a booking, or is blacklisted
+ * V7 - Check if email exists in crm_leads or is blacklisted
  *
  * Returns:
  * - exists: boolean - true if lead with this email exists
- * - hasBooking: boolean - true if lead has booking_slot_at set
  * - leadId: string | null - lead ID if exists
  * - blacklisted: boolean - true if email is in crm_blacklist
  *
@@ -72,7 +71,7 @@ export async function GET(request: NextRequest) {
         success: true,
         data: {
           exists: false,
-          hasBooking: false,
+          hasBooking: false, // deprecated, kept for API compat
           leadId: null,
           blacklisted: true,
         },
@@ -89,8 +88,6 @@ export async function GET(request: NextRequest) {
         id: true,
         email: true,
         status: true,
-        booking_slot_at: true,
-        booking_calcom_uid: true,
         email_verified: true,
       },
     });
@@ -100,21 +97,17 @@ export async function GET(request: NextRequest) {
         success: true,
         data: {
           exists: false,
-          hasBooking: false,
+          hasBooking: false, // deprecated, kept for API compat
           leadId: null,
           blacklisted: false,
         },
       });
     }
 
-    // Check if lead has a booking
-    const hasBooking = !!(lead.booking_slot_at && lead.booking_calcom_uid);
-
     logger.info(
       {
         email: email.toLowerCase().trim(),
         leadId: lead.id,
-        hasBooking,
         status: lead.status,
       },
       "[CheckEmail] Email check result"
@@ -124,7 +117,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         exists: true,
-        hasBooking,
+        hasBooking: false, // deprecated, kept for API compat
         leadId: lead.id,
         emailVerified: lead.email_verified,
         status: lead.status,

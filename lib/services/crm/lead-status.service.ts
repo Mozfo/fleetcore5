@@ -1,5 +1,5 @@
 /**
- * Lead Status Service - V6.2-6
+ * Lead Status Service - V7
  * Gestion des transitions de statut et validation des loss reasons
  *
  * Ce service est le SEUL point d'acces pour:
@@ -32,7 +32,7 @@ export interface StatusConfig {
   color: string;
   icon: string;
   description: string;
-  allowed_transitions: string[];
+  transitions_to: string[];
   auto_assign: boolean;
   sla_hours: number | null;
   is_terminal?: boolean;
@@ -166,7 +166,7 @@ export class LeadStatusService {
    */
   async getAllowedTransitions(currentStatus: string): Promise<string[]> {
     const config = await this.getStatusConfig(currentStatus);
-    return config?.allowed_transitions || [];
+    return config?.transitions_to || [];
   }
 
   /**

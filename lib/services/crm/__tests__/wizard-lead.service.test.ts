@@ -128,6 +128,13 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     recovery_notification_sent_at: null,
     recovery_notification_clicked_at: null,
     whatsapp_number: null,
+    // V7: BANT qualification
+    bant_budget: null,
+    bant_authority: null,
+    bant_need: null,
+    bant_timeline: null,
+    bant_qualified_at: null,
+    bant_qualified_by: null,
     // Apply overrides
     ...overrides,
   };

@@ -1,11 +1,11 @@
 /**
  * PATCH /api/crm/leads/[id]/complete-wizard
  *
- * V6.2.3 - Save business info and mark wizard as completed
+ * V7 - Save business info and mark wizard as completed
  *
- * Called from the schedule step after successful Cal.com booking.
+ * Called from the profile step of the Book Demo wizard.
  * Saves company_name, phone, fleet_size, gdpr_consent.
- * Sets wizard_completed=true and updates status to "demo".
+ * Sets wizard_completed=true.
  *
  * Prerequisites:
  * - Lead must exist and have email_verified = true
@@ -105,8 +105,6 @@ export async function PATCH(
         id: true,
         email: true,
         email_verified: true,
-        booking_slot_at: true,
-        booking_calcom_uid: true,
         status: true,
         wizard_completed: true,
       },
@@ -151,10 +149,6 @@ export async function PATCH(
       });
     }
 
-    // Determine new status based on booking
-    const hasBooking = !!(lead.booking_slot_at && lead.booking_calcom_uid);
-    const newStatus = hasBooking ? "demo" : lead.status;
-
     // Get client IP for GDPR audit
     const clientIp =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -175,7 +169,6 @@ export async function PATCH(
         consent_at: gdpr_consent ? new Date() : null,
         consent_ip: gdpr_consent ? clientIp : null,
         wizard_completed: true,
-        status: newStatus,
         updated_at: new Date(),
       },
     });
@@ -184,8 +177,6 @@ export async function PATCH(
       {
         leadId,
         email: lead.email,
-        hasBooking,
-        newStatus,
         gdpr_consent,
         consent_ip: gdpr_consent ? clientIp : null,
       },
