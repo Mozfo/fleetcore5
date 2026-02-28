@@ -559,8 +559,8 @@ model adm_tenants {
   adm_tenant_vehicle_classes    adm_tenant_vehicle_classes[]
   bil_payment_methods           bil_payment_methods[]
   bil_promotion_usage           bil_promotion_usage[]
-  clt_invoices                  clt_invoices[]
-  clt_subscriptions             clt_subscriptions[]
+  bil_tenant_invoices                  bil_tenant_invoices[]
+  bil_tenant_subscriptions             bil_tenant_subscriptions[]
   bil_tenant_usage_metrics      bil_tenant_usage_metrics[]
   dir_car_makes                 dir_car_makes[]
   dir_car_models                dir_car_models[]
@@ -738,8 +738,8 @@ model bil_billing_plans {
   status                           billing_plan_status?
   description_translations         Json?
   bil_promotions                   bil_promotions[]
-  xg6p2jq                          clt_subscriptions[]                @relation("X_wagae5")
-  xm8l72q                          clt_subscriptions[]                @relation("X_6s6mwl")
+  xg6p2jq                          bil_tenant_subscriptions[]                @relation("X_wagae5")
+  xm8l72q                          bil_tenant_subscriptions[]                @relation("X_6s6mwl")
   crm_opportunities                crm_opportunities[]
   // Quote-to-Cash relations
   bil_amendments_new_plan          bil_amendments[]                   @relation("bil_amendments_new_plan")
@@ -783,7 +783,7 @@ model bil_payment_methods {
   is_default                 Boolean?               @default(false)
   last_used_at               DateTime?              @db.Timestamptz(6)
   adm_tenants                adm_tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  clt_subscriptions          clt_subscriptions[]
+  bil_tenant_subscriptions          bil_tenant_subscriptions[]
   fin_traffic_fines          fin_traffic_fines[]
   fin_transactions           fin_transactions[]
 
@@ -803,7 +803,7 @@ model bil_promotion_usage {
   invoice_id      String?        @db.Uuid
   applied_at      DateTime       @default(now()) @db.Timestamptz(6)
   discount_amount Decimal        @db.Decimal(18, 2)
-  clt_invoices    clt_invoices?  @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_promotion_usage_invoice")
+  bil_tenant_invoices    bil_tenant_invoices?  @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_promotion_usage_invoice")
   bil_promotions  bil_promotions @relation(fields: [promotion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_promotion_usage_promotion")
   adm_tenants     adm_tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_promotion_usage_tenant")
 }
@@ -833,7 +833,7 @@ model bil_promotions {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model clt_invoice_lines {
+model bil_tenant_invoice_lines {
   id              String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   invoice_id      String                    @db.Uuid
   description     String
@@ -854,7 +854,7 @@ model clt_invoice_lines {
   discount_amount Decimal?                  @db.Decimal(18, 2)
   source_type     invoice_line_source_type?
   source_id       String?                   @db.Uuid
-  clt_invoices    clt_invoices              @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  bil_tenant_invoices    bil_tenant_invoices              @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
 
   @@index([created_by])
   @@index([deleted_at])
@@ -867,7 +867,7 @@ model clt_invoice_lines {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model clt_invoices {
+model bil_tenant_invoices {
   id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id           String                @db.Uuid
   invoice_number      String
@@ -896,9 +896,9 @@ model clt_invoices {
   stripe_invoice_id   String?               @db.VarChar(255)
   document_url        String?
   bil_promotion_usage bil_promotion_usage[]
-  clt_invoice_lines   clt_invoice_lines[]
+  bil_tenant_invoice_lines   bil_tenant_invoice_lines[]
   adm_tenants         adm_tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  clt_subscriptions   clt_subscriptions?    @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_invoices_subscription")
+  bil_tenant_subscriptions   bil_tenant_subscriptions?    @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_invoices_subscription")
 
   @@index([created_by])
   @@index([deleted_at])
@@ -913,7 +913,7 @@ model clt_invoices {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model clt_subscriptions {
+model bil_tenant_subscriptions {
   id                       String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id                String                     @db.Uuid
   plan_id                  String                     @db.Uuid
@@ -940,7 +940,7 @@ model clt_subscriptions {
   provider                 String?                    @db.VarChar(50)
   provider_subscription_id String?
   provider_customer_id     String?
-  clt_invoices             clt_invoices[]
+  bil_tenant_invoices             bil_tenant_invoices[]
   xgunea8                  bil_billing_plans          @relation("X_wagae5", fields: [plan_id], references: [id], onDelete: Cascade)
   adm_tenants              adm_tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   bil_payment_methods      bil_payment_methods?       @relation(fields: [payment_method_id], references: [id], onUpdate: NoAction, map: "fk_bil_subscriptions_payment_method")
@@ -986,7 +986,7 @@ model bil_tenant_usage_metrics {
   period_end_ts          DateTime?               @db.Timestamptz(6)
   metric_source          metric_source?
   adm_tenants            adm_tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  clt_subscriptions      clt_subscriptions?      @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_usage_metrics_subscription")
+  bil_tenant_subscriptions      bil_tenant_subscriptions?      @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_bil_usage_metrics_subscription")
   bil_usage_metric_types bil_usage_metric_types? @relation(fields: [metric_type_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_bil_usage_metrics_type")
 
   @@index([created_by])
@@ -1210,7 +1210,7 @@ model bil_amendments {
   bil_billing_plans_new      bil_billing_plans?          @relation("bil_amendments_new_plan", fields: [new_plan_id], references: [id], onDelete: SetNull, map: "bil_amendments_new_plan_id_fkey")
   bil_billing_plans_old      bil_billing_plans?          @relation("bil_amendments_old_plan", fields: [old_plan_id], references: [id], onDelete: SetNull, map: "bil_amendments_old_plan_id_fkey")
   bil_subscription_schedules bil_subscription_schedules? @relation(fields: [schedule_id], references: [id], onDelete: SetNull, map: "bil_amendments_schedule_id_fkey")
-  clt_subscriptions          clt_subscriptions           @relation(fields: [subscription_id], references: [id], onDelete: Cascade, map: "bil_amendments_subscription_id_fkey")
+  bil_tenant_subscriptions          bil_tenant_subscriptions           @relation(fields: [subscription_id], references: [id], onDelete: Cascade, map: "bil_amendments_subscription_id_fkey")
   adm_tenants                adm_tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, map: "bil_amendments_tenant_id_fkey")
 
   @@index([amendment_reference], map: "idx_bil_amendments_reference")
@@ -1574,7 +1574,7 @@ model crm_orders {
   bil_billing_plans          bil_billing_plans?           @relation(fields: [plan_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_plan")
   renewed_from_order         crm_orders?                  @relation("crm_orders_renewed_from", fields: [renewed_from_contract_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_renewed_from")
   renewed_orders             crm_orders[]                 @relation("crm_orders_renewed_from")
-  clt_subscriptions          clt_subscriptions?           @relation(fields: [subscription_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_subscription")
+  bil_tenant_subscriptions          bil_tenant_subscriptions?           @relation(fields: [subscription_id], references: [id], onDelete: SetNull, map: "fk_crm_orders_subscription")
   adm_tenants                adm_tenants?                 @relation("crm_orders_client_tenant", fields: [client_tenant_id], references: [id], map: "fk_crm_orders_client_tenant")
   bil_subscription_schedules bil_subscription_schedules[]
 

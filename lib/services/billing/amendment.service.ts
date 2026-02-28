@@ -221,7 +221,7 @@ export class AmendmentService {
     logger.info({ input }, "[AmendmentService] Creating amendment");
 
     // Validate subscription exists and is active
-    const subscription = await this.prisma.clt_subscriptions.findUnique({
+    const subscription = await this.prisma.bil_tenant_subscriptions.findUnique({
       where: { id: input.subscriptionId },
       include: {
         xgunea8: true,
@@ -612,7 +612,7 @@ export class AmendmentService {
       }
 
       // Apply changes to subscription
-      const updateData: Prisma.clt_subscriptionsUpdateInput = {
+      const updateData: Prisma.bil_tenant_subscriptionsUpdateInput = {
         updated_at: new Date(),
       };
 
@@ -623,7 +623,7 @@ export class AmendmentService {
         updateData.billing_cycle = amendment.new_billing_cycle;
       }
 
-      await tx.clt_subscriptions.update({
+      await tx.bil_tenant_subscriptions.update({
         where: { id: amendment.subscription_id },
         data: updateData,
       });
@@ -769,7 +769,7 @@ export class AmendmentService {
     const effectiveDate = new Date(amendment.effective_date);
 
     // Fetch subscription separately (no relation in schema)
-    const subscription = await this.prisma.clt_subscriptions.findUnique({
+    const subscription = await this.prisma.bil_tenant_subscriptions.findUnique({
       where: { id: amendment.subscription_id },
       select: {
         current_period_start: true,
