@@ -60,7 +60,13 @@ export function ResetPasswordDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleReset} disabled={isLoading}>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              void handleReset();
+            }}
+            disabled={isLoading}
+          >
             {isLoading ? "Sending..." : "Send Reset Link"}
           </AlertDialogAction>
         </AlertDialogFooter>

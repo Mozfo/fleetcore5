@@ -16,6 +16,9 @@ import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { URLS, buildAppUrl } from "@/lib/config/urls.config";
 import { defaultLocale } from "@/lib/i18n/locales";
+import { createLogger } from "@/lib/logger";
+
+const authLogger = createLogger({ module: "auth" });
 
 // ── Auth instance ──────────────────────────────────────────────────────────────
 
@@ -83,20 +86,34 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
-      const { sendNotification } = await import("@/lib/notifications");
-      const firstName = user.name?.split(" ")[0] ?? "";
-      await sendNotification(
-        "admin.member.password_reset",
-        user.email,
-        {
-          first_name: firstName,
-          reset_link: url,
-          expiry_hours: "24",
-        },
-        {
-          processImmediately: true,
-        }
-      );
+      authLogger.info({ email: user.email }, "[RESET-PASSWORD] Triggered");
+      authLogger.info({ url }, "[RESET-PASSWORD] URL");
+      try {
+        const { sendNotification } = await import("@/lib/notifications");
+        const firstName = user.name?.split(" ")[0] ?? "";
+        await sendNotification(
+          "admin.member.password_reset",
+          user.email,
+          {
+            first_name: firstName,
+            reset_link: url,
+            expiry_hours: "24",
+          },
+          {
+            processImmediately: true,
+          }
+        );
+        authLogger.info(
+          { email: user.email },
+          "[RESET-PASSWORD] Email sent successfully"
+        );
+      } catch (error) {
+        authLogger.error(
+          { error, email: user.email },
+          "[RESET-PASSWORD] FAILED"
+        );
+        throw error;
+      }
     },
   },
 

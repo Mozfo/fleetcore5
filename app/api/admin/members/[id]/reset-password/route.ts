@@ -16,14 +16,35 @@ export async function POST(
     const { userId: adminUserId, orgId } = await requireCrmApiAuth();
     const { id } = await params;
 
-    // Verify user exists
+    // Resolve auth_user via adm_members (id param is adm_members.id)
+    const member = await prisma.adm_members.findFirst({
+      where: { id, deleted_at: null },
+      select: { auth_user_id: true, email: true },
+    });
+
+    if (!member) {
+      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    }
+
+    // Verify linked auth account exists
+    const authUserId = member.auth_user_id;
+    if (!authUserId) {
+      return NextResponse.json(
+        { error: "Member has no auth account. They must sign up first." },
+        { status: 422 }
+      );
+    }
+
     const user = await prisma.auth_user.findUnique({
-      where: { id },
+      where: { id: authUserId },
       select: { id: true, email: true },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Auth account not found for this member" },
+        { status: 404 }
+      );
     }
 
     // Send password reset email via Better Auth (triggers sendResetPassword hook → Resend)

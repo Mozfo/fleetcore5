@@ -251,7 +251,7 @@ export function MemberDetailPage({ memberId }: MemberDetailPageProps) {
       </Card>
 
       <ResetPasswordDialog
-        userId={member.authUserId}
+        userId={member.id}
         open={resetPwdOpen}
         onOpenChange={setResetPwdOpen}
       />
