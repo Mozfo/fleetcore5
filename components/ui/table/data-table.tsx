@@ -136,12 +136,18 @@ export function DataTable<TData>({
 
           const metaClassName = cell.column.columnDef.meta?.className;
 
+          const isCellPinned = cell.column.getIsPinned();
+
           // Grouped cell (group header with expand/collapse)
           if (cell.getIsGrouped()) {
             return (
               <TableCell
                 key={cell.id}
-                className={cn(cellDensity, metaClassName)}
+                className={cn(
+                  cellDensity,
+                  metaClassName,
+                  isCellPinned && "bg-background"
+                )}
                 style={cellStyle}
               >
                 <button
@@ -167,7 +173,11 @@ export function DataTable<TData>({
             return (
               <TableCell
                 key={cell.id}
-                className={cn(cellDensity, metaClassName)}
+                className={cn(
+                  cellDensity,
+                  metaClassName,
+                  isCellPinned && "bg-background"
+                )}
                 style={cellStyle}
               >
                 {flexRender(
@@ -184,7 +194,11 @@ export function DataTable<TData>({
             return (
               <TableCell
                 key={cell.id}
-                className={cn(cellDensity, metaClassName)}
+                className={cn(
+                  cellDensity,
+                  metaClassName,
+                  isCellPinned && "bg-background"
+                )}
                 style={cellStyle}
               />
             );
@@ -194,7 +208,11 @@ export function DataTable<TData>({
           return (
             <TableCell
               key={cell.id}
-              className={cn(cellDensity, metaClassName)}
+              className={cn(
+                cellDensity,
+                metaClassName,
+                isCellPinned && "bg-background"
+              )}
               style={cellStyle}
             >
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -259,7 +277,8 @@ export function DataTable<TData>({
                           colSpan={header.colSpan}
                           className={cn(
                             "relative",
-                            header.column.columnDef.meta?.className
+                            header.column.columnDef.meta?.className,
+                            isPinned && "bg-muted"
                           )}
                           draggable={!header.isPlaceholder && !isPinned}
                           onDragStart={(e) => handleDragStart(e, header.id)}

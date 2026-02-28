@@ -312,6 +312,7 @@ export function useLeadsTable({
     initialState: {
       pagination: { pageIndex: 0, pageSize: initialPageSize },
       columnVisibility: savedColumnVisibility ?? DEFAULT_COLUMN_VISIBILITY,
+      columnPinning: { right: ["actions"] },
     },
   });
 

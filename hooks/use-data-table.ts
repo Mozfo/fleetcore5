@@ -77,6 +77,12 @@ interface UseDataTableProps<TData>
   scroll?: boolean;
   shallow?: boolean;
   startTransition?: React.TransitionStartFunction;
+  /**
+   * When true, page/perPage/sort/filters use local useState instead of nuqs URL state.
+   * Use this for pages in shared route segments (e.g. admin tabs) where nuqs
+   * history.replaceState calls corrupt Next.js App Router internal state.
+   */
+  disableUrlState?: boolean;
 }
 
 export function useDataTable<TData>(props: UseDataTableProps<TData>) {
@@ -94,6 +100,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     scroll = false,
     shallow = true,
     startTransition,
+    disableUrlState = false,
     ...tableProps
   } = props;
 
@@ -120,6 +127,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     ]
   );
 
+  // ── Local state (never touches URL — unchanged) ─────────────────────────
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(
     initialState?.rowSelection ?? {}
   );
@@ -149,16 +157,27 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     [onSearchChange]
   );
 
-  const [page, setPage] = useQueryState(
+  // ── Pagination: nuqs URL state (always called — Rules of Hooks) ─────────
+  const [urlPage, setUrlPage] = useQueryState(
     PAGE_KEY,
     parseAsInteger.withOptions(queryStateOptions).withDefault(1)
   );
-  const [perPage, setPerPage] = useQueryState(
+  const [urlPerPage, setUrlPerPage] = useQueryState(
     PER_PAGE_KEY,
     parseAsInteger
       .withOptions(queryStateOptions)
       .withDefault(initialState?.pagination?.pageSize ?? 10)
   );
+
+  // ── Pagination: local fallback (always called — Rules of Hooks) ─────────
+  const [localPage, setLocalPage] = React.useState(1);
+  const [localPerPage, setLocalPerPage] = React.useState(
+    initialState?.pagination?.pageSize ?? 10
+  );
+
+  // ── Select active pagination source ─────────────────────────────────────
+  const page = disableUrlState ? localPage : urlPage;
+  const perPage = disableUrlState ? localPerPage : urlPerPage;
 
   const pagination: PaginationState = React.useMemo(() => {
     return {
@@ -169,43 +188,59 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
 
   const onPaginationChange = React.useCallback(
     (updaterOrValue: Updater<PaginationState>) => {
-      if (typeof updaterOrValue === "function") {
-        const newPagination = updaterOrValue(pagination);
-        void setPage(newPagination.pageIndex + 1);
-        void setPerPage(newPagination.pageSize);
+      const newPagination =
+        typeof updaterOrValue === "function"
+          ? updaterOrValue(pagination)
+          : updaterOrValue;
+      if (disableUrlState) {
+        setLocalPage(newPagination.pageIndex + 1);
+        setLocalPerPage(newPagination.pageSize);
       } else {
-        void setPage(updaterOrValue.pageIndex + 1);
-        void setPerPage(updaterOrValue.pageSize);
+        void setUrlPage(newPagination.pageIndex + 1);
+        void setUrlPerPage(newPagination.pageSize);
       }
     },
-    [pagination, setPage, setPerPage]
+    [pagination, disableUrlState, setUrlPage, setUrlPerPage]
   );
 
+  // ── Sorting: nuqs URL state (always called) ────────────────────────────
   const columnIds = React.useMemo(() => {
     return new Set(
       columns.map((column) => column.id).filter(Boolean) as string[]
     );
   }, [columns]);
 
-  const [sorting, setSorting] = useQueryState(
+  const [urlSorting, setUrlSorting] = useQueryState(
     SORT_KEY,
     getSortingStateParser<TData>(columnIds)
       .withOptions(queryStateOptions)
       .withDefault(initialState?.sorting ?? [])
   );
 
-  const onSortingChange = React.useCallback(
-    (updaterOrValue: Updater<SortingState>) => {
-      if (typeof updaterOrValue === "function") {
-        const newSorting = updaterOrValue(sorting);
-        void setSorting(newSorting as ExtendedColumnSort<TData>[]);
-      } else {
-        void setSorting(updaterOrValue as ExtendedColumnSort<TData>[]);
-      }
-    },
-    [sorting, setSorting]
+  // ── Sorting: local fallback (always called) ─────────────────────────────
+  const [localSorting, setLocalSorting] = React.useState<SortingState>(
+    (initialState?.sorting as SortingState) ?? []
   );
 
+  // ── Select active sorting source ────────────────────────────────────────
+  const sorting = disableUrlState ? localSorting : urlSorting;
+
+  const onSortingChange = React.useCallback(
+    (updaterOrValue: Updater<SortingState>) => {
+      const newSorting =
+        typeof updaterOrValue === "function"
+          ? updaterOrValue(sorting)
+          : updaterOrValue;
+      if (disableUrlState) {
+        setLocalSorting(newSorting);
+      } else {
+        void setUrlSorting(newSorting as ExtendedColumnSort<TData>[]);
+      }
+    },
+    [sorting, disableUrlState, setUrlSorting]
+  );
+
+  // ── Column filters: nuqs URL state (always called) ─────────────────────
   const filterableColumns = React.useMemo(() => {
     if (enableAdvancedFilter) return [];
 
@@ -230,20 +265,24 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     }, {});
   }, [filterableColumns, queryStateOptions, enableAdvancedFilter]);
 
-  const [filterValues, setFilterValues] = useQueryStates(filterParsers);
+  const [urlFilterValues, setUrlFilterValues] = useQueryStates(filterParsers);
 
   const debouncedSetFilterValues = useDebouncedCallback(
-    (values: typeof filterValues) => {
-      void setPage(1);
-      void setFilterValues(values);
+    (values: typeof urlFilterValues) => {
+      if (disableUrlState) {
+        setLocalPage(1);
+      } else {
+        void setUrlPage(1);
+        void setUrlFilterValues(values);
+      }
     },
     debounceMs
   );
 
   const initialColumnFilters: ColumnFiltersState = React.useMemo(() => {
-    if (enableAdvancedFilter) return [];
+    if (enableAdvancedFilter || disableUrlState) return [];
 
-    return Object.entries(filterValues).reduce<ColumnFiltersState>(
+    return Object.entries(urlFilterValues).reduce<ColumnFiltersState>(
       (filters, [key, value]) => {
         if (value !== null) {
           const processedValue = Array.isArray(value)
@@ -261,7 +300,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
       },
       []
     );
-  }, [filterValues, enableAdvancedFilter]);
+  }, [urlFilterValues, enableAdvancedFilter, disableUrlState]);
 
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(initialColumnFilters);
@@ -276,26 +315,38 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
             ? updaterOrValue(prev)
             : updaterOrValue;
 
-        const filterUpdates = next.reduce<
-          Record<string, string | string[] | null>
-        >((acc, filter) => {
-          if (filterableColumns.find((column) => column.id === filter.id)) {
-            acc[filter.id] = filter.value as string | string[];
-          }
-          return acc;
-        }, {});
+        if (disableUrlState) {
+          // Local mode: just reset to page 1 on filter change
+          setLocalPage(1);
+        } else {
+          // URL mode: sync filters to URL
+          const filterUpdates = next.reduce<
+            Record<string, string | string[] | null>
+          >((acc, filter) => {
+            if (filterableColumns.find((column) => column.id === filter.id)) {
+              acc[filter.id] = filter.value as string | string[];
+            }
+            return acc;
+          }, {});
 
-        for (const prevFilter of prev) {
-          if (!next.some((filter) => filter.id === prevFilter.id)) {
-            filterUpdates[prevFilter.id] = null;
+          for (const prevFilter of prev) {
+            if (!next.some((filter) => filter.id === prevFilter.id)) {
+              filterUpdates[prevFilter.id] = null;
+            }
           }
+
+          debouncedSetFilterValues(filterUpdates);
         }
 
-        debouncedSetFilterValues(filterUpdates);
         return next;
       });
     },
-    [debouncedSetFilterValues, filterableColumns, enableAdvancedFilter]
+    [
+      debouncedSetFilterValues,
+      filterableColumns,
+      enableAdvancedFilter,
+      disableUrlState,
+    ]
   );
 
   const table = useReactTable({
