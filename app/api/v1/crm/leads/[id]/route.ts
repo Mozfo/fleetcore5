@@ -150,6 +150,13 @@ export async function GET(
                   lead.crm_lead_sources.description_translations,
               }
             : null,
+          // BANT qualification (V7)
+          bant_budget: lead.bant_budget,
+          bant_authority: lead.bant_authority,
+          bant_need: lead.bant_need,
+          bant_timeline: lead.bant_timeline,
+          bant_qualified_at: lead.bant_qualified_at?.toISOString() || null,
+          bant_qualified_by: lead.bant_qualified_by,
           notes: lead.qualification_notes,
           message: lead.message,
           metadata: lead.metadata as Record<string, unknown> | null,

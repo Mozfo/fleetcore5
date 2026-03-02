@@ -20,6 +20,26 @@ export abstract class BaseRepository<T> {
   }
 
   /**
+   * Resolve a userId to adm_members.id for FK audit columns.
+   * Handles both auth_user.id (Better Auth) and adm_members.id (already resolved).
+   * Returns the original value if no member match is found.
+   */
+  protected async resolveAuditUserId(userId: string): Promise<string> {
+    try {
+      const member = await this.prisma.adm_members.findFirst({
+        where: {
+          OR: [{ id: userId }, { auth_user_id: userId }],
+          deleted_at: null,
+        },
+        select: { id: true },
+      });
+      return member?.id ?? userId;
+    } catch {
+      return userId;
+    }
+  }
+
+  /**
    * Abstract method - child repositories MUST provide sortBy whitelist
    * @returns Non-empty array of allowed sortable fields
    */
@@ -109,10 +129,11 @@ export abstract class BaseRepository<T> {
     userId: string,
     tenantId?: string
   ): Promise<T> {
+    const memberId = await this.resolveAuditUserId(userId);
     const createData = {
       ...data,
-      created_by: userId,
-      updated_by: userId,
+      created_by: memberId,
+      updated_by: memberId,
       ...(tenantId && { tenant_id: tenantId }),
     };
 
@@ -139,11 +160,12 @@ export abstract class BaseRepository<T> {
       where.tenant_id = tenantId;
     }
 
+    const memberId = await this.resolveAuditUserId(userId);
     return (await this.model.update({
       where,
       data: {
         ...data,
-        updated_by: userId,
+        updated_by: memberId,
         updated_at: new Date(),
       },
     })) as T;
@@ -167,11 +189,12 @@ export abstract class BaseRepository<T> {
       where.tenant_id = tenantId;
     }
 
+    const memberId = await this.resolveAuditUserId(userId);
     await this.model.update({
       where,
       data: {
         deleted_at: new Date(),
-        deleted_by: userId,
+        deleted_by: memberId,
         ...(reason && { deletion_reason: reason }),
       },
     });
@@ -215,13 +238,14 @@ export abstract class BaseRepository<T> {
     }
 
     // Restore the entity
+    const memberId = await this.resolveAuditUserId(userId);
     return (await this.model.update({
       where: { id },
       data: {
         deleted_at: null,
         deleted_by: null,
         deletion_reason: null,
-        updated_by: userId,
+        updated_by: memberId,
         updated_at: new Date(),
       },
     })) as T;

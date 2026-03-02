@@ -1,10 +1,20 @@
 "use client";
 
-import { Filter } from "lucide-react";
+import { ArrowRightCircle, Filter, Loader2 } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useInvalidate } from "@refinedev/core";
 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -15,6 +25,8 @@ import {
 import { LeadDrawer } from "@/components/crm/leads/LeadDrawer";
 import { useTablePreferences } from "@/hooks/use-table-preferences";
 import { useSalesOwners } from "@/lib/hooks/useSalesOwners";
+import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
+import { updateLeadStatusAction } from "@/lib/actions/crm/lead.actions";
 
 import { LeadsFilterSidebar } from "./leads-filter-sidebar";
 import { LeadsKanbanBoardComponent } from "./leads-kanban-board";
@@ -43,6 +55,8 @@ export function LeadsKanbanPage({ onOutcomeClick }: LeadsKanbanPageProps) {
   const router = useRouter();
   const params = useParams();
   const locale = (params.locale as string) || "en";
+  const invalidate = useInvalidate();
+  const { getLabel } = useLeadStatuses();
 
   // Table preferences (sidebar persistence)
   const { preferences, save: savePreferences } = useTablePreferences("leads");
@@ -54,6 +68,7 @@ export function LeadsKanbanPage({ onOutcomeClick }: LeadsKanbanPageProps) {
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(
     null
   );
+  const [isConfirmingDrop, setIsConfirmingDrop] = React.useState(false);
 
   const handleSidebarToggle = React.useCallback(() => {
     setSidebarOpen((prev) => {
@@ -62,8 +77,6 @@ export function LeadsKanbanPage({ onOutcomeClick }: LeadsKanbanPageProps) {
       return next;
     });
   }, [savePreferences]);
-
-  // Click outcome badge → delegate to parent (ViewRouter handles filter + view switch)
 
   // Sales owners for assignment dropdown
   const { owners } = useSalesOwners();
@@ -101,32 +114,56 @@ export function LeadsKanbanPage({ onOutcomeClick }: LeadsKanbanPageProps) {
     [findLeadById]
   );
 
-  // Open drawer on drag & drop transition
-  React.useEffect(() => {
-    if (pendingTransition) {
-      setDrawerState({
-        lead: pendingTransition.lead,
-        transition: pendingTransition,
-      });
-    }
-  }, [pendingTransition]);
-
   // Close drawer handler
   const handleDrawerClose = React.useCallback(() => {
-    if (drawerState?.transition) cancelTransition();
     setDrawerState(null);
-  }, [drawerState?.transition, cancelTransition]);
+  }, []);
 
-  // Transition confirmed
-  const handleTransitionComplete = React.useCallback(() => {
-    confirmTransition();
-    setDrawerState(null);
-  }, [confirmTransition]);
+  // ── Drop confirmation dialog handlers ─────────────────────────────
 
-  // Transition cancelled
-  const handleTransitionCancel = React.useCallback(() => {
+  const handleDropConfirm = React.useCallback(async () => {
+    if (!pendingTransition) return;
+
+    setIsConfirmingDrop(true);
+    try {
+      const result = await updateLeadStatusAction(
+        pendingTransition.leadId,
+        pendingTransition.toStatus,
+        {}
+      );
+
+      if (result.success) {
+        const toLabel = getLabel(pendingTransition.toStatus, locale);
+        toast.success(
+          t("leads.kanban.drop_confirmed", {
+            defaultValue: `Lead moved to ${toLabel}`,
+            status: toLabel,
+          })
+        );
+        void invalidate({ resource: "leads", invalidates: ["list"] });
+        confirmTransition();
+      } else {
+        toast.error(result.error || t("leads.step_actions.error"));
+        cancelTransition();
+      }
+    } catch {
+      toast.error(t("leads.step_actions.error"));
+      cancelTransition();
+    } finally {
+      setIsConfirmingDrop(false);
+    }
+  }, [
+    pendingTransition,
+    getLabel,
+    locale,
+    t,
+    invalidate,
+    confirmTransition,
+    cancelTransition,
+  ]);
+
+  const handleDropCancel = React.useCallback(() => {
     cancelTransition();
-    setDrawerState(null);
   }, [cancelTransition]);
 
   return (
@@ -189,16 +226,60 @@ export function LeadsKanbanPage({ onOutcomeClick }: LeadsKanbanPageProps) {
       {/* Dialogs */}
       <LeadsCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 
-      {/* Lead Drawer (replaces both edit drawer and transition modals) */}
+      {/* Drop confirmation dialog */}
+      <AlertDialog
+        open={pendingTransition !== null}
+        onOpenChange={(open) => {
+          if (!open) handleDropCancel();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ArrowRightCircle className="text-primary size-5" />
+              {t("leads.kanban.drop_confirm_title", {
+                defaultValue: "Move Lead?",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingTransition &&
+                t("leads.kanban.drop_confirm_description", {
+                  defaultValue: `Move ${pendingTransition.lead.lead_code ?? ""} from ${getLabel(pendingTransition.fromStatus, locale)} to ${getLabel(pendingTransition.toStatus, locale)}?`,
+                  leadCode: pendingTransition.lead.lead_code ?? "",
+                  from: getLabel(pendingTransition.fromStatus, locale),
+                  to: getLabel(pendingTransition.toStatus, locale),
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleDropCancel}
+              disabled={isConfirmingDrop}
+            >
+              {t("leads.step_actions.cancel")}
+            </Button>
+            <Button onClick={handleDropConfirm} disabled={isConfirmingDrop}>
+              {isConfirmingDrop ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  {t("leads.step_actions.confirming")}
+                </>
+              ) : (
+                t("leads.step_actions.confirm")
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Lead Drawer (view/edit mode only, no longer used for transitions) */}
       <LeadDrawer
         lead={drawerState?.lead ?? null}
         isOpen={drawerState !== null}
         onClose={handleDrawerClose}
         onOpenFullPage={(id) => router.push(`/${locale}/crm/leads/${id}`)}
         owners={owners}
-        transition={drawerState?.transition ?? null}
-        onTransitionComplete={handleTransitionComplete}
-        onTransitionCancel={handleTransitionCancel}
       />
     </div>
   );

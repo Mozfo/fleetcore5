@@ -27,6 +27,7 @@ import {
   BusinessRuleError,
 } from "@/lib/core/errors";
 import type { PaginatedResult } from "@/lib/core/types";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 import { logger } from "@/lib/logger";
 import {
   agreement_status,
@@ -223,10 +224,14 @@ export class AgreementService {
       throw new NotFoundError(`Order ${orderId}`);
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? null;
+
     const agreement = await this.agreementRepo.createAgreement({
       order_id: orderId,
       tenant_id: tenantId,
-      created_by: userId,
+      created_by: memberId ?? userId,
       agreement_type: agreementType,
       effective_date: effectiveDate,
       expiry_date: expiryDate,
@@ -320,11 +325,15 @@ export class AgreementService {
     if (params.internalNotes !== undefined)
       updateData.internal_notes = params.internalNotes;
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? userId;
+
     const updated = await this.agreementRepo.updateAgreement(
       id,
       tenantId,
       updateData,
-      userId
+      memberId
     );
 
     logger.info(
@@ -375,10 +384,14 @@ export class AgreementService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(deletedBy);
+    const resolvedDeletedBy = member?.id ?? deletedBy;
+
     await this.agreementRepo.softDeleteAgreement(
       id,
       tenantId,
-      deletedBy,
+      resolvedDeletedBy,
       reason
     );
 
@@ -436,6 +449,10 @@ export class AgreementService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(sentBy);
+    const resolvedSentBy = member?.id ?? sentBy;
+
     // Generate public token
     const publicToken = this.agreementRepo.generatePublicToken();
 
@@ -443,7 +460,7 @@ export class AgreementService {
     const updated = await this.agreementRepo.markSentForSignature(
       id,
       tenantId,
-      sentBy,
+      resolvedSentBy,
       undefined, // envelopeId - for DocuSign integration
       undefined // envelopeUrl - for DocuSign integration
     );
@@ -505,6 +522,10 @@ export class AgreementService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(recordedBy);
+    const resolvedRecordedBy = member?.id ?? recordedBy;
+
     const updated = await this.agreementRepo.recordClientSignature(
       id,
       tenantId,
@@ -515,7 +536,7 @@ export class AgreementService {
         signatoryEmail: params.signatoryEmail,
         signatoryTitle: params.signatoryTitle,
       },
-      recordedBy
+      resolvedRecordedBy
     );
 
     logger.info(
@@ -577,6 +598,10 @@ export class AgreementService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const memberProv = await resolveMemberId(recordedBy);
+    const resolvedRecordedByProv = memberProv?.id ?? recordedBy;
+
     const updated = await this.agreementRepo.recordProviderSignature(
       id,
       tenantId,
@@ -586,7 +611,7 @@ export class AgreementService {
         signatoryName: params.signatoryName,
         signatoryTitle: params.signatoryTitle,
       },
-      recordedBy
+      resolvedRecordedByProv
     );
 
     logger.info(
@@ -661,11 +686,15 @@ export class AgreementService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(activatedBy);
+    const resolvedActivatedBy = member?.id ?? activatedBy;
+
     const updated = await this.agreementRepo.activateAgreement(
       id,
       tenantId,
       signedDocumentUrl ?? agreement.signed_document_url ?? "",
-      activatedBy
+      resolvedActivatedBy
     );
 
     logger.info(
@@ -718,11 +747,15 @@ export class AgreementService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(terminatedBy);
+    const resolvedTerminatedBy = member?.id ?? terminatedBy;
+
     const updated = await this.agreementRepo.terminateAgreement(
       id,
       tenantId,
       reason,
-      terminatedBy
+      resolvedTerminatedBy
     );
 
     logger.info(
@@ -767,13 +800,17 @@ export class AgreementService {
       throw new NotFoundError(`Agreement ${originalId}`);
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(createdBy);
+    const resolvedCreatedBy = member?.id ?? createdBy;
+
     // Create new version in transaction
     const newVersion = await prisma.$transaction(async (tx) => {
       // Create new version
       const newAgreement = await this.agreementRepo.createNewVersion(
         originalId,
         tenantId,
-        createdBy,
+        resolvedCreatedBy,
         tx
       );
 
@@ -782,7 +819,7 @@ export class AgreementService {
         where: { id: originalId },
         data: {
           status: "superseded",
-          updated_by: createdBy,
+          updated_by: resolvedCreatedBy,
           updated_at: new Date(),
         },
       });

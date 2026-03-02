@@ -543,7 +543,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await requireCrmApiAuth();
+    const { memberId } = await requireCrmApiAuth();
     const { id } = await params;
 
     // Validate UUID format
@@ -599,7 +599,7 @@ export async function DELETE(
       where: { id },
       data: {
         deleted_at: new Date(),
-        deleted_by: userId,
+        deleted_by: memberId,
         deletion_reason: deletionReason,
       },
     });
@@ -609,7 +609,7 @@ export async function DELETE(
     logger.warn(
       {
         opportunityId: id,
-        deletedBy: userId,
+        deletedBy: memberId,
         leadEmail: lead?.email,
         company: lead?.company_name,
         reason: deletionReason,

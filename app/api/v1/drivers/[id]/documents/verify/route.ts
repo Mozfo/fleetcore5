@@ -17,7 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId, tenantId } = await requireTenantApiAuth();
+    const { tenantId, memberId } = await requireTenantApiAuth();
 
     // 3. Await params (Next.js 15 convention)
     const { id } = await params;
@@ -60,9 +60,9 @@ export async function POST(
         where: { id: document_id },
         data: {
           verified: true,
-          verified_by: userId, // Audit field (exists only in rid_driver_documents)
-          verified_at: new Date(), // Audit field (exists only in rid_driver_documents)
-          updated_by: userId,
+          verified_by: memberId, // Resolved adm_members.id for FK
+          verified_at: new Date(),
+          updated_by: memberId,
           updated_at: new Date(),
         },
       });

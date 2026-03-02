@@ -126,12 +126,6 @@ export const LeadsKanbanCard = memo(
                       {String(lead.fleet_size).replace(/\s*vehicles?/i, "")}
                     </span>
                   )}
-                  {lead.qualification_score !== null &&
-                    lead.qualification_score !== undefined && (
-                      <span className="font-semibold">
-                        {lead.qualification_score}
-                      </span>
-                    )}
                 </div>
                 {lead.source && (
                   <span className="truncate text-xs">{lead.source}</span>
@@ -162,8 +156,6 @@ export const LeadsKanbanCard = memo(
       prevProps.lead.id === nextProps.lead.id &&
       prevProps.lead.status === nextProps.lead.status &&
       prevProps.lead.updated_at === nextProps.lead.updated_at &&
-      prevProps.lead.qualification_score ===
-        nextProps.lead.qualification_score &&
       prevProps.lead.assigned_to?.id === nextProps.lead.assigned_to?.id
     );
   }

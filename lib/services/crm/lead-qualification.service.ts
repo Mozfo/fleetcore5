@@ -277,7 +277,7 @@ export class LeadQualificationService {
           activity_type: "lead_qualified",
           title: `BANT qualification: ${criteria_met}/4 criteria met → ${result}`,
           description: `B:${bant.bant_budget} A:${bant.bant_authority} N:${bant.bant_need} T:${bant.bant_timeline}${fleetSizeException ? " (fleet size exception applied)" : ""}`,
-          performed_by: performedBy,
+          performed_by: member?.id ?? null,
           created_at: new Date(),
         },
       });
@@ -294,7 +294,7 @@ export class LeadQualificationService {
       const statusResult = await leadStatusService.updateStatus(
         leadId,
         "qualified",
-        { performedBy }
+        { performedBy: member?.id ?? performedBy }
       );
       statusUpdated = statusResult.success;
 

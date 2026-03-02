@@ -25,6 +25,7 @@ import type {
   OrderUpdateInput,
 } from "@/lib/repositories/crm/order.repository";
 import { ValidationError, NotFoundError } from "@/lib/core/errors";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 import { logger } from "@/lib/logger";
 
 /**
@@ -197,6 +198,10 @@ export class OrderService {
     const expiryDate = new Date(effectiveDate);
     expiryDate.setMonth(expiryDate.getMonth() + durationMonths);
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? null;
+
     // STEP 5: Execute transaction (create order + update opportunity)
     const previousStage = opportunity.stage;
     const previousStatus = opportunity.status;
@@ -220,7 +225,7 @@ export class OrderService {
           notice_period_days: noticePeriodDays,
           metadata,
         },
-        userId,
+        memberId ?? userId,
         tx
       );
 
@@ -233,7 +238,7 @@ export class OrderService {
           won_date: new Date(),
           won_value: totalValue,
           contract_id: order.id,
-          updated_by: userId,
+          updated_by: memberId,
           updated_at: new Date(),
         },
       });
@@ -337,10 +342,14 @@ export class OrderService {
 
     const previousStatus = order.status;
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? userId;
+
     const updated = await this.orderRepo.updateOrder(
       id,
       { status },
-      userId,
+      memberId,
       tenantId
     );
 
@@ -398,10 +407,14 @@ export class OrderService {
         break;
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? userId;
+
     const updated = await this.orderRepo.updateOrder(
       id,
       updateData,
-      userId,
+      memberId,
       tenantId
     );
 
@@ -444,6 +457,10 @@ export class OrderService {
       throw new ValidationError(`Order ${id} is already cancelled`);
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? userId;
+
     const updated = await this.orderRepo.updateOrder(
       id,
       {
@@ -452,7 +469,7 @@ export class OrderService {
         cancelled_at: new Date(),
         cancellation_reason: reason,
       },
-      userId,
+      memberId,
       tenantId
     );
 

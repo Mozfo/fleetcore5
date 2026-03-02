@@ -14,6 +14,7 @@
 import { requireCrmAuth, requireAuth } from "@/lib/auth/server";
 import { prisma } from "@/lib/prisma";
 import { UnauthorizedError, ForbiddenError } from "@/lib/core/errors";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 
 // -- CRM API Guard (Pattern A) -----------------------------------------------
 
@@ -30,10 +31,21 @@ import { UnauthorizedError, ForbiddenError } from "@/lib/core/errors";
 export async function requireCrmApiAuth(): Promise<{
   userId: string;
   orgId: string;
+  memberId: string;
 }> {
   try {
     const session = await requireCrmAuth();
-    return { userId: session.userId, orgId: session.orgId };
+    const member = await resolveMemberId(session.userId);
+    if (!member) {
+      throw new UnauthorizedError(
+        "Member record not found for authenticated user"
+      );
+    }
+    return {
+      userId: session.userId,
+      orgId: session.orgId,
+      memberId: member.id,
+    };
   } catch (error) {
     if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {
       throw error;
@@ -67,6 +79,7 @@ export async function requireCrmApiAuth(): Promise<{
 export async function requireTenantApiAuth(): Promise<{
   userId: string;
   tenantId: string;
+  memberId: string;
 }> {
   let session;
   try {
@@ -84,11 +97,14 @@ export async function requireTenantApiAuth(): Promise<{
     throw new UnauthorizedError("No active organization");
   }
 
-  // Lookup tenant by shared-ID pattern (auth_organization.id = adm_tenants.id)
-  const tenant = await prisma.adm_tenants.findUnique({
-    where: { id: session.orgId },
-    select: { id: true, status: true, name: true },
-  });
+  // Lookup tenant + member in parallel
+  const [tenant, member] = await Promise.all([
+    prisma.adm_tenants.findUnique({
+      where: { id: session.orgId },
+      select: { id: true, status: true, name: true },
+    }),
+    resolveMemberId(session.userId),
+  ]);
 
   if (!tenant) {
     throw new UnauthorizedError(
@@ -108,5 +124,11 @@ export async function requireTenantApiAuth(): Promise<{
     );
   }
 
-  return { userId: session.userId, tenantId: tenant.id };
+  if (!member) {
+    throw new UnauthorizedError(
+      "Member record not found for authenticated user"
+    );
+  }
+
+  return { userId: session.userId, tenantId: tenant.id, memberId: member.id };
 }

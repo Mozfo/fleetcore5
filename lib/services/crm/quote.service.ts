@@ -32,6 +32,7 @@ import {
   BusinessRuleError,
 } from "@/lib/core/errors";
 import type { PaginatedResult } from "@/lib/core/types";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 import { logger } from "@/lib/logger";
 import { quote_status } from "@prisma/client";
 
@@ -252,13 +253,17 @@ export class QuoteService {
       sort_order: item.sortOrder ?? index,
     }));
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? null;
+
     // Create quote with transaction
     const quote = await prisma.$transaction(async (tx) => {
       return this.quoteRepo.createQuote(
         {
           opportunity_id: opportunityId,
           tenant_id: tenantId,
-          created_by: userId,
+          created_by: memberId ?? userId,
           valid_until: validUntil,
           valid_from: validFrom,
           contract_start_date: contractStartDate,
@@ -342,11 +347,15 @@ export class QuoteService {
     if (params.termsAndConditions !== undefined)
       updateData.terms_and_conditions = params.termsAndConditions;
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? userId;
+
     const updated = await this.quoteRepo.updateQuote(
       id,
       tenantId,
       updateData,
-      userId
+      memberId
     );
 
     logger.info(
@@ -394,7 +403,16 @@ export class QuoteService {
       );
     }
 
-    await this.quoteRepo.softDeleteQuote(id, tenantId, deletedBy, reason);
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(deletedBy);
+    const resolvedDeletedBy = member?.id ?? deletedBy;
+
+    await this.quoteRepo.softDeleteQuote(
+      id,
+      tenantId,
+      resolvedDeletedBy,
+      reason
+    );
 
     logger.info(
       {
@@ -444,10 +462,18 @@ export class QuoteService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(sentBy);
+    const resolvedSentBy = member?.id ?? sentBy;
+
     // Generate public token if not present
     let publicToken = quote.public_token;
     if (!publicToken) {
-      publicToken = await this.quoteRepo.setPublicToken(id, tenantId, sentBy);
+      publicToken = await this.quoteRepo.setPublicToken(
+        id,
+        tenantId,
+        resolvedSentBy
+      );
     }
 
     // Update status
@@ -458,7 +484,7 @@ export class QuoteService {
         status: "sent",
         sent_at: new Date(),
       },
-      sentBy
+      resolvedSentBy
     );
 
     const publicUrl = `/quotes/view/${publicToken}`;
@@ -572,6 +598,13 @@ export class QuoteService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns (if acceptedBy is an auth user)
+    let resolvedAcceptedBy = acceptedBy ?? "client";
+    if (acceptedBy) {
+      const member = await resolveMemberId(acceptedBy);
+      resolvedAcceptedBy = member?.id ?? acceptedBy;
+    }
+
     const updated = await this.quoteRepo.updateQuote(
       id,
       tenantId,
@@ -579,7 +612,7 @@ export class QuoteService {
         status: "accepted",
         accepted_at: new Date(),
       },
-      acceptedBy ?? "client"
+      resolvedAcceptedBy
     );
 
     logger.info(
@@ -722,11 +755,15 @@ export class QuoteService {
       throw new NotFoundError(`Quote ${originalQuoteId}`);
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(createdBy);
+    const resolvedCreatedBy = member?.id ?? createdBy;
+
     const newVersion = await prisma.$transaction(async (tx) => {
       return this.quoteRepo.createNewVersion(
         originalQuoteId,
         tenantId,
-        createdBy,
+        resolvedCreatedBy,
         tx
       );
     });
@@ -787,7 +824,11 @@ export class QuoteService {
       );
     }
 
-    // Create order from quote via OrderService
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(convertedBy);
+    const resolvedConvertedBy = member?.id ?? convertedBy;
+
+    // Create order from quote via OrderService (resolves internally)
     const orderResult = await this.orderService.createOrderFromOpportunity({
       opportunityId: quote.opportunity_id,
       tenantId,
@@ -809,7 +850,7 @@ export class QuoteService {
         converted_to_order_id: orderResult.order.id,
         converted_at: new Date(),
       },
-      convertedBy
+      resolvedConvertedBy
     );
 
     logger.info(

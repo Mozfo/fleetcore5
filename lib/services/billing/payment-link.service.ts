@@ -17,6 +17,7 @@
 import { prisma } from "@/lib/prisma";
 import { stripeClientService } from "@/lib/services/stripe/stripe-client.service";
 import { leadStatusService } from "@/lib/services/crm/lead-status.service";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 import { logger } from "@/lib/logger";
 import { URLS } from "@/lib/config/urls.config";
 import type Stripe from "stripe";
@@ -345,6 +346,10 @@ export class PaymentLinkService {
           },
         });
 
+        // Resolve auth_user.id → adm_members.id for audit columns
+        const member = await resolveMemberId(performedBy);
+        const memberId = member?.id ?? null;
+
         // Create activity (tenant_id always set since V7 country routing)
         await tx.crm_lead_activities.create({
           data: {
@@ -353,7 +358,7 @@ export class PaymentLinkService {
             activity_type: "payment_link_created",
             title: "Payment link created",
             description: `Plan: ${planCode}, Billing: ${billingCycle}, Expires: ${expiresAt.toISOString()}`,
-            performed_by: performedBy,
+            performed_by: memberId,
             created_at: new Date(),
           },
         });

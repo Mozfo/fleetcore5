@@ -293,6 +293,16 @@ export class LeadStatusService {
       // tenant_id always set since V7 country routing
       const activityTenantId = lead.tenant_id;
 
+      // Resolve auth_user.id → adm_members.id for audit columns
+      let resolvedPerformedBy: string | null = null;
+      if (performedBy) {
+        const member = await prisma.adm_members.findFirst({
+          where: { auth_user_id: performedBy, deleted_at: null },
+          select: { id: true },
+        });
+        resolvedPerformedBy = member?.id ?? null;
+      }
+
       // 2. Validate transition
       const isValidTransition = await this.validateTransition(
         previousStatus,
@@ -384,7 +394,7 @@ export class LeadStatusService {
               description: lossReasonCode
                 ? `Reason: ${lossReasonCode}${lossReasonDetail ? ` - ${lossReasonDetail}` : ""}`
                 : null,
-              performed_by: performedBy,
+              performed_by: resolvedPerformedBy,
               created_at: new Date(),
             },
           });
@@ -469,6 +479,16 @@ export class LeadStatusService {
       // 2. Disqualification is a terminal admin action - allowed from ANY status
       // (no workflow transition validation needed)
 
+      // Resolve auth_user.id → adm_members.id for audit columns
+      let resolvedDisqualifiedBy: string | null = null;
+      if (disqualifiedBy) {
+        const member = await prisma.adm_members.findFirst({
+          where: { auth_user_id: disqualifiedBy, deleted_at: null },
+          select: { id: true },
+        });
+        resolvedDisqualifiedBy = member?.id ?? null;
+      }
+
       // 3. Update lead + activity in transaction
       await prisma.$transaction(async (tx) => {
         await tx.crm_leads.update({
@@ -478,7 +498,7 @@ export class LeadStatusService {
             disqualified_at: new Date(),
             disqualification_reason: reason,
             disqualification_comment: comment || null,
-            disqualified_by: disqualifiedBy,
+            disqualified_by: resolvedDisqualifiedBy,
             updated_at: new Date(),
           },
         });
@@ -490,8 +510,8 @@ export class LeadStatusService {
             activity_type: "status_change",
             title: `Lead disqualified (from ${previousStatus})`,
             description: `Reason: ${reason}${comment ? ` - ${comment}` : ""}`,
-            performed_by: disqualifiedBy,
-            performed_by_name: disqualifiedBy ? null : "system",
+            performed_by: resolvedDisqualifiedBy,
+            performed_by_name: resolvedDisqualifiedBy ? null : "system",
             created_at: new Date(),
           },
         });
@@ -507,7 +527,7 @@ export class LeadStatusService {
             reason: "disqualified",
             reasonComment: `Disqualified: ${reason}`,
             originalLeadId: leadId,
-            blacklistedBy: disqualifiedBy,
+            blacklistedBy: resolvedDisqualifiedBy,
           });
         } catch (blError) {
           logger.error(

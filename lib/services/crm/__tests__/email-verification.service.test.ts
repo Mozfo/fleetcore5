@@ -70,6 +70,11 @@ vi.mock("bcryptjs", () => ({
   },
 }));
 
+// Mock tenant routing helper (needed when sendVerificationCode creates a new lead)
+vi.mock("@/lib/helpers/tenant-routing.server", () => ({
+  resolveTenantByCountry: vi.fn().mockResolvedValue("test-tenant-id"),
+}));
+
 describe("EmailVerificationService", () => {
   let service: EmailVerificationService;
 

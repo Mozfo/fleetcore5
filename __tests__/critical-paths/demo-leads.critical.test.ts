@@ -32,6 +32,10 @@ const mockFindFirst = vi.fn();
 const mockFindUnique = vi.fn();
 const mockUpdate = vi.fn();
 
+const mockAdmTenantCountriesFindUnique = vi.fn();
+const mockAdmTenantsFindFirst = vi.fn();
+const mockCrmSettingsFindUnique = vi.fn();
+
 const mockPrismaClient = {
   crm_leads: {
     create: (...args: unknown[]) => mockCreate(...args),
@@ -40,6 +44,16 @@ const mockPrismaClient = {
   },
   crm_countries: {
     findUnique: (...args: unknown[]) => mockFindUnique(...args),
+  },
+  adm_tenant_countries: {
+    findUnique: (...args: unknown[]) =>
+      mockAdmTenantCountriesFindUnique(...args),
+  },
+  adm_tenants: {
+    findFirst: (...args: unknown[]) => mockAdmTenantsFindFirst(...args),
+  },
+  crm_settings: {
+    findUnique: (...args: unknown[]) => mockCrmSettingsFindUnique(...args),
   },
 };
 
@@ -158,6 +172,20 @@ describe("CRITICAL: Demo Lead Email Flow (Queue-Based)", () => {
       success: true,
       queueId: "queue-uuid",
     });
+    // Tenant routing: adm_tenant_countries returns null → falls back to expansion tenant
+    mockAdmTenantCountriesFindUnique.mockResolvedValue(null);
+    mockAdmTenantsFindFirst.mockResolvedValue({ id: "expansion-tenant-uuid" });
+    // Fleet size validation from crm_settings (includes test value "10-50")
+    mockCrmSettingsFindUnique.mockResolvedValue({
+      setting_value: {
+        options: [
+          { value: "1-5", is_active: true },
+          { value: "6-10", is_active: true },
+          { value: "10-50", is_active: true },
+          { value: "50+", is_active: true },
+        ],
+      },
+    });
   });
 
   /**
@@ -267,6 +295,9 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Tenant routing: adm_tenant_countries returns null → falls back to expansion tenant
+    mockAdmTenantCountriesFindUnique.mockResolvedValue(null);
+    mockAdmTenantsFindFirst.mockResolvedValue({ id: "expansion-tenant-uuid" });
   });
 
   it("should send verification code for new email", async () => {

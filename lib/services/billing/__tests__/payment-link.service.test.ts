@@ -58,6 +58,14 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
+vi.mock("@/lib/utils/audit-resolver", () => ({
+  resolveMemberId: vi.fn().mockResolvedValue({
+    id: "member-uuid-123",
+    email: "test@example.com",
+    tenant_id: "tenant-1",
+  }),
+}));
+
 // ===== TEST DATA =====
 
 const mockPaymentSettings = {
@@ -442,7 +450,7 @@ describe("PaymentLinkService", () => {
           data: expect.objectContaining({
             lead_id: mockLead.id,
             activity_type: "payment_link_created",
-            performed_by: "user-123",
+            performed_by: "member-uuid-123",
           }),
         })
       );

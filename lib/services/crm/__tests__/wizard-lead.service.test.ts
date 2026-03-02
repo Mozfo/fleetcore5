@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import type { crm_leads } from "@prisma/client";
 import { WizardLeadService } from "../wizard-lead.service";
 
-// Mock tenant routing helper
-const MOCK_TENANT_ID = "test-tenant-id-from-routing";
+// Mock tenant routing helper (hoisted to avoid "Cannot access before initialization")
+const { MOCK_TENANT_ID } = vi.hoisted(() => ({
+  MOCK_TENANT_ID: "test-tenant-id-from-routing",
+}));
 vi.mock("@/lib/helpers/tenant-routing.server", () => ({
   resolveTenantByCountry: vi.fn().mockResolvedValue(MOCK_TENANT_ID),
 }));

@@ -25,6 +25,7 @@ describe("Auth Middleware - requireAuth()", () => {
     vi.mocked(requireTenantApiAuth).mockResolvedValue({
       userId: "user_123",
       tenantId: "tenant_001",
+      memberId: "member_001",
     });
 
     const mockReq = {} as never;

@@ -13,6 +13,9 @@
  * - ≤2/4 + fleet >50 → confirmation dialog "Move to Nurturing? (large fleet)"
  * - ≤2/4 + fleet ≤50 → confirmation dialog "Disqualify?"
  *
+ * Mutations go through the data provider (qualifyLead, patchLeadStatus).
+ * After success → onMutationSuccess() (parent refetches via useOne + marks dirty).
+ *
  * Placement: RIGHT column of LeadDrawer, between InlineActivityForm and LeadStatusActions.
  */
 
@@ -46,6 +49,10 @@ import { Select } from "@/components/ui/select-native";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { drawerSectionVariants } from "@/lib/animations/drawer-variants";
+import {
+  qualifyLead,
+  patchLeadStatus,
+} from "@/lib/providers/refine-data-provider";
 import type { Lead } from "@/types/crm";
 
 // ── BANT option definitions ─────────────────────────────────────────────
@@ -110,6 +117,22 @@ function findLabel(
 ): string | null {
   if (!value) return null;
   return options.find((o) => o.value === value)?.label ?? value;
+}
+
+/**
+ * Compute number of qualifying BANT criteria met on a lead.
+ * Exported for use in LeadStatusActions (Schedule Demo visibility).
+ */
+export function getBantCriteriaMet(lead: Lead): number {
+  return BANT_DIMENSIONS.reduce((count, dim) => {
+    const fieldMap: Record<string, string | null | undefined> = {
+      budget: lead.bant_budget,
+      authority: lead.bant_authority,
+      need: lead.bant_need,
+      timeline: lead.bant_timeline,
+    };
+    return count + (isQualifying(dim.options, fieldMap[dim.key]) ? 1 : 0);
+  }, 0);
 }
 
 function formatDate(dateValue: string | Date | null | undefined): string {
@@ -191,10 +214,13 @@ const INITIAL_CONFIRMATION: ConfirmationState = {
 
 interface LeadBantSectionProps {
   lead: Lead;
-  onQualified?: () => void;
+  onMutationSuccess?: () => void;
 }
 
-export function LeadBantSection({ lead, onQualified }: LeadBantSectionProps) {
+export function LeadBantSection({
+  lead,
+  onMutationSuccess,
+}: LeadBantSectionProps) {
   const { t } = useTranslation("crm");
   const mode = getBantMode(lead);
 
@@ -213,12 +239,12 @@ export function LeadBantSection({ lead, onQualified }: LeadBantSectionProps) {
 
       <div className="border-border bg-card space-y-4 rounded-lg border border-l-4 border-l-blue-500 p-4">
         {mode === "edit" ? (
-          <BantEditMode lead={lead} onQualified={onQualified} />
+          <BantEditMode lead={lead} onMutationSuccess={onMutationSuccess} />
         ) : (
           <BantSummaryMode
             lead={lead}
             showRequalify={mode === "summary"}
-            onQualified={onQualified}
+            onMutationSuccess={onMutationSuccess}
           />
         )}
       </div>
@@ -230,10 +256,10 @@ export function LeadBantSection({ lead, onQualified }: LeadBantSectionProps) {
 
 interface BantEditModeProps {
   lead: Lead;
-  onQualified?: () => void;
+  onMutationSuccess?: () => void;
 }
 
-function BantEditMode({ lead, onQualified }: BantEditModeProps) {
+function BantEditMode({ lead, onMutationSuccess }: BantEditModeProps) {
   const { t } = useTranslation("crm");
 
   const [budget, setBudget] = useState<string>(lead.bant_budget || "");
@@ -311,93 +337,68 @@ function BantEditMode({ lead, onQualified }: BantEditModeProps) {
     };
   }, [criteriaMet, t]);
 
-  // ── Step 1: Call qualify API → saves BANT + evaluates result ──────────
+  // ── Step 1: Call qualify via data provider → saves BANT + evaluates ──
 
   const handleQualify = useCallback(async () => {
     if (!allFilled) return;
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/v1/crm/leads/${lead.id}/qualify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bant_budget: budget,
-          bant_authority: authority,
-          bant_need: need,
-          bant_timeline: timeline,
-        }),
+      const result = await qualifyLead(lead.id, {
+        bant_budget: budget,
+        bant_authority: authority,
+        bant_need: need,
+        bant_timeline: timeline,
       });
 
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        toast.error(
-          json.error?.message ||
-            json.message ||
-            t("leads.bant.error", { defaultValue: "Qualification failed" })
-        );
-        return;
-      }
-
-      const result = json.data?.result as string;
-      const met = json.data?.criteria_met as number;
-      const fleetException = json.data?.fleet_size_exception as boolean;
-
       // 4/4 → auto-qualified by backend, show success
-      if (result === "qualified") {
+      if (result.result === "qualified") {
         toast.success(
           t("leads.bant.qualified_success", {
-            defaultValue: `Lead qualified (${met}/4 criteria met)`,
-            count: met,
+            defaultValue: `Lead qualified (${result.criteria_met}/4 criteria met)`,
+            count: result.criteria_met,
           })
         );
-        onQualified?.();
+        onMutationSuccess?.();
         return;
       }
 
       // <4/4 → show confirmation dialog (backend saved BANT but did NOT change status)
       setConfirmation({
         open: true,
-        result: result as "nurturing" | "disqualified",
-        criteriaMet: met,
-        fleetSizeException: fleetException,
+        result: result.result as "nurturing" | "disqualified",
+        criteriaMet: result.criteria_met,
+        fleetSizeException: result.fleet_size_exception,
         leadId: lead.id,
       });
-    } catch {
+    } catch (err) {
       toast.error(
-        t("leads.bant.error", { defaultValue: "Qualification failed" })
+        err instanceof Error
+          ? err.message
+          : t("leads.bant.error", { defaultValue: "Qualification failed" })
       );
     } finally {
       setIsSubmitting(false);
     }
-  }, [lead.id, budget, authority, need, timeline, allFilled, onQualified, t]);
+  }, [
+    lead.id,
+    budget,
+    authority,
+    need,
+    timeline,
+    allFilled,
+    onMutationSuccess,
+    t,
+  ]);
 
-  // ── Step 2: User confirms → call status API to change status ─────────
+  // ── Step 2: User confirms → call status via data provider ────────────
 
   const handleConfirmStatusChange = useCallback(async () => {
     if (!confirmation.result) return;
 
     setIsConfirming(true);
     try {
-      const res = await fetch(
-        `/api/v1/crm/leads/${confirmation.leadId}/status`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: confirmation.result }),
-        }
-      );
-
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        toast.error(
-          json.error?.message ||
-            t("leads.bant.error", { defaultValue: "Status update failed" })
-        );
-        return;
-      }
+      await patchLeadStatus(confirmation.leadId, confirmation.result);
 
       if (confirmation.result === "nurturing") {
         toast.info(
@@ -416,21 +417,25 @@ function BantEditMode({ lead, onQualified }: BantEditModeProps) {
       }
 
       setConfirmation(INITIAL_CONFIRMATION);
-      onQualified?.();
-    } catch {
+      onMutationSuccess?.();
+    } catch (err) {
       toast.error(
-        t("leads.bant.error", { defaultValue: "Status update failed" })
+        err instanceof Error
+          ? err.message
+          : t("leads.bant.error", { defaultValue: "Status update failed" })
       );
     } finally {
       setIsConfirming(false);
     }
-  }, [confirmation, onQualified, t]);
+  }, [confirmation, onMutationSuccess, t]);
 
-  // ── Step 2b: User cancels → close dialog, dropdowns stay ─────────────
+  // ── Step 2b: User cancels → close dialog, refetch (BANT already saved) ─
 
   const handleCancelConfirmation = useCallback(() => {
     setConfirmation(INITIAL_CONFIRMATION);
-  }, []);
+    // BANT was saved by the qualify API — refetch so lead data includes new values
+    onMutationSuccess?.();
+  }, [onMutationSuccess]);
 
   // ── Confirmation dialog message ──────────────────────────────────────
 
@@ -636,13 +641,13 @@ function BantEditMode({ lead, onQualified }: BantEditModeProps) {
 interface BantSummaryModeProps {
   lead: Lead;
   showRequalify: boolean;
-  onQualified?: () => void;
+  onMutationSuccess?: () => void;
 }
 
 function BantSummaryMode({
   lead,
   showRequalify,
-  onQualified,
+  onMutationSuccess,
 }: BantSummaryModeProps) {
   const { t } = useTranslation("crm");
   const [isRequalifying, setIsRequalifying] = useState(false);
@@ -685,36 +690,24 @@ function BantSummaryMode({
   const handleRequalify = async () => {
     setIsRequalifying(true);
     try {
-      const res = await fetch(`/api/v1/crm/leads/${lead.id}/qualify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bant_budget: lead.bant_budget,
-          bant_authority: lead.bant_authority,
-          bant_need: lead.bant_need,
-          bant_timeline: lead.bant_timeline,
-        }),
+      await qualifyLead(lead.id, {
+        bant_budget: lead.bant_budget || "",
+        bant_authority: lead.bant_authority || "",
+        bant_need: lead.bant_need || "",
+        bant_timeline: lead.bant_timeline || "",
       });
-
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        toast.error(
-          json.error?.message ||
-            t("leads.bant.error", { defaultValue: "Qualification failed" })
-        );
-        return;
-      }
 
       toast.success(
         t("leads.bant.requalified", {
           defaultValue: "Lead re-qualified successfully",
         })
       );
-      onQualified?.();
-    } catch {
+      onMutationSuccess?.();
+    } catch (err) {
       toast.error(
-        t("leads.bant.error", { defaultValue: "Qualification failed" })
+        err instanceof Error
+          ? err.message
+          : t("leads.bant.error", { defaultValue: "Qualification failed" })
       );
     } finally {
       setIsRequalifying(false);

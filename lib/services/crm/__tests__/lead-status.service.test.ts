@@ -19,6 +19,9 @@ vi.mock("@/lib/prisma", () => ({
     adm_tenants: {
       findFirst: vi.fn(),
     },
+    adm_members: {
+      findFirst: vi.fn(),
+    },
     $transaction: vi.fn((callback) => callback(prisma)),
   },
 }));
@@ -223,6 +226,7 @@ describe("LeadStatusService", () => {
     id: "lead-uuid-123",
     status: "new",
     email: "test@example.com",
+    tenant_id: "tenant-uuid-1",
   };
 
   beforeEach(() => {
@@ -256,6 +260,14 @@ describe("LeadStatusService", () => {
         }
       ).adm_tenants.findFirst
     ).mockResolvedValue({ id: "hq-tenant-uuid" } as never);
+    // Default mock for member resolution (auth_user.id → adm_members.id)
+    vi.mocked(
+      (
+        prisma as unknown as {
+          adm_members: { findFirst: ReturnType<typeof vi.fn> };
+        }
+      ).adm_members.findFirst
+    ).mockResolvedValue({ id: "member-uuid-123" } as never);
   });
 
   afterEach(() => {
@@ -559,7 +571,7 @@ describe("LeadStatusService", () => {
             lead_id: mockLead.id,
             activity_type: "status_change",
             title: expect.stringContaining("Status changed from new to demo"),
-            performed_by: "user-1",
+            performed_by: "member-uuid-123",
           }),
         })
       );

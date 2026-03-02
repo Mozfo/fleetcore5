@@ -5,11 +5,17 @@
  * RIGHT (w-3/5): Actions + Timeline (inline activity form, status actions, timeline)
  *
  * Uses Dialog (centered, fade+scale). Supports read-only and edit mode.
+ *
+ * Data flow (B2 refonte):
+ * - Single source of truth: Refine useOne (replaces dual lead prop + currentLead state)
+ * - Dirty tracking via useRef for conditional Kanban invalidation on close
+ * - onMutationSuccess callback passed to all mutating children
  */
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useOne, useInvalidate } from "@refinedev/core";
 import { motion } from "framer-motion";
 import { Pencil, Ban, Trash, CheckCircle, X, Loader2 } from "lucide-react";
 import {
@@ -49,7 +55,6 @@ import {
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
 import { usePermission } from "@/lib/hooks/usePermission";
 import type { Lead } from "@/types/crm";
-import type { PendingTransition } from "@/features/crm/leads/hooks/use-leads-kanban";
 
 interface LeadDrawerProps {
   lead: Lead | null;
@@ -57,16 +62,12 @@ interface LeadDrawerProps {
   onClose: () => void;
   onDelete?: (id: string) => void;
   onOpenFullPage?: (id: string) => void;
-  onLeadUpdated?: (updatedLead: Lead) => void;
   isLoading?: boolean;
   owners?: Array<{
     id: string;
     first_name: string;
     last_name: string | null;
   }>;
-  transition?: PendingTransition | null;
-  onTransitionComplete?: () => void;
-  onTransitionCancel?: () => void;
 }
 
 /**
@@ -107,23 +108,29 @@ export function LeadDrawer({
   onClose,
   onDelete,
   onOpenFullPage,
-  onLeadUpdated,
   isLoading = false,
   owners = [],
-  transition = null,
-  onTransitionComplete,
-  onTransitionCancel,
 }: LeadDrawerProps) {
   const { t } = useTranslation("crm");
   const { can } = usePermission();
+  const invalidate = useInvalidate();
+
+  // ── Single source of truth: Refine useOne ───────────────────────────
+  const { result: fullLead, query: leadQuery } = useOne<Lead>({
+    resource: "leads",
+    id: lead?.id ?? "",
+    queryOptions: { enabled: !!lead?.id && isOpen },
+  });
+
+  // ── Dirty tracking — mutations set true, Kanban invalidation on close
+  const dirtyRef = useRef(false);
 
   // ── Edit Mode States ─────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
   const [editedLead, setEditedLead] = useState<Partial<Lead>>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // ── State ────────────────────────────────────────────────────────────
-  const [currentLead, setCurrentLead] = useState<Lead | null>(lead);
+  // ── Modal States ─────────────────────────────────────────────────────
   const [isDisqualifyModalOpen, setIsDisqualifyModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -131,7 +138,7 @@ export function LeadDrawer({
   // Timeline refresh counter — incremented by InlineActivityForm
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Reset states when lead changes or popup closes
+  // Reset states when lead changes or drawer closes
   useEffect(() => {
     setIsEditing(false);
     setEditedLead({});
@@ -139,8 +146,24 @@ export function LeadDrawer({
     setIsDisqualifyModalOpen(false);
     setIsDeleteModalOpen(false);
     setIsDeleting(false);
-    setCurrentLead(lead);
-  }, [lead?.id, isOpen, lead]);
+    dirtyRef.current = false;
+    setRefreshTrigger(0);
+  }, [lead?.id, isOpen]);
+
+  // ── Mutation success callback — passed to all mutating children ─────
+  const handleMutationSuccess = useCallback(() => {
+    dirtyRef.current = true;
+    void leadQuery.refetch();
+  }, [leadQuery]);
+
+  // ── Close with conditional Kanban invalidation ─────────────────────
+  const closeWithInvalidation = useCallback(() => {
+    if (dirtyRef.current) {
+      void invalidate({ resource: "leads", invalidates: ["list"] });
+      dirtyRef.current = false;
+    }
+    onClose();
+  }, [onClose, invalidate]);
 
   // ── Edit mode handlers ───────────────────────────────────────────────
 
@@ -152,7 +175,7 @@ export function LeadDrawer({
   );
 
   const handleSave = useCallback(async () => {
-    if (!lead) return;
+    if (!fullLead) return;
 
     if (Object.keys(editedLead).length === 0) {
       setIsEditing(false);
@@ -191,15 +214,13 @@ export function LeadDrawer({
           : null;
       }
 
-      const result = await updateLeadAction(lead.id, updateData);
+      const result = await updateLeadAction(fullLead.id, updateData);
 
       if (result.success) {
         toast.success(t("leads.drawer.save_success"));
         setIsEditing(false);
         setEditedLead({});
-        if (onLeadUpdated && result.lead) {
-          onLeadUpdated(result.lead as unknown as Lead);
-        }
+        handleMutationSuccess();
       } else {
         toast.error(result.error || t("leads.drawer.save_error"));
       }
@@ -208,7 +229,7 @@ export function LeadDrawer({
     } finally {
       setIsSaving(false);
     }
-  }, [lead, editedLead, onLeadUpdated, t]);
+  }, [fullLead, editedLead, t, handleMutationSuccess]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
@@ -227,11 +248,9 @@ export function LeadDrawer({
 
   const handleDisqualifySuccess = useCallback(() => {
     setIsDisqualifyModalOpen(false);
-    onClose();
-    if (lead) {
-      onLeadUpdated?.({ ...lead, status: "disqualified" });
-    }
-  }, [lead, onClose, onLeadUpdated]);
+    dirtyRef.current = true;
+    closeWithInvalidation();
+  }, [closeWithInvalidation]);
 
   // ── Delete handlers ──────────────────────────────────────────────────
 
@@ -241,11 +260,15 @@ export function LeadDrawer({
 
   const handleDeleteConfirm = useCallback(
     async (reason: string, permanentDelete: boolean) => {
-      if (!lead) return;
+      if (!fullLead) return;
 
       setIsDeleting(true);
       try {
-        const result = await deleteLeadAction(lead.id, reason, permanentDelete);
+        const result = await deleteLeadAction(
+          fullLead.id,
+          reason,
+          permanentDelete
+        );
 
         if (!result.success) {
           throw new Error(result.error);
@@ -257,8 +280,9 @@ export function LeadDrawer({
             : t("leads.delete.success")
         );
         setIsDeleteModalOpen(false);
-        onClose();
-        onDelete?.(lead.id);
+        dirtyRef.current = true;
+        closeWithInvalidation();
+        onDelete?.(fullLead.id);
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : t("leads.delete.error")
@@ -267,7 +291,7 @@ export function LeadDrawer({
         setIsDeleting(false);
       }
     },
-    [lead, onClose, onDelete, t]
+    [fullLead, closeWithInvalidation, onDelete, t]
   );
 
   // ── GDPR ─────────────────────────────────────────────────────────────
@@ -302,22 +326,24 @@ export function LeadDrawer({
     "CY",
   ];
 
-  const showGdprSection = lead
-    ? (lead.country?.country_gdpr ??
-      EU_COUNTRY_CODES.includes(lead.country_code?.toUpperCase() || ""))
+  const showGdprSection = fullLead
+    ? (fullLead.country?.country_gdpr ??
+      EU_COUNTRY_CODES.includes(fullLead.country_code?.toUpperCase() || ""))
     : false;
 
-  // ── Handle close ─────────────────────────────────────────────────────
+  // ── Handle dialog close ────────────────────────────────────────────
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
-        if (transition) onTransitionCancel?.();
-        onClose();
+        closeWithInvalidation();
       }
     },
-    [transition, onTransitionCancel, onClose]
+    [closeWithInvalidation]
   );
+
+  // Show skeleton when loading full data
+  const showSkeleton = isLoading || (!!lead && !fullLead);
 
   return (
     <>
@@ -327,7 +353,7 @@ export function LeadDrawer({
           showCloseIcon
           className="flex max-h-[90vh] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl"
         >
-          {/* Accessibility */}
+          {/* Accessibility — use prop lead for immediate title */}
           <VisuallyHidden.Root>
             <DialogTitle>
               {lead
@@ -342,11 +368,11 @@ export function LeadDrawer({
 
           {/* 2-column content area */}
           <div className="flex min-h-0 flex-1">
-            {isLoading ? (
+            {showSkeleton ? (
               <div className="flex-1 px-6 py-5">
                 <DrawerSkeleton />
               </div>
-            ) : lead ? (
+            ) : fullLead ? (
               <>
                 {/* ── LEFT COLUMN (w-2/5) — Info sections ── */}
                 <div className="w-2/5 overflow-y-auto border-r px-5 py-5">
@@ -358,39 +384,39 @@ export function LeadDrawer({
                     className="space-y-6"
                   >
                     <LeadDrawerHeader
-                      lead={lead}
+                      lead={fullLead}
                       onOpenFullPage={
                         onOpenFullPage
-                          ? () => onOpenFullPage(lead.id)
+                          ? () => onOpenFullPage(fullLead.id)
                           : undefined
                       }
                     />
                     <Separator />
                     <ContactSection
-                      lead={lead}
+                      lead={fullLead}
                       isEditing={isEditing}
                       editedLead={editedLead}
                       onFieldChange={handleFieldChange}
                     />
                     <CompanySection
-                      lead={lead}
+                      lead={fullLead}
                       isEditing={isEditing}
                       editedLead={editedLead}
                       onFieldChange={handleFieldChange}
                     />
                     <AssignmentSection
-                      lead={lead}
+                      lead={fullLead}
                       isEditing={isEditing}
                       editedLead={editedLead}
                       onFieldChange={handleFieldChange}
                       owners={owners}
                     />
-                    <LocationSection lead={lead} />
-                    <SourceSection lead={lead} />
-                    <GdprSection lead={lead} visible={showGdprSection} />
-                    <NotesSection lead={lead} />
+                    <LocationSection lead={fullLead} />
+                    <SourceSection lead={fullLead} />
+                    <GdprSection lead={fullLead} visible={showGdprSection} />
+                    <NotesSection lead={fullLead} />
                     <MessageSection
-                      lead={lead}
+                      lead={fullLead}
                       isEditing={isEditing}
                       editedLead={editedLead}
                       onFieldChange={handleFieldChange}
@@ -409,43 +435,34 @@ export function LeadDrawer({
                   >
                     {/* Inline Activity Form */}
                     <InlineActivityForm
-                      leadId={lead.id}
-                      leadEmail={lead.email}
-                      leadPhone={lead.phone}
+                      leadId={fullLead.id}
+                      leadEmail={fullLead.email}
+                      leadPhone={fullLead.phone}
                       onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
                     />
 
                     <Separator />
 
-                    {/* BANT Qualification */}
+                    {/* BANT Qualification — key forces remount when BANT data changes */}
                     <LeadBantSection
-                      lead={currentLead || lead}
-                      onQualified={() => {
-                        setRefreshTrigger((prev) => prev + 1);
-                        onClose();
-                      }}
+                      key={`bant-${fullLead.id}-${fullLead.bant_budget ?? "empty"}`}
+                      lead={fullLead}
+                      onMutationSuccess={handleMutationSuccess}
                     />
 
                     <Separator />
 
-                    {/* Step Actions (manual + drag & drop) */}
+                    {/* Step Actions (V7) */}
                     <LeadStatusActions
-                      lead={currentLead || lead}
-                      onStatusChanged={() => {
-                        if (transition) {
-                          onTransitionComplete?.();
-                        }
-                        onClose();
-                      }}
-                      pendingTransition={transition}
-                      onTransitionCancel={onTransitionCancel}
+                      lead={fullLead}
+                      onMutationSuccess={handleMutationSuccess}
                     />
 
                     <Separator />
 
                     {/* Timeline */}
                     <TimelineSection
-                      lead={lead}
+                      lead={fullLead}
                       hideAddButton={true}
                       refreshTrigger={refreshTrigger}
                     />
@@ -456,7 +473,7 @@ export function LeadDrawer({
           </div>
 
           {/* Footer with action buttons */}
-          {lead && !isLoading && (
+          {fullLead && !showSkeleton && (
             <div className="bg-muted/50 border-t px-6 py-4">
               {isEditing ? (
                 <div className="flex gap-2">
@@ -529,26 +546,26 @@ export function LeadDrawer({
       </Dialog>
 
       {/* Sub-modals rendered outside Dialog to avoid nested portal issues */}
-      {currentLead && (
+      {fullLead && (
         <DisqualifyLeadModal
           isOpen={isDisqualifyModalOpen}
           onClose={() => setIsDisqualifyModalOpen(false)}
-          lead={currentLead}
+          lead={fullLead}
           onSuccess={handleDisqualifySuccess}
         />
       )}
 
-      {currentLead && (
+      {fullLead && (
         <DeleteLeadModal
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleDeleteConfirm}
           leadName={
-            currentLead.first_name || currentLead.last_name
-              ? `${currentLead.first_name || ""} ${currentLead.last_name || ""}`.trim()
-              : currentLead.email || "Unknown contact"
+            fullLead.first_name || fullLead.last_name
+              ? `${fullLead.first_name || ""} ${fullLead.last_name || ""}`.trim()
+              : fullLead.email || "Unknown contact"
           }
-          leadEmail={currentLead.email}
+          leadEmail={fullLead.email}
           isLoading={isDeleting}
         />
       )}

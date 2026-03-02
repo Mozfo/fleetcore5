@@ -267,6 +267,75 @@ async function deleteOne(params: DeleteOneParams): Promise<DeleteOneResponse> {
 }
 
 // ---------------------------------------------------------------------------
+// Custom CRM methods (domain-specific, non-CRUD)
+// ---------------------------------------------------------------------------
+// These complement the standard DataProvider with operations that don't map
+// to CRUD (qualify, status PATCH). They use the same fetchApi HTTP client
+// so all mutations go through one central point.
+
+export interface QualifyLeadPayload {
+  bant_budget: string;
+  bant_authority: string;
+  bant_need: string;
+  bant_timeline: string;
+}
+
+export interface QualifyLeadResult {
+  result: string;
+  criteria_met: number;
+  fleet_size_exception: boolean;
+}
+
+/**
+ * POST /api/v1/crm/leads/:id/qualify — save BANT + evaluate qualification.
+ * Throws HttpError on failure (HTTP error OR success:false).
+ */
+export async function qualifyLead(
+  id: string,
+  bantData: QualifyLeadPayload
+): Promise<QualifyLeadResult> {
+  const json = await fetchApi<{
+    success: boolean;
+    data: QualifyLeadResult;
+    error?: { message?: string };
+    message?: string;
+  }>(`/crm/leads/${id}/qualify`, {
+    method: "POST",
+    body: JSON.stringify(bantData),
+  });
+
+  if (!json.success) {
+    throw createHttpError(
+      400,
+      json.error?.message ?? json.message ?? "Qualification failed"
+    );
+  }
+
+  return json.data;
+}
+
+/**
+ * PATCH /api/v1/crm/leads/:id/status — change lead status.
+ * Throws HttpError on failure.
+ */
+export async function patchLeadStatus(
+  id: string,
+  status: string
+): Promise<void> {
+  const json = await fetchApi<{
+    success: boolean;
+    error?: { message?: string };
+  }>(`/crm/leads/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+
+  if (!json.success) {
+    throw createHttpError(400, json.error?.message ?? "Status update failed");
+  }
+}
+
+// ---------------------------------------------------------------------------
 // DataProvider export
 // ---------------------------------------------------------------------------
 

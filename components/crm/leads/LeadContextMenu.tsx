@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * LeadContextMenu - Right-click context menu for lead rows/cards
+ * LeadContextMenu - Right-click context menu for lead rows/cards (V7)
  *
  * Best practices implemented:
  * - WAI-ARIA compliant via Radix UI
  * - Keyboard navigation (Arrow keys, Enter, Escape)
  * - Disabled items shown (not hidden) per NN/g guidelines
- * - Frequency-ordered items (most common first)
+ * - Change Status filtered dynamically by transitions_to from crm_settings
  *
  * @see https://www.nngroup.com/articles/contextual-menus/
  * @see https://www.radix-ui.com/primitives/docs/components/context-menu
@@ -24,6 +24,7 @@ import {
   Trash,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "next/navigation";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -34,19 +35,9 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
+import { getStatusConfig } from "@/lib/config/pipeline-status";
 import type { Lead, LeadStatus } from "@/types/crm";
-
-// V6.3: 8 statuts
-const STATUS_OPTIONS: { value: LeadStatus; colorClass: string }[] = [
-  { value: "new", colorClass: "bg-gray-500" },
-  { value: "demo", colorClass: "bg-blue-500" },
-  { value: "proposal_sent", colorClass: "bg-orange-500" },
-  { value: "payment_pending", colorClass: "bg-amber-500" },
-  { value: "converted", colorClass: "bg-green-500" },
-  { value: "lost", colorClass: "bg-red-500" },
-  { value: "nurturing", colorClass: "bg-purple-500" },
-  { value: "disqualified", colorClass: "bg-gray-400" },
-];
 
 interface LeadContextMenuProps {
   lead: Lead;
@@ -72,11 +63,19 @@ export function LeadContextMenu({
   disabled = false,
 }: LeadContextMenuProps) {
   const { t } = useTranslation("crm");
+  const params = useParams();
+  const locale = (params.locale as string) || "en";
+  const { getValidTransitions, getLabel } = useLeadStatuses();
 
   // If disabled (e.g., during drag), just render children
   if (disabled) {
     return <>{children}</>;
   }
+
+  // Dynamic transitions from crm_settings
+  const validTransitions = getValidTransitions(lead.status);
+  const isConverted = lead.status === "converted";
+  const isQualified = lead.status === "qualified";
 
   return (
     <ContextMenu>
@@ -126,48 +125,52 @@ export function LeadContextMenu({
 
         <ContextMenuSeparator />
 
-        {/* WORKFLOW ACTIONS */}
-        <ContextMenuSub>
-          <ContextMenuSubTrigger>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {t("leads.context_menu.change_status")}
-          </ContextMenuSubTrigger>
-          <ContextMenuSubContent className="w-48">
-            {STATUS_OPTIONS.map((option) => (
-              <ContextMenuItem
-                key={option.value}
-                onClick={() => onStatusChange?.(option.value)}
-                className={lead.status === option.value ? "bg-accent" : ""}
-              >
-                <span
-                  className={`mr-2 h-2 w-2 rounded-full ${option.colorClass}`}
-                />
-                {t(`leads.columns.${option.value}`)}
-                {lead.status === option.value && (
-                  <span className="ml-auto text-xs opacity-60">
-                    {t("leads.context_menu.current")}
-                  </span>
-                )}
-              </ContextMenuItem>
-            ))}
-          </ContextMenuSubContent>
-        </ContextMenuSub>
+        {/* WORKFLOW ACTIONS — filtered by transitions_to */}
+        {validTransitions.length > 0 && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {t("leads.context_menu.change_status")}
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-48">
+              {validTransitions.map((statusConfig) => {
+                const config = getStatusConfig(statusConfig.value);
+                return (
+                  <ContextMenuItem
+                    key={statusConfig.value}
+                    onClick={() => onStatusChange?.(statusConfig.value)}
+                  >
+                    <span
+                      className={`mr-2 h-2 w-2 rounded-full ${config.bg}`}
+                    />
+                    {getLabel(statusConfig.value, locale)}
+                  </ContextMenuItem>
+                );
+              })}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
 
-        <ContextMenuItem onClick={onConvert}>
-          <ArrowRightCircle className="mr-2 h-4 w-4" />
-          {t("leads.context_menu.convert")}
-        </ContextMenuItem>
+        {/* Convert — only for qualified leads */}
+        {isQualified && (
+          <ContextMenuItem onClick={onConvert}>
+            <ArrowRightCircle className="mr-2 h-4 w-4" />
+            {t("leads.context_menu.convert")}
+          </ContextMenuItem>
+        )}
 
         <ContextMenuSeparator />
 
-        {/* DESTRUCTIVE ACTIONS */}
-        <ContextMenuItem
-          onClick={onDisqualify}
-          className="text-orange-600 focus:text-orange-600"
-        >
-          <Ban className="mr-2 h-4 w-4" />
-          {t("leads.context_menu.disqualify")}
-        </ContextMenuItem>
+        {/* DESTRUCTIVE ACTIONS — hidden for converted */}
+        {!isConverted && (
+          <ContextMenuItem
+            onClick={onDisqualify}
+            className="text-orange-600 focus:text-orange-600"
+          >
+            <Ban className="mr-2 h-4 w-4" />
+            {t("leads.context_menu.disqualify")}
+          </ContextMenuItem>
+        )}
         <ContextMenuItem
           onClick={onDelete}
           className="text-destructive focus:text-destructive"

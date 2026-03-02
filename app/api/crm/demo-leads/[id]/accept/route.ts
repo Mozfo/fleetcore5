@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 
 export async function POST(
   request: NextRequest,
@@ -15,6 +16,10 @@ export async function POST(
 
     const { userId } = session;
     const { id: leadId } = await params;
+
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? null;
 
     // Transaction pour conversion lead -> customer
     const result = await db.$transaction(async (tx) => {
@@ -87,7 +92,7 @@ export async function POST(
         data: {
           status: "converted",
           converted_date: new Date(),
-          assigned_to: userId,
+          assigned_to: memberId,
         },
       });
 

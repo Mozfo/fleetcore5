@@ -24,6 +24,7 @@ import {
   NotFoundError,
   BusinessRuleError,
 } from "@/lib/core/errors";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 import { logger } from "@/lib/logger";
 
 // =============================================================================
@@ -274,6 +275,10 @@ export class SubscriptionScheduleService {
       this.validatePhases(input.phases);
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(input.userId);
+    const memberId = member?.id ?? null;
+
     const result = await this.prisma.$transaction(async (tx) => {
       const reference = await this.generateScheduleReference(
         input.tenantId,
@@ -294,7 +299,7 @@ export class SubscriptionScheduleService {
           total_phases: input.phases?.length || 0,
           total_contract_value: 0,
           metadata: input.metadata ?? Prisma.JsonNull,
-          created_by: input.userId,
+          created_by: memberId,
         },
       });
 
@@ -384,6 +389,10 @@ export class SubscriptionScheduleService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? null;
+
     const updated = await this.prisma.bil_subscription_schedules.update({
       where: { id },
       data: {
@@ -391,7 +400,7 @@ export class SubscriptionScheduleService {
         end_behavior: input.endBehavior,
         currency: input.currency,
         metadata: input.metadata,
-        updated_by: userId,
+        updated_by: memberId,
         updated_at: new Date(),
       },
     });
@@ -432,11 +441,14 @@ export class SubscriptionScheduleService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(deletedBy);
+
     await this.prisma.bil_subscription_schedules.update({
       where: { id },
       data: {
         deleted_at: new Date(),
-        deleted_by: deletedBy,
+        deleted_by: member?.id ?? null,
         deletion_reason: reason,
       },
     });

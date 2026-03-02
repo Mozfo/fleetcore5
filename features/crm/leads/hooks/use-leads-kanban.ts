@@ -3,6 +3,7 @@
 import { useList, type CrudFilter } from "@refinedev/core";
 import { useQueryStates } from "nuqs";
 import * as React from "react";
+import { toast } from "sonner";
 
 import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
 import type { Lead } from "../types/lead.types";
@@ -75,7 +76,7 @@ export interface PendingTransition {
 }
 
 export function useLeadsKanban() {
-  const { canTransitionTo } = useLeadStatuses();
+  const { canTransitionTo, getLabel } = useLeadStatuses();
 
   // Read sidebar filters from URL (shared with table view via nuqs)
   const [sidebarValues] = useQueryStates(SIDEBAR_FILTER_PARSERS);
@@ -112,12 +113,18 @@ export function useLeadsKanban() {
       "email",
       "fleet_size",
       "source",
-      "qualification_score",
       "country_code",
       "created_at",
       "updated_at",
       "next_action_date",
       "priority",
+      // BANT fields — needed for drawer to show BANT immediately
+      "bant_budget",
+      "bant_authority",
+      "bant_need",
+      "bant_timeline",
+      "bant_qualified_at",
+      "bant_qualified_by",
     ],
     []
   );
@@ -204,7 +211,9 @@ export function useLeadsKanban() {
 
             // Validate transition
             if (!canTransitionTo(fromStatus, toStatus)) {
-              // Invalid — revert (don't update state)
+              const fromLabel = getLabel(fromStatus);
+              const toLabel = getLabel(toStatus);
+              toast.error(`Cannot move from ${fromLabel} to ${toLabel}`);
               return;
             }
 
@@ -224,7 +233,7 @@ export function useLeadsKanban() {
       // Fallback: same-column reorder
       setOptimisticColumns(newColumns);
     },
-    [optimisticColumns, canTransitionTo]
+    [optimisticColumns, canTransitionTo, getLabel]
   );
 
   // ── Cancel transition (revert to server state) ─────────────────────

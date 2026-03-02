@@ -24,6 +24,7 @@ import {
   NotFoundError,
   BusinessRuleError,
 } from "@/lib/core/errors";
+import { resolveMemberId } from "@/lib/utils/audit-resolver";
 import { logger } from "@/lib/logger";
 
 // =============================================================================
@@ -281,6 +282,10 @@ export class AmendmentService {
     const currentPlan = subscription.xgunea8;
     const currentPrice = currentPlan?.monthly_fee ?? null;
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(input.userId);
+    const memberId = member?.id ?? null;
+
     const result = await this.prisma.$transaction(async (tx) => {
       const reference = await this.generateAmendmentReference(
         input.tenantId,
@@ -317,7 +322,7 @@ export class AmendmentService {
           // Metadata
           metadata: input.metadata ?? Prisma.JsonNull,
           // Audit
-          created_by: input.userId,
+          created_by: memberId,
         },
       });
 
@@ -371,6 +376,10 @@ export class AmendmentService {
       }
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(userId);
+    const memberId = member?.id ?? null;
+
     const updated = await this.prisma.bil_amendments.update({
       where: { id },
       data: {
@@ -383,7 +392,7 @@ export class AmendmentService {
         reason: input.reason,
         internal_notes: input.internalNotes,
         metadata: input.metadata,
-        updated_by: userId,
+        updated_by: memberId,
         updated_at: new Date(),
       },
     });
@@ -417,11 +426,14 @@ export class AmendmentService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(deletedBy);
+
     await this.prisma.bil_amendments.update({
       where: { id },
       data: {
         deleted_at: new Date(),
-        deleted_by: deletedBy,
+        deleted_by: member?.id ?? null,
       },
     });
 
@@ -460,15 +472,19 @@ export class AmendmentService {
       ? "pending_approval"
       : "approved";
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(submittedBy);
+    const memberId = member?.id ?? null;
+
     const updated = await this.prisma.bil_amendments.update({
       where: { id },
       data: {
         status: nextStatus,
         ...(nextStatus === "approved" && {
-          approved_by: submittedBy,
+          approved_by: memberId,
           approved_at: new Date(),
         }),
-        updated_by: submittedBy,
+        updated_by: memberId,
         updated_at: new Date(),
       },
     });
@@ -507,13 +523,17 @@ export class AmendmentService {
       );
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(approvedBy);
+    const memberId = member?.id ?? null;
+
     const updated = await this.prisma.bil_amendments.update({
       where: { id },
       data: {
         status: "approved",
-        approved_by: approvedBy,
+        approved_by: memberId,
         approved_at: new Date(),
-        updated_by: approvedBy,
+        updated_by: memberId,
         updated_at: new Date(),
       },
     });
@@ -554,14 +574,18 @@ export class AmendmentService {
       throw new ValidationError("Rejection reason is required");
     }
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(rejectedBy);
+    const memberId = member?.id ?? null;
+
     const updated = await this.prisma.bil_amendments.update({
       where: { id },
       data: {
         status: "rejected",
-        rejected_by: rejectedBy,
+        rejected_by: memberId,
         rejected_at: new Date(),
         rejection_reason: reason,
-        updated_by: rejectedBy,
+        updated_by: memberId,
         updated_at: new Date(),
       },
     });
@@ -682,6 +706,10 @@ export class AmendmentService {
         ? amendment.metadata
         : {};
 
+    // Resolve auth_user.id → adm_members.id for FK columns
+    const member = await resolveMemberId(cancelledBy);
+    const resolvedCancelledBy = member?.id ?? null;
+
     const updated = await this.prisma.bil_amendments.update({
       where: { id },
       data: {
@@ -692,7 +720,7 @@ export class AmendmentService {
           canceled_by: cancelledBy,
           canceled_at: new Date().toISOString(),
         },
-        updated_by: cancelledBy,
+        updated_by: resolvedCancelledBy,
         updated_at: new Date(),
       },
     });
