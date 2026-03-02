@@ -213,6 +213,14 @@ export interface Lead {
   // Recovery notification (V6.6)
   recovery_notification_sent_at?: string | null;
   recovery_notification_clicked_at?: string | null;
+
+  // BANT qualification (V7)
+  bant_budget?: string | null;
+  bant_authority?: string | null;
+  bant_need?: string | null;
+  bant_timeline?: string | null;
+  bant_qualified_at?: string | null;
+  bant_qualified_by?: string | null;
 }
 
 export interface LeadsApiResponse {

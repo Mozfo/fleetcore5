@@ -39,6 +39,7 @@ import {
 import { InlineActivityForm } from "./InlineActivityForm";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { DisqualifyLeadModal } from "./DisqualifyLeadModal";
+import { LeadBantSection } from "./LeadBantSection";
 import { LeadStatusActions } from "./LeadStatusActions";
 import { drawerContainerVariants } from "@/lib/animations/drawer-variants";
 import {
@@ -412,6 +413,17 @@ export function LeadDrawer({
                       leadEmail={lead.email}
                       leadPhone={lead.phone}
                       onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
+                    />
+
+                    <Separator />
+
+                    {/* BANT Qualification */}
+                    <LeadBantSection
+                      lead={currentLead || lead}
+                      onQualified={() => {
+                        setRefreshTrigger((prev) => prev + 1);
+                        onClose();
+                      }}
                     />
 
                     <Separator />

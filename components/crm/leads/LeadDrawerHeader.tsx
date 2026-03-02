@@ -161,11 +161,13 @@ export function LeadDrawerHeader({
         </motion.div>
 
         {/* Stage Badge */}
-        <motion.div variants={badgeVariants}>
-          <Badge variant="outline" className="text-xs">
-            {t(`leads.card.stage.${lead.lead_stage}`)}
-          </Badge>
-        </motion.div>
+        {lead.lead_stage && (
+          <motion.div variants={badgeVariants}>
+            <Badge variant="outline" className="text-xs">
+              {t(`leads.card.stage.${lead.lead_stage}`)}
+            </Badge>
+          </motion.div>
+        )}
 
         {/* Priority Badge */}
         {lead.priority && (

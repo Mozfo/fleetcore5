@@ -2,9 +2,9 @@
 
 ## Blocs A + B + C — Document Unique de Référence
 
-**Version :** 6.0
-**Date :** 28 février 2026
-**Statut :** 🔄 BLOC A TERMINÉ — BLOC B EN ATTENTE
+**Version :** 6.1
+**Date :** 02 mars 2026
+**Statut :** 🔄 EN COURS — Bloc B Phase B2
 **Responsable :** Mohamed (CEO/CTO)
 **Rédacteur :** Architecture Claude
 **Remplace :** TOUS les plans précédents non terminés (V5.3 phases restantes, Step 2.3 Completion, Dashboard V4, Round 4, 6I-BIS, CLT Backlog, Backlog Phase 6E)
@@ -49,220 +49,52 @@
 
 # ═══════════════════════════════════════════════
 
-# BLOC A — FERMER V5.3 PROPREMENT
+# BLOC A — FERMER V5.3 PROPREMENT ✅
 
 # ═══════════════════════════════════════════════
 
 **Objectif :** Résoudre TOUS les bugs, dettes techniques et tâches incomplètes avant de toucher au CRM.
 **Durée estimée :** 3-5 jours
+**Statut : ✅ COMPLÉTÉ** — Tag `v-bloc-a-complete`, commit `a032e77`
 **Pourquoi d'abord :** On ne construit pas un CRM enterprise sur des fondations qui ont des bugs connus.
 
 ---
 
-## PHASE A1 — CORRECTIONS ADMIN/SETTINGS (6I Round 4 + 6I-BIS)
+## PHASE A1 — CORRECTIONS ADMIN/SETTINGS (6I Round 4 + 6I-BIS) ✅
 
-**Objectif :** L'admin fonctionne correctement, UX standardisée.
-**Durée estimée :** 2-3 jours
-**Source :** PROMPT_PHASE6I_CORRECTIONS_ROUND4.md + journal 6I-BIS
+**Statut : ✅ COMPLÉTÉ** — Inclus dans tag `v-bloc-a-complete`
 
-### A1.0 — Standardisation DataTable (PRIORITÉ ABSOLUE)
-
-📌 _Source : Round 4 §0, 6I-BIS audit_
-
-| #      | Tâche                                                                                                                                                               | Statut | Commit    | Date       | Notes                                          |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- | ---------- | ---------------------------------------------- |
-| A1.0.1 | Analyser le framework DataTable du Lead Pipeline (30 min analyse, ZÉRO code) : composant wrapper, toolbar, filtres, export CSV/Excel, pagination, placement boutons | ✅     | `5a756b3` | 27/02/2026 | RAPPORT uniquement                             |
-| A1.0.2 | Présenter rapport : quels composants, quelles fonctionnalités, quel layout                                                                                          | ✅     | `5a756b3` | 27/02/2026 | VALIDATION CEO avant code                      |
-| A1.0.3 | Identifier problèmes ergonomie du Lead Pipeline lui-même (placement bouton action trop à droite)                                                                    | ✅     | `5a756b3` | 27/02/2026 | Rechercher best practices Stripe/Linear/Notion |
-| A1.0.4 | Proposer standard corrigé applicable à TOUTES les DataTables                                                                                                        | ✅     | `5a756b3` | 27/02/2026 | VALIDATION CEO                                 |
-| A1.0.5 | Appliquer standard sur Tenants list (filtres, recherche, export CSV/Excel, pagination)                                                                              | ✅     | `5a756b3` | 27/02/2026 |                                                |
-| A1.0.6 | Appliquer standard sur Members list                                                                                                                                 | ✅     | `5a756b3` | 27/02/2026 |                                                |
-| A1.0.7 | Appliquer standard sur Invitations list                                                                                                                             | ✅     | `5a756b3` | 27/02/2026 |                                                |
-| A1.0.8 | Appliquer standard corrigé sur Lead Pipeline DataTable (bouton repositionné)                                                                                        | ✅     | `5a756b3` | 27/02/2026 | Le Lead Pipeline est aussi corrigé             |
-
-**Critère de validation :** Un utilisateur qui passe de Leads → Tenants → Members → Invitations doit avoir l'impression d'être sur le MÊME type de page.
-
-### A1.1 — Phone Input
-
-📌 _Source : Round 4 §1_
-
-| #      | Tâche                                                                          | Statut | Commit    | Date       | Notes                                  |
-| ------ | ------------------------------------------------------------------------------ | ------ | --------- | ---------- | -------------------------------------- |
-| A1.1.1 | Trouver le composant PhoneInput existant dans le codebase (CRM Leads, Drivers) | ✅     | `c9032d2` | 28/02/2026 | grep PhoneInput, phone-input, intl-tel |
-| A1.1.2 | Réutiliser EXACTEMENT dans le dialog "Add Member"                              | ✅     | `c9032d2` | 28/02/2026 | NE PAS créer de nouveau composant      |
-
-### A1.2 — Placeholders trop foncés (fix global)
-
-📌 _Source : Round 4 §2 — signalé 3 fois_
-
-| #      | Tâche                                                                                    | Statut | Commit    | Date       | Notes                             |
-| ------ | ---------------------------------------------------------------------------------------- | ------ | --------- | ---------- | --------------------------------- |
-| A1.2.1 | Fix CSS global : ::placeholder { opacity: 0.4; } ou placeholder:text-muted-foreground/40 | ✅     | `5a20d93` | 27/02/2026 | TOUTES les pages Admin + Settings |
-| A1.2.2 | Vérifier visuellement sur Add Member, Create Tenant, Company Profile, Invitations        | ✅     | `5a20d93` | 27/02/2026 |                                   |
-
-### A1.3 — Add Member améliorations
-
-📌 _Source : Round 4 §3, §4_
-
-| #      | Tâche                                                             | Statut | Commit    | Date       | Notes                                    |
-| ------ | ----------------------------------------------------------------- | ------ | --------- | ---------- | ---------------------------------------- |
-| A1.3.1 | Language dropdown pré-rempli avec la locale de session (en/fr/ar) | ✅     | `c9032d2` | 28/02/2026 | useParams().locale ou cookie NEXT_LOCALE |
-| A1.3.2 | Tooltips explicatifs (icône info) sur Tenant, Role, Language      | ✅     | `c9032d2` | 28/02/2026 | Textes définis dans Round 4 §4           |
-
-### A1.4 — Invitation Email template
-
-📌 _Source : Round 4 §5_
-
-| #      | Tâche                                                                | Statut | Commit    | Date       | Notes                                |
-| ------ | -------------------------------------------------------------------- | ------ | --------- | ---------- | ------------------------------------ |
-| A1.4.1 | Identifier le template email standard FleetCore existant (Resend)    | ✅     | `c9032d2` | 28/02/2026 | grep resend, email template          |
-| A1.4.2 | Créer template invitation qui réutilise EXACTEMENT la même structure | ✅     | `c9032d2` | 28/02/2026 | Header FleetCore, bouton CTA, footer |
-
-### A1.5 — Last Login date+heure
-
-📌 _Source : Round 4 §6_
-
-| #      | Tâche                                                                 | Statut | Commit    | Date       | Notes                |
-| ------ | --------------------------------------------------------------------- | ------ | --------- | ---------- | -------------------- |
-| A1.5.1 | Modifier members-columns.tsx : format Last Login → "24/02/2026 15:42" | ✅     | `c9032d2` | 28/02/2026 | date + heure:minutes |
-
-### A1.6 — Company Profile read-only
-
-📌 _Source : Round 4 §7, §8_
-
-| #      | Tâche                                                                 | Statut | Commit    | Date       | Notes                      |
-| ------ | --------------------------------------------------------------------- | ------ | --------- | ---------- | -------------------------- |
-| A1.6.1 | Page s'ouvre en mode READ-ONLY (texte, pas d'inputs)                  | ✅     | `4f71194` | 27/02/2026 |                            |
-| A1.6.2 | Bouton "Edit" à côté du titre : `Company Profile [Edit]`              | ✅     | `4f71194` | 27/02/2026 | PAS perdu en haut à droite |
-| A1.6.3 | Clic Edit → champs deviennent inputs + Save/Cancel apparaissent       | ✅     | `4f71194` | 27/02/2026 |                            |
-| A1.6.4 | Save → retour read-only. Cancel → retour sans sauvegarder             | ✅     | `4f71194` | 27/02/2026 |                            |
-| A1.6.5 | Section Logo réduite à une seule ligne ("Logo upload available soon") | ✅     | `4f71194` | 27/02/2026 | Pas de carte vide énorme   |
-
-### A1.7 — Reset Password (CRITIQUE)
-
-📌 _Source : Round 4 §9, §10_
-
-| #      | Tâche                                                                   | Statut | Commit    | Date       | Notes                                       |
-| ------ | ----------------------------------------------------------------------- | ------ | --------- | ---------- | ------------------------------------------- |
-| A1.7.1 | Diagnostiquer pourquoi "Send Reset Link" n'envoie pas d'email           | ✅     | `436d6fe` | 27/02/2026 | Vérifier Resend config dans Better Auth     |
-| A1.7.2 | Corriger : email de reset doit être reçu                                | ✅     | `436d6fe` | 27/02/2026 | CRITIQUE — fonctionnalité cassée            |
-| A1.7.3 | Ajouter "Send Reset Link" dans menu ··· de chaque row Members DataTable | ✅     | `436d6fe` | 27/02/2026 | Action individuelle                         |
-| A1.7.4 | Implémenter bulk actions Members : Reset Password, Deactivate, Delete   | ✅     | `5a756b3` | 27/02/2026 | Quand checkboxes sélectionnées → barre bulk |
-| A1.7.5 | Implémenter bulk actions Tenants : Suspend, Delete                      | ✅     | `5a756b3` | 27/02/2026 | Même pattern                                |
-| A1.7.6 | Implémenter bulk actions Invitations : Revoke, Resend                   | ✅     | `5a756b3` | 27/02/2026 | Même pattern                                |
-
-### A1.8 — Livrable Phase A1
-
-| #      | Tâche                                      | Statut | Notes                |
-| ------ | ------------------------------------------ | ------ | -------------------- |
-| A1.8.1 | pnpm tsc --noEmit → 0 erreurs              | ✅     | `c9032d2` 28/02/2026 |
-| A1.8.2 | pnpm build → SUCCESS                       | ✅     | `c9032d2` 28/02/2026 |
-| A1.8.3 | Git tag v-phase-a1-complete                | ✅     | `c9032d2` 28/02/2026 |
-| A1.8.4 | Push + CI verte                            | ✅     | 28/02/2026           |
-| A1.8.5 | Validation CEO (parcours Settings complet) | ✅     | A3 E2E 5/5 PASS      |
+_(Détail des sous-tâches A1.0 à A1.8 : toutes validées)_
 
 ---
 
-## PHASE A2 — NETTOYAGE CLT TABLES
+## PHASE A2 — NETTOYAGE CLT TABLES ✅
 
-**Objectif :** Les tables mal renommées retournent dans leur module correct.
-**Durée estimée :** 2-3 heures
-**Source :** FLEETCORE_BACKLOG_CLT_MODULE_RESTRUCTURATION.md — Phase A
-
-📌 _CLT-A1 (clt_members → adm_members) déjà fait en session Phase 6I_
-
-| #    | Tâche                                                                                 | Statut | Commit    | Date       | Notes                                |
-| ---- | ------------------------------------------------------------------------------------- | ------ | --------- | ---------- | ------------------------------------ |
-| A2.1 | ALTER TABLE clt_invoices RENAME TO bil_tenant_invoices + FK + Prisma + code           | ✅     | `5f87877` | 28/02/2026 | ~0 rows, faible risque               |
-| A2.2 | ALTER TABLE clt_invoice_lines RENAME TO bil_tenant_invoice_lines + FK + Prisma + code | ✅     | `5f87877` | 28/02/2026 | Dépend A2.1                          |
-| A2.3 | ALTER TABLE clt_subscriptions RENAME TO bil_tenant_subscriptions + FK + Prisma + code | ✅     | `5f87877` | 28/02/2026 | ~0 rows                              |
-| A2.4 | Validation : module CLT ne contient que clt_masterdata                                | ✅     | `5f87877` | 28/02/2026 | SELECT tablename WHERE LIKE 'clt\_%' |
-| A2.5 | pnpm prisma generate → succès                                                         | ✅     | `5f87877` | 28/02/2026 |                                      |
-| A2.6 | pnpm tsc --noEmit → 0 erreurs                                                         | ✅     | `5f87877` | 28/02/2026 |                                      |
-| A2.7 | pnpm build → SUCCESS                                                                  | ✅     | `5f87877` | 28/02/2026 |                                      |
-| A2.8 | Git commit : "fix(db): revert CLT table misplacements to BIL module"                  | ✅     | `5f87877` | 28/02/2026 | tag: v-phase-a2-complete             |
+**Statut : ✅ COMPLÉTÉ** — Inclus dans tag `v-bloc-a-complete`
 
 ---
 
-## PHASE A3 — VALIDATION E2E (V5.3 Phase 7 allégée)
+## PHASE A3 — VALIDATION E2E (V5.3 Phase 7 allégée) ✅
 
-**Objectif :** S'assurer que auth, tenant isolation et Settings fonctionnent après toutes les corrections.
-**Durée estimée :** 2-3 heures
-**Source :** V5.3 Section 5 Phase 7 — 31 tests, allégé aux critiques
-
-### A3.1 — Auth flows
-
-| #      | Test                                          | Résultat attendu                                 | Statut |
-| ------ | --------------------------------------------- | ------------------------------------------------ | ------ |
-| A3.1.1 | Login email/password (Mohamed, Pierre, Ahmed) | Session OK, active_organization_id = UUID tenant | ✅     |
-| A3.1.2 | Register nouveau compte                       | 3 test users créés via seed script               | ✅     |
-| A3.1.3 | Forgot password                               | Email reset envoyé (toast success)               | ✅     |
-| A3.1.4 | Reset password                                | Bulk action "Reset Password" fonctionne          | ✅     |
-| A3.1.5 | Route protégée sans session                   | Pierre redirigé → /login sur /admin/members      | ✅     |
-
-### A3.2 — CRM fonctionnel
-
-| #      | Test               | Résultat attendu                                | Statut |
-| ------ | ------------------ | ----------------------------------------------- | ------ |
-| A3.2.1 | CRM leads visibles | Pipeline chargé, leads visibles toutes étapes   | ✅     |
-| A3.2.2 | Création lead      | 33 leads HQ, 1 Expansion, 0 Alpha Transport     | ✅     |
-| A3.2.3 | Tenant isolation   | Pierre (Alpha Transport) voit 0 leads (correct) | ✅     |
-
-### A3.3 — Settings module
-
-| #      | Test                                                            | Résultat attendu                      | Statut |
-| ------ | --------------------------------------------------------------- | ------------------------------------- | ------ |
-| A3.3.1 | Admin accède /admin/members                                     | 6 members chargés OK                  | ✅     |
-| A3.3.2 | Non-admin rejeté                                                | Pierre redirigé → login sur /admin    | ✅     |
-| A3.3.3 | Tenants, Members, Invitations, Country Routing, Company Profile | Navigation fluide, toutes pages OK    | ✅     |
-| A3.3.4 | Reset password via Settings                                     | Toast "Reset links sent to 1 members" | ✅     |
-| A3.3.5 | Invitations visibles                                            | 8 invitations dans liste              | ✅     |
-
-### A3.4 — Architecture multi-tenant
-
-| #      | Test                                                  | Résultat attendu                         | Statut |
-| ------ | ----------------------------------------------------- | ---------------------------------------- | ------ |
-| A3.4.1 | DB : 0 colonnes provider_id                           | Vérifié — migration Better Auth complète | ✅     |
-| A3.4.2 | DB : 0 colonnes clerk                                 | Vérifié — migration Better Auth complète | ✅     |
-| A3.4.3 | DB : adm_providers + adm_provider_employees SUPPRIMÉS | Vérifié                                  | ✅     |
-| A3.4.4 | DB : TOUTES tables CRM ont tenant_id                  | Vérifié — tenant isolation fonctionne    | ✅     |
-| A3.4.5 | Code : 0 référence provider_id/clerk                  | Vérifié — Better Auth partout            | ✅     |
-
-### A3.5 — Livrable Phase A3
-
-| #      | Tâche                         | Statut | Notes      |
-| ------ | ----------------------------- | ------ | ---------- |
-| A3.5.1 | pnpm build final → SUCCESS    | ✅     | 28/02/2026 |
-| A3.5.2 | Git tag v-phase-a3-complete   | ✅     | 28/02/2026 |
-| A3.5.3 | Validation CEO (E2E 5/5 PASS) | ✅     | 28/02/2026 |
+**Statut : ✅ COMPLÉTÉ** — Inclus dans tag `v-bloc-a-complete`
 
 ---
 
-## PHASE A4 — DOCUMENTATION
+## PHASE A4 — DOCUMENTATION ✅
 
-**Objectif :** Mettre à jour les documents de référence.
-**Durée estimée :** 1-2 heures
-**Source :** TD-05 (Backlog 6E), CLT-D1
-
-| #    | Tâche                                                    | Statut | Commit    | Date       | Notes             |
-| ---- | -------------------------------------------------------- | ------ | --------- | ---------- | ----------------- |
-| A4.1 | Mise à jour plan consolidé V6 — Bloc A marqué ✅ complet | ✅     | ce commit | 28/02/2026 |                   |
-| A4.2 | Seed test users script créé (scripts/seed-test-users.ts) | ✅     | `c9032d2` | 28/02/2026 | 3 users avec auth |
-| A4.3 | Git commit + tag v-bloc-a-complete                       | ✅     | ce commit | 28/02/2026 |                   |
+**Statut : ✅ COMPLÉTÉ** — Inclus dans tag `v-bloc-a-complete`
 
 ---
 
-## RÉSUMÉ BLOC A
+## RÉSUMÉ BLOC A ✅
 
-| Phase            | Description                                   | Durée                     | Prérequis |
-| ---------------- | --------------------------------------------- | ------------------------- | --------- |
-| **A1**           | Corrections Admin/Settings (Round 4 + 6I-BIS) | ✅ 2 jours                | —         |
-| **A2**           | Nettoyage tables CLT → BIL                    | ✅ 1h                     | A1        |
-| **A3**           | Validation E2E allégée (V5.3 Phase 7)         | ✅ 2h                     | A1 + A2   |
-| **A4**           | Documentation plan consolidé                  | ✅ 30min                  | A2 + A3   |
-| **TOTAL BLOC A** |                                               | **✅ TERMINÉ 28/02/2026** |           |
-
-**BLOC A TERMINÉ :** Fondations propres. Admin Settings fonctionnel, bulk actions, DataTable standardisé, DB cohérente (CLT→BIL), 3 test users avec auth, E2E 5/5 PASS. Prêt pour Bloc B.
+| Phase            | Description                                   | Durée         | Statut                 |
+| ---------------- | --------------------------------------------- | ------------- | ---------------------- |
+| **A1**           | Corrections Admin/Settings (Round 4 + 6I-BIS) | 2-3 jours     | ✅                     |
+| **A2**           | Nettoyage tables CLT → BIL                    | 2-3h          | ✅                     |
+| **A3**           | Validation E2E allégée (V5.3 Phase 7)         | 2-3h          | ✅                     |
+| **A4**           | Documentation (SUPABASE_SCHEMA_REF + seeds)   | 1-2h          | ✅                     |
+| **TOTAL BLOC A** |                                               | **3-5 jours** | ✅ `v-bloc-a-complete` |
 
 ---
 
@@ -275,127 +107,102 @@
 **Objectif :** Implémenter le CRM standard Salesforce BANT tel que spécifié dans V7 FINALE.
 **Durée estimée :** 20-25 jours ouvrés
 **Référence :** FLEETCORE_CRM_SPECIFICATION_V7_FINALE.md
-**Prérequis :** Bloc A complété et validé.
+**Prérequis :** Bloc A complété et validé. ✅
 **Base :** FLEETCORE_CRM_EXECUTION_PLAN_V1.md enrichi avec les tâches des plans absorbés.
 
 ---
 
-## PHASE B0 — AUDIT DU CODE EXISTANT
+## PHASE B0 — AUDIT DU CODE EXISTANT ✅
 
 **Objectif :** Cartographier l'état réel du code avant toute modification.
-**Prérequis :** Bloc A complété.
+**Statut : ✅ COMPLÉTÉ** — Commit `f94877f`
 **Durée estimée :** 1 jour.
 
-### B0.1 Audit Lead Module
-
-| #       | Tâche                                                                                                              | Statut | Commit | Date | Notes                  |
-| ------- | ------------------------------------------------------------------------------------------------------------------ | ------ | ------ | ---- | ---------------------- |
-| B0.1.1  | Identifier TOUS les fichiers impliqués dans le Lead Module (services, hooks, actions, composants, routes API)      | ⬜     |        |      |                        |
-| B0.1.2  | Lister tous les statuts lead actuellement définis dans le code (crm_settings, Zod schemas, enums, useLeadStatuses) | ⬜     |        |      |                        |
-| B0.1.3  | Lister toutes les transitions autorisées actuellement codées (transitions_to dans crm_settings)                    | ⬜     |        |      |                        |
-| B0.1.4  | Identifier l'implémentation CPT existante (fichiers, fonctions, scoring) → À SUPPRIMER                             | ⬜     |        |      | Remplacé par BANT      |
-| B0.1.5  | Identifier les webhooks Cal.com existants (route.ts, handlers, types) → À SUPPRIMER                                | ⬜     |        |      | Cal.com décommissionné |
-| B0.1.6  | Vérifier l'état réel du Kanban Lead (colonnes affichées, hook useLeadsKanban, filtres)                             | ⬜     |        |      |                        |
-| B0.1.7  | Documenter les Lead Actions existantes (LeadStatusActions.tsx, LeadContextMenu.tsx, LeadDrawer.tsx)                | ⬜     |        |      |                        |
-| B0.1.8  | Vérifier l'état des notifications Lead (N1-N10) — lesquelles fonctionnent réellement                               | ⬜     |        |      |                        |
-| B0.1.9  | 📌 Identifier les 10 fichiers Kanban WIP non commités (V5.3 0-WIP)                                                 | ⬜     |        |      | _Step 2.3 Completion_  |
-| B0.1.10 | 📌 Vérifier l'état des fonctionnalités fake/décoratives identifiées en 6I-BIS                                      | ⬜     |        |      | _6I-BIS audit_         |
-
-### B0.2 Audit Opportunity Module
-
-| #      | Tâche                                                                             | Statut | Commit | Date | Notes               |
-| ------ | --------------------------------------------------------------------------------- | ------ | ------ | ---- | ------------------- |
-| B0.2.1 | Identifier TOUS les fichiers impliqués dans le Opportunity Module                 | ⬜     |        |      |                     |
-| B0.2.2 | Lister tous les stages opportunity actuellement définis dans le code              | ⬜     |        |      |                     |
-| B0.2.3 | Vérifier l'état du Kanban Opportunity (existe-t-il ? fonctionnel ?)               | ⬜     |        |      |                     |
-| B0.2.4 | Vérifier l'état de la conversion Lead → Opportunity (T10 actuel)                  | ⬜     |        |      |                     |
-| B0.2.5 | Identifier les composants Opportunity existants (pages, drawers, cards)           | ⬜     |        |      |                     |
-| B0.2.6 | 📌 Identifier l'état du God Component OpportunityDrawer (1021L) — éclaté ou pas ? | ⬜     |        |      | _Reshaping Phase 3_ |
-
-### B0.3 Audit Quote Module
-
-| #      | Tâche                                                                          | Statut | Commit | Date | Notes |
-| ------ | ------------------------------------------------------------------------------ | ------ | ------ | ---- | ----- |
-| B0.3.1 | Vérifier que crm_quotes, crm_quote_items, crm_quote_approvals existent en base | ⬜     |        |      |       |
-| B0.3.2 | Vérifier que hq_pricing_rules existe et est peuplé                             | ⬜     |        |      |       |
-| B0.3.3 | Vérifier l'état du code Quote (services, API routes, composants)               | ⬜     |        |      |       |
-| B0.3.4 | Vérifier si les règles RM-QOT-001 à RM-QOT-005 sont implémentées               | ⬜     |        |      |       |
-
-### B0.4 Audit Cross-Module
-
-📌 _Source : Dashboard V4, Step 2.3 Completion, Reshaping_
-
-| #      | Tâche                                                                  | Statut | Commit | Date | Notes                  |
-| ------ | ---------------------------------------------------------------------- | ------ | ------ | ---- | ---------------------- |
-| B0.4.1 | Vérifier l'état du Dashboard CRM existant (route actuelle, composants) | ⬜     |        |      | _Dashboard V4 Step 1_  |
-| B0.4.2 | Identifier les templates email Resend existants et fonctionnels        | ⬜     |        |      | _Step 2.3 item 15_     |
-| B0.4.3 | Vérifier si crm_lead_activities fonctionne (insertion, affichage)      | ⬜     |        |      | _Step 2.3 items 18-19_ |
-| B0.4.4 | Lister les CRON jobs existants (lead nurturing, quote expiry)          | ⬜     |        |      |                        |
-
-### B0.5 Livrable Phase B0
-
-| #      | Tâche                                                        | Statut | Notes              |
-| ------ | ------------------------------------------------------------ | ------ | ------------------ |
-| B0.5.1 | Document AUDIT_CODE_CRM_ETAT_REEL.md produit par Claude Code | ⬜     | Inventaire complet |
-| B0.5.2 | Validation CEO de l'audit                                    | ⬜     |                    |
+_(Détail des sous-tâches B0.1 à B0.5 : toutes validées)_
 
 ---
 
-## PHASE B1 — FONDATIONS LEAD (pas de changement visible utilisateur)
+## PHASE B1 — FONDATIONS LEAD + KANBAN V7 STABLE ✅
 
-**Objectif :** DB et backend prêts pour le nouveau pipeline Lead BANT.
-**Prérequis :** Phase B0 complétée et validée.
+**Objectif :** DB et backend prêts pour le nouveau pipeline Lead BANT + Kanban 3 colonnes opérationnel.
+**Statut : ✅ COMPLÉTÉ** — Tags `v-crm-phase1` + `v-crm-kanban-v7-stable`
 **Durée estimée :** 2 jours.
 
-### B1.1 Migration Base de Données
+### B1.1 Migration Base de Données ✅
 
-| #      | Tâche                                                                                                                  | Statut | Commit | Date | Notes                       |
-| ------ | ---------------------------------------------------------------------------------------------------------------------- | ------ | ------ | ---- | --------------------------- |
-| B1.1.1 | Ajouter 4 champs BANT sur crm_leads (SQL Supabase) : bant_budget, bant_authority, bant_need, bant_timeline VARCHAR(20) | ⬜     |        |      |                             |
-| B1.1.2 | Ajouter bant_qualified_at (TIMESTAMPTZ), bant_qualified_by (UUID FK adm_members)                                       | ⬜     |        |      |                             |
-| B1.1.3 | Ajouter opportunity_id (UUID FK crm_opportunities) si non existant                                                     | ⬜     |        |      | Lien lead → opportunity     |
-| B1.1.4 | Prisma schema mise à jour manuelle                                                                                     | ⬜     |        |      | JAMAIS db push/pull/migrate |
-| B1.1.5 | pnpm prisma generate                                                                                                   | ⬜     |        |      |                             |
-| B1.1.6 | pnpm tsc --noEmit → 0 erreurs                                                                                          | ⬜     |        |      |                             |
+| #      | Tâche                                                                                                                  | Statut | Commit  | Date  | Notes                       |
+| ------ | ---------------------------------------------------------------------------------------------------------------------- | ------ | ------- | ----- | --------------------------- |
+| B1.1.1 | Ajouter 4 champs BANT sur crm_leads (SQL Supabase) : bant_budget, bant_authority, bant_need, bant_timeline VARCHAR(20) | ✅     | 17d2913 | 01/03 |                             |
+| B1.1.2 | Ajouter bant_qualified_at (TIMESTAMPTZ), bant_qualified_by (UUID FK adm_members)                                       | ✅     | 17d2913 | 01/03 |                             |
+| B1.1.3 | Ajouter opportunity_id (UUID FK crm_opportunities) si non existant                                                     | ✅     | 17d2913 | 01/03 | Lien lead → opportunity     |
+| B1.1.4 | Prisma schema mise à jour manuelle                                                                                     | ✅     | 17d2913 | 01/03 | JAMAIS db push/pull/migrate |
+| B1.1.5 | pnpm prisma generate                                                                                                   | ✅     | 17d2913 | 01/03 |                             |
+| B1.1.6 | pnpm tsc --noEmit → 0 erreurs                                                                                          | ✅     | 17d2913 | 01/03 |                             |
 
-### B1.2 Configuration Statuts Lead
+### B1.2 Configuration Statuts Lead ✅
 
-| #      | Tâche                                                                      | Statut | Commit | Date | Notes                                 |
-| ------ | -------------------------------------------------------------------------- | ------ | ------ | ---- | ------------------------------------- |
-| B1.2.1 | Ajouter status "qualified" dans crm_settings                               | ⬜     |        |      |                                       |
-| B1.2.2 | Mettre à jour Zod schema pour inclure "qualified"                          | ⬜     |        |      |                                       |
-| B1.2.3 | Mettre à jour useLeadStatuses hook                                         | ⬜     |        |      |                                       |
-| B1.2.4 | Configurer transitions_to : callback_requested → qualified                 | ⬜     |        |      | LT4                                   |
-| B1.2.5 | Configurer transitions_to : qualified → converted, nurturing, disqualified | ⬜     |        |      | LT7, LT9, LT10                        |
-| B1.2.6 | SUPPRIMER status "lost" du module Lead                                     | ⬜     |        |      | Standard Salesforce                   |
-| B1.2.7 | SUPPRIMER statuts "demo", "proposal_sent"                                  | ⬜     |        |      | Remplacés par stages Opportunity      |
-| B1.2.8 | Migrer leads existants en status demo/proposal_sent                        | ⬜     |        |      | ❌ DÉCISION CEO si données existent   |
-| B1.2.9 | 📌 SUPPRIMER CPT scoring (service, hooks, composants)                      | ⬜     |        |      | _Step 2.3 item 7_ — remplacé par BANT |
+| #      | Tâche                                                                      | Statut | Commit  | Date  | Notes                                 |
+| ------ | -------------------------------------------------------------------------- | ------ | ------- | ----- | ------------------------------------- |
+| B1.2.1 | Ajouter status "qualified" dans crm_settings                               | ✅     | 17d2913 | 01/03 |                                       |
+| B1.2.2 | Mettre à jour Zod schema pour inclure "qualified"                          | ✅     | 17d2913 | 01/03 |                                       |
+| B1.2.3 | Mettre à jour useLeadStatuses hook                                         | ✅     | 17d2913 | 01/03 |                                       |
+| B1.2.4 | Configurer transitions_to : callback_requested → qualified                 | ✅     | 17d2913 | 01/03 | LT4                                   |
+| B1.2.5 | Configurer transitions_to : qualified → converted, nurturing, disqualified | ✅     | 17d2913 | 01/03 | LT7, LT9, LT10                        |
+| B1.2.6 | SUPPRIMER status "lost" du module Lead                                     | ✅     | 17d2913 | 01/03 | Standard Salesforce                   |
+| B1.2.7 | SUPPRIMER statuts "demo", "proposal_sent"                                  | ✅     | 17d2913 | 01/03 | Remplacés par stages Opportunity      |
+| B1.2.8 | Migrer leads existants en status demo/proposal_sent                        | ✅     | 17d2913 | 01/03 | 27 leads migrés vers statuts V7       |
+| B1.2.9 | 📌 SUPPRIMER CPT scoring (service, hooks, composants)                      | ✅     | 17d2913 | 01/03 | _Step 2.3 item 7_ — remplacé par BANT |
 
-### B1.3 Validation transitions_to backend
+### B1.3 Validation transitions_to backend ✅
 
-| #      | Tâche                                                              | Statut | Commit | Date | Notes                              |
-| ------ | ------------------------------------------------------------------ | ------ | ------ | ---- | ---------------------------------- |
-| B1.3.1 | Identifier lead.actions.ts (updateLeadStatusAction)                | ⬜     |        |      | Écart audit V7 : pas de validation |
-| B1.3.2 | Ajouter validation transitions_to AVANT changement statut          | ⬜     |        |      |                                    |
-| B1.3.3 | Tester transitions invalides bloquées (new → qualified = interdit) | ⬜     |        |      |                                    |
+| #      | Tâche                                                              | Statut | Commit  | Date  | Notes                                      |
+| ------ | ------------------------------------------------------------------ | ------ | ------- | ----- | ------------------------------------------ |
+| B1.3.1 | Identifier lead.actions.ts (updateLeadStatusAction)                | ✅     | 17d2913 | 01/03 | Écart audit V7 corrigé                     |
+| B1.3.2 | Ajouter validation transitions_to AVANT changement statut          | ✅     | 17d2913 | 01/03 | 🔧 Fix: allowed_transitions→transitions_to |
+| B1.3.3 | Tester transitions invalides bloquées (new → qualified = interdit) | ✅     | 17d2913 | 01/03 |                                            |
 
-### B1.4 Livrable Phase B1
+### B1.4 Livrable Phase B1 ✅
 
-| #      | Tâche                                                | Statut | Notes |
-| ------ | ---------------------------------------------------- | ------ | ----- |
-| B1.4.1 | Git tag v-crm-phase1                                 | ⬜     |       |
-| B1.4.2 | Push + CI verte                                      | ⬜     |       |
-| B1.4.3 | SELECT DISTINCT status FROM crm_leads → bons statuts | ⬜     |       |
-| B1.4.4 | Validation CEO                                       | ⬜     |       |
+| #      | Tâche                                                | Statut | Notes                  |
+| ------ | ---------------------------------------------------- | ------ | ---------------------- |
+| B1.4.1 | Git tag v-crm-phase1                                 | ✅     | commit 17d2913         |
+| B1.4.2 | Push + CI verte                                      | ✅     |                        |
+| B1.4.3 | SELECT DISTINCT status FROM crm_leads → bons statuts | ✅     | 7 statuts V7 confirmés |
+| B1.4.4 | Validation CEO                                       | ✅     |                        |
+
+### B1.5 Kanban V7 Stabilisation + Performance ✅
+
+**Ajouté post-B1** — Kanban 3 colonnes + outcomes bar + 4 optimisations performance.
+**Tag :** `v-crm-kanban-v7-stable`, commit `a4ca69c`
+
+| #       | Tâche                                                                         | Statut | Commit  | Date  | Notes                            |
+| ------- | ----------------------------------------------------------------------------- | ------ | ------- | ----- | -------------------------------- |
+| B1.5.1  | Kanban 3 colonnes : Email Verified, Callback Requested, Qualified             | ✅     | a4ca69c | 02/03 | Décision CEO : 3 colonnes, pas 2 |
+| B1.5.2  | Barre outcomes : Nurturing (count) / Disqualified (count) avec clic-to-filter | ✅     | a4ca69c | 02/03 |                                  |
+| B1.5.3  | Compteurs badges colorés par colonne                                          | ✅     | a4ca69c | 02/03 |                                  |
+| B1.5.4  | Lead codes inline (badge pill)                                                | ✅     | a4ca69c | 02/03 |                                  |
+| B1.5.5  | Fix1 perf : SWR fallbackData + dedup 5min (0 requête bloquante)               | ✅     | a4ca69c | 02/03 |                                  |
+| B1.5.6  | Fix2 perf : SELECT partiel Kanban (90→15 champs via meta.select)              | ✅     | a4ca69c | 02/03 |                                  |
+| B1.5.7  | Fix3/3B perf : Outcome click filtre via React props (zéro URL pollution)      | ✅     | a4ca69c | 02/03 | 🔧 2 itérations                  |
+| B1.5.8  | Fix4 perf : Static imports remplacent next/dynamic ssr:false                  | ✅     | a4ca69c | 02/03 |                                  |
+| B1.5.9  | Cal.com cleanup : 20 fichiers supprimés                                       | ✅     | 17d2913 | 01/03 | Décommissionnement partiel       |
+| B1.5.10 | tsc + build PASS                                                              | ✅     | a4ca69c | 02/03 |                                  |
 
 ---
 
-## PHASE B2 — UI LEAD BANT
+## PHASE B2 — UI LEAD BANT 🔄
 
-**Objectif :** Qualification BANT + Kanban 2 colonnes.
-**Prérequis :** Phase B1.
+**Objectif :** Formulaire qualification BANT dans le Drawer + finalisation actions Lead V7.
+**Prérequis :** Phase B1. ✅
 **Durée estimée :** 2 jours.
+**Statut :** 🔄 EN COURS
+
+**⚠️ CHANGEMENT vs plan initial :** Le Kanban était prévu à 2 colonnes (B2.2). Le CEO a décidé **3 colonnes** (email_verified, callback_requested, qualified). Le Kanban 3 colonnes + outcomes + perf sont **déjà livrés** dans B1.5. La phase B2 se concentre donc sur :
+
+- B2.1 : Formulaire BANT (pas encore fait)
+- B2.2 : Kanban — items restants uniquement (drag & drop, tooltips)
+- B2.3 : Actions Lead V7 (pas encore fait)
+- B2.4 : Nettoyage affichage (CPT scoring encore visible sur cartes)
 
 ### B2.1 Formulaire BANT
 
@@ -410,18 +217,18 @@
 | B2.1.7 | Gestion 3/4 (nurturing) et ≤2/4 (disqualify, sauf fleet_size >50)        | ⬜     |        |      |                           |
 | B2.1.8 | Labels UI EXPLICITES pour utilisateur métier                             | ⬜     |        |      | POSTURE ARCHITECTE SENIOR |
 
-### B2.2 Kanban Lead — 2 colonnes
+### B2.2 Kanban Lead — 3 colonnes
 
-| #      | Tâche                                                           | Statut | Commit | Date | Notes             |
-| ------ | --------------------------------------------------------------- | ------ | ------ | ---- | ----------------- |
-| B2.2.1 | Identifier hook useLeadsKanban et composant Kanban              | ⬜     |        |      |                   |
-| B2.2.2 | Modifier : 2 colonnes seulement (callback_requested, qualified) | ⬜     |        |      |                   |
-| B2.2.3 | Barre outcomes : Nurturing (count) / Disqualified (count)       | ⬜     |        |      |                   |
-| B2.2.4 | Leads new/email_verified HORS Kanban (Table uniquement)         | ⬜     |        |      |                   |
-| B2.2.5 | Drag & drop avec validation transitions autorisées              | ⬜     |        |      |                   |
-| B2.2.6 | Compteurs par colonne                                           | ⬜     |        |      |                   |
-| B2.2.7 | 📌 Popup au DROP pas au DRAG                                    | ⬜     |        |      | _Step 2.3 item 8_ |
-| B2.2.8 | 📌 Infobulles (tooltips) sur icônes Rapport d'Activité          | ⬜     |        |      | _Step 2.3 item 4_ |
+| #      | Tâche                                                                    | Statut | Commit  | Date  | Notes                     |
+| ------ | ------------------------------------------------------------------------ | ------ | ------- | ----- | ------------------------- |
+| B2.2.1 | Identifier hook useLeadsKanban et composant Kanban                       | ✅     | a4ca69c | 02/03 | Fait en B1.5              |
+| B2.2.2 | 3 colonnes : Email Verified, Callback Requested, Qualified               | ✅     | a4ca69c | 02/03 | Décision CEO : 3 colonnes |
+| B2.2.3 | Barre outcomes : Nurturing (count) / Disqualified (count)                | ✅     | a4ca69c | 02/03 | Fait en B1.5              |
+| B2.2.4 | ~~Leads new/email_verified HORS Kanban~~ → email_verified DANS le Kanban | ✅     | a4ca69c | 02/03 | Décision CEO changée      |
+| B2.2.5 | Drag & drop avec validation transitions autorisées                       | ⬜     |         |       | À vérifier/implémenter    |
+| B2.2.6 | Compteurs par colonne                                                    | ✅     | a4ca69c | 02/03 | Fait en B1.5              |
+| B2.2.7 | 📌 Popup au DROP pas au DRAG                                             | ⬜     |         |       | _Step 2.3 item 8_         |
+| B2.2.8 | 📌 Infobulles (tooltips) sur icônes Rapport d'Activité                   | ⬜     |         |       | _Step 2.3 item 4_         |
 
 ### B2.3 Actions Lead — Adaptation
 
@@ -435,15 +242,26 @@
 | B2.3.6 | 📌 Croix (X) correctement placée dans le popup                          | ⬜     |        |      | _Step 2.3 item 1_      |
 | B2.3.7 | 📌 Section PROCHAINES ÉTAPES — couleur distincte, zone d'action visible | ⬜     |        |      | _Step 2.3 item 5_      |
 
-### B2.4 Livrable Phase B2
+### B2.4 Nettoyage affichage
 
-| #      | Tâche                               | Statut | Notes |
-| ------ | ----------------------------------- | ------ | ----- |
-| B2.4.1 | Git tag v-crm-phase2                | ⬜     |       |
-| B2.4.2 | Push + CI verte                     | ⬜     |       |
-| B2.4.3 | Test : Kanban Lead 2 colonnes       | ⬜     |       |
-| B2.4.4 | Test : BANT form → qualification OK | ⬜     |       |
-| B2.4.5 | Validation CEO                      | ⬜     |       |
+| #      | Tâche                                                             | Statut | Commit | Date | Notes            |
+| ------ | ----------------------------------------------------------------- | ------ | ------ | ---- | ---------------- |
+| B2.4.1 | Supprimer score CPT des cartes Kanban (score "90" encore visible) | ⬜     |        |      | Audit B2.0-VERIF |
+| B2.4.2 | Uniformiser l'affichage des cartes entre les 3 colonnes           | ⬜     |        |      |                  |
+| B2.4.3 | Supprimer sections CPT du Lead Drawer (ScoreGauge, etc.)          | ⬜     |        |      |                  |
+| B2.4.4 | Recalibrer indicateurs overdue pour SLA V7                        | ⬜     |        |      |                  |
+
+### B2.5 Livrable Phase B2
+
+| #      | Tâche                                                       | Statut | Notes |
+| ------ | ----------------------------------------------------------- | ------ | ----- |
+| B2.5.1 | Git tag v-crm-phase2                                        | ⬜     |       |
+| B2.5.2 | Push + CI verte                                             | ⬜     |       |
+| B2.5.3 | Test : Kanban Lead 3 colonnes fonctionnel                   | ⬜     |       |
+| B2.5.4 | Test : BANT form → qualification OK                         | ⬜     |       |
+| B2.5.5 | Test : Drag & drop respecte transitions_to                  | ⬜     |       |
+| B2.5.6 | Test : Actions V7 (pas de Book Demo, pas de Not Interested) | ⬜     |       |
+| B2.5.7 | Validation CEO                                              | ⬜     |       |
 
 ---
 
@@ -529,19 +347,21 @@
 **Prérequis :** Phase B4.
 **Durée estimée :** 2-3 jours.
 
+**Note :** Décommissionnement partiel déjà fait en B1.5.9 (20 fichiers Cal.com supprimés). Reste à vérifier zéro référence + wizard simplifié + solution calendrier Gmail.
+
 ### B5.1 Suppression Cal.com
 
 📌 _Source : Décision CEO 27/02/2026 + Step 2.3 items 13, 16, 17, 18_
 
-| #      | Tâche                                                | Statut | Commit | Date | Notes                       |
-| ------ | ---------------------------------------------------- | ------ | ------ | ---- | --------------------------- |
-| B5.1.1 | grep récursif Cal.com → identifier TOUS les fichiers | ⬜     |        |      |                             |
-| B5.1.2 | Retirer Cal.com du wizard prospect                   | ⬜     |        |      |                             |
-| B5.1.3 | Retirer webhooks Cal.com (route.ts handlers)         | ⬜     |        |      |                             |
-| B5.1.4 | Retirer dépendances npm Cal.com                      | ⬜     |        |      |                             |
-| B5.1.5 | Retirer variables d'environnement Cal.com            | ⬜     |        |      |                             |
-| B5.1.6 | T5 : wizard complete → TOUJOURS callback_requested   | ⬜     |        |      | Plus de branchement booking |
-| B5.1.7 | pnpm build → SUCCESS après suppression               | ⬜     |        |      |                             |
+| #      | Tâche                                                | Statut | Commit  | Date  | Notes                       |
+| ------ | ---------------------------------------------------- | ------ | ------- | ----- | --------------------------- |
+| B5.1.1 | grep récursif Cal.com → identifier TOUS les fichiers | ✅     | 17d2913 | 01/03 | Fait en B1.5.9              |
+| B5.1.2 | Retirer Cal.com du wizard prospect                   | ⬜     |         |       | À vérifier post-suppression |
+| B5.1.3 | Retirer webhooks Cal.com (route.ts handlers)         | ✅     | 17d2913 | 01/03 | 20 fichiers supprimés       |
+| B5.1.4 | Retirer dépendances npm Cal.com                      | ⬜     |         |       | Vérifier package.json       |
+| B5.1.5 | Retirer variables d'environnement Cal.com            | ⬜     |         |       | .env files                  |
+| B5.1.6 | T5 : wizard complete → TOUJOURS callback_requested   | ⬜     |         |       | Plus de branchement booking |
+| B5.1.7 | pnpm build → SUCCESS après suppression               | ⬜     |         |       |                             |
 
 ### B5.2 Solution Custom Calendrier Gmail
 
@@ -758,19 +578,19 @@
 
 ## RÉSUMÉ BLOC B
 
-| Phase            | Description                                   | Durée           | Prérequis      |
-| ---------------- | --------------------------------------------- | --------------- | -------------- |
-| **B0**           | Audit code existant                           | 1 jour          | Bloc A complet |
-| **B1**           | Fondations Lead (DB + backend BANT)           | 2 jours         | B0             |
-| **B2**           | UI Lead BANT (formulaire + Kanban 2 col.)     | 2 jours         | B1             |
-| **B3**           | Conversion enrichie (3 entités)               | 2 jours         | B2             |
-| **B4**           | Pipeline Opportunity (4 colonnes)             | 2 jours         | B3             |
-| **B5**           | Cal.com décommissionnement + calendrier Gmail | 2-3 jours       | B4             |
-| **B6**           | Quote-to-Cash (Accept/Reject/Stripe)          | 3-4 jours       | B4             |
-| **B7**           | Kanban temps réel                             | 1-2 jours       | B6             |
-| **B8**           | Notifications Opportunity (11 templates)      | 2-3 jours       | B6             |
-| **B9**           | Page détail + Notes + Tags + Import/Export    | 3-4 jours       | B1-B8          |
-| **TOTAL BLOC B** |                                               | **20-25 jours** |                |
+| Phase            | Description                                            | Durée           | Prérequis      | Statut                                       |
+| ---------------- | ------------------------------------------------------ | --------------- | -------------- | -------------------------------------------- |
+| **B0**           | Audit code existant                                    | 1 jour          | Bloc A complet | ✅ `f94877f`                                 |
+| **B1**           | Fondations Lead (DB + backend BANT + Kanban V7 + perf) | 2 jours         | B0             | ✅ `v-crm-phase1` + `v-crm-kanban-v7-stable` |
+| **B2**           | UI Lead BANT (formulaire + actions V7 + nettoyage)     | 2 jours         | B1             | 🔄 EN COURS                                  |
+| **B3**           | Conversion enrichie (3 entités)                        | 2 jours         | B2             | ⬜                                           |
+| **B4**           | Pipeline Opportunity (4 colonnes)                      | 2 jours         | B3             | ⬜                                           |
+| **B5**           | Cal.com décommissionnement + calendrier Gmail          | 2-3 jours       | B4             | ⬜ (partiel B1.5.9)                          |
+| **B6**           | Quote-to-Cash (Accept/Reject/Stripe)                   | 3-4 jours       | B4             | ⬜                                           |
+| **B7**           | Kanban temps réel                                      | 1-2 jours       | B6             | ⬜                                           |
+| **B8**           | Notifications Opportunity (11 templates)               | 2-3 jours       | B6             | ⬜                                           |
+| **B9**           | Page détail + Notes + Tags + Import/Export             | 3-4 jours       | B1-B8          | ⬜                                           |
+| **TOTAL BLOC B** |                                                        | **20-25 jours** |                |                                              |
 
 **Notes :** B5 et B6 sont indépendants (peuvent être parallélisés). B7 et B8 dépendent de B6 mais sont indépendants entre eux.
 
@@ -901,42 +721,43 @@
 
 # ═══════════════════════════════════════════════
 
-| Bloc      | Description                                                 | Durée           | Début        |
-| --------- | ----------------------------------------------------------- | --------------- | ------------ |
-| **A**     | ✅ Fermer V5.3 (admin fixes, CLT cleanup, E2E, docs)        | ✅ TERMINÉ      | 28/02/2026   |
-| **B**     | CRM Framework Standard (BANT, Lead/Opp, Quote, Stripe)      | 20-25 jours     | Après Bloc A |
-| **C**     | Enrichissements (Dashboard, SLA, CRM Client, Module Client) | 10-15 jours     | Après Bloc B |
-| **TOTAL** |                                                             | **33-45 jours** |              |
+| Bloc      | Description                                                 | Durée           | Statut                 |
+| --------- | ----------------------------------------------------------- | --------------- | ---------------------- |
+| **A**     | Fermer V5.3 (admin fixes, CLT cleanup, E2E, docs)           | 3-5 jours       | ✅ `v-bloc-a-complete` |
+| **B**     | CRM Framework Standard (BANT, Lead/Opp, Quote, Stripe)      | 20-25 jours     | 🔄 B2 en cours         |
+| **C**     | Enrichissements (Dashboard, SLA, CRM Client, Module Client) | 10-15 jours     | ⬜                     |
+| **TOTAL** |                                                             | **33-45 jours** |                        |
 
 ---
 
 ## DÉCISIONS CEO REQUISES (BLOQUANTES)
 
-| #   | Question                                                                 | Quand    | Impact             |
-| --- | ------------------------------------------------------------------------ | -------- | ------------------ |
-| D1  | Leads existants en status demo/proposal_sent → migrer vers quel statut ? | Phase B1 | Migration DB       |
-| D2  | Design UX solution custom calendrier Gmail                               | Phase B5 | Remplace Cal.com   |
-| D3  | Durées SLA par statut lead et par stage opportunity                      | Phase C2 | Rotting indicators |
-| D4  | clt_masterdata : enrichir ou nouvelle table clt_clients ?                | Phase C5 | Architecture DB    |
-| D5  | Champs légaux dynamiques : colonnes SQL ou JSONB ?                       | Phase C5 | Flexibilité        |
+| #   | Question                                                                 | Quand    | Impact             | Statut                      |
+| --- | ------------------------------------------------------------------------ | -------- | ------------------ | --------------------------- |
+| D1  | Leads existants en status demo/proposal_sent → migrer vers quel statut ? | Phase B1 | Migration DB       | ✅ RÉSOLU — 27 leads migrés |
+| D2  | Design UX solution custom calendrier Gmail                               | Phase B5 | Remplace Cal.com   | ⬜                          |
+| D3  | Durées SLA par statut lead et par stage opportunity                      | Phase C2 | Rotting indicators | ⬜                          |
+| D4  | clt_masterdata : enrichir ou nouvelle table clt_clients ?                | Phase C5 | Architecture DB    | ⬜                          |
+| D5  | Champs légaux dynamiques : colonnes SQL ou JSONB ?                       | Phase C5 | Flexibilité        | ⬜                          |
+| D6  | Kanban Lead : 3 colonnes (email_verified incluse)                        | Phase B1 | Kanban layout      | ✅ RÉSOLU — 3 colonnes      |
 
 ---
 
 ## SÉQUENCE VISUELLE
 
 ```
-BLOC A (3-5j)
+BLOC A (3-5j) ✅ COMPLÉTÉ
 ├── A1 : Admin fixes + DataTable standardisation  ─────┐
 ├── A2 : CLT tables cleanup                            │
-├── A3 : Validation E2E                                │ FONDATIONS
+├── A3 : Validation E2E                                │ FONDATIONS ✅
 ├── A4 : Documentation                           ─────┘
     ↓
-BLOC B (20-25j)
-├── B0 : Audit code CRM existant                 ─────┐
-├── B1 : Fondations Lead BANT (DB + backend)           │
-├── B2 : UI Lead (BANT form + Kanban 2 col.)           │
-├── B3 : Conversion 3 entités                          │ CRM CORE
-├── B4 : Pipeline Opportunity (4 col.)                 │
+BLOC B (20-25j) 🔄 EN COURS
+├── B0 : Audit code CRM existant                 ───── ✅
+├── B1 : Fondations Lead BANT + Kanban V7 + Perf ───── ✅
+├── B2 : UI Lead (BANT form + actions V7)         ───── 🔄 EN COURS
+├── B3 : Conversion 3 entités                          │
+├── B4 : Pipeline Opportunity (4 col.)                 │ CRM CORE
 ├── B5 : Cal.com → Gmail calendrier    ──┐             │
 ├── B6 : Quote-to-Cash (Stripe)        ──┤ parallèle   │
 ├── B7 : Kanban temps réel               │             │
@@ -955,10 +776,14 @@ BLOC C (10-15j)
 
 ## HISTORIQUE DES MISES À JOUR
 
-| Date       | Bloc | Phase | Tâche    | Modification                                                                                                 | Par                 |
-| ---------- | ---- | ----- | -------- | ------------------------------------------------------------------------------------------------------------ | ------------------- |
-| 28/02/2026 | —    | —     | Création | Document consolidé V6 — fusionne 7 plans                                                                     | Architecture Claude |
-| 28/02/2026 | A    | A1-A4 | Toutes   | BLOC A TERMINÉ — DataTable standard, UX fixes, reset password, data enrichment, CLT→BIL rename, E2E 5/5 PASS | Claude              |
+| Date       | Bloc | Phase | Tâche            | Modification                                                                                                                               | Par                 |
+| ---------- | ---- | ----- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| 28/02/2026 | —    | —     | Création         | Document consolidé V6 — fusionne 7 plans                                                                                                   | Architecture Claude |
+| 01/03/2026 | A    | A1-A4 | Bloc A complet   | Tag `v-bloc-a-complete`, commit `a032e77`                                                                                                  | Mohamed             |
+| 01/03/2026 | B    | B0    | Audit CRM        | Commit `f94877f` — audit complet code CRM                                                                                                  | Mohamed             |
+| 01/03/2026 | B    | B1    | Fondations BANT  | Tag `v-crm-phase1`, commit `17d2913` — DB, statuts V7, transitions, migration 27 leads, Cal.com cleanup 20 fichiers, CPT→BANT              | Mohamed             |
+| 02/03/2026 | B    | B1.5  | Kanban V7 stable | Tag `v-crm-kanban-v7-stable`, commit `a4ca69c` — 3 colonnes, outcomes bar, 4 perf fixes (SWR, SELECT partial, flash/back, dynamic imports) | Mohamed             |
+| 02/03/2026 | B    | B2    | Mise à jour plan | Décision CEO : 3 colonnes (email_verified incluse) au lieu de 2. Plan B2 mis à jour. Section B2.4 (nettoyage) ajoutée. D1+D6 résolues.     | Architecture Claude |
 
 ---
 
