@@ -91,13 +91,12 @@ export const LeadsKanbanCard = memo(
             )}
           >
             <CardHeader className="p-3 pb-1.5">
-              {lead.lead_code && (
-                <p className="text-primary font-mono text-sm font-bold tracking-wide">
-                  {lead.lead_code}
-                </p>
-              )}
-
               <CardTitle className="flex items-center gap-1.5 text-base font-semibold">
+                {lead.lead_code && (
+                  <span className="bg-primary/10 text-primary inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] leading-none font-semibold tracking-wide">
+                    {lead.lead_code}
+                  </span>
+                )}
                 <span className="truncate">
                   {lead.company_name || "Unknown Company"}
                 </span>

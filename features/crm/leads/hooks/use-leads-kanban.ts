@@ -8,11 +8,22 @@ import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
 import type { Lead } from "../types/lead.types";
 import { SIDEBAR_FILTER_PARSERS } from "./use-leads-table";
 
-// ── Kanban column order (V7: 2 active columns) ────────────────────────
+// ── Kanban column order (V7: 3 active columns) ────────────────────────
 
-const KANBAN_STATUSES = ["callback_requested", "qualified"] as const;
+const KANBAN_STATUSES = [
+  "email_verified",
+  "callback_requested",
+  "qualified",
+] as const;
 
 export type KanbanStatus = (typeof KANBAN_STATUSES)[number];
+
+// ── Outcome statuses (shown as counts below the board) ─────────────────
+
+const OUTCOME_STATUSES = ["nurturing", "disqualified"] as const;
+
+/** All statuses fetched by the kanban query (columns + outcomes) */
+const ALL_KANBAN_STATUSES = [...KANBAN_STATUSES, ...OUTCOME_STATUSES] as const;
 
 // ── Sidebar → CrudFilter conversion (same logic as use-leads-table) ────
 
@@ -64,7 +75,7 @@ export interface PendingTransition {
 }
 
 export function useLeadsKanban() {
-  const { canTransitionTo, isLoading: statusesLoading } = useLeadStatuses();
+  const { canTransitionTo } = useLeadStatuses();
 
   // Read sidebar filters from URL (shared with table view via nuqs)
   const [sidebarValues] = useQueryStates(SIDEBAR_FILTER_PARSERS);
@@ -73,12 +84,12 @@ export function useLeadsKanban() {
     [sidebarValues]
   );
 
-  // Only fetch leads that are in kanban-visible statuses
+  // Fetch leads in kanban columns + outcome statuses (for counts)
   const statusFilter: CrudFilter = React.useMemo(
     () => ({
       field: "status",
       operator: "in" as const,
-      value: [...KANBAN_STATUSES],
+      value: [...ALL_KANBAN_STATUSES],
     }),
     []
   );
@@ -88,12 +99,36 @@ export function useLeadsKanban() {
     [statusFilter, sidebarFilters]
   );
 
+  // Kanban card fields — only what the card component renders.
+  // Reduces API payload from ~90 columns to ~15 per lead.
+  const kanbanFields = React.useMemo(
+    () => [
+      "id",
+      "lead_code",
+      "status",
+      "company_name",
+      "first_name",
+      "last_name",
+      "email",
+      "fleet_size",
+      "source",
+      "qualification_score",
+      "country_code",
+      "created_at",
+      "updated_at",
+      "next_action_date",
+      "priority",
+    ],
+    []
+  );
+
   // Fetch all pipeline leads (no pagination for kanban)
   const { query, result } = useList<Lead>({
     resource: "leads",
     pagination: { mode: "off" },
     filters,
     sorters: [{ field: "created_at", order: "desc" }],
+    meta: { select: kanbanFields },
   });
 
   const leads = React.useMemo(() => result.data ?? [], [result.data]);
@@ -112,6 +147,21 @@ export function useLeadsKanban() {
       }
     }
     return grouped;
+  }, [leads]);
+
+  // ── Outcome counts (nurturing / disqualified) ────────────────────
+
+  const outcomeCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const status of OUTCOME_STATUSES) {
+      counts[status] = 0;
+    }
+    for (const lead of leads) {
+      if (lead.status in counts) {
+        counts[lead.status]++;
+      }
+    }
+    return counts;
   }, [leads]);
 
   // ── Local optimistic state ─────────────────────────────────────────
@@ -194,7 +244,8 @@ export function useLeadsKanban() {
   return {
     columns: optimisticColumns,
     columnOrder: [...KANBAN_STATUSES],
-    isLoading: query.isLoading || statusesLoading,
+    outcomeCounts,
+    isLoading: query.isLoading,
     total: leads.length,
     handleColumnsChange,
     pendingTransition,

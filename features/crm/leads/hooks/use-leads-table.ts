@@ -185,6 +185,8 @@ interface UseLeadsTableProps {
   columns: ColumnDef<Lead>[];
   initialPageSize?: number;
   savedColumnVisibility?: VisibilityState;
+  /** Pre-applied status filter (from Kanban outcome click). */
+  initialStatusFilter?: string | null;
 }
 
 /**
@@ -197,6 +199,7 @@ export function useLeadsTable({
   columns,
   initialPageSize = 20,
   savedColumnVisibility,
+  initialStatusFilter,
 }: UseLeadsTableProps) {
   // ── Read URL state for Refine data fetching ───────────────────────────
   const [page] = useQueryState("page", parseAsInteger.withDefault(1));
@@ -280,10 +283,30 @@ export function useLeadsTable({
     [debouncedSearch]
   );
 
+  // ── Pre-applied status filter (from Kanban outcome click) ────────────
+  const outcomeFilter = React.useMemo<CrudFilter[]>(
+    () =>
+      initialStatusFilter
+        ? [
+            {
+              field: "status",
+              operator: "in" as const,
+              value: [initialStatusFilter],
+            },
+          ]
+        : [],
+    [initialStatusFilter]
+  );
+
   // ── Merge all filters ─────────────────────────────────────────────────
   const filters = React.useMemo<CrudFilter[]>(
-    () => [...columnFilters, ...sidebarFilters, ...searchFilter],
-    [columnFilters, sidebarFilters, searchFilter]
+    () => [
+      ...columnFilters,
+      ...sidebarFilters,
+      ...searchFilter,
+      ...outcomeFilter,
+    ],
+    [columnFilters, sidebarFilters, searchFilter, outcomeFilter]
   );
 
   // ── Refine data fetching ──────────────────────────────────────────────

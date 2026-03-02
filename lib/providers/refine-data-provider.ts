@@ -151,13 +151,14 @@ function unwrapActionResult(
 // ---------------------------------------------------------------------------
 
 async function getList(params: GetListParams): Promise<GetListResponse> {
-  const { resource, pagination, sorters, filters } = params;
+  const { resource, pagination, sorters, filters, meta } = params;
   const config = getResourceConfig(resource);
 
   const queryParams = new URLSearchParams({
     ...paginationToQuery(pagination),
     ...filtersToQuery(filters),
     ...sortersToQuery(sorters),
+    ...(meta?.select ? { fields: (meta.select as string[]).join(",") } : {}),
   });
 
   const res = await fetchApi<{

@@ -70,6 +70,11 @@ export function sortersToQuery(sorters?: CrudSort[]): Record<string, string> {
 export function paginationToQuery(
   pagination?: Pagination
 ): Record<string, string> {
+  // mode: "off" = fetch all (use API max limit)
+  if (pagination?.mode === "off") {
+    return { page: "1", limit: "100" };
+  }
+
   const { currentPage = 1, pageSize = 10 } = pagination ?? {};
 
   return {

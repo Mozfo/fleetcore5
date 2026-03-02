@@ -421,6 +421,11 @@ export async function GET(request: NextRequest) {
     const rawOrder = searchParams.get("order") || "desc";
     const order: "asc" | "desc" = rawOrder === "asc" ? "asc" : "desc";
 
+    // Partial field selection (e.g. ?fields=id,status,lead_code,company_name)
+    // When provided, uses Prisma `select` instead of fetching all 90 columns.
+    // Validated against ALLOWED_SORT_FIELDS + extra allowed fields.
+    const rawFields = csvParam("fields");
+
     // STEP 4: Build where clause
     const where: Record<string, unknown> = {
       deleted_at: null, // Exclude soft-deleted
@@ -524,30 +529,76 @@ export async function GET(request: NextRequest) {
     }
 
     // STEP 5: Query leads directly with Prisma
+    // When `fields` is provided, use Prisma `select` for partial columns.
+    // Always include sort field + relations that were requested.
+    const usePartialSelect = rawFields && rawFields.length > 0;
+
+    // Build Prisma select clause from requested fields
+    const buildSelect = () => {
+      if (!rawFields) return undefined;
+      const sel: Record<string, true | object> = {};
+      for (const f of rawFields) {
+        sel[f] = true;
+      }
+      // Always include the sort field so orderBy works
+      sel[sort] = true;
+      // Include relations if their source fields are requested
+      if (sel.country_code || sel.country) {
+        sel.country_code = true;
+        sel.assigned_member = undefined as never; // clean up
+        sel.crm_countries = {
+          select: {
+            country_code: true,
+            country_name_en: true,
+            flag_emoji: true,
+          },
+        };
+      }
+      if (sel.assigned_to) {
+        sel.assigned_member = {
+          select: { id: true, first_name: true, last_name: true, email: true },
+        };
+      }
+      // Remove virtual keys that aren't real columns
+      delete (sel as Record<string, unknown>).country;
+      return sel;
+    };
+
+    const selectClause = usePartialSelect ? buildSelect() : undefined;
+
+    const commonArgs = {
+      where,
+      orderBy: { [sort]: order } as Record<string, "asc" | "desc">,
+      skip: (page - 1) * limit,
+      take: limit,
+    };
+
     const [leads, total] = await Promise.all([
-      db.crm_leads.findMany({
-        where,
-        include: {
-          assigned_member: {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-              email: true,
+      selectClause
+        ? db.crm_leads.findMany({
+            ...commonArgs,
+            select: selectClause as never,
+          })
+        : db.crm_leads.findMany({
+            ...commonArgs,
+            include: {
+              assigned_member: {
+                select: {
+                  id: true,
+                  first_name: true,
+                  last_name: true,
+                  email: true,
+                },
+              },
+              crm_countries: {
+                select: {
+                  country_code: true,
+                  country_name_en: true,
+                  flag_emoji: true,
+                },
+              },
             },
-          },
-          crm_countries: {
-            select: {
-              country_code: true,
-              country_name_en: true,
-              flag_emoji: true,
-            },
-          },
-        },
-        orderBy: { [sort]: order },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
+          }),
       db.crm_leads.count({ where }),
     ]);
 
@@ -555,26 +606,45 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: leads.map((lead) => {
-          // Destructure Prisma relation keys to exclude from spread
+        data: leads.map((lead: Record<string, unknown>) => {
           const { assigned_member, crm_countries, ...scalar } = lead;
           return {
             ...scalar,
             // Decimal → number (Prisma Decimal serializes to string)
-            fit_score: lead.fit_score ? Number(lead.fit_score) : null,
-            engagement_score: lead.engagement_score
-              ? Number(lead.engagement_score)
-              : null,
-            // Relations → clean objects
-            country: crm_countries ?? null,
-            assigned_to: assigned_member
+            ...(scalar.fit_score !== undefined
               ? {
-                  id: assigned_member.id,
-                  first_name: assigned_member.first_name,
-                  last_name: assigned_member.last_name,
-                  email: assigned_member.email,
+                  fit_score: scalar.fit_score ? Number(scalar.fit_score) : null,
                 }
-              : null,
+              : {}),
+            ...(scalar.engagement_score !== undefined
+              ? {
+                  engagement_score: scalar.engagement_score
+                    ? Number(scalar.engagement_score)
+                    : null,
+                }
+              : {}),
+            // Relations → clean objects (only if included)
+            ...(crm_countries !== undefined
+              ? { country: crm_countries ?? null }
+              : {}),
+            ...(assigned_member !== undefined
+              ? {
+                  assigned_to:
+                    assigned_member && typeof assigned_member === "object"
+                      ? {
+                          id: (assigned_member as Record<string, unknown>).id,
+                          first_name: (
+                            assigned_member as Record<string, unknown>
+                          ).first_name,
+                          last_name: (
+                            assigned_member as Record<string, unknown>
+                          ).last_name,
+                          email: (assigned_member as Record<string, unknown>)
+                            .email,
+                        }
+                      : null,
+                }
+              : {}),
           };
         }),
         pagination: {

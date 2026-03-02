@@ -34,7 +34,11 @@ interface DrawerState {
 
 // ── Component ───────────────────────────────────────────────────────
 
-export function LeadsKanbanPage() {
+interface LeadsKanbanPageProps {
+  onOutcomeClick?: (status: string) => void;
+}
+
+export function LeadsKanbanPage({ onOutcomeClick }: LeadsKanbanPageProps) {
   const { t } = useTranslation("crm");
   const router = useRouter();
   const params = useParams();
@@ -59,6 +63,8 @@ export function LeadsKanbanPage() {
     });
   }, [savePreferences]);
 
+  // Click outcome badge → delegate to parent (ViewRouter handles filter + view switch)
+
   // Sales owners for assignment dropdown
   const { owners } = useSalesOwners();
 
@@ -66,6 +72,7 @@ export function LeadsKanbanPage() {
   const {
     columns,
     columnOrder,
+    outcomeCounts,
     isLoading,
     handleColumnsChange,
     pendingTransition,
@@ -170,10 +177,12 @@ export function LeadsKanbanPage() {
         <LeadsKanbanBoardComponent
           columns={columns}
           columnOrder={columnOrder}
+          outcomeCounts={outcomeCounts}
           isLoading={isLoading}
           onColumnsChange={handleColumnsChange}
           onView={handleViewLead}
           onEdit={handleViewLead}
+          onOutcomeClick={onOutcomeClick}
         />
       </div>
 

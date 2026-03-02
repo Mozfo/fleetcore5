@@ -37,6 +37,9 @@ export function useSalesOwners() {
       dedupingInterval: 300000, // 5 minutes — owners list rarely changes
       revalidateOnReconnect: true,
       errorRetryCount: 2,
+      // Provide fallback so isLoading starts false — owners are only needed
+      // when opening the LeadDrawer, not for initial Kanban/Table render.
+      fallbackData: { success: true, data: [] } as OwnersApiResponse,
     }
   );
 

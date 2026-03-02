@@ -158,10 +158,13 @@ export function useLeadStatuses() {
     fetcher,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 60000, // 1 minute cache
+      dedupingInterval: 300000, // 5 minutes — admin setting, changes rarely
       revalidateOnReconnect: true,
       shouldRetryOnError: true,
       errorRetryCount: 2,
+      // Provide fallback so isLoading starts false — DEFAULT_LEAD_STATUSES
+      // are valid for immediate rendering while real data loads in background.
+      fallbackData: { success: false } as SettingApiResponse,
     }
   );
 

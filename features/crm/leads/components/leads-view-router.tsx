@@ -6,16 +6,8 @@ import { useTranslation } from "react-i18next";
 import PageContainer from "@/components/layout/page-container";
 import { ViewToggle, type ViewMode } from "@/components/crm/leads/ViewToggle";
 
-import dynamic from "next/dynamic";
-
-const LeadsListPage = dynamic(
-  () => import("./leads-list-page").then((mod) => mod.LeadsListPage),
-  { ssr: false }
-);
-const LeadsKanbanPage = dynamic(
-  () => import("./leads-kanban-page").then((mod) => mod.LeadsKanbanPage),
-  { ssr: false }
-);
+import { LeadsKanbanPage } from "./leads-kanban-page";
+import { LeadsListPage } from "./leads-list-page";
 
 const VIEW_MODE_STORAGE_KEY = "crm_leads_view";
 
@@ -23,6 +15,7 @@ export function LeadsViewRouter() {
   const { t } = useTranslation("crm");
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [total, setTotal] = useState<number | null>(null);
+  const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
 
   // Load viewMode from localStorage on mount (SSR-safe)
   useEffect(() => {
@@ -36,10 +29,23 @@ export function LeadsViewRouter() {
     }
   }, []);
 
+  // Manual view switch (toggle button) — clears outcome filter
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
+    setOutcomeFilter(null);
     try {
       localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+    } catch {
+      // localStorage not available
+    }
+  }, []);
+
+  // Outcome click (Nurturing/Disqualified badge) — sets filter + switches to table
+  const handleOutcomeClick = useCallback((status: string) => {
+    setOutcomeFilter(status);
+    setViewMode("table");
+    try {
+      localStorage.setItem(VIEW_MODE_STORAGE_KEY, "table");
     } catch {
       // localStorage not available
     }
@@ -56,7 +62,7 @@ export function LeadsViewRouter() {
           <ViewToggle value={viewMode} onChange={handleViewModeChange} />
         }
       >
-        <LeadsKanbanPage />
+        <LeadsKanbanPage onOutcomeClick={handleOutcomeClick} />
       </PageContainer>
     );
   }
@@ -82,7 +88,10 @@ export function LeadsViewRouter() {
         <ViewToggle value={viewMode} onChange={handleViewModeChange} />
       }
     >
-      <LeadsListPage onTotalChange={setTotal} />
+      <LeadsListPage
+        onTotalChange={setTotal}
+        initialStatusFilter={outcomeFilter}
+      />
     </PageContainer>
   );
 }

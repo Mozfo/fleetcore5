@@ -61,9 +61,13 @@ import { computeRowIndicator } from "../lib/lead-insight";
 
 interface LeadsListPageProps {
   onTotalChange?: (total: number) => void;
+  initialStatusFilter?: string | null;
 }
 
-export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
+export function LeadsListPage({
+  onTotalChange,
+  initialStatusFilter,
+}: LeadsListPageProps) {
   const { t } = useTranslation("crm");
   const { localizedPath } = useLocalizedPath();
   const { statuses, isLoading: statusesLoading } = useLeadStatuses();
@@ -134,6 +138,7 @@ export function LeadsListPage({ onTotalChange }: LeadsListPageProps) {
   const { table, isLoading, isError, total } = useLeadsTable({
     columns,
     savedColumnVisibility: preferences.columnVisibility,
+    initialStatusFilter,
   });
 
   React.useEffect(() => {
