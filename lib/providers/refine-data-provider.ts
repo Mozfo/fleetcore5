@@ -335,6 +335,42 @@ export async function patchLeadStatus(
   }
 }
 
+/**
+ * POST /api/crm/leads/:id/disqualify — disqualify lead with reason + optional blacklist.
+ * Throws HttpError on failure.
+ */
+export interface DisqualifyLeadPayload {
+  reason: string;
+  comment?: string | null;
+  blacklist?: boolean;
+}
+
+export interface DisqualifyLeadResult {
+  leadId: string;
+  status: string;
+  blacklisted: boolean;
+}
+
+export async function disqualifyLead(
+  id: string,
+  data: DisqualifyLeadPayload
+): Promise<DisqualifyLeadResult> {
+  const json = await fetchApi<{
+    success: boolean;
+    data: DisqualifyLeadResult;
+    error?: { message?: string };
+  }>(`/api/crm/leads/${id}/disqualify`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  if (!json.success) {
+    throw createHttpError(400, json.error?.message ?? "Disqualify failed");
+  }
+
+  return json.data;
+}
+
 // ---------------------------------------------------------------------------
 // DataProvider export
 // ---------------------------------------------------------------------------

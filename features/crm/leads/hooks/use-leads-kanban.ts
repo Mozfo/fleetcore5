@@ -3,9 +3,9 @@
 import { useList, type CrudFilter } from "@refinedev/core";
 import { useQueryStates } from "nuqs";
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
 import type { Lead } from "../types/lead.types";
 import { SIDEBAR_FILTER_PARSERS } from "./use-leads-table";
 
@@ -19,12 +19,41 @@ const KANBAN_STATUSES = [
 
 export type KanbanStatus = (typeof KANBAN_STATUSES)[number];
 
-// ── Outcome statuses (shown as counts below the board) ─────────────────
+// ── Outcome statuses (drop zones below the board) ─────────────────────
 
 const OUTCOME_STATUSES = ["nurturing", "disqualified"] as const;
 
 /** All statuses fetched by the kanban query (columns + outcomes) */
 const ALL_KANBAN_STATUSES = [...KANBAN_STATUSES, ...OUTCOME_STATUSES] as const;
+
+// ── Drag routing ──────────────────────────────────────────────────────
+
+export type DragType =
+  | "complete_profile"
+  | "qualify"
+  | "nurturing"
+  | "disqualify";
+
+export interface PendingDrag {
+  type: DragType;
+  lead: Lead;
+  fromStatus: string;
+  toStatus: string;
+}
+
+/**
+ * Allowed drag transitions — more restrictive than the workflow's transitions_to.
+ * Drags not listed here are rejected with a toast.
+ */
+const DRAG_ROUTES: Record<string, DragType> = {
+  "email_verified→callback_requested": "complete_profile",
+  "callback_requested→qualified": "qualify",
+  "callback_requested→nurturing": "nurturing",
+  "callback_requested→disqualified": "disqualify",
+  "qualified→nurturing": "nurturing",
+  "qualified→disqualified": "disqualify",
+  "email_verified→disqualified": "disqualify",
+};
 
 // ── Sidebar → CrudFilter conversion (same logic as use-leads-table) ────
 
@@ -68,15 +97,11 @@ function sidebarToCrudFilters(
 
 // ── Hook ───────────────────────────────────────────────────────────────
 
-export interface PendingTransition {
-  leadId: string;
-  lead: Lead;
-  fromStatus: string;
-  toStatus: string;
-}
+/** @deprecated Use PendingDrag instead */
+export type PendingTransition = PendingDrag;
 
 export function useLeadsKanban() {
-  const { canTransitionTo, getLabel } = useLeadStatuses();
+  const { t } = useTranslation("crm");
 
   // Read sidebar filters from URL (shared with table view via nuqs)
   const [sidebarValues] = useQueryStates(SIDEBAR_FILTER_PARSERS);
@@ -111,6 +136,7 @@ export function useLeadsKanban() {
       "first_name",
       "last_name",
       "email",
+      "phone",
       "fleet_size",
       "source",
       "country_code",
@@ -118,7 +144,7 @@ export function useLeadsKanban() {
       "updated_at",
       "next_action_date",
       "priority",
-      // BANT fields — needed for drawer to show BANT immediately
+      // BANT fields — needed for drawer + qualify drag dialog
       "bant_budget",
       "bant_authority",
       "bant_need",
@@ -141,12 +167,12 @@ export function useLeadsKanban() {
   const leads = React.useMemo(() => result.data ?? [], [result.data]);
 
   // ── Group leads by status into columns ─────────────────────────────
+  // Includes outcome statuses as empty arrays for DnD drop zone support.
 
   const columns = React.useMemo(() => {
     const grouped: Record<string, Lead[]> = {};
-    for (const status of KANBAN_STATUSES) {
-      grouped[status] = [];
-    }
+    for (const status of KANBAN_STATUSES) grouped[status] = [];
+    for (const status of OUTCOME_STATUSES) grouped[status] = [];
     for (const lead of leads) {
       const status = lead.status;
       if (status in grouped) {
@@ -156,20 +182,15 @@ export function useLeadsKanban() {
     return grouped;
   }, [leads]);
 
-  // ── Outcome counts (nurturing / disqualified) ────────────────────
+  // ── Outcome counts (derived from columns) ──────────────────────────
 
   const outcomeCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     for (const status of OUTCOME_STATUSES) {
-      counts[status] = 0;
-    }
-    for (const lead of leads) {
-      if (lead.status in counts) {
-        counts[lead.status]++;
-      }
+      counts[status] = (columns[status] ?? []).length;
     }
     return counts;
-  }, [leads]);
+  }, [columns]);
 
   // ── Local optimistic state ─────────────────────────────────────────
 
@@ -181,49 +202,47 @@ export function useLeadsKanban() {
     setOptimisticColumns(columns);
   }, [columns]);
 
-  // ── Transition modal state ─────────────────────────────────────────
+  // ── Drag modal state ───────────────────────────────────────────────
 
-  const [pendingTransition, setPendingTransition] =
-    React.useState<PendingTransition | null>(null);
+  const [pendingDrag, setPendingDrag] = React.useState<PendingDrag | null>(
+    null
+  );
 
   // ── Validate and handle column change from DnD ─────────────────────
 
   const handleColumnsChange = React.useCallback(
     (newColumns: Record<string, Lead[]>) => {
-      // Find which lead moved and to which column
-      for (const status of KANBAN_STATUSES) {
+      // Guard: if a drag confirmation is pending, ignore further DnD events
+      if (pendingDrag) return;
+
+      const ALL = [...KANBAN_STATUSES, ...OUTCOME_STATUSES];
+      for (const status of ALL) {
         const oldLeads = optimisticColumns[status] ?? [];
         const newLeads = newColumns[status] ?? [];
 
-        // Find lead that appeared in this column
         for (const lead of newLeads) {
-          const wasHere = oldLeads.some((l) => l.id === lead.id);
-          if (!wasHere) {
-            // This lead was moved TO this column
-            const fromStatus = lead.status;
-            const toStatus = status;
+          if (!oldLeads.some((l) => l.id === lead.id)) {
+            const from = lead.status;
+            const to = status;
 
-            if (fromStatus === toStatus) {
-              // Same column reorder — allow
+            if (from === to) {
               setOptimisticColumns(newColumns);
               return;
             }
 
-            // Validate transition
-            if (!canTransitionTo(fromStatus, toStatus)) {
-              const fromLabel = getLabel(fromStatus);
-              const toLabel = getLabel(toStatus);
-              toast.error(`Cannot move from ${fromLabel} to ${toLabel}`);
-              return;
+            const routeKey = `${from}→${to}`;
+            const dragType = DRAG_ROUTES[routeKey];
+            if (!dragType) {
+              toast.error(t("leads.kanban.drag.transition_not_allowed"));
+              return; // Card reverts visually — optimisticColumns unchanged
             }
 
-            // Valid transition — update visual immediately, open modal
-            setOptimisticColumns(newColumns);
-            setPendingTransition({
-              leadId: lead.id,
+            // Do NOT update optimisticColumns — card stays in source column
+            setPendingDrag({
+              type: dragType,
               lead,
-              fromStatus,
-              toStatus,
+              fromStatus: from,
+              toStatus: to,
             });
             return;
           }
@@ -233,32 +252,31 @@ export function useLeadsKanban() {
       // Fallback: same-column reorder
       setOptimisticColumns(newColumns);
     },
-    [optimisticColumns, canTransitionTo, getLabel]
+    [optimisticColumns, pendingDrag, t]
   );
 
-  // ── Cancel transition (revert to server state) ─────────────────────
+  // ── Cancel drag (no rollback needed — optimisticColumns never changed)
 
-  const cancelTransition = React.useCallback(() => {
-    setPendingTransition(null);
-    setOptimisticColumns(columns);
-  }, [columns]);
+  const cancelDrag = React.useCallback(() => {
+    setPendingDrag(null);
+  }, []);
 
-  // ── Confirm transition (called after modal submission) ─────────────
+  // ── Confirm drag (caller already called API — just clear state) ─────
 
-  const confirmTransition = React.useCallback(() => {
-    setPendingTransition(null);
-    // Refine will refetch and update columns automatically
+  const confirmDrag = React.useCallback(() => {
+    setPendingDrag(null);
   }, []);
 
   return {
     columns: optimisticColumns,
     columnOrder: [...KANBAN_STATUSES],
+    outcomeOrder: [...OUTCOME_STATUSES],
     outcomeCounts,
     isLoading: query.isLoading,
     total: leads.length,
     handleColumnsChange,
-    pendingTransition,
-    cancelTransition,
-    confirmTransition,
+    pendingDrag,
+    cancelDrag,
+    confirmDrag,
   };
 }

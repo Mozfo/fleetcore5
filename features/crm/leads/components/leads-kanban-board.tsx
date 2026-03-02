@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
+import { useDroppable } from "@dnd-kit/core";
 
 import {
   Kanban,
@@ -52,91 +53,141 @@ export function LeadsKanbanBoardComponent({
   }
 
   return (
-    <>
-      <Kanban
-        value={columns}
-        onValueChange={onColumnsChange}
-        getItemValue={(lead: Lead) => lead.id}
-      >
-        <KanbanBoard className="flex w-full gap-2 pb-4">
-          {columnOrder.map((status) => {
-            const leads = columns[status] ?? [];
+    <Kanban
+      value={columns}
+      onValueChange={onColumnsChange}
+      getItemValue={(lead: Lead) => lead.id}
+    >
+      <KanbanBoard className="flex w-full gap-2 pb-4">
+        {columnOrder.map((status) => {
+          const leads = columns[status] ?? [];
 
-            return (
-              <KanbanColumn
-                key={status}
-                value={status}
-                className="bg-muted flex-1 p-1.5"
-                disabled
+          return (
+            <KanbanColumn
+              key={status}
+              value={status}
+              className="bg-muted flex-1 p-1.5"
+              disabled
+            >
+              {/* Column header */}
+              <div
+                className={cn(
+                  "flex items-center justify-between rounded-md px-3 py-1.5",
+                  getStatusConfig(status).bgMedium
+                )}
               >
-                {/* Column header */}
-                <div
+                <span className="text-foreground text-sm font-semibold">
+                  {getLabel(status, locale)}
+                </span>
+                <span
                   className={cn(
-                    "flex items-center justify-between rounded-md px-3 py-1.5",
-                    getStatusConfig(status).bgMedium
+                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs leading-none font-bold",
+                    leads.length > 0
+                      ? cn(getStatusConfig(status).bg, "text-white")
+                      : "bg-foreground/10 text-foreground/50"
                   )}
                 >
-                  <span className="text-foreground text-sm font-semibold">
-                    {getLabel(status, locale)}
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs leading-none font-bold",
-                      leads.length > 0
-                        ? cn(getStatusConfig(status).bg, "text-white")
-                        : "bg-foreground/10 text-foreground/50"
-                    )}
-                  >
-                    {leads.length}
-                  </span>
-                </div>
+                  {leads.length}
+                </span>
+              </div>
 
-                {/* Cards */}
-                <div className="flex flex-col gap-2">
-                  {leads.map((lead) => (
-                    <LeadsKanbanCard
-                      key={lead.id}
-                      lead={lead}
-                      onView={onView}
-                      onEdit={onEdit}
-                    />
-                  ))}
-                  {leads.length === 0 && (
-                    <div className="text-muted-foreground flex flex-col justify-center gap-4 pt-4 text-center text-sm">
-                      {t("leads.kanban.empty_column")}
-                    </div>
-                  )}
-                </div>
-              </KanbanColumn>
-            );
-          })}
-        </KanbanBoard>
+              {/* Cards */}
+              <div className="flex flex-col gap-2">
+                {leads.map((lead) => (
+                  <LeadsKanbanCard
+                    key={lead.id}
+                    lead={lead}
+                    onView={onView}
+                    onEdit={onEdit}
+                  />
+                ))}
+                {leads.length === 0 && (
+                  <div className="text-muted-foreground flex flex-col justify-center gap-4 pt-4 text-center text-sm">
+                    {t("leads.kanban.empty_column")}
+                  </div>
+                )}
+              </div>
+            </KanbanColumn>
+          );
+        })}
+      </KanbanBoard>
 
-        <KanbanOverlay>
-          {({ variant }) =>
-            variant === "item" ? (
-              <div className="bg-primary/10 h-20 w-48 rounded-md" />
-            ) : null
-          }
-        </KanbanOverlay>
-      </Kanban>
-
-      {/* Outcomes bar */}
+      {/* Outcomes bar — droppable targets styled as compact badges */}
       <OutcomesBar
         counts={outcomeCounts}
         locale={locale}
         onClick={onOutcomeClick}
       />
-    </>
+
+      <KanbanOverlay>
+        {({ variant }) =>
+          variant === "item" ? (
+            <div className="bg-primary/10 h-20 w-48 rounded-md" />
+          ) : null
+        }
+      </KanbanOverlay>
+    </Kanban>
+  );
+}
+
+// ── Droppable outcome button ────────────────────────────────────────
+
+const OUTCOME_CONFIGS = [
+  { status: "nurturing" },
+  { status: "disqualified" },
+] as const;
+
+interface DroppableOutcomeButtonProps {
+  status: string;
+  count: number;
+  locale: string;
+  onClick?: (status: string) => void;
+}
+
+function DroppableOutcomeButton({
+  status,
+  count,
+  locale,
+  onClick,
+}: DroppableOutcomeButtonProps) {
+  const { getLabel } = useLeadStatuses();
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+  const config = getStatusConfig(status);
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      onClick={() => onClick?.(status)}
+      className={cn(
+        "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all",
+        count > 0
+          ? cn("cursor-pointer hover:opacity-80", config.bgSubtle, config.text)
+          : cn(
+              "cursor-pointer border border-dashed",
+              config.borderSubtle,
+              config.text,
+              "opacity-60"
+            ),
+        isOver && "opacity-100 ring-2 ring-offset-1"
+      )}
+    >
+      <span>{getLabel(status, locale)}</span>
+      {count > 0 && (
+        <span
+          className={cn(
+            "rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold",
+            config.bgMedium
+          )}
+        >
+          {count}
+        </span>
+      )}
+    </button>
   );
 }
 
 // ── Outcomes bar ────────────────────────────────────────────────────
-
-const OUTCOME_CONFIGS = [
-  { status: "nurturing", icon: "clock" },
-  { status: "disqualified", icon: "ban" },
-] as const;
 
 interface OutcomesBarProps {
   counts: Record<string, number>;
@@ -145,40 +196,17 @@ interface OutcomesBarProps {
 }
 
 function OutcomesBar({ counts, locale, onClick }: OutcomesBarProps) {
-  const { getLabel } = useLeadStatuses();
-
-  const hasAny = OUTCOME_CONFIGS.some((o) => (counts[o.status] ?? 0) > 0);
-  if (!hasAny) return null;
-
   return (
     <div className="flex items-center gap-3 px-1 pt-1">
-      {OUTCOME_CONFIGS.map(({ status }) => {
-        const count = counts[status] ?? 0;
-        if (count === 0) return null;
-        const config = getStatusConfig(status);
-        return (
-          <button
-            type="button"
-            key={status}
-            onClick={() => onClick?.(status)}
-            className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-opacity hover:opacity-80",
-              config.bgSubtle,
-              config.text
-            )}
-          >
-            <span>{getLabel(status, locale)}</span>
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold",
-                config.bgMedium
-              )}
-            >
-              {count}
-            </span>
-          </button>
-        );
-      })}
+      {OUTCOME_CONFIGS.map(({ status }) => (
+        <DroppableOutcomeButton
+          key={status}
+          status={status}
+          count={counts[status] ?? 0}
+          locale={locale}
+          onClick={onClick}
+        />
+      ))}
     </div>
   );
 }

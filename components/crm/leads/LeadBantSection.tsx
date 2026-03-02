@@ -53,71 +53,16 @@ import {
   qualifyLead,
   patchLeadStatus,
 } from "@/lib/providers/refine-data-provider";
+import {
+  type BantOption,
+  type BantKey,
+  BANT_DIMENSIONS,
+  isQualifying,
+  findLabel,
+} from "@/lib/constants/crm/bant.constants";
 import type { Lead } from "@/types/crm";
 
-// ── BANT option definitions ─────────────────────────────────────────────
-
-interface BantOption {
-  value: string;
-  label: string;
-  qualifying: boolean;
-}
-
-const BANT_BUDGET_OPTIONS: BantOption[] = [
-  { value: "confirmed", label: "Confirmed", qualifying: true },
-  { value: "planned", label: "Planned", qualifying: true },
-  { value: "no_budget", label: "No Budget", qualifying: false },
-  { value: "unknown", label: "Unknown", qualifying: false },
-];
-
-const BANT_AUTHORITY_OPTIONS: BantOption[] = [
-  { value: "decision_maker", label: "Decision Maker", qualifying: true },
-  { value: "influencer", label: "Influencer", qualifying: false },
-  { value: "user", label: "User", qualifying: false },
-  { value: "unknown", label: "Unknown", qualifying: false },
-];
-
-const BANT_NEED_OPTIONS: BantOption[] = [
-  { value: "critical", label: "Critical", qualifying: true },
-  { value: "important", label: "Important", qualifying: true },
-  { value: "nice_to_have", label: "Nice to Have", qualifying: false },
-  { value: "none", label: "None", qualifying: false },
-];
-
-const BANT_TIMELINE_OPTIONS: BantOption[] = [
-  { value: "immediate", label: "Immediate", qualifying: true },
-  { value: "this_quarter", label: "This Quarter", qualifying: true },
-  { value: "this_year", label: "This Year", qualifying: false },
-  { value: "no_timeline", label: "No Timeline", qualifying: false },
-];
-
-// All BANT dimension configs for iteration
-const BANT_DIMENSIONS = [
-  { key: "budget" as const, options: BANT_BUDGET_OPTIONS },
-  { key: "authority" as const, options: BANT_AUTHORITY_OPTIONS },
-  { key: "need" as const, options: BANT_NEED_OPTIONS },
-  { key: "timeline" as const, options: BANT_TIMELINE_OPTIONS },
-] as const;
-
-type BantKey = (typeof BANT_DIMENSIONS)[number]["key"];
-
 // ── Helpers ─────────────────────────────────────────────────────────────
-
-function isQualifying(
-  options: BantOption[],
-  value: string | null | undefined
-): boolean {
-  if (!value) return false;
-  return options.find((o) => o.value === value)?.qualifying === true;
-}
-
-function findLabel(
-  options: BantOption[],
-  value: string | null | undefined
-): string | null {
-  if (!value) return null;
-  return options.find((o) => o.value === value)?.label ?? value;
-}
 
 /**
  * Compute number of qualifying BANT criteria met on a lead.

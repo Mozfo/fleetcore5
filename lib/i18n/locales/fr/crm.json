@@ -230,6 +230,55 @@
     "kanban": {
       "empty_column": "Aucun lead dans cette étape",
       "overdue_days": "En retard — {{count}}j",
+      "drag": {
+        "transition_not_allowed": "Cette transition n'est pas autorisée",
+        "complete_profile": {
+          "title": "Compléter le contact — {{leadCode}}",
+          "phone": "Numéro de téléphone",
+          "phone_required": "Le numéro de téléphone est requis",
+          "first_name": "Prénom",
+          "last_name": "Nom",
+          "company": "Entreprise",
+          "fleet_size": "Taille de flotte",
+          "confirm": "Confirmer",
+          "cancel": "Annuler"
+        },
+        "qualify": {
+          "title": "Qualifier — {{leadCode}}",
+          "confirm": "Qualifier",
+          "partial_nurturing": "Ce lead remplit {{count}}/4 critères. Il sera déplacé en Nurturing pour un suivi ultérieur. Confirmer ?",
+          "partial_disqualify": "Ce lead ne remplit que {{count}}/4 critères. Disqualifier ?",
+          "partial_big_fleet": "Ce lead remplit {{count}}/4 critères mais a une grande flotte ({{size}} véhicules). Envoyer en Nurturing ?",
+          "send_nurturing": "Envoyer en Nurturing",
+          "disqualify": "Disqualifier"
+        },
+        "nurturing": {
+          "title": "Passer en Nurturing — {{leadCode}}",
+          "note_placeholder": "Pourquoi mettez-vous ce lead de côté ? (optionnel)",
+          "confirm": "Confirmer"
+        },
+        "disqualify": {
+          "title": "Disqualifier — {{leadCode}}",
+          "reason": "Raison",
+          "reason_required": "Une raison est requise",
+          "comment": "Commentaire",
+          "comment_required_other": "Le commentaire est requis quand la raison est 'Autre'",
+          "blacklist": "Bloquer cet email (liste noire)",
+          "blacklist_hint": "Cet email sera bloqué pour les futures soumissions",
+          "confirm": "Disqualifier",
+          "reasons": {
+            "fantasy_email": "Faux email",
+            "competitor": "Concurrent",
+            "no_response": "Pas de réponse (5+ jours)",
+            "wrong_market": "Hors marché cible",
+            "student_test": "Étudiant / Test",
+            "duplicate": "Doublon",
+            "other": "Autre (commentaire requis)"
+          }
+        },
+        "cancel": "Annuler",
+        "success": "Lead mis à jour avec succès"
+      },
       "transition": {
         "success": "Statut du lead mis à jour avec succès",
         "error": "Échec de la mise à jour du statut",
@@ -933,12 +982,12 @@
       "description": "Disqualifier {{name}} du pipeline commercial.",
       "reasonLabel": "Raison de disqualification",
       "reasons": {
-        "not_fleet_operator": "N'est pas un opérateur de flotte",
-        "fleet_too_small": "Flotte trop petite",
-        "country_not_supported": "Pays non couvert",
-        "duplicate": "Doublon",
-        "no_response": "Sans réponse",
+        "fantasy_email": "Faux email",
         "competitor": "Concurrent",
+        "no_response": "Pas de réponse (5+ jours)",
+        "wrong_market": "Hors marché cible",
+        "student_test": "Étudiant / Test",
+        "duplicate": "Doublon",
         "other": "Autre"
       },
       "commentLabel": "Commentaire (optionnel)",
