@@ -62,7 +62,6 @@ const ALLOWED_SORT_FIELDS = new Set([
   "converted_date",
   "next_action_date",
   "last_activity_at",
-  "stage_entered_at",
   "wizard_completed",
   "email_verified",
   "callback_requested",
