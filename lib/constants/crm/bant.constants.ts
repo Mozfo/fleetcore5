@@ -45,6 +45,32 @@ export const BANT_DIMENSIONS = [
 
 export type BantKey = (typeof BANT_DIMENSIONS)[number]["key"];
 
+/** Value-only arrays for Zod enum derivation. */
+export const BANT_BUDGET_VALUES = [
+  "confirmed",
+  "planned",
+  "no_budget",
+  "unknown",
+] as const;
+export const BANT_AUTHORITY_VALUES = [
+  "decision_maker",
+  "influencer",
+  "user",
+  "unknown",
+] as const;
+export const BANT_NEED_VALUES = [
+  "critical",
+  "important",
+  "nice_to_have",
+  "none",
+] as const;
+export const BANT_TIMELINE_VALUES = [
+  "immediate",
+  "this_quarter",
+  "this_year",
+  "no_timeline",
+] as const;
+
 export function isQualifying(
   options: BantOption[],
   value: string | null | undefined

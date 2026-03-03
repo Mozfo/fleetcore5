@@ -21,7 +21,6 @@ interface LeadsStats {
     total: number;
     total_trend: number;
     by_status: Record<string, number>;
-    by_stage: Record<string, number>;
     cold_leads: number;
     cold_threshold_months: number;
   };
@@ -34,11 +33,6 @@ interface LeadsStats {
     qualified_previous_period: number;
     converted_this_period: number;
     converted_previous_period: number;
-  };
-  quality: {
-    avg_fit_score: number;
-    avg_engagement_score: number;
-    avg_qualification_score: number;
   };
   charts: {
     time_series: Array<{ week: string; count: number }>;
@@ -131,7 +125,7 @@ export function StatsCards({ stats, locale }: StatsCardsProps) {
   const { t } = useTranslation("crm");
 
   return (
-    <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+    <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
       {/* Total Leads */}
       <StatCard
         title={t("reports.stats.total_leads", "Total Leads")}
@@ -162,16 +156,6 @@ export function StatsCards({ stats, locale }: StatsCardsProps) {
         icon={<Snowflake className="h-5 w-5" />}
         iconColor="text-cyan-600 dark:text-cyan-400"
         bgColor="bg-cyan-50 dark:bg-cyan-900/20"
-      />
-
-      {/* Average Score */}
-      <StatCard
-        title={t("reports.stats.avg_score", "Avg. Score")}
-        value={`${stats.quality.avg_qualification_score}/100`}
-        subtitle={`${t("reports.stats.fit_abbr")}: ${stats.quality.avg_fit_score} | ${t("reports.stats.engagement_abbr")}: ${stats.quality.avg_engagement_score}`}
-        icon={<TrendingUp className="h-5 w-5" />}
-        iconColor="text-purple-600 dark:text-purple-400"
-        bgColor="bg-purple-50 dark:bg-purple-900/20"
       />
 
       {/* Time to Convert */}

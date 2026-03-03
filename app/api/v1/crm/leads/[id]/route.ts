@@ -124,15 +124,7 @@ export async function GET(
             : null,
           fleet_size: lead.fleet_size,
           status: lead.status,
-          lead_stage: lead.lead_stage,
           priority: lead.priority,
-          fit_score: lead.fit_score ? Number(lead.fit_score) : null,
-          engagement_score: lead.engagement_score
-            ? Number(lead.engagement_score)
-            : null,
-          qualification_score: lead.qualification_score
-            ? Number(lead.qualification_score)
-            : null,
           assigned_to: assignedEmployee
             ? {
                 id: assignedEmployee.id,
@@ -157,7 +149,6 @@ export async function GET(
           bant_timeline: lead.bant_timeline,
           bant_qualified_at: lead.bant_qualified_at?.toISOString() || null,
           bant_qualified_by: lead.bant_qualified_by,
-          notes: lead.qualification_notes,
           message: lead.message,
           metadata: lead.metadata as Record<string, unknown> | null,
           gdpr_consent: lead.gdpr_consent,
@@ -213,10 +204,8 @@ export async function GET(
  *
  * PROTECTED TRANSITIONS:
  * - status="converted" is FORBIDDEN (use POST /leads/[id]/convert)
- * - lead_stage="opportunity" is FORBIDDEN (use POST /leads/[id]/convert)
  *
  * Business Logic:
- * - lead_stage="sales_qualified" → set qualified_date if not already set
  * - updated_at automatically set to NOW()
  */
 export async function PATCH(
@@ -256,21 +245,6 @@ export async function PATCH(
             code: "INVALID_STATUS_TRANSITION",
             message:
               'Cannot set status to "converted" manually. Use POST /api/v1/crm/leads/[id]/convert endpoint instead.',
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // PROTECTION #2: Forbid lead_stage="opportunity" (must use dedicated convert endpoint)
-    if (body.lead_stage === "opportunity") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "INVALID_STAGE_TRANSITION",
-            message:
-              'Cannot set lead_stage to "opportunity" manually. Use POST /api/v1/crm/leads/[id]/convert endpoint instead.',
           },
         },
         { status: 400 }
@@ -335,15 +309,6 @@ export async function PATCH(
       updated_at: new Date(),
     };
 
-    // Business logic: Set qualified_date when lead_stage changes to "sales_qualified"
-    if (
-      validatedData.lead_stage === "sales_qualified" &&
-      existingLead.lead_stage !== "sales_qualified" &&
-      !existingLead.qualified_date
-    ) {
-      updateData.qualified_date = new Date();
-    }
-
     // STEP 8: Update lead with full relations for response
     const updatedLead = await db.crm_leads.update({
       where: { id },
@@ -401,17 +366,7 @@ export async function PATCH(
           industry: updatedLead.industry,
           company_size: updatedLead.company_size,
           status: updatedLead.status,
-          lead_stage: updatedLead.lead_stage,
           priority: updatedLead.priority,
-          fit_score: updatedLead.fit_score
-            ? Number(updatedLead.fit_score)
-            : null,
-          engagement_score: updatedLead.engagement_score
-            ? Number(updatedLead.engagement_score)
-            : null,
-          qualification_score: updatedLead.qualification_score
-            ? Number(updatedLead.qualification_score)
-            : null,
           assigned_to: assignedEmployee
             ? {
                 id: assignedEmployee.id,
@@ -431,7 +386,6 @@ export async function PATCH(
                   updatedLead.crm_lead_sources.description_translations,
               }
             : null,
-          qualification_notes: updatedLead.qualification_notes,
           message: updatedLead.message,
           next_action_date: updatedLead.next_action_date?.toISOString() || null,
           metadata: updatedLead.metadata as Record<string, unknown> | null,

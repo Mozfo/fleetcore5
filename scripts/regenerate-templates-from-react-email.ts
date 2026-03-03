@@ -73,9 +73,6 @@ interface SalesRepAssignmentProps {
   lead_name: string;
   company_name: string;
   priority: "urgent" | "high" | "medium" | "low";
-  fit_score: number;
-  qualification_score: number;
-  lead_stage: string;
   fleet_size: string;
   country_code: string;
   lead_detail_url: string;
@@ -280,9 +277,6 @@ const templates: TemplateConfig[] = [
       lead_name: "{{lead_name}}",
       company_name: "{{company_name}}",
       priority: "high",
-      fit_score: 85, // Placeholder: replaced in post-processing
-      qualification_score: 90, // Placeholder: replaced in post-processing
-      lead_stage: "{{lead_stage}}",
       fleet_size: "{{fleet_size}}",
       country_code: "{{country_code}}",
       lead_detail_url: "{{lead_detail_url}}",
@@ -382,8 +376,6 @@ async function regenerateAllTemplates(): Promise<void> {
         html = html.replace(/high/g, "{{priority}}");
         html = html.replace(/haute/g, "{{priority}}");
         html = html.replace(/عالية/g, "{{priority}}");
-        html = html.replace(/85/g, "{{fit_score}}");
-        html = html.replace(/90/g, "{{qualification_score}}");
       }
 
       htmlOutputs[template.code][locale] = html;

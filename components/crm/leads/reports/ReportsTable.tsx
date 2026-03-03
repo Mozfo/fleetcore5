@@ -34,8 +34,6 @@ interface Lead {
   } | null;
   fleet_size: string | null;
   status: string;
-  lead_stage: string | null;
-  qualification_score: number | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -170,9 +168,6 @@ export function ReportsTable({ coldFilter, locale }: ReportsTableProps) {
                 {t("reports.table.status", "Status")}
               </th>
               <th className="px-4 py-3 text-left">
-                {t("reports.table.score", "Score")}
-              </th>
-              <th className="px-4 py-3 text-left">
                 {t("reports.table.created", "Created")}
               </th>
               <th className="px-4 py-3 text-right">
@@ -183,14 +178,14 @@ export function ReportsTable({ coldFilter, locale }: ReportsTableProps) {
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center">
+                <td colSpan={7} className="py-12 text-center">
                   <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />
                 </td>
               </tr>
             ) : leads.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={7}
                   className="py-12 text-center text-sm text-gray-500"
                 >
                   {t("reports.table.no_results", "No leads found")}
@@ -278,15 +273,6 @@ export function ReportsTable({ coldFilter, locale }: ReportsTableProps) {
                       )}
                     >
                       {t(`leads.status.${lead.status}`, lead.status)}
-                    </span>
-                  </td>
-
-                  {/* Score */}
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">
-                      {lead.qualification_score !== null
-                        ? lead.qualification_score
-                        : "-"}
                     </span>
                   </td>
 

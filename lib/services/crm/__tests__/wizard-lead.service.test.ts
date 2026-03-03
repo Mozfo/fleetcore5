@@ -45,8 +45,6 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     fleet_size: null,
     current_software: null,
     assigned_to: null,
-    qualification_score: null,
-    qualification_notes: null,
     qualified_date: null,
     converted_date: null,
     utm_source: null,
@@ -67,10 +65,6 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     website_url: null,
     linkedin_url: null,
     city: null,
-    lead_stage: null,
-    fit_score: null,
-    engagement_score: null,
-    scoring: null,
     gdpr_consent: null,
     consent_at: null,
     source_id: null,
@@ -80,14 +74,9 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     consent_ip: null,
     last_activity_at: null,
     // V5: Closing columns
-    stage_entered_at: now,
     loss_reason_code: null,
     loss_reason_detail: null,
     competitor_name: null,
-    // V6.2: Booking Cal.com
-    booking_slot_at: null,
-    booking_confirmed_at: null,
-    booking_calcom_uid: null,
     platforms_used: [],
     // V6.2: Wizard
     wizard_completed: false,
@@ -104,13 +93,6 @@ function createMockLead(overrides: Partial<crm_leads> = {}): crm_leads {
     email_verification_code: null,
     email_verification_expires_at: null,
     email_verification_attempts: 0,
-    // V6.2.6: Attendance Confirmation
-    confirmation_token: null,
-    attendance_confirmed: false,
-    attendance_confirmed_at: null,
-    j1_reminder_sent_at: null,
-    // V6.3.3: Reschedule token
-    reschedule_token: null,
     // V6.4: GeoIP tracking
     ip_address: null,
     detected_country_code: null,

@@ -40,7 +40,6 @@ import {
 import { LeadDetailCards } from "./LeadDetailCards";
 import { PaymentLinkSection } from "./PaymentLinkSection";
 import { LeadQuoteSection } from "./LeadQuoteSection";
-import { CPTQualificationModal } from "./CPTQualificationModal";
 import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
@@ -87,9 +86,6 @@ export function LeadsBrowserClient({
   // G4: Delete Modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  // G2: Qualify Modal state
-  const [isQualifyModalOpen, setIsQualifyModalOpen] = useState(false);
 
   // G3: Convert Modal state
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
@@ -281,17 +277,6 @@ export function LeadsBrowserClient({
     },
     [selectedLead, t]
   );
-
-  // G2: Handle qualify
-  const handleQualify = useCallback(() => {
-    setIsQualifyModalOpen(true);
-  }, []);
-
-  // G2: Handle qualify success (CPT framework)
-  const handleQualifySuccess = useCallback(() => {
-    // Refresh the page to get updated lead data
-    window.location.reload();
-  }, []);
 
   // G3: Handle convert
   const handleConvert = useCallback(() => {
@@ -564,9 +549,6 @@ export function LeadsBrowserClient({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={handleQualify}>
-                            {t("leads.drawer.actions.qualify")}
-                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={handleConvert}>
                             {t("leads.drawer.actions.convert")}
                           </DropdownMenuItem>
@@ -636,16 +618,6 @@ export function LeadsBrowserClient({
           </div>
         )}
       </div>
-
-      {/* G2: CPT Qualification Modal */}
-      {selectedLead && (
-        <CPTQualificationModal
-          lead={selectedLead}
-          isOpen={isQualifyModalOpen}
-          onClose={() => setIsQualifyModalOpen(false)}
-          onSuccess={handleQualifySuccess}
-        />
-      )}
 
       {/* G3: Convert to Opportunity Modal */}
       {selectedLead && (

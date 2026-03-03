@@ -7,7 +7,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Context: This API allows updating multiple settings atomically.
- * Useful for saving entire configuration pages (e.g., pipeline stages).
+ * Useful for saving entire configuration pages (e.g., opportunity stages).
  *
  * Authentication flow:
  * 1. Auth guard validates: userId + FleetCore Admin org membership + settings:edit
@@ -35,8 +35,8 @@ import { AppError } from "@/lib/core/errors";
  *
  * Request Body: {
  *   updates: [
- *     { key: "lead_stages", value: {...} },
- *     { key: "opportunity_stages", value: {...} }
+ *     { key: "opportunity_stages", value: {...} },
+ *     { key: "opportunity_loss_reasons", value: {...} }
  *   ]
  * }
  *
@@ -55,7 +55,7 @@ import { AppError } from "@/lib/core/errors";
  * POST /api/v1/crm/settings/bulk
  * Body: {
  *   "updates": [
- *     { "key": "lead_stages", "value": { "stages": [...] } },
+ *     { "key": "opportunity_stages", "value": { "stages": [...] } },
  *     { "key": "opportunity_loss_reasons", "value": { "reasons": [...] } }
  *   ]
  * }
@@ -64,7 +64,7 @@ import { AppError } from "@/lib/core/errors";
  *   "success": true,
  *   "data": {
  *     "updated_count": 2,
- *     "keys": ["lead_stages", "opportunity_loss_reasons"]
+ *     "keys": ["opportunity_stages", "opportunity_loss_reasons"]
  *   },
  *   "message": "2 settings updated successfully"
  * }

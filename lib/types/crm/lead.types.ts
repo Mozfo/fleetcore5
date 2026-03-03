@@ -219,13 +219,6 @@ export interface Lead360View {
   /** Aggregated timeline (activities + status changes + ops + quotes) */
   timeline: TimelineEntry[];
 
-  /** Scoring breakdown */
-  scoring: {
-    fit_score: number | null;
-    engagement_score: number | null;
-    qualification_score: number | null;
-  };
-
   /** Statistics */
   stats: {
     total_opportunities: number;

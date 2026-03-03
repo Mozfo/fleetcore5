@@ -10,12 +10,10 @@
 
 import { useRef, useCallback, memo } from "react";
 import { motion } from "framer-motion";
-import { useParams } from "next/navigation";
 import { Car } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
-import { useLeadStages } from "@/lib/hooks/useLeadStages";
 import { FCBadge } from "@/components/fc";
 import { getStatusBorderLeft } from "@/lib/utils/status-colors";
 import type { Lead, LeadStatus } from "@/types/crm";
@@ -96,9 +94,6 @@ export const KanbanCard = memo(
     onStatusChange,
   }: KanbanCardProps) {
     const { t } = useTranslation("crm");
-    const params = useParams();
-    const locale = (params.locale as string) || "en";
-    const { getLabel: getStageLabel } = useLeadStages();
 
     // Click delay to distinguish single vs double click
     const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -130,7 +125,6 @@ export const KanbanCard = memo(
     } = useDraggable({ id: lead.id });
 
     const showDraggingState = isDragging || isBeingDragged;
-    const score = lead.qualification_score;
 
     return (
       <LeadContextMenu
@@ -213,25 +207,6 @@ export const KanbanCard = memo(
                 {lead.fleet_size}
               </span>
             )}
-            {score !== null && score !== undefined && (
-              <span
-                className={cn(
-                  "inline-flex items-center rounded px-1 py-px text-[10px] font-bold",
-                  score >= 70
-                    ? "bg-status-converted/20 text-status-converted"
-                    : score >= 40
-                      ? "bg-status-proposal/20 text-status-proposal"
-                      : "bg-muted text-muted-foreground"
-                )}
-              >
-                {score}
-              </span>
-            )}
-            {lead.lead_stage && (
-              <span className="truncate">
-                {getStageLabel(lead.lead_stage, locale)}
-              </span>
-            )}
           </div>
 
           {/* Line 4: Status badge */}
@@ -269,8 +244,6 @@ export const KanbanCard = memo(
       prevProps.lead.id === nextProps.lead.id &&
       prevProps.lead.status === nextProps.lead.status &&
       prevProps.lead.updated_at === nextProps.lead.updated_at &&
-      prevProps.lead.qualification_score ===
-        nextProps.lead.qualification_score &&
       prevProps.lead.assigned_to?.id === nextProps.lead.assigned_to?.id &&
       prevProps.isDragging === nextProps.isDragging
     );

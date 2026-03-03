@@ -38,7 +38,6 @@ import {
   SourceSection,
   AssignmentSection,
   GdprSection,
-  NotesSection,
   MessageSection,
   TimelineSection,
 } from "./LeadDrawerSections";
@@ -414,7 +413,6 @@ export function LeadDrawer({
                     <LocationSection lead={fullLead} />
                     <SourceSection lead={fullLead} />
                     <GdprSection lead={fullLead} visible={showGdprSection} />
-                    <NotesSection lead={fullLead} />
                     <MessageSection
                       lead={fullLead}
                       isEditing={isEditing}

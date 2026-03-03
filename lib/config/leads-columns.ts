@@ -77,24 +77,6 @@ export const DEFAULT_LEADS_COLUMNS: ColumnConfig[] = [
     sortable: true,
   },
   {
-    key: "qualification_score",
-    labelKey: "leads.table.columns.score",
-    visible: true,
-    locked: false,
-    width: "w-[100px]",
-    defaultVisible: true,
-    sortable: true,
-  },
-  {
-    key: "lead_stage",
-    labelKey: "leads.table.columns.stage",
-    visible: true,
-    locked: false,
-    width: "w-[120px]",
-    defaultVisible: true,
-    sortable: true,
-  },
-  {
     key: "assigned_to",
     labelKey: "leads.table.columns.assigned",
     visible: true,
@@ -197,56 +179,10 @@ export const DEFAULT_LEADS_COLUMNS: ColumnConfig[] = [
     defaultVisible: false,
     sortable: true,
   },
-  {
-    key: "fit_score",
-    labelKey: "leads.table.columns.fit_score",
-    visible: false,
-    locked: false,
-    width: "w-[100px]",
-    defaultVisible: false,
-    sortable: true,
-  },
-  {
-    key: "engagement_score",
-    labelKey: "leads.table.columns.engagement",
-    visible: false,
-    locked: false,
-    width: "w-[100px]",
-    defaultVisible: false,
-    sortable: true,
-  },
-
   // 16 NEW colonnes MASQUÉES par défaut
-  {
-    key: "industry",
-    labelKey: "leads.table.columns.industry",
-    visible: false,
-    locked: false,
-    width: "w-[120px]",
-    defaultVisible: false,
-    sortable: true,
-  },
-  {
-    key: "company_size",
-    labelKey: "leads.table.columns.company_size",
-    visible: false,
-    locked: false,
-    width: "w-[130px]",
-    defaultVisible: false,
-    sortable: true,
-  },
   {
     key: "website_url",
     labelKey: "leads.table.columns.website_url",
-    visible: false,
-    locked: false,
-    width: "w-[180px]",
-    defaultVisible: false,
-    sortable: false,
-  },
-  {
-    key: "linkedin_url",
-    labelKey: "leads.table.columns.linkedin_url",
     visible: false,
     locked: false,
     width: "w-[180px]",
@@ -317,15 +253,6 @@ export const DEFAULT_LEADS_COLUMNS: ColumnConfig[] = [
     sortable: false,
   },
   {
-    key: "qualification_notes",
-    labelKey: "leads.table.columns.qualification_notes",
-    visible: false,
-    locked: false,
-    width: "w-[200px]",
-    defaultVisible: false,
-    sortable: false,
-  },
-  {
     key: "gdpr_consent",
     labelKey: "leads.table.columns.gdpr_consent",
     visible: false,
@@ -377,12 +304,9 @@ export const DEFAULT_COLUMN_ORDER: string[] = [
   "ref", // renamed from lead_code
   "email",
   "phone",
-  "industry",
-  "company_size",
   "fleet_size",
   "current_software",
   "website_url",
-  "linkedin_url",
 
   // Location
   "country_code",
@@ -394,13 +318,7 @@ export const DEFAULT_COLUMN_ORDER: string[] = [
   "utm_medium",
   "utm_campaign",
 
-  // Scoring
-  "qualification_score",
-  "fit_score",
-  "engagement_score",
-
-  // Status & Stage
-  "lead_stage",
+  // Status
   "status",
   "priority",
 
@@ -419,7 +337,6 @@ export const DEFAULT_COLUMN_ORDER: string[] = [
 
   // Notes & Message
   "message",
-  "qualification_notes",
 
   // Links
   "opportunity_id",
@@ -446,12 +363,9 @@ export const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
   ref: 120, // renamed from lead_code
   email: 200,
   phone: 140,
-  industry: 120,
-  company_size: 130,
   fleet_size: 100,
   current_software: 140,
   website_url: 180,
-  linkedin_url: 180,
 
   // Location
   country_code: 100,
@@ -463,13 +377,7 @@ export const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
   utm_medium: 120,
   utm_campaign: 140,
 
-  // Scoring
-  qualification_score: 100,
-  fit_score: 100,
-  engagement_score: 100,
-
-  // Status & Stage
-  lead_stage: 120,
+  // Status
   status: 100,
   priority: 100,
 
@@ -488,7 +396,6 @@ export const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
 
   // Notes & Message
   message: 200,
-  qualification_notes: 200,
 
   // Links
   opportunity_id: 140,
@@ -550,16 +457,6 @@ export const CSV_COLUMN_CONFIG: Record<string, CsvColumnConfig> = {
     header: "Company",
     getValue: (lead) => lead.company_name || "",
   },
-  industry: {
-    key: "industry",
-    header: "Industry",
-    getValue: (lead) => lead.industry || "",
-  },
-  company_size: {
-    key: "company_size",
-    header: "Company Size",
-    getValue: (lead) => lead.company_size?.toString() || "",
-  },
   fleet_size: {
     key: "fleet_size",
     header: "Fleet Size",
@@ -574,11 +471,6 @@ export const CSV_COLUMN_CONFIG: Record<string, CsvColumnConfig> = {
     key: "website_url",
     header: "Website",
     getValue: (lead) => lead.website_url || "",
-  },
-  linkedin_url: {
-    key: "linkedin_url",
-    header: "LinkedIn",
-    getValue: (lead) => lead.linkedin_url || "",
   },
   country_code: {
     key: "country_code",
@@ -609,26 +501,6 @@ export const CSV_COLUMN_CONFIG: Record<string, CsvColumnConfig> = {
     key: "utm_campaign",
     header: "UTM Campaign",
     getValue: (lead) => lead.utm_campaign || "",
-  },
-  qualification_score: {
-    key: "qualification_score",
-    header: "Qualification Score",
-    getValue: (lead) => lead.qualification_score?.toString() || "",
-  },
-  fit_score: {
-    key: "fit_score",
-    header: "Fit Score",
-    getValue: (lead) => lead.fit_score?.toString() || "",
-  },
-  engagement_score: {
-    key: "engagement_score",
-    header: "Engagement Score",
-    getValue: (lead) => lead.engagement_score?.toString() || "",
-  },
-  lead_stage: {
-    key: "lead_stage",
-    header: "Stage",
-    getValue: (lead) => lead.lead_stage || "",
   },
   status: {
     key: "status",
@@ -697,11 +569,6 @@ export const CSV_COLUMN_CONFIG: Record<string, CsvColumnConfig> = {
     key: "message",
     header: "Message",
     getValue: (lead) => lead.message || "",
-  },
-  qualification_notes: {
-    key: "qualification_notes",
-    header: "Qualification Notes",
-    getValue: (lead) => lead.qualification_notes || "",
   },
   opportunity_id: {
     key: "opportunity_id",

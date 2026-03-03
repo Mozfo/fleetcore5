@@ -165,16 +165,13 @@ describe("sendNotification Façade - Type Safety Tests", () => {
         lead_name: "John",
         company_name: "Test",
         priority: "high",
-        fit_score: 85,
-        qualification_score: 90,
-        lead_stage: "Qualified",
         fleet_size: "50",
         country_code: "FR",
         lead_detail_url: "https://app.fleetcore.com/leads/1",
       };
 
-      expect(payload.fit_score).toBe(85);
       expect(payload.priority).toBe("high");
+      expect(payload.fleet_size).toBe("50");
     });
   });
 

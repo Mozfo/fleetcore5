@@ -21,7 +21,6 @@ export interface SettingData {
  * All CRM settings data for the page
  */
 export interface CrmSettingsData {
-  leadStages: SettingData | null;
   opportunityStages: SettingData | null;
   lossReasons: SettingData | null;
 }
@@ -35,28 +34,6 @@ export interface SettingsTab {
   icon: string;
   enabled: boolean;
   phase: number;
-}
-
-/**
- * Lead stage from settings
- */
-export interface LeadStageConfig {
-  value: string;
-  label_en: string;
-  label_fr: string;
-  color: string;
-  order: number;
-  is_active: boolean;
-  auto_actions: string[];
-}
-
-/**
- * Lead stages setting value
- */
-export interface LeadStagesSettingValue {
-  stages: LeadStageConfig[];
-  transitions: Record<string, string[]>;
-  default_stage: string;
 }
 
 /**
@@ -143,18 +120,6 @@ export interface LossReasonsSettingValue {
   default: string | null;
   reasons: LossReasonConfig[];
   recovery_workflow: RecoveryWorkflowConfig;
-}
-
-/**
- * Simplified Lead stage for UI editing
- * (subset of LeadStageConfig without optional fields)
- */
-export interface LeadStage {
-  value: string;
-  label_en: string;
-  label_fr: string;
-  color: string;
-  order: number;
 }
 
 /**

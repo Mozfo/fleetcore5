@@ -3,10 +3,8 @@
 /**
  * CRM Lead Convert Server Actions
  *
- * Server Action to convert a Sales Qualified Lead (SQL) to an Opportunity.
- * Creates a new crm_opportunities record and updates the lead.
- *
- * @see lib/actions/crm/qualify.actions.ts for pattern reference
+ * Server Action to convert a Qualified Lead to an Opportunity.
+ * Creates a new crm_opportunities record and updates the lead status to "converted".
  */
 
 import { requireCrmAuth } from "@/lib/auth/server";
@@ -90,11 +88,11 @@ export async function convertLeadToOpportunityAction(
       return { success: false, error: "Lead not found" };
     }
 
-    // 6. Verify eligibility - must be sales_qualified
-    if (currentLead.lead_stage !== "sales_qualified") {
+    // 6. Verify eligibility - must be qualified (BANT V7)
+    if (currentLead.status !== "qualified") {
       return {
         success: false,
-        error: "Lead must be Sales Qualified to convert",
+        error: "Lead must be Qualified to convert",
       };
     }
 
@@ -146,7 +144,6 @@ export async function convertLeadToOpportunityAction(
           lead_email: currentLead.email,
           lead_phone: currentLead.phone,
           lead_fleet_size: currentLead.fleet_size,
-          lead_qualification_score: currentLead.qualification_score,
           lead_assigned_to: currentLead.assigned_to, // Store for reference, not as FK
           notes: validation.data.notes || null,
           created_by_user_id: userId,
@@ -162,13 +159,11 @@ export async function convertLeadToOpportunityAction(
         data: opportunityData,
       });
 
-      // Update the lead
-      // V6.3 AUTO STATUS SYNC: Set status to "converted" when converting to opportunity
+      // Update the lead — set status to "converted"
       const updatedLead = await tx.crm_leads.update({
         where: { id: leadId },
         data: {
-          lead_stage: "opportunity",
-          status: "converted", // V6.3: Auto-sync status with stage
+          status: "converted",
           converted_date: new Date(),
           opportunity_id: opportunity.id,
           updated_at: new Date(),
@@ -200,9 +195,9 @@ export async function convertLeadToOpportunityAction(
           entity: "crm_lead",
           entity_id: leadId,
           action: "CONVERT",
-          old_values: { lead_stage: currentLead.lead_stage },
+          old_values: { status: currentLead.status },
           new_values: {
-            lead_stage: "opportunity",
+            status: "converted",
             opportunity_id: result.opportunity.id,
             opportunity_name: validation.data.opportunityName,
           },
@@ -251,16 +246,9 @@ export async function convertLeadToOpportunityAction(
         : null,
     };
 
-    // Serialize lead Decimal fields as well
+    // Serialize lead fields
     const serializedLead = {
       ...result.lead,
-      fit_score: result.lead.fit_score ? Number(result.lead.fit_score) : null,
-      engagement_score: result.lead.engagement_score
-        ? Number(result.lead.engagement_score)
-        : null,
-      qualification_score: result.lead.qualification_score
-        ? Number(result.lead.qualification_score)
-        : null,
       // Convert Date fields to ISO strings
       created_at: result.lead.created_at.toISOString(),
       updated_at: result.lead.updated_at?.toISOString() || null,

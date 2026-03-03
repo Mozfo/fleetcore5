@@ -10,8 +10,6 @@ export const RESOURCE_TO_MODULE: Record<string, ModuleKey> = {
   leads: "crm",
   opportunities: "crm",
   quotes: "crm",
-  orders: "crm",
-  agreements: "crm",
   activities: "crm",
   vehicles: "fleet",
   drivers: "drivers",

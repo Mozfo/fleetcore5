@@ -2,8 +2,10 @@
  * PipelineSettingsTab - Pipeline Configuration with Drag & Drop
  *
  * Contains:
- * - Lead Stages configuration (drag & drop reorder)
  * - Opportunity Stages configuration (with probability & max_days)
+ * - Deal Rotting settings
+ *
+ * Lead stages pipeline configuration was removed in DETTE-V3 (migrated to V7 status workflow).
  *
  * Uses @dnd-kit for drag & drop reordering
  *
@@ -66,26 +68,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type {
   SettingData,
-  LeadStagesSettingValue,
   OpportunityStagesSettingValue,
-  LeadStage,
   OpportunityStage,
 } from "./types";
 import {
   DealRottingSettings,
   type DealRottingConfig,
 } from "./DealRottingSettings";
-import {
-  OpportunityPipelinePreview,
-  LeadPipelinePreview,
-} from "./PipelinePreview";
+import { OpportunityPipelinePreview } from "./PipelinePreview";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface PipelineSettingsTabProps {
-  leadStages: SettingData | null;
   opportunityStages: SettingData | null;
 }
 
@@ -137,17 +133,8 @@ const COLOR_CLASSES: Record<StageColor, string> = {
 // ============================================================================
 
 export function PipelineSettingsTab({
-  leadStages,
   opportunityStages,
 }: PipelineSettingsTabProps) {
-  // Parse initial values
-  const initialLeadStages = useMemo(() => {
-    const value = leadStages?.setting_value as
-      | LeadStagesSettingValue
-      | undefined;
-    return value?.stages?.sort((a, b) => a.order - b.order) || [];
-  }, [leadStages]);
-
   const initialOppStages = useMemo(() => {
     const value = opportunityStages?.setting_value as
       | OpportunityStagesSettingValue
@@ -164,59 +151,17 @@ export function PipelineSettingsTab({
   }, [opportunityStages]);
 
   // Local state for editing
-  const [localLeadStages, setLocalLeadStages] =
-    useState<LeadStage[]>(initialLeadStages);
   const [localOppStages, setLocalOppStages] =
     useState<OpportunityStage[]>(initialOppStages);
 
   // Save states
-  const [isSavingLeads, setIsSavingLeads] = useState(false);
   const [isSavingOpps, setIsSavingOpps] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState<
-    "leads" | "opportunities" | null
-  >(null);
-
-  // Check for unsaved changes
-  const hasLeadChanges = useMemo(() => {
-    return (
-      JSON.stringify(localLeadStages) !== JSON.stringify(initialLeadStages)
-    );
-  }, [localLeadStages, initialLeadStages]);
+  const [saveSuccess, setSaveSuccess] = useState<"opportunities" | null>(null);
 
   const hasOppChanges = useMemo(() => {
     return JSON.stringify(localOppStages) !== JSON.stringify(initialOppStages);
   }, [localOppStages, initialOppStages]);
-
-  // Save handlers
-  const handleSaveLeadStages = useCallback(async () => {
-    setIsSavingLeads(true);
-    setSaveError(null);
-    try {
-      const response = await fetch("/api/v1/crm/settings/lead_stages", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          setting_value: {
-            stages: localLeadStages,
-            default_stage: localLeadStages[0]?.value || "new",
-          },
-        }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || "Failed to save");
-      }
-      setSaveSuccess("leads");
-      setTimeout(() => setSaveSuccess(null), 2000);
-    } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Failed to save lead stages"
-      );
-    } finally {
-      setIsSavingLeads(false);
-    }
-  }, [localLeadStages]);
 
   const handleSaveOppStages = useCallback(async () => {
     setIsSavingOpps(true);
@@ -249,11 +194,7 @@ export function PipelineSettingsTab({
     }
   }, [localOppStages]);
 
-  // Reset handlers
-  const handleResetLeadStages = useCallback(() => {
-    setLocalLeadStages(initialLeadStages);
-  }, [initialLeadStages]);
-
+  // Reset handler
   const handleResetOppStages = useCallback(() => {
     setLocalOppStages(initialOppStages);
   }, [initialOppStages]);
@@ -300,35 +241,19 @@ export function PipelineSettingsTab({
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Lead Stages Card */}
-        <LeadStagesCard
-          stages={localLeadStages}
-          setStages={setLocalLeadStages}
-          hasChanges={hasLeadChanges}
-          isSaving={isSavingLeads}
-          saveSuccess={saveSuccess === "leads"}
-          onSave={handleSaveLeadStages}
-          onReset={handleResetLeadStages}
-        />
+      {/* Opportunity Stages Card */}
+      <OpportunityStagesCard
+        stages={localOppStages}
+        setStages={setLocalOppStages}
+        hasChanges={hasOppChanges}
+        isSaving={isSavingOpps}
+        saveSuccess={saveSuccess === "opportunities"}
+        onSave={handleSaveOppStages}
+        onReset={handleResetOppStages}
+      />
 
-        {/* Opportunity Stages Card */}
-        <OpportunityStagesCard
-          stages={localOppStages}
-          setStages={setLocalOppStages}
-          hasChanges={hasOppChanges}
-          isSaving={isSavingOpps}
-          saveSuccess={saveSuccess === "opportunities"}
-          onSave={handleSaveOppStages}
-          onReset={handleResetOppStages}
-        />
-      </div>
-
-      {/* Pipeline Previews */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <LeadPipelinePreview stages={localLeadStages} />
-        <OpportunityPipelinePreview stages={localOppStages} />
-      </div>
+      {/* Pipeline Preview */}
+      <OpportunityPipelinePreview stages={localOppStages} />
 
       {/* Deal Rotting Settings */}
       <DealRottingSettings
@@ -336,206 +261,6 @@ export function PipelineSettingsTab({
         onSave={handleSaveRottingConfig}
       />
     </div>
-  );
-}
-
-// ============================================================================
-// Lead Stages Card
-// ============================================================================
-
-interface LeadStagesCardProps {
-  stages: LeadStage[];
-  setStages: React.Dispatch<React.SetStateAction<LeadStage[]>>;
-  hasChanges: boolean;
-  isSaving: boolean;
-  saveSuccess: boolean;
-  onSave: () => void;
-  onReset: () => void;
-}
-
-function LeadStagesCard({
-  stages,
-  setStages,
-  hasChanges,
-  isSaving,
-  saveSuccess,
-  onSave,
-  onReset,
-}: LeadStagesCardProps) {
-  const { t } = useTranslation("crm");
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingStage, setEditingStage] = useState<LeadStage | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-
-    if (over && active.id !== over.id) {
-      setStages((items) => {
-        const oldIndex = items.findIndex((item) => item.value === active.id);
-        const newIndex = items.findIndex((item) => item.value === over.id);
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        // Update order values
-        return newItems.map((item, index) => ({ ...item, order: index + 1 }));
-      });
-    }
-  };
-
-  const handleAddStage = (stage: LeadStage) => {
-    setStages((prev) => [...prev, { ...stage, order: prev.length + 1 }]);
-    setIsAddModalOpen(false);
-  };
-
-  const handleEditStage = (stage: LeadStage) => {
-    setStages((prev) => prev.map((s) => (s.value === stage.value ? stage : s)));
-    setEditingStage(null);
-  };
-
-  const handleDeleteStage = (value: string) => {
-    setStages((prev) => {
-      const filtered = prev.filter((s) => s.value !== value);
-      return filtered.map((item, index) => ({ ...item, order: index + 1 }));
-    });
-  };
-
-  const activeStage = stages.find((s) => s.value === activeId);
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <GitBranch className="h-5 w-5 text-blue-500" />
-            <CardTitle>
-              {t("settings.pipeline.leadStages.title", "Lead Stages")}
-            </CardTitle>
-            {hasChanges && (
-              <span className="bg-fc-warning-50 text-fc-warning-600 rounded-full px-2 py-0.5 text-xs font-medium dark:bg-yellow-900/50 dark:text-yellow-300">
-                {t("settings.unsavedChanges", "Unsaved")}
-              </span>
-            )}
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsAddModalOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {t("settings.pipeline.addStage", "Add Stage")}
-          </Button>
-        </div>
-        <CardDescription>
-          {t(
-            "settings.pipeline.leadStages.description",
-            "Configure the stages for your lead pipeline. Drag to reorder."
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {stages.length > 0 ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={stages.map((s) => s.value)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2">
-                {stages.map((stage) => (
-                  <SortableLeadStageRow
-                    key={stage.value}
-                    stage={stage}
-                    onEdit={() => setEditingStage(stage)}
-                    onDelete={() => handleDeleteStage(stage.value)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-            <DragOverlay>
-              {activeStage && (
-                <div className="rounded-lg border bg-white p-3 shadow-lg dark:bg-gray-900">
-                  <LeadStageRowContent stage={activeStage} />
-                </div>
-              )}
-            </DragOverlay>
-          </DndContext>
-        ) : (
-          <EmptyStateMessage
-            message={t(
-              "settings.pipeline.leadStages.empty",
-              "No lead stages configured. Add your first stage to get started."
-            )}
-          />
-        )}
-
-        {/* Action Buttons */}
-        {stages.length > 0 && (
-          <div className="mt-4 flex justify-end gap-2 border-t pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onReset}
-              disabled={!hasChanges || isSaving}
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              {t("settings.reset", "Reset")}
-            </Button>
-            <Button
-              size="sm"
-              onClick={onSave}
-              disabled={!hasChanges || isSaving}
-            >
-              {isSaving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : saveSuccess ? (
-                <Check className="mr-2 h-4 w-4" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              {isSaving
-                ? t("settings.saving", "Saving...")
-                : saveSuccess
-                  ? t("settings.saved", "Saved!")
-                  : t("settings.save", "Save Changes")}
-            </Button>
-          </div>
-        )}
-      </CardContent>
-
-      {/* Add Modal */}
-      <LeadStageModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleAddStage}
-        existingValues={stages.map((s) => s.value)}
-      />
-
-      {/* Edit Modal */}
-      {editingStage && (
-        <LeadStageModal
-          isOpen={true}
-          onClose={() => setEditingStage(null)}
-          onSave={handleEditStage}
-          existingValues={stages
-            .filter((s) => s.value !== editingStage.value)
-            .map((s) => s.value)}
-          initialData={editingStage}
-        />
-      )}
-    </Card>
   );
 }
 
@@ -747,90 +472,6 @@ function OpportunityStagesCard({
 // Sortable Row Components
 // ============================================================================
 
-interface SortableLeadStageRowProps {
-  stage: LeadStage;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function SortableLeadStageRow({
-  stage,
-  onEdit,
-  onDelete,
-}: SortableLeadStageRowProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: stage.value });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="hover:bg-fc-bg-hover flex items-center gap-3 rounded-lg border bg-white p-3 transition-colors dark:bg-gray-900"
-    >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab touch-none focus:outline-none active:cursor-grabbing"
-      >
-        <GripVertical className="text-fc-text-muted h-4 w-4" />
-      </button>
-      <LeadStageRowContent stage={stage} />
-      <div className="ml-auto flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={onEdit}
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-fc-danger-500 hover:text-fc-danger-500 h-7 w-7"
-          onClick={onDelete}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function LeadStageRowContent({ stage }: { stage: LeadStage }) {
-  const { i18n } = useTranslation("crm");
-  const colorClass =
-    COLOR_CLASSES[stage.color as StageColor] || COLOR_CLASSES.gray;
-
-  return (
-    <>
-      <span className="text-fc-text-muted w-6 text-center text-sm">
-        {stage.order}
-      </span>
-      <span
-        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorClass}`}
-      >
-        {i18n.language === "fr"
-          ? stage.label_fr || stage.label_en
-          : stage.label_en}
-      </span>
-      <span className="text-fc-text-muted text-xs">{stage.value}</span>
-    </>
-  );
-}
-
 interface SortableOpportunityStageRowProps {
   stage: OpportunityStage;
   onEdit: () => void;
@@ -923,163 +564,6 @@ function OpportunityStageRowContent({ stage }: { stage: OpportunityStage }) {
 // ============================================================================
 // Modal Components
 // ============================================================================
-
-interface LeadStageModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (stage: LeadStage) => void;
-  existingValues: string[];
-  initialData?: LeadStage;
-}
-
-function LeadStageModal({
-  isOpen,
-  onClose,
-  onSave,
-  existingValues,
-  initialData,
-}: LeadStageModalProps) {
-  const { t } = useTranslation("crm");
-  const isEditing = !!initialData;
-
-  const [value, setValue] = useState(initialData?.value || "");
-  const [labelEn, setLabelEn] = useState(initialData?.label_en || "");
-  const [labelFr, setLabelFr] = useState(initialData?.label_fr || "");
-  const [color, setColor] = useState<StageColor>(
-    (initialData?.color as StageColor) || "blue"
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    // Validate
-    const trimmedValue = value.trim().toLowerCase().replace(/\s+/g, "_");
-    if (!trimmedValue) {
-      setError("Value is required");
-      return;
-    }
-    if (!isEditing && existingValues.includes(trimmedValue)) {
-      setError("This value already exists");
-      return;
-    }
-    if (!labelEn.trim()) {
-      setError("English label is required");
-      return;
-    }
-
-    onSave({
-      value: trimmedValue,
-      label_en: labelEn.trim(),
-      label_fr: labelFr.trim() || labelEn.trim(),
-      color,
-      order: initialData?.order || 0,
-    });
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing
-                ? t("settings.pipeline.editStage", "Edit Stage")
-                : t("settings.pipeline.addStage", "Add Stage")}
-            </DialogTitle>
-            <DialogDescription>
-              {t(
-                "settings.pipeline.stageModalDescription",
-                "Configure the stage properties."
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-4">
-            {/* Value */}
-            <div className="grid gap-2">
-              <Label htmlFor="value">
-                {t("settings.pipeline.stageValue", "Value (ID)")}
-              </Label>
-              <Input
-                id="value"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder="e.g., new, qualified, working"
-                disabled={isEditing}
-              />
-            </div>
-
-            {/* English Label */}
-            <div className="grid gap-2">
-              <Label htmlFor="labelEn">
-                {t("settings.pipeline.labelEn", "Label (English)")}
-              </Label>
-              <Input
-                id="labelEn"
-                value={labelEn}
-                onChange={(e) => setLabelEn(e.target.value)}
-                placeholder="e.g., New Lead"
-              />
-            </div>
-
-            {/* French Label */}
-            <div className="grid gap-2">
-              <Label htmlFor="labelFr">
-                {t("settings.pipeline.labelFr", "Label (French)")}
-              </Label>
-              <Input
-                id="labelFr"
-                value={labelFr}
-                onChange={(e) => setLabelFr(e.target.value)}
-                placeholder="e.g., Nouveau Lead"
-              />
-            </div>
-
-            {/* Color */}
-            <div className="grid gap-2">
-              <Label>{t("settings.pipeline.color", "Color")}</Label>
-              <div className="flex flex-wrap gap-2">
-                {STAGE_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className={`h-8 w-8 rounded-full border-2 transition-all ${
-                      COLOR_CLASSES[c].split(" ")[0]
-                    } ${
-                      color === c
-                        ? "ring-fc-primary-500 ring-2 ring-offset-2"
-                        : "opacity-60 hover:opacity-100"
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="text-fc-danger-500 flex items-center gap-2 text-sm">
-                <AlertCircle className="h-4 w-4" />
-                {error}
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t("common.cancel", "Cancel")}
-            </Button>
-            <Button type="submit">
-              {isEditing ? t("common.save", "Save") : t("common.add", "Add")}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 interface OpportunityStageModalProps {
   isOpen: boolean;

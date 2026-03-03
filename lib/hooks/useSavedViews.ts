@@ -28,7 +28,6 @@ const DEFAULT_CONFIG: SavedViewConfig = {
   advancedFilters: null,
   basicFilters: {
     status: "all",
-    lead_stage: "all",
     assigned_to: "all",
     country_code: "all",
     min_score: undefined,
@@ -92,9 +91,9 @@ const BUILT_IN_VIEWS: SavedView[] = [
         conditions: [
           {
             id: "qualified-condition",
-            field: "lead_stage",
+            field: "status",
             operator: "equals",
-            value: "sales_qualified",
+            value: "qualified",
           },
         ],
         groups: [],

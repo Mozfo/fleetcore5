@@ -39,10 +39,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ProgressBar } from "@/components/ui/progress-bar";
 import { useTranslation } from "react-i18next";
 import { useParams, useRouter } from "next/navigation";
-import { useLeadStages } from "@/lib/hooks/useLeadStages";
 import { getStatusConfig } from "@/lib/config/pipeline-status";
 import { LeadTimeline } from "./LeadTimeline";
 import type { Lead } from "@/types/crm";
@@ -91,8 +89,6 @@ export function LeadWorkspaceDialog({
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
-  const { getLabel: getStageLabel } = useLeadStages();
-
   // Prev/Next navigation
   const currentIndex = useMemo(() => {
     if (!lead) return -1;
@@ -235,29 +231,7 @@ export function LeadWorkspaceDialog({
                 </h3>
               </div>
               <div className="space-y-3 p-3">
-                {lead.qualification_score !== null && (
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Score</span>
-                      <span className="font-medium">
-                        {lead.qualification_score}/100
-                      </span>
-                    </div>
-                    <ProgressBar
-                      value={lead.qualification_score ?? 0}
-                      max={100}
-                    />
-                  </div>
-                )}
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-muted-foreground text-xs">Stage</span>
-                    <p className="text-foreground font-medium">
-                      {lead.lead_stage
-                        ? getStageLabel(lead.lead_stage, locale)
-                        : "—"}
-                    </p>
-                  </div>
                   <div>
                     <span className="text-muted-foreground text-xs">
                       Priority
@@ -478,19 +452,6 @@ export function LeadWorkspaceDialog({
                     {fullName || "—"}
                   </span>
                 </div>
-                {lead.linkedin_url && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">LinkedIn</span>
-                    <a
-                      href={lead.linkedin_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      <ExternalLink className="inline h-3 w-3" /> Profile
-                    </a>
-                  </div>
-                )}
                 {lead.website_url && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Website</span>
@@ -502,11 +463,6 @@ export function LeadWorkspaceDialog({
                     >
                       <ExternalLink className="inline h-3 w-3" /> Visit
                     </a>
-                  </div>
-                )}
-                {lead.qualification_notes && (
-                  <div className="border-border bg-muted/50 text-foreground mt-2 rounded border p-2 text-xs">
-                    {lead.qualification_notes}
                   </div>
                 )}
               </div>

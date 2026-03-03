@@ -6,21 +6,19 @@
  */
 
 import { z } from "zod";
+import { LEAD_STATUSES } from "@/lib/constants/crm/lead-status.constants";
+import {
+  BANT_BUDGET_VALUES,
+  BANT_AUTHORITY_VALUES,
+  BANT_NEED_VALUES,
+  BANT_TIMELINE_VALUES,
+} from "@/lib/constants/crm/bant.constants";
 
 /**
- * V7 Lead statuses
- * Source: crm_settings.lead_status_workflow + DB CHECK constraint
+ * V7 Lead statuses — derived from single source of truth.
+ * @see lib/constants/crm/lead-status.constants.ts
  */
-export const leadStatusEnum = z.enum([
-  "new",
-  "email_verified",
-  "callback_requested",
-  "qualified",
-  "payment_pending",
-  "converted",
-  "nurturing",
-  "disqualified",
-]);
+export const leadStatusEnum = z.enum(LEAD_STATUSES);
 
 export type LeadStatus = z.infer<typeof leadStatusEnum>;
 
@@ -37,35 +35,12 @@ export const updateStatusSchema = z.object({
 
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
 
-// ===== BANT Qualification Enums =====
+// ===== BANT Qualification Enums — derived from bant.constants.ts =====
 
-export const bantBudgetEnum = z.enum([
-  "confirmed",
-  "planned",
-  "no_budget",
-  "unknown",
-]);
-
-export const bantAuthorityEnum = z.enum([
-  "decision_maker",
-  "influencer",
-  "user",
-  "unknown",
-]);
-
-export const bantNeedEnum = z.enum([
-  "critical",
-  "important",
-  "nice_to_have",
-  "none",
-]);
-
-export const bantTimelineEnum = z.enum([
-  "immediate",
-  "this_quarter",
-  "this_year",
-  "no_timeline",
-]);
+export const bantBudgetEnum = z.enum(BANT_BUDGET_VALUES);
+export const bantAuthorityEnum = z.enum(BANT_AUTHORITY_VALUES);
+export const bantNeedEnum = z.enum(BANT_NEED_VALUES);
+export const bantTimelineEnum = z.enum(BANT_TIMELINE_VALUES);
 
 /**
  * BANT Qualification request validation (V7)

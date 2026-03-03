@@ -10,13 +10,12 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { CheckCircle, ArrowRightCircle, Trash2 } from "lucide-react";
+import { ArrowRightCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadDetailHeader } from "./LeadDetailHeader";
 import { LeadDetailCards } from "./LeadDetailCards";
 import { PaymentLinkSection } from "./PaymentLinkSection";
 import { LeadQuoteSection } from "./LeadQuoteSection";
-import { CPTQualificationModal } from "./CPTQualificationModal";
 import { ConvertToOpportunityModal } from "./ConvertToOpportunityModal";
 import { DeleteLeadModal } from "./DeleteLeadModal";
 import { deleteLeadAction } from "@/lib/actions/crm/delete.actions";
@@ -55,7 +54,6 @@ export function LeadDetailPage({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedLead, setEditedLead] = useState<Partial<Lead>>({});
-  const [isQualifyModalOpen, setIsQualifyModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -154,17 +152,6 @@ export function LeadDetailPage({
     [lead.id, locale, router, t]
   );
 
-  // Qualify lead
-  const handleQualify = useCallback(() => {
-    setIsQualifyModalOpen(true);
-  }, []);
-
-  // Handle qualify success (CPT framework)
-  const handleQualifySuccess = useCallback(() => {
-    // Refresh to get updated lead data after qualification
-    router.refresh();
-  }, [router]);
-
   // Convert to opportunity
   const handleConvert = useCallback(() => {
     setIsConvertModalOpen(true);
@@ -190,7 +177,6 @@ export function LeadDetailPage({
         onEdit={handleEditToggle}
         onSave={handleSave}
         onDelete={handleDelete}
-        onQualify={handleQualify}
         onConvert={handleConvert}
         navigation={navigation}
       />
@@ -241,21 +227,7 @@ export function LeadDetailPage({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleQualify}
-                disabled={
-                  currentLead.lead_stage === "sales_qualified" ||
-                  currentLead.lead_stage === "opportunity"
-                }
-                className="gap-1.5"
-              >
-                <CheckCircle className="h-4 w-4" />
-                {t("leads.drawer.actions.qualify")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={handleConvert}
-                disabled={currentLead.lead_stage !== "sales_qualified"}
                 className="gap-1.5"
               >
                 <ArrowRightCircle className="h-4 w-4" />
@@ -274,14 +246,6 @@ export function LeadDetailPage({
           </div>
         </div>
       )}
-
-      {/* CPT Qualification Modal */}
-      <CPTQualificationModal
-        lead={currentLead}
-        isOpen={isQualifyModalOpen}
-        onClose={() => setIsQualifyModalOpen(false)}
-        onSuccess={handleQualifySuccess}
-      />
 
       {/* Convert to Opportunity Modal */}
       <ConvertToOpportunityModal

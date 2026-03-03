@@ -50,6 +50,16 @@ export function RefineProvider({ children }: { children: React.ReactNode }) {
         syncWithLocation: true,
         warnWhenUnsavedChanges: true,
         projectId: "fleetcore",
+        reactQuery: {
+          clientConfig: {
+            defaultOptions: {
+              queries: {
+                staleTime: 30 * 1000, // 30s — eliminates duplicate fetches without blocking refresh
+                refetchOnWindowFocus: false, // Avoid refetch when user switches tabs
+              },
+            },
+          },
+        },
       }}
     >
       {children}

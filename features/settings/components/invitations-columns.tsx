@@ -24,11 +24,7 @@ import {
 import { DataTableColumnHeader } from "@/components/ui/table/data-table-column-header";
 import type { SettingsInvitation } from "../types/invitation.types";
 
-function formatDate(value: unknown): string {
-  if (!value) return "\u2014";
-  const d = new Date(value as string);
-  return isNaN(d.getTime()) ? "\u2014" : d.toLocaleDateString();
-}
+import { formatDateCell as formatDate } from "@/lib/format";
 
 const STATUS_VARIANT: Record<
   string,

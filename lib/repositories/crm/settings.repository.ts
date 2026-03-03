@@ -48,12 +48,10 @@ export const SettingCategory = {
  * CRM Setting keys enum
  */
 export const CrmSettingKey = {
-  LEAD_SCORING_CONFIG: "lead_scoring_config",
+  // @deprecated — DETTE-V3: assignment rules to be cleaned in Phase E
   LEAD_ASSIGNMENT_RULES: "lead_assignment_rules",
-  LEAD_PRIORITY_CONFIG: "lead_priority_config",
   LOCALE_TEMPLATE_MAPPING: "locale_template_mapping",
-  // Phase 1.1: Pipeline & Loss Reasons settings
-  LEAD_STAGES: "lead_stages",
+  // Pipeline & Loss Reasons settings
   OPPORTUNITY_STAGES: "opportunity_stages",
   OPPORTUNITY_LOSS_REASONS: "opportunity_loss_reasons",
 } as const;
@@ -68,8 +66,8 @@ export const CrmSettingKey = {
  * @example
  * ```typescript
  * const repo = new CrmSettingsRepository(prisma);
- * const setting = await repo.getSetting('lead_scoring_config');
- * const value = await repo.getSettingValue<ScoringConfig>('lead_scoring_config');
+ * const setting = await repo.getSetting('opportunity_stages');
+ * const value = await repo.getSettingValue<ScoringConfig>('opportunity_stages');
  * ```
  */
 export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
@@ -93,7 +91,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    *
    * @example
    * ```typescript
-   * const setting = await repo.getSetting('lead_scoring_config');
+   * const setting = await repo.getSetting('opportunity_stages');
    * if (setting) {
    *   // Access setting.setting_value
    *   // Access setting.version for audit trail
@@ -121,7 +119,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    * interface ScoringConfig {
    *   fleet_size_points: Record<string, { vehicles: number; points: number }>;
    * }
-   * const config = await repo.getSettingValue<ScoringConfig>('lead_scoring_config');
+   * const config = await repo.getSettingValue<ScoringConfig>('opportunity_stages');
    * if (config) {
    *   // Access config.fleet_size_points['500+']
    * }
@@ -188,7 +186,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    *
    * @example
    * ```typescript
-   * const exists = await repo.exists('lead_scoring_config');
+   * const exists = await repo.exists('opportunity_stages');
    * if (!exists) {
    *   // Create default setting
    * }
@@ -213,7 +211,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    *
    * @example
    * ```typescript
-   * const metadata = await repo.getSettingMetadata('lead_scoring_config');
+   * const metadata = await repo.getSettingMetadata('opportunity_stages');
    * if (metadata) {
    *   // metadata.display_label: "Lead Scoring Algorithm"
    *   // metadata.help_text: "Configure how leads..."
@@ -263,7 +261,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    * const grouped = await repo.getAllSettingsMetadata();
    * for (const [category, settings] of grouped) {
    *   // category: 'scoring'
-   *   // settings: [{ setting_key: 'lead_scoring_config', display_label: '...', ... }]
+   *   // settings: [{ setting_key: 'opportunity_stages', display_label: '...', ... }]
    * }
    * ```
    */
@@ -407,8 +405,8 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    * @example
    * ```typescript
    * const count = await repo.bulkUpdate([
-   *   { key: 'lead_stages', value: leadStagesConfig },
    *   { key: 'opportunity_stages', value: oppStagesConfig },
+   *   { key: 'opportunity_loss_reasons', value: lossReasonsConfig },
    * ], userId);
    * ```
    */
@@ -452,7 +450,7 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
    *
    * @example
    * ```typescript
-   * const setting = await repo.toggleActive('lead_stages', userId);
+   * const setting = await repo.toggleActive('opportunity_stages', userId);
    * // setting.is_active is now toggled
    * ```
    */
@@ -512,7 +510,10 @@ export class CrmSettingsRepository extends BaseRepository<CrmSetting> {
 
 /**
  * Seed initial CRM settings
- * Creates lead_scoring_config and lead_assignment_rules
+ * Creates opportunity_stages and opportunity_loss_reasons
+ *
+ * Note: lead_scoring_config, lead_assignment_rules, and lead_stages
+ * were removed in DETTE-V3 (migrated to V7 status workflow).
  *
  * @param prisma - Prisma client instance
  * @returns Number of settings seeded
@@ -528,286 +529,6 @@ export async function seedCrmSettings(
   tenantId: string = "7ad8173c-68c5-41d3-9918-686e4e941cc0"
 ): Promise<number> {
   const settings = [
-    {
-      setting_key: "lead_scoring_config",
-      category: "scoring",
-      data_type: "object",
-      is_system: true,
-      description:
-        "Lead scoring algorithm configuration (fit score, engagement score, qualification thresholds)",
-      setting_value: {
-        fleet_size_points: {
-          "500+": { vehicles: 600, points: 40 },
-          "101-500": { vehicles: 250, points: 35 },
-          "51-100": { vehicles: 75, points: 30 },
-          "11-50": { vehicles: 30, points: 20 },
-          "1-10": { vehicles: 5, points: 5 },
-          unknown: { vehicles: 30, points: 10 },
-        },
-        country_tier_points: {
-          tier1: { countries: ["AE", "SA", "QA"], points: 20 },
-          tier2: { countries: ["FR"], points: 18 },
-          tier3: { countries: ["KW", "BH", "OM"], points: 15 },
-          tier4: {
-            countries: [
-              "DE",
-              "IT",
-              "ES",
-              "BE",
-              "NL",
-              "PT",
-              "AT",
-              "IE",
-              "DK",
-              "SE",
-              "FI",
-              "GR",
-              "PL",
-              "CZ",
-              "HU",
-              "RO",
-              "BG",
-              "HR",
-              "SI",
-              "SK",
-              "LT",
-              "LV",
-              "EE",
-              "CY",
-              "LU",
-              "MT",
-            ],
-            points: 12,
-          },
-          tier5: { points: 5 },
-        },
-        message_length_thresholds: {
-          detailed: { min: 200, points: 30 },
-          substantial: { min: 100, points: 20 },
-          minimal: { min: 20, points: 10 },
-          none: { points: 0 },
-        },
-        phone_points: { provided: 20, missing: 0 },
-        page_views_thresholds: {
-          very_engaged: { min: 10, points: 30 },
-          interested: { min: 5, points: 20 },
-          curious: { min: 2, points: 10 },
-          normal: { points: 5 },
-        },
-        time_on_site_thresholds: {
-          deep_read: { min: 600, points: 20 },
-          moderate: { min: 300, points: 15 },
-          brief: { min: 120, points: 10 },
-          quick: { points: 5 },
-        },
-        qualification_stage_thresholds: {
-          sales_qualified: 70,
-          marketing_qualified: 40,
-          top_of_funnel: 0,
-        },
-        qualification_weights: {
-          fit: 0.6,
-          engagement: 0.4,
-        },
-      },
-    },
-    {
-      setting_key: "lead_assignment_rules",
-      category: "assignment",
-      data_type: "object",
-      is_system: true,
-      description:
-        "Lead assignment rules (fleet priority, geographic zones, round-robin, fallback)",
-      setting_value: {
-        fleet_size_priority: {
-          "500+": {
-            title_patterns: ["%Senior%Account%Manager%"],
-            priority: 1,
-          },
-          "101-500": {
-            title_patterns: ["%Account%Manager%"],
-            exclude_patterns: ["%Senior%"],
-            priority: 2,
-          },
-        },
-        geographic_zones: {
-          UAE: {
-            countries: ["AE"],
-            title_patterns: ["%UAE%", "%Emirates%"],
-            priority: 10,
-          },
-          KSA: {
-            countries: ["SA"],
-            title_patterns: ["%KSA%", "%Saudi%"],
-            priority: 11,
-          },
-          FRANCE: {
-            countries: ["FR"],
-            title_patterns: ["%France%"],
-            priority: 12,
-          },
-          MENA: {
-            countries: [
-              "KW",
-              "BH",
-              "OM",
-              "QA",
-              "JO",
-              "LB",
-              "EG",
-              "MA",
-              "TN",
-              "DZ",
-            ],
-            title_patterns: ["%MENA%", "%Middle East%"],
-            priority: 13,
-          },
-          EU: {
-            countries: [
-              "DE",
-              "IT",
-              "ES",
-              "BE",
-              "NL",
-              "PT",
-              "AT",
-              "IE",
-              "DK",
-              "SE",
-              "FI",
-              "GR",
-              "PL",
-              "CZ",
-              "HU",
-              "RO",
-              "BG",
-              "HR",
-              "SI",
-              "SK",
-              "LT",
-              "LV",
-              "EE",
-              "CY",
-              "LU",
-              "MT",
-            ],
-            title_patterns: ["%EU%", "%Europe%"],
-            priority: 14,
-          },
-          INTERNATIONAL: {
-            countries: [],
-            title_patterns: ["%International%"],
-            priority: 15,
-          },
-        },
-        fallback: {
-          employee_id: null,
-          title_pattern: "%Sales%Manager%",
-        },
-      },
-    },
-    // ========================================================================
-    // Pipeline Settings (Phase 1.6)
-    // ========================================================================
-    // V6.3: 8 statuts (lead_status_workflow)
-    {
-      setting_key: "lead_stages",
-      category: "stages",
-      data_type: "object",
-      is_system: true,
-      description: "Lead pipeline stages configuration (V6.3: 8 statuts)",
-      setting_value: {
-        stages: [
-          {
-            value: "new",
-            label_en: "New",
-            label_fr: "Nouveau",
-            color: "gray",
-            order: 1,
-            is_active: true,
-            is_initial: true,
-            auto_actions: ["assign_to_queue"],
-          },
-          {
-            value: "demo",
-            label_en: "Demo",
-            label_fr: "Démo",
-            color: "blue",
-            order: 2,
-            is_active: true,
-            auto_actions: [],
-          },
-          {
-            value: "proposal_sent",
-            label_en: "Proposal Sent",
-            label_fr: "Proposition envoyée",
-            color: "orange",
-            order: 3,
-            is_active: true,
-            auto_actions: ["calculate_score"],
-          },
-          {
-            value: "payment_pending",
-            label_en: "Payment Pending",
-            label_fr: "Paiement en attente",
-            color: "amber",
-            order: 4,
-            is_active: true,
-            auto_actions: [],
-          },
-          {
-            value: "converted",
-            label_en: "Converted",
-            label_fr: "Converti",
-            color: "green",
-            order: 5,
-            is_active: true,
-            is_terminal: true,
-            is_success: true,
-            auto_actions: ["create_tenant"],
-          },
-          {
-            value: "lost",
-            label_en: "Lost",
-            label_fr: "Perdu",
-            color: "red",
-            order: 6,
-            is_active: true,
-            auto_actions: [],
-          },
-          {
-            value: "nurturing",
-            label_en: "Nurturing",
-            label_fr: "En nurturing",
-            color: "purple",
-            order: 7,
-            is_active: true,
-            auto_actions: ["add_to_sequence"],
-          },
-          {
-            value: "disqualified",
-            label_en: "Disqualified",
-            label_fr: "Disqualifié",
-            color: "gray",
-            order: 8,
-            is_active: true,
-            is_terminal: true,
-            auto_actions: ["archive"],
-          },
-        ],
-        transitions: {
-          new: ["demo", "nurturing", "disqualified"],
-          demo: ["proposal_sent", "nurturing", "lost", "disqualified"],
-          proposal_sent: ["payment_pending", "lost", "nurturing"],
-          payment_pending: ["converted", "lost"],
-          converted: [],
-          lost: ["nurturing"],
-          nurturing: ["demo", "proposal_sent", "lost"],
-          disqualified: [],
-        },
-        default_stage: "new",
-      },
-    },
     {
       setting_key: "opportunity_stages",
       category: "stages",

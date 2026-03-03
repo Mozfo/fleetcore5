@@ -27,21 +27,14 @@ const CSV_FIELDS = [
   { key: "email", label: "Email" },
   { key: "phone", label: "Phone" },
   { key: "company_name", label: "Company" },
-  { key: "industry", label: "Industry" },
-  { key: "company_size", label: "Company Size" },
   { key: "fleet_size", label: "Fleet Size" },
   { key: "current_software", label: "Current Software" },
   { key: "website_url", label: "Website" },
-  { key: "linkedin_url", label: "LinkedIn" },
   { key: "country_code", label: "Country Code" },
   { key: "country_name", label: "Country" },
   { key: "city", label: "City" },
   { key: "status", label: "Status" },
-  { key: "lead_stage", label: "Stage" },
   { key: "priority", label: "Priority" },
-  { key: "fit_score", label: "Fit Score" },
-  { key: "engagement_score", label: "Engagement Score" },
-  { key: "qualification_score", label: "Qualification Score" },
   { key: "source", label: "Source" },
   { key: "utm_source", label: "UTM Source" },
   { key: "utm_medium", label: "UTM Medium" },
@@ -49,7 +42,6 @@ const CSV_FIELDS = [
   { key: "assigned_to_name", label: "Assigned To" },
   { key: "assigned_to_email", label: "Assigned Email" },
   { key: "message", label: "Message" },
-  { key: "qualification_notes", label: "Qualification Notes" },
   { key: "gdpr_consent", label: "GDPR Consent" },
   { key: "consent_at", label: "Consent Date" },
   { key: "created_at", label: "Created At" },
@@ -85,10 +77,8 @@ function formatDate(date: Date | null | undefined): string {
  * - format: "csv" | "json" (default: "csv")
  * - filters: Object with filter criteria
  *   - status: Lead status
- *   - lead_stage: Lead stage
  *   - assigned_to: Assigned employee ID
  *   - country_code: Country code
- *   - min_score: Minimum qualification score
  *   - search: Search term
  *   - inactive_months: Cold lead threshold (only include leads inactive > X months)
  *   - include_cold: Boolean to include cold leads only
@@ -127,12 +117,8 @@ export async function POST(request: NextRequest) {
 
     // Apply filters
     if (filters.status) where.status = filters.status;
-    if (filters.lead_stage) where.lead_stage = filters.lead_stage;
     if (filters.assigned_to) where.assigned_to = filters.assigned_to;
     if (filters.country_code) where.country_code = filters.country_code;
-    if (filters.min_score !== undefined) {
-      where.qualification_score = { gte: filters.min_score };
-    }
 
     // Search filter
     if (filters.search) {
@@ -205,21 +191,14 @@ export async function POST(request: NextRequest) {
         email: lead.email,
         phone: lead.phone,
         company_name: lead.company_name,
-        industry: lead.industry,
-        company_size: lead.company_size,
         fleet_size: lead.fleet_size,
         current_software: lead.current_software,
         website_url: lead.website_url,
-        linkedin_url: lead.linkedin_url,
         country_code: lead.country_code,
         country_name: country?.country_name_en || "",
         city: lead.city,
         status: lead.status,
-        lead_stage: lead.lead_stage,
         priority: lead.priority,
-        fit_score: lead.fit_score,
-        engagement_score: lead.engagement_score,
-        qualification_score: lead.qualification_score,
         source: lead.source,
         utm_source: lead.utm_source,
         utm_medium: lead.utm_medium,
@@ -229,7 +208,6 @@ export async function POST(request: NextRequest) {
           : "",
         assigned_to_email: assigned?.email || "",
         message: lead.message,
-        qualification_notes: lead.qualification_notes,
         gdpr_consent: lead.gdpr_consent ? "Yes" : "No",
         consent_at: formatDate(lead.consent_at),
         created_at: formatDate(lead.created_at),

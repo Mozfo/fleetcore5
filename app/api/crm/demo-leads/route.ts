@@ -375,7 +375,6 @@ async function handleFullForm(
 
       // Statut initial
       status: "new",
-      lead_stage: "top_of_funnel",
       source: "website", // Web form (must match crm_leads_source_check constraint)
       // V6.4-3: Store homepage language for email notifications
       language: body.form_locale || "en",

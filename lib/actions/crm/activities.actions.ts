@@ -20,7 +20,6 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
-import { LeadScoringService } from "@/lib/services/crm/lead-scoring.service";
 
 // ============================================================================
 // TYPES
@@ -284,14 +283,10 @@ export async function createActivityAction(
           where: { id: validated.data.leadId },
           data: { last_activity_at: new Date() },
         });
-
-        // Recalculate scores (async, non-blocking)
-        const scoringService = new LeadScoringService();
-        await scoringService.recalculateScores(validated.data.leadId);
-      } catch (scoreError) {
+      } catch (updateError) {
         logger.warn(
-          { leadId: validated.data.leadId, error: scoreError },
-          "[createActivityAction] Score update failed (non-blocking)"
+          { leadId: validated.data.leadId, error: updateError },
+          "[createActivityAction] last_activity_at update failed (non-blocking)"
         );
       }
     }

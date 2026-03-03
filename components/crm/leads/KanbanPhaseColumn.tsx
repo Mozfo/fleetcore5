@@ -170,16 +170,6 @@ export const KanbanPhaseColumn = memo(
     // Phase header colors from pipeline-status config
     const phaseCfg = getPhaseConfig(column.phase.id);
 
-    // Calculate average score for this phase's leads
-    const phaseLeads = column.leads;
-    const scores = phaseLeads
-      .map((l) => l.qualification_score)
-      .filter((s): s is number => s !== null && s !== undefined);
-    const avgScore =
-      scores.length > 0
-        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-        : null;
-
     return (
       <motion.div
         data-testid="kanban-phase"
@@ -210,12 +200,6 @@ export const KanbanPhaseColumn = memo(
               {column.totalCount}
             </span>
           </div>
-          {avgScore !== null && (
-            <p className="text-muted-foreground mt-1 text-[11px]">
-              {t("leads.stats.avg_score", { defaultValue: "Avg Score" })}:{" "}
-              <span className="text-foreground font-semibold">{avgScore}</span>
-            </p>
-          )}
         </div>
 
         {/* Status Groups Container - Scrollable */}

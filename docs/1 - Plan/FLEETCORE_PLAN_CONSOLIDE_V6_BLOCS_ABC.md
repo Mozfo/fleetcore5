@@ -2,9 +2,9 @@
 
 ## Blocs A + B + C — Document Unique de Référence
 
-**Version :** 6.1
-**Date :** 02 mars 2026
-**Statut :** 🔄 EN COURS — Bloc B Phase B2
+**Version :** 6.2
+**Date :** 03 mars 2026
+**Statut :** 🔄 EN COURS — Bloc B Phase B2 (finalisation) → Bloc P ensuite
 **Responsable :** Mohamed (CEO/CTO)
 **Rédacteur :** Architecture Claude
 **Remplace :** TOUS les plans précédents non terminés (V5.3 phases restantes, Step 2.3 Completion, Dashboard V4, Round 4, 6I-BIS, CLT Backlog, Backlog Phase 6E)
@@ -15,6 +15,20 @@
 ## POURQUOI CE DOCUMENT
 
 7 plans non terminés se sont accumulés en parallèle. Ce document les **fusionne en un seul plan séquentiel** avec 3 blocs ordonnés. Chaque tâche incomplète de chaque plan est rattrapée ici. Aucun plan antérieur ne doit être consulté pour l'exécution — ce document est autosuffisant.
+
+---
+
+## ⚡ CHANGEMENT V6.2 — PERFORMANCE EN PRIORITÉ ABSOLUE
+
+**Constat (03/03/2026) :** L'application est lente partout (localhost ET production). 27 leads mettent 6 secondes à charger. Chaque API est appelée 2 fois. Les données statiques sont refetchées à chaque navigation. La Table fetche 90 colonnes au lieu de 20. 71% des pages n'ont pas de Suspense. 23 composants ont plus de 5 useState.
+
+**Décision CEO :** La performance n'est pas cosmétique — c'est la condition d'existence du produit. Un outil lent à 34 leads est mort à 500. Un investisseur qui voit l'outil ramer ne signe pas. Un commercial retourne sur Excel.
+
+**Impact sur le plan :** Un **Bloc P (Performance)** est inséré entre B2 et B3. RIEN ne continue tant que la performance n'est pas résolue. Critère Go/No-Go : chaque page < 2s, chaque interaction < 500ms, validé localhost ET production.
+
+**Séquence :** B2 (finaliser) → **P (performance)** → B3 → B4 → ...
+
+**Source :** PERF-AUDIT-001 (diagnostic Playwright) + PERF-FIX-001 (audit holistique 10 scans)
 
 ---
 
@@ -44,6 +58,7 @@
 | Step 2.3 Completion (26 items)         | **OBSOLÈTE** — Cal.com décommissionné, CPT→BANT, pipeline refait | **ABSORBÉ** dans Bloc B intégralement                                   |
 | Dashboard V4 Steps 2.5-2.12            | Fiche détail, notes, tags, import/export                         | Bloc C — Phase C3                                                       |
 | CRM Execution Plan V1                  | Plan CRM initial 9 phases                                        | **BASE** du Bloc B — enrichi et intégré                                 |
+| PERF-AUDIT-001 + PERF-FIX-001          | Diagnostic performance global + audit holistique                 | **Bloc P** — Performance (NOUVEAU V6.2)                                 |
 
 ---
 
@@ -199,48 +214,51 @@ _(Détail des sous-tâches B0.1 à B0.5 : toutes validées)_
 
 **⚠️ CHANGEMENT vs plan initial :** Le Kanban était prévu à 2 colonnes (B2.2). Le CEO a décidé **3 colonnes** (email_verified, callback_requested, qualified). Le Kanban 3 colonnes + outcomes + perf sont **déjà livrés** dans B1.5. La phase B2 se concentre donc sur :
 
-- B2.1 : Formulaire BANT (pas encore fait)
+- B2.1 : Formulaire BANT ✅ (5514573)
 - B2.2 : Kanban — items restants uniquement (drag & drop, tooltips)
-- B2.3 : Actions Lead V7 (pas encore fait)
+- B2.3 : Actions Lead V7 ✅ (5514573 + 13c8c74)
 - B2.4 : Nettoyage affichage (CPT scoring encore visible sur cartes)
+- B2.5 : Drawer refonte useOne ✅ (13c8c74)
+- B2.6 : Data provider custom CRM ✅ (13c8c74)
+- B2.7 : Audit Clerk ID→UUID ✅ (13c8c74)
 
 ### B2.1 Formulaire BANT
 
-| #      | Tâche                                                                    | Statut | Commit | Date | Notes                     |
-| ------ | ------------------------------------------------------------------------ | ------ | ------ | ---- | ------------------------- |
-| B2.1.1 | Identifier pattern LeadDrawer.tsx (onglets, sections) — LIRE avant coder | ⬜     |        |      |                           |
-| B2.1.2 | Créer onglet/section "Qualification" dans le Lead Drawer                 | ⬜     |        |      |                           |
-| B2.1.3 | 4 dropdowns BANT avec valeurs spec V7                                    | ⬜     |        |      |                           |
-| B2.1.4 | Indicateur visuel "3/4 OK" ou "4/4 — Prêt pour conversion"               | ⬜     |        |      |                           |
-| B2.1.5 | Bouton "Qualify" → validation BANT côté serveur                          | ⬜     |        |      |                           |
-| B2.1.6 | Status change uniquement si 4/4                                          | ⬜     |        |      |                           |
-| B2.1.7 | Gestion 3/4 (nurturing) et ≤2/4 (disqualify, sauf fleet_size >50)        | ⬜     |        |      |                           |
-| B2.1.8 | Labels UI EXPLICITES pour utilisateur métier                             | ⬜     |        |      | POSTURE ARCHITECTE SENIOR |
+| #      | Tâche                                                                    | Statut | Commit  | Date  | Notes                     |
+| ------ | ------------------------------------------------------------------------ | ------ | ------- | ----- | ------------------------- |
+| B2.1.1 | Identifier pattern LeadDrawer.tsx (onglets, sections) — LIRE avant coder | ✅     | 5514573 | 02/03 |                           |
+| B2.1.2 | Créer onglet/section "Qualification" dans le Lead Drawer                 | ✅     | 5514573 | 02/03 |                           |
+| B2.1.3 | 4 dropdowns BANT avec valeurs spec V7                                    | ✅     | 5514573 | 02/03 |                           |
+| B2.1.4 | Indicateur visuel "3/4 OK" ou "4/4 — Prêt pour conversion"               | ✅     | 5514573 | 02/03 |                           |
+| B2.1.5 | Bouton "Qualify" → validation BANT côté serveur                          | ✅     | 5514573 | 02/03 |                           |
+| B2.1.6 | Status change uniquement si 4/4                                          | ✅     | 5514573 | 02/03 |                           |
+| B2.1.7 | Gestion 3/4 (nurturing) et ≤2/4 (disqualify, sauf fleet_size >50)        | ✅     | 5514573 | 02/03 |                           |
+| B2.1.8 | Labels UI EXPLICITES pour utilisateur métier                             | ✅     | 5514573 | 02/03 | POSTURE ARCHITECTE SENIOR |
 
 ### B2.2 Kanban Lead — 3 colonnes
 
-| #      | Tâche                                                                    | Statut | Commit  | Date  | Notes                     |
-| ------ | ------------------------------------------------------------------------ | ------ | ------- | ----- | ------------------------- |
-| B2.2.1 | Identifier hook useLeadsKanban et composant Kanban                       | ✅     | a4ca69c | 02/03 | Fait en B1.5              |
-| B2.2.2 | 3 colonnes : Email Verified, Callback Requested, Qualified               | ✅     | a4ca69c | 02/03 | Décision CEO : 3 colonnes |
-| B2.2.3 | Barre outcomes : Nurturing (count) / Disqualified (count)                | ✅     | a4ca69c | 02/03 | Fait en B1.5              |
-| B2.2.4 | ~~Leads new/email_verified HORS Kanban~~ → email_verified DANS le Kanban | ✅     | a4ca69c | 02/03 | Décision CEO changée      |
-| B2.2.5 | Drag & drop avec validation transitions autorisées                       | ⬜     |         |       | À vérifier/implémenter    |
-| B2.2.6 | Compteurs par colonne                                                    | ✅     | a4ca69c | 02/03 | Fait en B1.5              |
-| B2.2.7 | 📌 Popup au DROP pas au DRAG                                             | ⬜     |         |       | _Step 2.3 item 8_         |
-| B2.2.8 | 📌 Infobulles (tooltips) sur icônes Rapport d'Activité                   | ⬜     |         |       | _Step 2.3 item 4_         |
+| #      | Tâche                                                                    | Statut | Commit  | Date  | Notes                                   |
+| ------ | ------------------------------------------------------------------------ | ------ | ------- | ----- | --------------------------------------- |
+| B2.2.1 | Identifier hook useLeadsKanban et composant Kanban                       | ✅     | a4ca69c | 02/03 | Fait en B1.5                            |
+| B2.2.2 | 3 colonnes : Email Verified, Callback Requested, Qualified               | ✅     | a4ca69c | 02/03 | Décision CEO : 3 colonnes               |
+| B2.2.3 | Barre outcomes : Nurturing (count) / Disqualified (count)                | ✅     | a4ca69c | 02/03 | Fait en B1.5                            |
+| B2.2.4 | ~~Leads new/email_verified HORS Kanban~~ → email_verified DANS le Kanban | ✅     | a4ca69c | 02/03 | Décision CEO changée                    |
+| B2.2.5 | Drag & drop 7 transitions avec mini-popups                               | 🔄     | af3119b | 03/03 | DnD OK, régression OutcomesBar corrigée |
+| B2.2.6 | Compteurs par colonne                                                    | ✅     | a4ca69c | 02/03 | Fait en B1.5                            |
+| B2.2.7 | 📌 Popup au DROP pas au DRAG                                             | ✅     | af3119b | 03/03 | 4 mini-popups implémentés               |
+| B2.2.8 | 📌 Infobulles (tooltips) sur icônes Rapport d'Activité                   | ⬜     |         |       | _Step 2.3 item 4_                       |
 
 ### B2.3 Actions Lead — Adaptation
 
-| #      | Tâche                                                                   | Statut | Commit | Date | Notes                  |
-| ------ | ----------------------------------------------------------------------- | ------ | ------ | ---- | ---------------------- |
-| B2.3.1 | "Convert to Opportunity" UNIQUEMENT si qualified                        | ⬜     |        |      |                        |
-| B2.3.2 | "Reactivate" → callback_requested uniquement                            | ⬜     |        |      |                        |
-| B2.3.3 | Context menu filtré selon transitions_to                                | ⬜     |        |      |                        |
-| B2.3.4 | SUPPRIMER Book Demo de l'UI Lead                                        | ⬜     |        |      | Cal.com décommissionné |
-| B2.3.5 | SUPPRIMER "Not Interested" → Disqualify + Nurturing séparés             | ⬜     |        |      |                        |
-| B2.3.6 | 📌 Croix (X) correctement placée dans le popup                          | ⬜     |        |      | _Step 2.3 item 1_      |
-| B2.3.7 | 📌 Section PROCHAINES ÉTAPES — couleur distincte, zone d'action visible | ⬜     |        |      | _Step 2.3 item 5_      |
+| #      | Tâche                                                                   | Statut | Commit  | Date  | Notes                            |
+| ------ | ----------------------------------------------------------------------- | ------ | ------- | ----- | -------------------------------- |
+| B2.3.1 | "Convert to Opportunity" UNIQUEMENT si qualified                        | ✅     | 5514573 | 02/03 | V7 status→actions mapping        |
+| B2.3.2 | "Reactivate" → callback_requested uniquement                            | ✅     | 5514573 | 02/03 | nurturing→reactivate             |
+| B2.3.3 | Context menu filtré selon transitions_to                                | ✅     | 5514573 | 02/03 | getValidTransitions()            |
+| B2.3.4 | SUPPRIMER Book Demo de l'UI Lead                                        | ✅     | 17d2913 | 02/03 | Cal.com décommissionné en B1     |
+| B2.3.5 | SUPPRIMER "Not Interested" → Disqualify + Nurturing séparés             | ✅     | 5514573 | 02/03 | V7 actions: nurturing/disqualify |
+| B2.3.6 | 📌 Croix (X) correctement placée dans le popup                          | ⬜     |         |       | _Step 2.3 item 1_                |
+| B2.3.7 | 📌 Section PROCHAINES ÉTAPES — couleur distincte, zone d'action visible | ✅     | 5514573 | 02/03 | getStatusSectionBg()             |
 
 ### B2.4 Nettoyage affichage
 
@@ -251,24 +269,201 @@ _(Détail des sous-tâches B0.1 à B0.5 : toutes validées)_
 | B2.4.3 | Supprimer sections CPT du Lead Drawer (ScoreGauge, etc.)          | ⬜     |        |      |                  |
 | B2.4.4 | Recalibrer indicateurs overdue pour SLA V7                        | ⬜     |        |      |                  |
 
-### B2.5 Livrable Phase B2
+### B2.5 Drawer refonte useOne (NOUVEAU)
 
-| #      | Tâche                                                       | Statut | Notes |
-| ------ | ----------------------------------------------------------- | ------ | ----- |
-| B2.5.1 | Git tag v-crm-phase2                                        | ⬜     |       |
-| B2.5.2 | Push + CI verte                                             | ⬜     |       |
-| B2.5.3 | Test : Kanban Lead 3 colonnes fonctionnel                   | ⬜     |       |
-| B2.5.4 | Test : BANT form → qualification OK                         | ⬜     |       |
-| B2.5.5 | Test : Drag & drop respecte transitions_to                  | ⬜     |       |
-| B2.5.6 | Test : Actions V7 (pas de Book Demo, pas de Not Interested) | ⬜     |       |
-| B2.5.7 | Validation CEO                                              | ⬜     |       |
+| #      | Tâche                                                       | Statut | Commit  | Date  | Notes                              |
+| ------ | ----------------------------------------------------------- | ------ | ------- | ----- | ---------------------------------- |
+| B2.5.1 | LeadDrawer: useOne single source (zero dual-source pattern) | ✅     | 13c8c74 | 03/03 | Remplace lead prop + currentLead   |
+| B2.5.2 | dirtyRef: conditional Kanban invalidation on close          | ✅     | 13c8c74 | 03/03 | Zero refetch inutile               |
+| B2.5.3 | BantEditMode: key prop pour React state sync                | ✅     | 13c8c74 | 03/03 | Pas de useEffect sync              |
+| B2.5.4 | kanbanFields: 14→20 champs (+6 BANT, zero delay)            | ✅     | 13c8c74 | 03/03 | BANT visible dès ouverture drawer  |
+| B2.5.5 | Fix handleCancelConfirmation missing onMutationSuccess      | ✅     | 13c8c74 | 03/03 | BANT sauvé mais useOne pas refetch |
+
+### B2.6 Data provider custom CRM (NOUVEAU)
+
+| #      | Tâche                                                        | Statut | Commit  | Date  | Notes                                 |
+| ------ | ------------------------------------------------------------ | ------ | ------- | ----- | ------------------------------------- |
+| B2.6.1 | qualifyLead() via fetchApi (POST /crm/leads/:id/qualify)     | ✅     | 13c8c74 | 03/03 | Remplace raw fetch() dans BantSection |
+| B2.6.2 | patchLeadStatus() via fetchApi (PATCH /crm/leads/:id/status) | ✅     | 13c8c74 | 03/03 | Remplace raw fetch() dans BantSection |
+| B2.6.3 | Mutations unifiées: zero raw fetch() dans composants drawer  | ✅     | 13c8c74 | 03/03 | onMutationSuccess callback pattern    |
+
+### B2.7 Audit Clerk ID→UUID (NOUVEAU)
+
+| #      | Tâche                                                        | Statut | Commit  | Date  | Notes                         |
+| ------ | ------------------------------------------------------------ | ------ | ------- | ----- | ----------------------------- |
+| B2.7.1 | 20+ fixes Clerk ID→UUID across services (billing, crm, auth) | ✅     | 13c8c74 | 03/03 | resolveMemberId() pattern     |
+| B2.7.2 | api-guard.ts: memberId resolution                            | ✅     | 13c8c74 | 03/03 | Clerk userId → adm_members.id |
+| B2.7.3 | base.repository.ts: userId fallback                          | ✅     | 13c8c74 | 03/03 | Compatibilité FK UUID         |
+
+### B2.8 DnD 7 transitions + régression fix (NOUVEAU)
+
+| #      | Tâche                                                                  | Statut | Commit  | Date  | Notes                                        |
+| ------ | ---------------------------------------------------------------------- | ------ | ------- | ----- | -------------------------------------------- |
+| B2.8.1 | DRAG_ROUTES : 7 transitions validées par CEO                           | ✅     | af3119b | 03/03 | Spec complète 7 drags                        |
+| B2.8.2 | 4 mini-popups : CompleteProfile, Qualify, Nurturing, Disqualify        | ✅     | af3119b | 03/03 | shadcn, i18n, loading, error handling        |
+| B2.8.3 | OutcomesBar restauré (double-clic navigation, hasAny, style tokens)    | ✅     | af3119b | 03/03 | 🔧 Régression corrigée — suppression annulée |
+| B2.8.4 | Outcomes droppables via useDroppable (INSIDE DndContext, style intact) | ✅     | af3119b | 03/03 | useDroppable sur boutons existants           |
+| B2.8.5 | DragDisqualifyDialog : native checkbox→shadcn Checkbox                 | ✅     | af3119b | 03/03 | + DisqualifyLeadModal aligné                 |
+| B2.8.6 | Navigation viewMode+outcomeFilter dans URL (query params)              | ✅     | af3119b | 03/03 | PERF-FIX-001 A5 — back button fonctionne     |
+
+### B2.9 Livrable Phase B2
+
+| #      | Tâche                                                 | Statut | Notes                                   |
+| ------ | ----------------------------------------------------- | ------ | --------------------------------------- |
+| B2.9.1 | Git tag v-crm-b2-complete                             | ⬜     | Après finalisation B2.2.8, B2.3.6, B2.4 |
+| B2.9.2 | Push + CI verte                                       | ⬜     |                                         |
+| B2.9.3 | Test : Kanban Lead 3 colonnes + 7 drags fonctionnels  | 🔄     |                                         |
+| B2.9.4 | Test : BANT form → qualification OK                   | ✅     | 4/4 qualify + 3/4 nurturing             |
+| B2.9.5 | Test : Back button depuis vue filtrée → retour Kanban | ✅     | PERF-FIX-001 A5                         |
+| B2.9.6 | Test : OutcomesBar navigation double-clic fonctionne  | ✅     | Régression corrigée af3119b             |
+| B2.9.7 | Validation CEO                                        | ⬜     |                                         |
+
+---
+
+---
+
+# ═══════════════════════════════════════════════
+
+# ⚡ BLOC P — PERFORMANCE (PRIORITÉ ABSOLUE)
+
+# ═══════════════════════════════════════════════
+
+**Objectif :** Rendre FleetCore rapide partout. Chaque page < 2s. Chaque interaction < 500ms. Prêt pour 5000 utilisateurs.
+**Durée estimée :** 3-5 jours
+**Prérequis :** B2 finalisé.
+**Pourquoi AVANT B3 :** Un outil lent est un outil mort. Chaque feature ajoutée sur des fondations lentes aggrave le problème. On corrige la base MAINTENANT.
+**Source :** PERF-AUDIT-001 (diagnostic) + PERF-FIX-001 Phase B (audit holistique)
+**Critère de sortie :** Chaque page < 2s, chaque interaction < 500ms, mesuré localhost ET production Vercel. Test de charge validé à 500 leads. Si le critère n'est pas atteint, on ne passe PAS à B3.
+
+---
+
+## PHASE P1 — CORRECTIONS GLOBALES REACT QUERY / REFINE ✅ (partiel)
+
+**Objectif :** Éliminer les doublons API et configurer le caching différencié.
+
+| #    | Tâche                                                                  | Statut | Commit  | Date  | Notes                                                    |
+| ---- | ---------------------------------------------------------------------- | ------ | ------- | ----- | -------------------------------------------------------- |
+| P1.1 | staleTime 30s global dans refine-provider.tsx                          | ✅     | af3119b | 03/03 | PERF-FIX-001 A1 — élimine doublons API                   |
+| P1.2 | refetchOnWindowFocus: false global                                     | ✅     | af3119b | 03/03 | PERF-FIX-001 A1                                          |
+| P1.3 | refetchInterval 60s sur Kanban leads                                   | ✅     | af3119b | 03/03 | PERF-FIX-001 A2 — inscriptions portail visibles en <1min |
+| P1.4 | meta.select dynamique sur Table leads                                  | ✅     | af3119b | 03/03 | PERF-FIX-001 A3 — payload 50KB→13KB (-75%)               |
+| P1.5 | dedupingInterval 5min sur hooks statiques (stages, fleet_size_options) | ✅     | af3119b | 03/03 | PERF-FIX-001 A4                                          |
+| P1.6 | Stabiliser filter references nuqs (doublons résiduels Table/Outcome)   | ⬜     |         |       | Query key change entre 1er/2e render                     |
+
+---
+
+## PHASE P2 — META.SELECT SUR TOUS LES HOOKS
+
+**Objectif :** Aucun useList/useOne/useMany ne fetche toutes les colonnes.
+**Source :** Audit holistique Problème 1 — 6 hooks sans select identifiés.
+
+| #    | Tâche                                                         | Statut | Notes                         |
+| ---- | ------------------------------------------------------------- | ------ | ----------------------------- |
+| P2.1 | use-invitations-table.ts : ajouter meta.select                | ⬜     | Settings — ALL fields fetched |
+| P2.2 | use-members-table.ts : ajouter meta.select                    | ⬜     | Settings — ALL fields fetched |
+| P2.3 | use-tenants-table.ts : ajouter meta.select                    | ⬜     | Settings — ALL fields fetched |
+| P2.4 | use-tenant-countries-table.ts : ajouter meta.select           | ⬜     | Settings — ALL fields fetched |
+| P2.5 | LeadDrawer.tsx useOne : ajouter meta.select (drawerFields)    | ⬜     | Commercial ouvre 50x/jour     |
+| P2.6 | leads-edit-drawer.tsx useOne : ajouter meta.select            | ⬜     | Full payload pour 1 lead      |
+| P2.7 | Scanner nouveaux hooks ajoutés depuis audit → vérifier select | ⬜     |                               |
+
+---
+
+## PHASE P3 — ÉLIMINER LES ANTI-PATTERNS
+
+**Objectif :** Remplacer les useEffect+fetch par des hooks Refine, réduire les re-renders.
+
+| #    | Tâche                                                              | Statut | Notes               |
+| ---- | ------------------------------------------------------------------ | ------ | ------------------- |
+| P3.1 | company-profile-page.tsx : useEffect+fetch → useOne Refine         | ⬜     | Anti-pattern Refine |
+| P3.2 | tenant-detail-page.tsx : useEffect+fetch → useOne Refine           | ⬜     | Anti-pattern Refine |
+| P3.3 | useOpportunityStatuses : staleTime 30min (données quasi-statiques) | ⬜     | Actuellement 60s    |
+| P3.4 | useLeadLossReasons : staleTime 30min (données quasi-statiques)     | ⬜     | Actuellement 60s    |
+
+---
+
+## PHASE P4 — LOADING SKELETONS CRM
+
+**Objectif :** Zéro écran blanc. Chaque page affiche un skeleton immédiat pendant le chargement.
+**Source :** Audit holistique Problème 4 — 71% des pages sans Suspense.
+
+| #    | Tâche                                                                                   | Statut | Notes                             |
+| ---- | --------------------------------------------------------------------------------------- | ------ | --------------------------------- |
+| P4.1 | Créer composants skeleton réutilisables (KanbanSkeleton, TableSkeleton, DrawerSkeleton) | ⬜     |                                   |
+| P4.2 | Kanban leads : skeleton au chargement initial                                           | ⬜     | Page la plus utilisée             |
+| P4.3 | Table leads : skeleton au chargement initial                                            | ⬜     |                                   |
+| P4.4 | Dashboard CRM : skeleton                                                                | ⬜     |                                   |
+| P4.5 | Pages admin (members, tenants, invitations, countries) : skeletons                      | ⬜     | 7 pages, 0% Suspense actuellement |
+| P4.6 | Suspense boundaries sur pages CRM principales                                           | ⬜     | 9% → 80%+ couverture              |
+
+---
+
+## PHASE P5 — DÉCOMPOSITION COMPOSANTS CRITIQUES
+
+**Objectif :** Réduire les re-renders en cassant les méga-composants.
+**Source :** Audit holistique Problème 3 — 23 composants >5 useState.
+
+| #    | Tâche                                                                 | Statut | Notes                             |
+| ---- | --------------------------------------------------------------------- | ------ | --------------------------------- |
+| P5.1 | PipelineSettingsTab.tsx (25 useState) → décomposer en sous-composants | ⬜     | CRITIQUE — admin pipeline         |
+| P5.2 | LeadsPageClient.tsx (24 useState) → décomposer en sous-composants     | ⬜     | CRITIQUE — page quotidienne       |
+| P5.3 | QuotesPageClient.tsx (14 useState) → évaluer décomposition            | ⬜     | HAUTE                             |
+| P5.4 | LeadsBrowserClient.tsx (12 useState) → évaluer décomposition          | ⬜     | HAUTE                             |
+| P5.5 | OpportunitiesPageClient.tsx (12 useState) → évaluer décomposition     | ⬜     | HAUTE                             |
+| P5.6 | Ajouter useMemo/useCallback sur les composants à risque               | ⬜     | Audit montrait faible utilisation |
+
+---
+
+## PHASE P6 — OPTIMISATIONS INFRASTRUCTURE
+
+**Objectif :** Réduire les temps de réponse côté serveur.
+
+| #    | Tâche                                                                      | Statut | Notes                             |
+| ---- | -------------------------------------------------------------------------- | ------ | --------------------------------- |
+| P6.1 | Vérifier connexion DB pooler (port 6543) vs directe (5432)                 | ⬜     | Pooler = moins de cold starts     |
+| P6.2 | Prisma singleton vérifié et optimisé                                       | ⬜     |                                   |
+| P6.3 | next.config : vérifier optimisations (serverActions, experimental)         | ⬜     |                                   |
+| P6.4 | API routes CRM (696 lignes leads/route.ts) : évaluer split                 | ⬜     | Cold start Vercel                 |
+| P6.5 | Activer Redis (Upstash) pour données référentielles (countries, platforms) | ⬜     | Prévu dans roadmap, jamais activé |
+
+---
+
+## PHASE P7 — MESURES + VALIDATION
+
+**Objectif :** Prouver que les corrections ont un impact mesurable.
+
+| #    | Tâche                                                              | Statut | Notes                                        |
+| ---- | ------------------------------------------------------------------ | ------ | -------------------------------------------- |
+| P7.1 | Mesures Playwright AVANT (baseline = PERF-AUDIT-001)               | ✅     | Kanban 5.6s, Table 6s, Outcome 4.7s          |
+| P7.2 | Mesures après P1 (déjà fait)                                       | ✅     | Kanban 3.3s (-41%), payload -75%             |
+| P7.3 | Mesures après P2+P3                                                | ⬜     |                                              |
+| P7.4 | Mesures après P4+P5                                                | ⬜     |                                              |
+| P7.5 | Mesures après P6                                                   | ⬜     |                                              |
+| P7.6 | Test de charge : 50 leads, 200 leads, 500 leads — temps de réponse | ⬜     | Simuler croissance réelle                    |
+| P7.7 | Mesure production Vercel (pas seulement localhost)                 | ⬜     | Les deux environnements doivent être rapides |
+| P7.8 | Cible finale : chaque page < 2s, chaque interaction < 500ms        | ⬜     | **Critère Go/No-Go pour B3**                 |
+
+---
+
+## RÉSUMÉ BLOC P
+
+| Phase            | Description                              | Durée         | Prérequis | Statut                    |
+| ---------------- | ---------------------------------------- | ------------- | --------- | ------------------------- |
+| **P1**           | React Query staleTime + caching          | 2h            | B2        | ✅ (partiel P1.6 restant) |
+| **P2**           | meta.select sur tous les hooks           | 2-3h          | P1        | ⬜                        |
+| **P3**           | Éliminer anti-patterns (useEffect+fetch) | 1-2h          | P1        | ⬜                        |
+| **P4**           | Loading skeletons CRM                    | 3-4h          | P2        | ⬜                        |
+| **P5**           | Décomposition méga-composants            | 1-2 jours     | P4        | ⬜                        |
+| **P6**           | Optimisations infrastructure             | 2-3h          | P1        | ⬜                        |
+| **P7**           | Mesures + validation                     | Continue      | Toutes    | 🔄 (P7.1-P7.2 done)       |
+| **TOTAL BLOC P** |                                          | **3-5 jours** |           |                           |
 
 ---
 
 ## PHASE B3 — CONVERSION ENRICHIE (3 entités)
 
 **Objectif :** Lead → Account + Contact + Opportunity.
-**Prérequis :** Phase B2.
+**Prérequis :** Phase B2 + **Bloc P complété (Go/No-Go validé)**.
 **Durée estimée :** 2 jours.
 
 ### B3.1 Backend Conversion
@@ -578,19 +773,20 @@ _(Détail des sous-tâches B0.1 à B0.5 : toutes validées)_
 
 ## RÉSUMÉ BLOC B
 
-| Phase            | Description                                            | Durée           | Prérequis      | Statut                                       |
-| ---------------- | ------------------------------------------------------ | --------------- | -------------- | -------------------------------------------- |
-| **B0**           | Audit code existant                                    | 1 jour          | Bloc A complet | ✅ `f94877f`                                 |
-| **B1**           | Fondations Lead (DB + backend BANT + Kanban V7 + perf) | 2 jours         | B0             | ✅ `v-crm-phase1` + `v-crm-kanban-v7-stable` |
-| **B2**           | UI Lead BANT (formulaire + actions V7 + nettoyage)     | 2 jours         | B1             | 🔄 EN COURS                                  |
-| **B3**           | Conversion enrichie (3 entités)                        | 2 jours         | B2             | ⬜                                           |
-| **B4**           | Pipeline Opportunity (4 colonnes)                      | 2 jours         | B3             | ⬜                                           |
-| **B5**           | Cal.com décommissionnement + calendrier Gmail          | 2-3 jours       | B4             | ⬜ (partiel B1.5.9)                          |
-| **B6**           | Quote-to-Cash (Accept/Reject/Stripe)                   | 3-4 jours       | B4             | ⬜                                           |
-| **B7**           | Kanban temps réel                                      | 1-2 jours       | B6             | ⬜                                           |
-| **B8**           | Notifications Opportunity (11 templates)               | 2-3 jours       | B6             | ⬜                                           |
-| **B9**           | Page détail + Notes + Tags + Import/Export             | 3-4 jours       | B1-B8          | ⬜                                           |
-| **TOTAL BLOC B** |                                                        | **20-25 jours** |                |                                              |
+| Phase            | Description                                              | Durée           | Prérequis       | Statut                                       |
+| ---------------- | -------------------------------------------------------- | --------------- | --------------- | -------------------------------------------- |
+| **B0**           | Audit code existant                                      | 1 jour          | Bloc A complet  | ✅ `f94877f`                                 |
+| **B1**           | Fondations Lead (DB + backend BANT + Kanban V7 + perf)   | 2 jours         | B0              | ✅ `v-crm-phase1` + `v-crm-kanban-v7-stable` |
+| **B2**           | UI Lead BANT (formulaire + actions V7 + DnD + nettoyage) | 2 jours         | B1              | 🔄 EN COURS                                  |
+| **⚡ BLOC P**    | **PERFORMANCE (priorité absolue)**                       | **3-5 jours**   | **B2**          | **🔄 P1 partiel**                            |
+| **B3**           | Conversion enrichie (3 entités)                          | 2 jours         | B2 + **Bloc P** | ⬜                                           |
+| **B4**           | Pipeline Opportunity (4 colonnes)                        | 2 jours         | B3              | ⬜                                           |
+| **B5**           | Cal.com décommissionnement + calendrier Gmail            | 2-3 jours       | B4              | ⬜ (partiel B1.5.9)                          |
+| **B6**           | Quote-to-Cash (Accept/Reject/Stripe)                     | 3-4 jours       | B4              | ⬜                                           |
+| **B7**           | Kanban temps réel                                        | 1-2 jours       | B6              | ⬜                                           |
+| **B8**           | Notifications Opportunity (11 templates)                 | 2-3 jours       | B6              | ⬜                                           |
+| **B9**           | Page détail + Notes + Tags + Import/Export               | 3-4 jours       | B1-B8           | ⬜                                           |
+| **TOTAL BLOC B** |                                                          | **23-30 jours** |                 |                                              |
 
 **Notes :** B5 et B6 sont indépendants (peuvent être parallélisés). B7 et B8 dépendent de B6 mais sont indépendants entre eux.
 
@@ -721,12 +917,14 @@ _(Détail des sous-tâches B0.1 à B0.5 : toutes validées)_
 
 # ═══════════════════════════════════════════════
 
-| Bloc      | Description                                                 | Durée           | Statut                 |
-| --------- | ----------------------------------------------------------- | --------------- | ---------------------- |
-| **A**     | Fermer V5.3 (admin fixes, CLT cleanup, E2E, docs)           | 3-5 jours       | ✅ `v-bloc-a-complete` |
-| **B**     | CRM Framework Standard (BANT, Lead/Opp, Quote, Stripe)      | 20-25 jours     | 🔄 B2 en cours         |
-| **C**     | Enrichissements (Dashboard, SLA, CRM Client, Module Client) | 10-15 jours     | ⬜                     |
-| **TOTAL** |                                                             | **33-45 jours** |                        |
+| Bloc          | Description                                                 | Durée           | Statut                 |
+| ------------- | ----------------------------------------------------------- | --------------- | ---------------------- |
+| **A**         | Fermer V5.3 (admin fixes, CLT cleanup, E2E, docs)           | 3-5 jours       | ✅ `v-bloc-a-complete` |
+| **B (B0-B2)** | CRM Framework — Fondations + Lead BANT + Kanban DnD         | 5-6 jours       | 🔄 B2 finalisation     |
+| **⚡ P**      | **PERFORMANCE — PRIORITÉ ABSOLUE**                          | **3-5 jours**   | 🔄 P1 partiel          |
+| **B (B3-B9)** | CRM Framework — Conversion, Opportunity, Quote, Temps réel  | 15-20 jours     | ⬜ (après Bloc P)      |
+| **C**         | Enrichissements (Dashboard, SLA, CRM Client, Module Client) | 10-15 jours     | ⬜                     |
+| **TOTAL**     |                                                             | **36-51 jours** |                        |
 
 ---
 
@@ -752,14 +950,25 @@ BLOC A (3-5j) ✅ COMPLÉTÉ
 ├── A3 : Validation E2E                                │ FONDATIONS ✅
 ├── A4 : Documentation                           ─────┘
     ↓
-BLOC B (20-25j) 🔄 EN COURS
+BLOC B — PHASE 1 (5-6j) 🔄 EN COURS
 ├── B0 : Audit code CRM existant                 ───── ✅
 ├── B1 : Fondations Lead BANT + Kanban V7 + Perf ───── ✅
-├── B2 : UI Lead (BANT form + actions V7)         ───── 🔄 EN COURS
+├── B2 : UI Lead (BANT + DnD + actions V7)        ───── 🔄 FINALISATION
+    ↓
+⚡ BLOC P — PERFORMANCE (3-5j) ← PRIORITÉ ABSOLUE
+├── P1 : React Query staleTime + caching          ───── ✅ (partiel)
+├── P2 : meta.select sur TOUS les hooks            ─────┐
+├── P3 : Éliminer anti-patterns                         │
+├── P4 : Loading skeletons CRM                          │ PERFORMANCE
+├── P5 : Décomposition méga-composants                  │
+├── P6 : Optimisations infrastructure                   │
+├── P7 : Mesures + validation (Go/No-Go)          ─────┘
+    ↓ (SEULEMENT si P7 validé : pages <2s, interactions <500ms)
+BLOC B — PHASE 2 (15-20j)
 ├── B3 : Conversion 3 entités                          │
-├── B4 : Pipeline Opportunity (4 col.)                 │ CRM CORE
+├── B4 : Pipeline Opportunity (4 col.)                 │
 ├── B5 : Cal.com → Gmail calendrier    ──┐             │
-├── B6 : Quote-to-Cash (Stripe)        ──┤ parallèle   │
+├── B6 : Quote-to-Cash (Stripe)        ──┤ parallèle   │ CRM CORE
 ├── B7 : Kanban temps réel               │             │
 ├── B8 : Notifications (ON1-ON11)        │             │
 ├── B9 : Pages détail + Notes + Import   ────────────┘
@@ -776,14 +985,17 @@ BLOC C (10-15j)
 
 ## HISTORIQUE DES MISES À JOUR
 
-| Date       | Bloc | Phase | Tâche            | Modification                                                                                                                               | Par                 |
-| ---------- | ---- | ----- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
-| 28/02/2026 | —    | —     | Création         | Document consolidé V6 — fusionne 7 plans                                                                                                   | Architecture Claude |
-| 01/03/2026 | A    | A1-A4 | Bloc A complet   | Tag `v-bloc-a-complete`, commit `a032e77`                                                                                                  | Mohamed             |
-| 01/03/2026 | B    | B0    | Audit CRM        | Commit `f94877f` — audit complet code CRM                                                                                                  | Mohamed             |
-| 01/03/2026 | B    | B1    | Fondations BANT  | Tag `v-crm-phase1`, commit `17d2913` — DB, statuts V7, transitions, migration 27 leads, Cal.com cleanup 20 fichiers, CPT→BANT              | Mohamed             |
-| 02/03/2026 | B    | B1.5  | Kanban V7 stable | Tag `v-crm-kanban-v7-stable`, commit `a4ca69c` — 3 colonnes, outcomes bar, 4 perf fixes (SWR, SELECT partial, flash/back, dynamic imports) | Mohamed             |
-| 02/03/2026 | B    | B2    | Mise à jour plan | Décision CEO : 3 colonnes (email_verified incluse) au lieu de 2. Plan B2 mis à jour. Section B2.4 (nettoyage) ajoutée. D1+D6 résolues.     | Architecture Claude |
+| Date       | Bloc  | Phase | Tâche            | Modification                                                                                                                               | Par                 |
+| ---------- | ----- | ----- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| 28/02/2026 | —     | —     | Création         | Document consolidé V6 — fusionne 7 plans                                                                                                   | Architecture Claude |
+| 01/03/2026 | A     | A1-A4 | Bloc A complet   | Tag `v-bloc-a-complete`, commit `a032e77`                                                                                                  | Mohamed             |
+| 01/03/2026 | B     | B0    | Audit CRM        | Commit `f94877f` — audit complet code CRM                                                                                                  | Mohamed             |
+| 01/03/2026 | B     | B1    | Fondations BANT  | Tag `v-crm-phase1`, commit `17d2913` — DB, statuts V7, transitions, migration 27 leads, Cal.com cleanup 20 fichiers, CPT→BANT              | Mohamed             |
+| 02/03/2026 | B     | B1.5  | Kanban V7 stable | Tag `v-crm-kanban-v7-stable`, commit `a4ca69c` — 3 colonnes, outcomes bar, 4 perf fixes (SWR, SELECT partial, flash/back, dynamic imports) | Mohamed             |
+| 02/03/2026 | B     | B2    | Mise à jour plan | Décision CEO : 3 colonnes (email_verified incluse) au lieu de 2. Plan B2 mis à jour. Section B2.4 (nettoyage) ajoutée. D1+D6 résolues.     | Architecture Claude |
+| 03/03/2026 | B     | B2    | Commit 13c8c74   | B2.5 Drawer refonte useOne, B2.6 Data provider custom, B2.7 Clerk ID→UUID audit. Tag v-crm-b2-drawer. 4 tests navigateur PASS.             | Architecture Claude |
+| 03/03/2026 | B     | B2.8  | DnD + perf       | af3119b — 7 drags, 4 mini-popups, OutcomesBar restauré (régression corrigée), PERF-FIX-001 Phase A (staleTime, meta.select, URL nav)       | Architecture Claude |
+| 03/03/2026 | **P** | —     | **BLOC P créé**  | **V6.2 — Bloc Performance inséré entre B2 et B3. Décision CEO : performance = condition d'existence, pas cosmétique. Go/No-Go avant B3.**  | Architecture Claude |
 
 ---
 

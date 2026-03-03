@@ -10,20 +10,17 @@
 import { useState, useEffect } from "react";
 import { Search, X, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "next/navigation";
-import { useLeadStages } from "@/lib/hooks/useLeadStages";
 import type {
   FilterGroup,
   LogicOperator,
   FilterCondition,
 } from "@/lib/config/filter-config";
-import type { LeadStatus, LeadStage } from "@/types/crm";
+import type { LeadStatus } from "@/types/crm";
 import type { SavedView, SavedViewConfig } from "@/lib/types/views";
 import type { ViewMode } from "./ViewToggle";
 
 export interface LeadsFilters {
   status?: LeadStatus | "all";
-  lead_stage?: LeadStage | "all";
   assigned_to?: string | "all" | "unassigned";
   country_code?: string | "all";
   min_score?: number;
@@ -104,11 +101,7 @@ export function LeadsFilterBar({
   onAdvancedReset,
 }: LeadsFilterBarProps) {
   const { t } = useTranslation("crm");
-  const params = useParams();
-  const locale = (params.locale as string) || "en";
   const [searchInput, setSearchInput] = useState(filters.search || "");
-
-  const { stages, getLabel } = useLeadStages();
 
   // Debounced search (300ms)
   useEffect(() => {
@@ -132,7 +125,6 @@ export function LeadsFilterBar({
     setSearchInput("");
     onFiltersChange({
       status: "all",
-      lead_stage: "all",
       assigned_to: "all",
       country_code: "all",
       min_score: undefined,
@@ -167,21 +159,6 @@ export function LeadsFilterBar({
       </div>
 
       <div className="bg-fc-border-light h-5 w-px" />
-
-      {/* Stage */}
-      <FilterSelect
-        value={filters.lead_stage || "all"}
-        onChange={(val) => onFiltersChange({ ...filters, lead_stage: val })}
-      >
-        <option value="all">{t("leads.filters.all_stages")}</option>
-        {stages
-          .filter((stage) => stage.value !== "opportunity")
-          .map((stage) => (
-            <option key={stage.value} value={stage.value}>
-              {getLabel(stage.value, locale)}
-            </option>
-          ))}
-      </FilterSelect>
 
       {/* Owner */}
       <FilterSelect

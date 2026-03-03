@@ -40,20 +40,13 @@ const ALLOWED_SORT_FIELDS = new Set([
   "last_name",
   "phone",
   "company_name",
-  "industry",
-  "company_size",
   "fleet_size",
   "current_software",
   "website_url",
-  "linkedin_url",
   "country_code",
   "city",
   "status",
-  "lead_stage",
   "priority",
-  "fit_score",
-  "engagement_score",
-  "qualification_score",
   "source",
   "source_id",
   "utm_source",
@@ -70,8 +63,6 @@ const ALLOWED_SORT_FIELDS = new Set([
   "next_action_date",
   "last_activity_at",
   "stage_entered_at",
-  "booking_slot_at",
-  "booking_confirmed_at",
   "wizard_completed",
   "email_verified",
   "callback_requested",
@@ -84,8 +75,6 @@ const ALLOWED_SORT_FIELDS = new Set([
   "detected_country_code",
   "language",
   "converted_at",
-  "attendance_confirmed",
-  "attendance_confirmed_at",
   "deleted_at",
   "created_by",
 ]);
@@ -119,8 +108,6 @@ const ALLOWED_SORT_FIELDS = new Set([
  *   "data": {
  *     "id": "uuid",
  *     "lead_code": "L-R7M8J6",
- *     "qualification_score": 76,
- *     "lead_stage": "sales_qualified",
  *     "assigned_to": "emp-uuid",
  *     "priority": "high"
  *   }
@@ -177,15 +164,6 @@ export async function POST(request: NextRequest) {
           email: result.lead.email,
           status: result.lead.status,
           priority: result.lead.priority ?? "medium",
-
-          // Scoring info
-          fit_score: result.scoring.fit_score,
-          engagement_score: result.scoring.engagement_score,
-          qualification_score: result.scoring.qualification_score,
-          lead_stage: result.scoring.lead_stage as
-            | "top_of_funnel"
-            | "marketing_qualified"
-            | "sales_qualified",
 
           // Assignment info
           assigned_to: result.assignment.assigned_to,
@@ -288,10 +266,8 @@ export async function POST(request: NextRequest) {
  *
  * Query Parameters:
  * - status: Filter by status (new, contacted, qualified, converted, lost)
- * - lead_stage: Filter by stage (top_of_funnel, marketing_qualified, sales_qualified, opportunity)
  * - assigned_to: Filter by assigned employee ID
  * - country_code: Filter by country (2-letter ISO code)
- * - min_score: Minimum qualification score (0-100)
  * - search: Search in email, company_name, first_name, last_name
  * - inactive_months: Filter cold leads (no update for X months)
  * - include_cold: Include only cold leads (lost/disqualified OR inactive)
@@ -306,7 +282,7 @@ export async function POST(request: NextRequest) {
  * Response 500: Internal server error
  *
  * @example
- * GET /api/v1/crm/leads?status=new&lead_stage=sales_qualified&page=1&limit=20&sort=created_at&order=desc
+ * GET /api/v1/crm/leads?status=new&page=1&limit=20&sort=created_at&order=desc
  *
  * Response 200: {
  *   "success": true,
@@ -317,8 +293,6 @@ export async function POST(request: NextRequest) {
  *       "email": "ceo@bigfleet.ae",
  *       "company_name": "Big Fleet LLC",
  *       "status": "new",
- *       "lead_stage": "sales_qualified",
- *       "qualification_score": 76,
  *       "assigned_to": {
  *         "id": "emp-uuid",
  *         "first_name": "John",
@@ -367,12 +341,10 @@ export async function GET(request: NextRequest) {
 
     // CSV multi-select filters
     const status = csvParam("status");
-    const lead_stage = csvParam("lead_stage");
     const priority = csvParam("priority");
     const source = csvParam("source");
     const fleet_size = csvParam("fleet_size");
     const language = csvParam("language");
-    const industry = csvParam("industry");
     const country_code = csvParam("country_code");
     const loss_reason_code = csvParam("loss_reason_code");
     const disqualification_reason = csvParam("disqualification_reason");
@@ -382,14 +354,6 @@ export async function GET(request: NextRequest) {
     // Search
     const search = searchParams.get("search") || undefined;
 
-    // Range filters (min/max)
-    const min_qualification_score = intParam("min_qualification_score");
-    const max_qualification_score = intParam("max_qualification_score");
-    const min_fit_score = intParam("min_fit_score");
-    const max_fit_score = intParam("max_fit_score");
-    const min_engagement_score = intParam("min_engagement_score");
-    const max_engagement_score = intParam("max_engagement_score");
-
     // Date range filters
     const last_activity_at_gte = dateParam("min_last_activity_at");
     const last_activity_at_lte = dateParam("max_last_activity_at");
@@ -397,14 +361,10 @@ export async function GET(request: NextRequest) {
     const created_at_lte = dateParam("max_created_at");
     const next_action_date_gte = dateParam("min_next_action_date");
     const next_action_date_lte = dateParam("max_next_action_date");
-    const booking_slot_at_gte = dateParam("min_booking_slot_at");
-    const booking_slot_at_lte = dateParam("max_booking_slot_at");
-
     // Boolean filters
     const email_verified = boolParam("email_verified");
     const callback_requested = boolParam("callback_requested");
     const gdpr_consent = boolParam("gdpr_consent");
-    const attendance_confirmed = boolParam("attendance_confirmed");
     const wizard_completed = boolParam("wizard_completed");
 
     // Legacy cold leads filters
@@ -433,37 +393,16 @@ export async function GET(request: NextRequest) {
 
     // CSV multi-select → Prisma { in: [...] }
     if (status) where.status = { in: status };
-    if (lead_stage) where.lead_stage = { in: lead_stage };
     if (priority) where.priority = { in: priority };
     if (source) where.source = { in: source };
     if (fleet_size) where.fleet_size = { in: fleet_size };
     if (language) where.language = { in: language };
-    if (industry) where.industry = { in: industry };
     if (country_code) where.country_code = { in: country_code };
     if (loss_reason_code) where.loss_reason_code = { in: loss_reason_code };
     if (disqualification_reason)
       where.disqualification_reason = { in: disqualification_reason };
     if (platforms_used) where.platforms_used = { hasSome: platforms_used };
     if (assigned_to) where.assigned_to = assigned_to;
-
-    // Range filters → Prisma { gte, lte }
-    const scoreWhere: Record<string, number> = {};
-    if (min_qualification_score !== undefined)
-      scoreWhere.gte = min_qualification_score;
-    if (max_qualification_score !== undefined)
-      scoreWhere.lte = max_qualification_score;
-    if (Object.keys(scoreWhere).length > 0)
-      where.qualification_score = scoreWhere;
-
-    const fitWhere: Record<string, number> = {};
-    if (min_fit_score !== undefined) fitWhere.gte = min_fit_score;
-    if (max_fit_score !== undefined) fitWhere.lte = max_fit_score;
-    if (Object.keys(fitWhere).length > 0) where.fit_score = fitWhere;
-
-    const engWhere: Record<string, number> = {};
-    if (min_engagement_score !== undefined) engWhere.gte = min_engagement_score;
-    if (max_engagement_score !== undefined) engWhere.lte = max_engagement_score;
-    if (Object.keys(engWhere).length > 0) where.engagement_score = engWhere;
 
     // Date range filters
     const buildDateRange = (
@@ -487,19 +426,11 @@ export async function GET(request: NextRequest) {
       next_action_date_lte
     );
     if (nextActionRange) where.next_action_date = nextActionRange;
-    const bookingRange = buildDateRange(
-      booking_slot_at_gte,
-      booking_slot_at_lte
-    );
-    if (bookingRange) where.booking_slot_at = bookingRange;
-
     // Boolean filters
     if (email_verified !== undefined) where.email_verified = email_verified;
     if (callback_requested !== undefined)
       where.callback_requested = callback_requested;
     if (gdpr_consent !== undefined) where.gdpr_consent = gdpr_consent;
-    if (attendance_confirmed !== undefined)
-      where.attendance_confirmed = attendance_confirmed;
     if (wizard_completed !== undefined)
       where.wizard_completed = wizard_completed;
 
@@ -610,19 +541,6 @@ export async function GET(request: NextRequest) {
           const { assigned_member, crm_countries, ...scalar } = lead;
           return {
             ...scalar,
-            // Decimal → number (Prisma Decimal serializes to string)
-            ...(scalar.fit_score !== undefined
-              ? {
-                  fit_score: scalar.fit_score ? Number(scalar.fit_score) : null,
-                }
-              : {}),
-            ...(scalar.engagement_score !== undefined
-              ? {
-                  engagement_score: scalar.engagement_score
-                    ? Number(scalar.engagement_score)
-                    : null,
-                }
-              : {}),
             // Relations → clean objects (only if included)
             ...(crm_countries !== undefined
               ? { country: crm_countries ?? null }

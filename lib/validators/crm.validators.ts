@@ -19,6 +19,8 @@
 import { z } from "zod";
 import { differenceInDays, differenceInYears } from "date-fns";
 import { OPPORTUNITY_STAGE_VALUES } from "../config/opportunity-stages";
+import { LEAD_STATUSES } from "@/lib/constants/crm/lead-status.constants";
+import { OPPORTUNITY_STATUSES } from "@/lib/constants/crm/opportunity-status.constants";
 
 // ===== LEAD VALIDATORS =====
 
@@ -181,34 +183,8 @@ export type LeadUpdateInput = z.infer<typeof LeadUpdateSchema>;
 /**
  * Lead qualification validation schema
  *
- * Used when a commercial qualifies a lead with scoring and stage transition.
- *
- * @example
- * const qualification = {
- *   lead_stage: "sales_qualified",
- *   qualification_score: 85,
- *   qualification_notes: "Strong fit, budget confirmed"
- * };
+ * @deprecated ICP scoring removed in DETTE-V3 — BANT qualification is handled by qualify/route.ts
  */
-export const LeadQualifySchema = z.object({
-  lead_stage: z
-    .enum(["sales_qualified", "marketing_qualified"])
-    .describe(
-      "Le statut de qualification doit être 'sales_qualified' ou 'marketing_qualified'"
-    ),
-
-  qualification_score: z
-    .number()
-    .min(0, "Le score doit être entre 0 et 100")
-    .max(100, "Le score doit être entre 0 et 100"),
-
-  qualification_notes: z
-    .string()
-    .max(500, "Les notes ne peuvent pas dépasser 500 caractères")
-    .optional(),
-});
-
-export type LeadQualifyInput = z.infer<typeof LeadQualifySchema>;
 
 /**
  * Lead query/filter validation schema
@@ -239,10 +215,8 @@ export const LeadQuerySchema = z.object({
 
   // Sorting
   sortBy: z
-    .enum(["created_at", "email", "company_name", "fit_score"])
-    .describe(
-      "Le tri doit être par: created_at, email, company_name, ou fit_score"
-    )
+    .enum(["created_at", "email", "company_name"])
+    .describe("Le tri doit être par: created_at, email, ou company_name")
     .default("created_at"),
 
   sortOrder: z
@@ -250,34 +224,7 @@ export const LeadQuerySchema = z.object({
     .describe("L'ordre doit être 'asc' ou 'desc'")
     .default("desc"),
 
-  // V6.3: 8 statuts
-  status: z
-    .enum([
-      "new",
-      "demo",
-      "proposal_sent",
-      "payment_pending",
-      "converted",
-      "lost",
-      "nurturing",
-      "disqualified",
-    ])
-    .describe(
-      "Le statut doit être: new, demo, proposal_sent, payment_pending, converted, lost, nurturing, ou disqualified"
-    )
-    .optional(),
-
-  lead_stage: z
-    .enum([
-      "top_of_funnel",
-      "marketing_qualified",
-      "sales_qualified",
-      "opportunity",
-    ])
-    .describe(
-      "Le stage doit être: top_of_funnel, marketing_qualified, sales_qualified, ou opportunity"
-    )
-    .optional(),
+  status: z.enum(LEAD_STATUSES).optional(),
 
   country_code: z
     .string()
@@ -341,8 +288,8 @@ export const OpportunityCreateSchema = z.object({
     ),
 
   status: z
-    .enum(["open", "won", "lost"])
-    .describe("Le statut doit être: open, won, ou lost"),
+    .enum(OPPORTUNITY_STATUSES)
+    .describe("Le statut doit être: open, won, lost, on_hold ou cancelled"),
 
   expected_value: z
     .number()
@@ -409,7 +356,7 @@ export const OpportunityQuerySchema = z.object({
   // Filters
   stage: z.enum(OPPORTUNITY_STAGE_VALUES).optional(),
 
-  status: z.enum(["open", "won", "lost", "on_hold", "cancelled"]).optional(),
+  status: z.enum(OPPORTUNITY_STATUSES).optional(),
 
   pipeline_id: z.string().uuid().optional(),
   assigned_to: z.string().uuid().optional(),

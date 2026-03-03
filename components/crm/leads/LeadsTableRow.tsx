@@ -23,7 +23,6 @@ import {
   Trash,
   User,
   ExternalLink,
-  Linkedin,
   Check,
   X,
   Building2,
@@ -144,18 +143,6 @@ function truncateUrl(url: string, maxLength: number = 30): string {
   return cleanUrl.substring(0, maxLength) + "...";
 }
 
-/**
- * Retourne la couleur du badge score
- */
-function getScoreColor(score: number | null): string {
-  if (score === null) return "bg-gray-100 text-gray-600";
-  if (score < 40)
-    return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-  if (score < 70)
-    return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
-  return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-}
-
 // Default visible columns if not provided
 // B2B Company-First: Company before Contact
 const DEFAULT_VISIBLE_COLUMNS = [
@@ -164,8 +151,6 @@ const DEFAULT_VISIBLE_COLUMNS = [
   "contact", // SECONDARY column
   "ref", // renamed from lead_code
   "country_code",
-  "qualification_score",
-  "lead_stage",
   "assigned_to",
   "created_at",
   // Additional visible columns
@@ -298,57 +283,6 @@ export const LeadsTableRow = memo(
           ) : (
             <span className="text-sm">—</span>
           )}
-        </TableCell>
-      ),
-
-      qualification_score: () => (
-        <TableCell className="w-[100px] overflow-hidden">
-          <Badge
-            variant="secondary"
-            className={cn(
-              "text-xs font-medium",
-              getScoreColor(lead.qualification_score)
-            )}
-          >
-            {lead.qualification_score !== null
-              ? `${lead.qualification_score}/100`
-              : "—"}
-          </Badge>
-        </TableCell>
-      ),
-
-      fit_score: () => (
-        <TableCell className="w-[100px] overflow-hidden">
-          <Badge
-            variant="secondary"
-            className={cn("text-xs font-medium", getScoreColor(lead.fit_score))}
-          >
-            {lead.fit_score !== null ? `${lead.fit_score}/100` : "—"}
-          </Badge>
-        </TableCell>
-      ),
-
-      engagement_score: () => (
-        <TableCell className="w-[100px] overflow-hidden">
-          <Badge
-            variant="secondary"
-            className={cn(
-              "text-xs font-medium",
-              getScoreColor(lead.engagement_score)
-            )}
-          >
-            {lead.engagement_score !== null
-              ? `${lead.engagement_score}/100`
-              : "—"}
-          </Badge>
-        </TableCell>
-      ),
-
-      lead_stage: () => (
-        <TableCell className="w-[120px] overflow-hidden">
-          <Badge variant="outline" className="max-w-full truncate text-xs">
-            {t(`leads.card.stage.${lead.lead_stage}`)}
-          </Badge>
         </TableCell>
       ),
 
@@ -513,21 +447,6 @@ export const LeadsTableRow = memo(
       ),
 
       // Company details
-      industry: () => (
-        <TableCell className="w-[120px] overflow-hidden">
-          <span className="block truncate text-sm">{lead.industry || "—"}</span>
-        </TableCell>
-      ),
-
-      company_size: () => (
-        <TableCell className="w-[130px] overflow-hidden">
-          <span className="block truncate text-sm">
-            {lead.company_size
-              ? `${lead.company_size} ${t("leads.drawer.fields.employees")}`
-              : "—"}
-          </span>
-        </TableCell>
-      ),
 
       current_software: () => (
         <TableCell className="w-[140px] overflow-hidden">
@@ -553,29 +472,6 @@ export const LeadsTableRow = memo(
             >
               <ExternalLink className="h-3 w-3 shrink-0" />
               <span className="truncate">{truncateUrl(lead.website_url)}</span>
-            </a>
-          ) : (
-            <span className="text-sm">—</span>
-          )}
-        </TableCell>
-      ),
-
-      linkedin_url: () => (
-        <TableCell className="w-[180px] overflow-hidden">
-          {lead.linkedin_url ? (
-            <a
-              href={
-                lead.linkedin_url.startsWith("http")
-                  ? lead.linkedin_url
-                  : `https://${lead.linkedin_url}`
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-400"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Linkedin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{truncateUrl(lead.linkedin_url)}</span>
             </a>
           ) : (
             <span className="text-sm">—</span>
@@ -664,17 +560,6 @@ export const LeadsTableRow = memo(
             title={lead.message || undefined}
           >
             {lead.message || "—"}
-          </span>
-        </TableCell>
-      ),
-
-      qualification_notes: () => (
-        <TableCell className="w-[200px] overflow-hidden">
-          <span
-            className="block truncate text-sm"
-            title={lead.qualification_notes || undefined}
-          >
-            {lead.qualification_notes || "—"}
           </span>
         </TableCell>
       ),
@@ -833,11 +718,6 @@ export const LeadsTableRow = memo(
           {isVisible("company_name") && cellRenderers.company_name()}
           {isVisible("fleet_size") && cellRenderers.fleet_size()}
           {isVisible("country_code") && cellRenderers.country_code()}
-          {isVisible("qualification_score") &&
-            cellRenderers.qualification_score()}
-          {isVisible("fit_score") && cellRenderers.fit_score()}
-          {isVisible("engagement_score") && cellRenderers.engagement_score()}
-          {isVisible("lead_stage") && cellRenderers.lead_stage()}
           {isVisible("status") && cellRenderers.status()}
           {isVisible("priority") && cellRenderers.priority()}
           {isVisible("assigned_to") && cellRenderers.assigned_to()}

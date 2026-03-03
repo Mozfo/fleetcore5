@@ -17,23 +17,18 @@ import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getSortingStateParser } from "@/lib/parsers";
 import type { Lead } from "../types/lead.types";
 
+/** Column IDs that are UI-only (no DB field). */
+const NON_FIELD_COLUMNS = new Set(["select", "expand", "actions"]);
+
 /** Columns hidden by default — only the 22 CEO-selected columns are visible. */
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   id: false,
-  industry: false,
-  company_size: false,
-  linkedin_url: false,
   source: false,
   source_id: false,
   utm_source: false,
   utm_medium: false,
   utm_campaign: false,
   message: false,
-  qualification_notes: false,
-  scoring: false,
-  fit_score: false,
-  engagement_score: false,
-  qualification_score: false,
   consent_at: false,
   consent_ip: false,
   updated_at: false,
@@ -55,7 +50,6 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   loss_reason_code: false,
   loss_reason_detail: false,
   competitor_name: false,
-  booking_confirmed_at: false,
   platforms_used: false,
   tenant_id: false,
   converted_at: false,
@@ -63,10 +57,6 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   email_verification_code: false,
   email_verification_expires_at: false,
   email_verification_attempts: false,
-  confirmation_token: false,
-  attendance_confirmed: false,
-  attendance_confirmed_at: false,
-  j1_reminder_sent_at: false,
   detected_country_code: false,
   ip_address: false,
   language: false,
@@ -90,22 +80,13 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
  */
 export const SIDEBAR_FILTER_PARSERS = {
   // Multi-select (CSV → Prisma IN)
-  lead_stage: parseAsArrayOf(parseAsString, ","),
   source: parseAsArrayOf(parseAsString, ","),
   fleet_size: parseAsArrayOf(parseAsString, ","),
   language: parseAsArrayOf(parseAsString, ","),
-  industry: parseAsArrayOf(parseAsString, ","),
   country_code: parseAsArrayOf(parseAsString, ","),
   loss_reason_code: parseAsArrayOf(parseAsString, ","),
   disqualification_reason: parseAsArrayOf(parseAsString, ","),
   platforms_used: parseAsArrayOf(parseAsString, ","),
-  // Range (min/max → Prisma gte/lte)
-  min_qualification_score: parseAsInteger,
-  max_qualification_score: parseAsInteger,
-  min_fit_score: parseAsInteger,
-  max_fit_score: parseAsInteger,
-  min_engagement_score: parseAsInteger,
-  max_engagement_score: parseAsInteger,
   // Date range (ISO strings → Prisma gte/lte)
   min_last_activity_at: parseAsString,
   max_last_activity_at: parseAsString,
@@ -113,13 +94,10 @@ export const SIDEBAR_FILTER_PARSERS = {
   max_created_at: parseAsString,
   min_next_action_date: parseAsString,
   max_next_action_date: parseAsString,
-  min_booking_slot_at: parseAsString,
-  max_booking_slot_at: parseAsString,
   // Boolean (string "true"/"false" → Prisma eq)
   email_verified: parseAsString,
   callback_requested: parseAsString,
   gdpr_consent: parseAsString,
-  attendance_confirmed: parseAsString,
   wizard_completed: parseAsString,
 } as const;
 
@@ -309,12 +287,25 @@ export function useLeadsTable({
     [columnFilters, sidebarFilters, searchFilter, outcomeFilter]
   );
 
+  // ── Compute fields to fetch based on visible columns ──────────────────
+  const tableFields = React.useMemo(() => {
+    const vis = savedColumnVisibility ?? DEFAULT_COLUMN_VISIBILITY;
+    const fields = new Set<string>(["id", "status"]); // Always needed for row ID and filtering
+    for (const col of columns) {
+      const key = col.id;
+      if (!key || NON_FIELD_COLUMNS.has(key)) continue;
+      if (vis[key] !== false) fields.add(key);
+    }
+    return Array.from(fields);
+  }, [columns, savedColumnVisibility]);
+
   // ── Refine data fetching ──────────────────────────────────────────────
   const { query, result } = useList<Lead>({
     resource: "leads",
     pagination: { currentPage: page, pageSize: perPage },
     sorters,
     filters,
+    meta: { select: tableFields },
   });
 
   const data = result.data;

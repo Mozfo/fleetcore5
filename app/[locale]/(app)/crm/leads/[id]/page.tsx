@@ -64,19 +64,13 @@ const getLeadWithNavigation = cache(async (id: string) => {
       country_code: string | null;
       city: string | null;
       status: string;
-      lead_stage: string | null;
       priority: string | null;
-      fit_score: number | null;
-      engagement_score: number | null;
-      qualification_score: number | null;
-      scoring: unknown;
       source: string | null;
       source_id: string | null;
       utm_source: string | null;
       utm_medium: string | null;
       utm_campaign: string | null;
       message: string | null;
-      qualification_notes: string | null;
       assigned_to: string | null;
       gdpr_consent: boolean | null;
       consent_at: Date | null;
@@ -208,23 +202,13 @@ export default async function LeadPage({ params }: LeadPageProps) {
         : null,
     city: leadData.city,
     status: leadData.status,
-    lead_stage: leadData.lead_stage,
     priority: leadData.priority,
-    fit_score: leadData.fit_score ? Number(leadData.fit_score) : null,
-    engagement_score: leadData.engagement_score
-      ? Number(leadData.engagement_score)
-      : null,
-    qualification_score: leadData.qualification_score
-      ? Number(leadData.qualification_score)
-      : null,
-    scoring: leadData.scoring as Record<string, unknown> | null,
     source: leadData.source,
     source_id: leadData.source_id,
     utm_source: leadData.utm_source,
     utm_medium: leadData.utm_medium,
     utm_campaign: leadData.utm_campaign,
     message: leadData.message,
-    qualification_notes: leadData.qualification_notes,
     assigned_to:
       leadData.emp_id && leadData.emp_first_name
         ? {

@@ -8,7 +8,7 @@ import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/prisma";
 import { LeadsBrowserClient } from "@/components/crm/leads/LeadsBrowserClient";
 import { localizedRedirect } from "@/lib/navigation";
-import type { Lead, LeadStage } from "@/types/crm";
+import type { Lead } from "@/types/crm";
 
 interface BrowserPageProps {
   params: Promise<{ locale: string }>;
@@ -80,23 +80,13 @@ const fetchAllLeads = cache(
         country: lead.crm_countries || null,
         city: lead.city,
         status: lead.status,
-        lead_stage: lead.lead_stage as LeadStage | null,
         priority: lead.priority,
-        fit_score: lead.fit_score ? Number(lead.fit_score) : null,
-        engagement_score: lead.engagement_score
-          ? Number(lead.engagement_score)
-          : null,
-        qualification_score: lead.qualification_score
-          ? Number(lead.qualification_score)
-          : null,
-        scoring: lead.scoring as Record<string, unknown> | null,
         source: lead.source,
         source_id: lead.source_id,
         utm_source: lead.utm_source,
         utm_medium: lead.utm_medium,
         utm_campaign: lead.utm_campaign,
         message: lead.message,
-        qualification_notes: lead.qualification_notes,
         assigned_to: assignedTo
           ? {
               id: assignedTo.id,

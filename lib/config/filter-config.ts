@@ -147,31 +147,10 @@ export const LEADS_FILTERABLE_FIELDS: FilterableField[] = [
     options: "statuses",
   },
   {
-    key: "lead_stage",
-    labelKey: "leads.filters.fields.stage",
-    type: "select",
-    options: "stages",
-  },
-  {
     key: "priority",
     labelKey: "leads.filters.fields.priority",
     type: "select",
     options: "priorities",
-  },
-  {
-    key: "qualification_score",
-    labelKey: "leads.filters.fields.qualification_score",
-    type: "number",
-  },
-  {
-    key: "fit_score",
-    labelKey: "leads.filters.fields.fit_score",
-    type: "number",
-  },
-  {
-    key: "engagement_score",
-    labelKey: "leads.filters.fields.engagement_score",
-    type: "number",
   },
   {
     key: "fleet_size",
@@ -194,11 +173,6 @@ export const LEADS_FILTERABLE_FIELDS: FilterableField[] = [
     key: "wizard_completed",
     labelKey: "leads.filters.fields.wizard_completed",
     type: "boolean",
-  },
-  {
-    key: "booking_slot_at",
-    labelKey: "leads.filters.fields.booking_date",
-    type: "date",
   },
 ];
 

@@ -53,9 +53,9 @@ import { AppError } from "@/lib/core/errors";
  *   "data": [
  *     {
  *       "id": "uuid",
- *       "setting_key": "lead_stages",
+ *       "setting_key": "opportunity_stages",
  *       "setting_value": { ... },
- *       "category": "pipeline",
+ *       "category": "stages",
  *       "version": 1
  *     }
  *   ]

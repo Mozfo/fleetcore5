@@ -200,7 +200,7 @@ describe("CRITICAL: Demo Lead Email Flow (Queue-Based)", () => {
   it("MUST queue notification with correct template and idempotency key - NEVER SKIP", async () => {
     mockFindUnique.mockResolvedValue(OPERATIONAL_COUNTRY);
 
-    const { POST } = await import("@/app/api/demo-leads/route");
+    const { POST } = await import("@/app/api/crm/demo-leads/route");
 
     const request = createMockRequest({
       first_name: "Test",
@@ -304,7 +304,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
     // No existing lead
     mockFindFirst.mockResolvedValue(null);
 
-    const { POST } = await import("@/app/api/demo-leads/route");
+    const { POST } = await import("@/app/api/crm/demo-leads/route");
 
     const request = createMockRequest({
       mode: "wizard_step1",
@@ -331,7 +331,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
       status: "proposal_sent",
     });
 
-    const { POST } = await import("@/app/api/demo-leads/route");
+    const { POST } = await import("@/app/api/crm/demo-leads/route");
 
     const request = createMockRequest({
       mode: "wizard_step1",
@@ -357,7 +357,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
       status: "converted",
     });
 
-    const { POST } = await import("@/app/api/demo-leads/route");
+    const { POST } = await import("@/app/api/crm/demo-leads/route");
 
     const request = createMockRequest({
       mode: "wizard_step1",
@@ -375,7 +375,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
   });
 
   it("should reject invalid email format", async () => {
-    const { POST } = await import("@/app/api/demo-leads/route");
+    const { POST } = await import("@/app/api/crm/demo-leads/route");
 
     const request = createMockRequest({
       mode: "wizard_step1",
@@ -393,7 +393,7 @@ describe("V6.2.2: Book Demo Wizard - wizard_step1 mode", () => {
   });
 
   it("should reject wizard_step1 without email", async () => {
-    const { POST } = await import("@/app/api/demo-leads/route");
+    const { POST } = await import("@/app/api/crm/demo-leads/route");
 
     const request = createMockRequest({
       mode: "wizard_step1",

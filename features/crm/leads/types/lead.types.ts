@@ -6,7 +6,6 @@
 export type {
   Lead,
   LeadStatus,
-  LeadStage,
   LeadPriority,
   LeadSource,
   FleetSize,
@@ -15,8 +14,4 @@ export type {
   FilterState,
 } from "@/types/crm";
 
-export {
-  LEAD_STATUS_VALUES,
-  LEAD_STAGE_VALUES,
-  FLEET_SIZE_VALUES,
-} from "@/types/crm";
+export { LEAD_STATUS_VALUES, FLEET_SIZE_VALUES } from "@/types/crm";

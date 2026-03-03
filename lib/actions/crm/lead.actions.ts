@@ -15,23 +15,12 @@ import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getAuditLogUuids } from "@/lib/utils/audit-resolver";
-import type { LeadStatus } from "@/types/crm";
+import { LEAD_STATUSES } from "@/lib/constants/crm/lead-status.constants";
 
-// Schema de validation pour status update (Kanban)
-// V6.6: 9 statuts (added callback_requested)
+// Schema de validation pour status update — uses single source of truth
 const UpdateStatusSchema = z.object({
   leadId: z.string().uuid("Invalid lead ID"),
-  status: z.enum([
-    "new",
-    "callback_requested",
-    "demo",
-    "proposal_sent",
-    "payment_pending",
-    "converted",
-    "lost",
-    "nurturing",
-    "disqualified",
-  ]),
+  status: z.enum(LEAD_STATUSES),
   // V6.3: Reason codes for lost/nurturing/disqualified
   lossReasonCode: z.string().min(1).max(50).optional(),
   nurturingReasonCode: z.string().min(1).max(50).optional(),
@@ -57,7 +46,7 @@ const UpdateLeadSchema = z.object({
 export type UpdateLeadData = z.infer<typeof UpdateLeadSchema>;
 
 export type UpdateStatusResult =
-  | { success: true; data: { id: string; status: LeadStatus } }
+  | { success: true; data: { id: string; status: string } }
   | { success: false; error: string };
 
 /**
@@ -73,7 +62,7 @@ export type UpdateStatusResult =
  */
 export async function updateLeadStatusAction(
   leadId: string,
-  status: LeadStatus,
+  status: string,
   options?: {
     lossReasonCode?: string;
     nurturingReasonCode?: string;
@@ -122,15 +111,7 @@ export async function updateLeadStatusAction(
     const existingMetadata =
       (currentLead.metadata as Record<string, unknown>) || {};
 
-    if (status === "lost") {
-      updateData.metadata = {
-        ...existingMetadata,
-        lost_at: now.toISOString(),
-        lost_from_status: oldStatus,
-        loss_reason_code: options?.lossReasonCode || null,
-        reason_detail: options?.reasonDetail || null,
-      };
-    } else if (status === "nurturing") {
+    if (status === "nurturing") {
       updateData.metadata = {
         ...existingMetadata,
         nurturing_at: now.toISOString(),
@@ -146,12 +127,6 @@ export async function updateLeadStatusAction(
         loss_reason_code: options?.lossReasonCode || null,
         reason_detail: options?.reasonDetail || null,
       };
-    }
-
-    // RÈGLE MÉTIER V6.3: Quand status = "proposal_sent", enregistrer qualified_date
-    // (Un lead est considéré qualifié quand on lui envoie une proposition)
-    if (status === "proposal_sent" && !currentLead.qualified_date) {
-      updateData.qualified_date = now;
     }
 
     // 6. Update with Prisma (tenant_id filter already applied via RLS)
@@ -334,7 +309,6 @@ export async function updateLeadAction(
       country_code: updatedLead.country_code,
       country: updatedLead.crm_countries,
       status: updatedLead.status,
-      lead_stage: updatedLead.lead_stage,
       priority: updatedLead.priority,
       source: updatedLead.source,
       source_id: updatedLead.source_id,
@@ -342,15 +316,6 @@ export async function updateLeadAction(
       utm_medium: updatedLead.utm_medium,
       utm_campaign: updatedLead.utm_campaign,
       message: updatedLead.message,
-      qualification_notes: updatedLead.qualification_notes,
-      // Convert Decimal to Number
-      fit_score: updatedLead.fit_score ? Number(updatedLead.fit_score) : null,
-      engagement_score: updatedLead.engagement_score
-        ? Number(updatedLead.engagement_score)
-        : null,
-      qualification_score: updatedLead.qualification_score
-        ? Number(updatedLead.qualification_score)
-        : null,
       // Format assigned_to relation
       assigned_to: updatedLead.assigned_member
         ? {

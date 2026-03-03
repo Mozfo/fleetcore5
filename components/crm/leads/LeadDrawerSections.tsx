@@ -4,8 +4,7 @@
  * Contains:
  * - DrawerSection (wrapper)
  * - InfoRow (reusable row)
- * - ScoreBar (animated progress bar)
- * - ContactSection, CompanySection, ScoringSection, AssignmentSection, GdprSection, MessageSection
+ * - ContactSection, CompanySection, AssignmentSection, GdprSection, MessageSection
  */
 
 "use client";
@@ -15,19 +14,15 @@ import {
   Mail,
   Phone,
   Building2,
-  BarChart3,
   User,
   Shield,
   MessageSquare,
   Copy,
   ExternalLink,
-  Linkedin,
   MapPin,
   Megaphone,
-  FileText,
   Clock,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,13 +32,11 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import {
-  drawerSectionVariants,
-  scoreBarVariants,
-} from "@/lib/animations/drawer-variants";
+import { drawerSectionVariants } from "@/lib/animations/drawer-variants";
 import { useFleetSizeOptions } from "@/lib/hooks/useFleetSizeOptions";
 import type { Lead } from "@/types/crm";
 import type { LucideIcon } from "lucide-react";
+import { InfoRow } from "@/components/crm/shared/InfoRow";
 import { LeadTimeline } from "./LeadTimeline";
 
 // ============================================================================
@@ -88,114 +81,7 @@ export function DrawerSection({
   );
 }
 
-interface InfoRowProps {
-  label: string;
-  value: string | null | undefined;
-  actions?: Array<{
-    icon: LucideIcon;
-    label: string;
-    href?: string;
-    onClick?: () => void;
-  }>;
-  emptyText?: string;
-}
-
-export function InfoRow({
-  label,
-  value,
-  actions,
-  emptyText = "—",
-}: InfoRowProps) {
-  const displayValue = value || emptyText;
-  const isEmpty = !value;
-
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="min-w-0 flex-1">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p
-          className={cn(
-            "truncate text-sm font-medium",
-            isEmpty && "text-muted-foreground italic"
-          )}
-        >
-          {displayValue}
-        </p>
-      </div>
-      {actions && actions.length > 0 && (
-        <div className="flex items-center gap-1">
-          {actions.map((action, i) => {
-            const ActionIcon = action.icon;
-            if (action.href) {
-              return (
-                <Button
-                  key={i}
-                  variant="ghost"
-                  size="icon"
-                  className="hover:bg-primary/10 hover:text-primary h-7 w-7 transition-colors"
-                  asChild
-                >
-                  <a href={action.href} title={action.label}>
-                    <ActionIcon className="h-4 w-4" />
-                  </a>
-                </Button>
-              );
-            }
-            return (
-              <Button
-                key={i}
-                variant="ghost"
-                size="icon"
-                className="hover:bg-primary/10 hover:text-primary h-7 w-7 transition-colors"
-                onClick={action.onClick}
-                title={action.label}
-              >
-                <ActionIcon className="h-4 w-4" />
-              </Button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface ScoreBarProps {
-  label: string;
-  value: number | null;
-  max: number;
-  color: "blue" | "green" | "orange";
-}
-
-export function ScoreBar({ label, value, max, color }: ScoreBarProps) {
-  const percentage = value !== null ? Math.min((value / max) * 100, 100) : 0;
-  const displayValue = value !== null ? value : "—";
-
-  const colorClasses = {
-    blue: "bg-primary",
-    green: "bg-status-converted",
-    orange: "bg-status-proposal",
-  };
-
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">
-          {displayValue}
-          {value !== null && `/${max}`}
-        </span>
-      </div>
-      <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
-        <motion.div
-          className={cn("h-full rounded-full", colorClasses[color])}
-          variants={scoreBarVariants}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
-  );
-}
+export { InfoRow } from "@/components/crm/shared/InfoRow";
 
 // ============================================================================
 // EDITABLE INFO ROW (F1-B)
@@ -524,18 +410,6 @@ export function CompanySection({
         label={t("leads.drawer.fields.company_name")}
         value={lead.company_name}
       />
-      {lead.industry && (
-        <InfoRow
-          label={t("leads.drawer.fields.industry")}
-          value={lead.industry}
-        />
-      )}
-      {lead.company_size && (
-        <InfoRow
-          label={t("leads.drawer.fields.company_size")}
-          value={`${lead.company_size} ${t("leads.drawer.fields.employees")}`}
-        />
-      )}
       <InfoRow
         label={t("leads.drawer.fields.fleet_size")}
         value={lead.fleet_size}
@@ -558,21 +432,6 @@ export function CompanySection({
               href: lead.website_url.startsWith("http")
                 ? lead.website_url
                 : `https://${lead.website_url}`,
-            },
-          ]}
-        />
-      )}
-      {lead.linkedin_url && (
-        <InfoRow
-          label={t("leads.drawer.fields.linkedin")}
-          value={lead.linkedin_url}
-          actions={[
-            {
-              icon: Linkedin,
-              label: t("leads.drawer.actions.open"),
-              href: lead.linkedin_url.startsWith("http")
-                ? lead.linkedin_url
-                : `https://${lead.linkedin_url}`,
             },
           ]}
         />
@@ -647,57 +506,6 @@ export function SourceSection({ lead }: SectionProps) {
           value={lead.utm_campaign}
         />
       )}
-    </DrawerSection>
-  );
-}
-
-export function NotesSection({ lead }: SectionProps) {
-  const { t } = useTranslation("crm");
-
-  if (!lead.qualification_notes) return null;
-
-  return (
-    <DrawerSection
-      icon={FileText}
-      title={t("leads.drawer.sections.notes")}
-      iconColor="text-status-proposal"
-      borderAccent="border-l-status-proposal"
-    >
-      <p className="text-muted-foreground text-sm whitespace-pre-wrap">
-        {lead.qualification_notes}
-      </p>
-    </DrawerSection>
-  );
-}
-
-export function ScoringSection({ lead }: SectionProps) {
-  const { t } = useTranslation("crm");
-
-  return (
-    <DrawerSection
-      icon={BarChart3}
-      title={t("leads.drawer.sections.scoring")}
-      iconColor="text-chart-3"
-      borderAccent="border-l-chart-3"
-    >
-      <ScoreBar
-        label={t("leads.drawer.fields.fit_score")}
-        value={lead.fit_score}
-        max={100}
-        color="blue"
-      />
-      <ScoreBar
-        label={t("leads.drawer.fields.engagement_score")}
-        value={lead.engagement_score}
-        max={100}
-        color="orange"
-      />
-      <ScoreBar
-        label={t("leads.drawer.fields.qualification_score")}
-        value={lead.qualification_score}
-        max={100}
-        color="green"
-      />
     </DrawerSection>
   );
 }

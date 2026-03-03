@@ -7,9 +7,8 @@
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Returns aggregated statistics for the Leads Reports page:
- * - Summary: totals by status/stage, cold leads count
+ * - Summary: totals by status, cold leads count
  * - Conversion: rates, trends, average time to convert
- * - Quality: average scores (fit, engagement, qualification)
  * - Pipeline value: total and by status
  * - Time series: leads created over time (for charts)
  *
@@ -79,14 +78,8 @@ export async function GET(request: NextRequest) {
       // By status
       statusCounts,
 
-      // By stage
-      stageCounts,
-
       // Cold leads (lost/disqualified OR inactive)
       coldLeadsCount,
-
-      // Average scores
-      avgScores,
 
       // Conversion stats
       qualifiedThisPeriod,
@@ -136,13 +129,6 @@ export async function GET(request: NextRequest) {
         _count: { id: true },
       }),
 
-      // Count by stage
-      db.crm_leads.groupBy({
-        by: ["lead_stage"],
-        where: { deleted_at: null },
-        _count: { id: true },
-      }),
-
       // Cold leads: lost/disqualified OR no update for X months
       db.crm_leads.count({
         where: {
@@ -151,16 +137,6 @@ export async function GET(request: NextRequest) {
             { status: { in: ["lost", "disqualified"] } },
             { updated_at: { lt: coldThreshold } },
           ],
-        },
-      }),
-
-      // Average scores
-      db.crm_leads.aggregate({
-        where: { deleted_at: null },
-        _avg: {
-          fit_score: true,
-          engagement_score: true,
-          qualification_score: true,
         },
       }),
 
@@ -283,12 +259,6 @@ export async function GET(request: NextRequest) {
       if (s.status) byStatus[s.status] = s._count.id;
     });
 
-    // Stage counts as object
-    const byStage: Record<string, number> = {};
-    stageCounts.forEach((s) => {
-      if (s.lead_stage) byStage[s.lead_stage] = s._count.id;
-    });
-
     // RÈGLE MÉTIER: Conversion Rate = qualified / (qualified + lost)
     // Quand un lead passe en lost, le dénominateur augmente → taux diminue
     const qualifiedCount = byStatus.qualified || 0;
@@ -348,7 +318,6 @@ export async function GET(request: NextRequest) {
             total: totalLeads,
             total_trend: totalTrend,
             by_status: byStatus,
-            by_stage: byStage,
             cold_leads: coldLeadsCount,
             cold_threshold_months: inactiveMonths,
           },
@@ -361,17 +330,6 @@ export async function GET(request: NextRequest) {
             qualified_previous_period: qualifiedPreviousPeriod,
             converted_this_period: convertedThisPeriod,
             converted_previous_period: convertedPreviousPeriod,
-          },
-          quality: {
-            avg_fit_score:
-              Math.round((Number(avgScores._avg.fit_score) || 0) * 10) / 10,
-            avg_engagement_score:
-              Math.round((Number(avgScores._avg.engagement_score) || 0) * 10) /
-              10,
-            avg_qualification_score:
-              Math.round(
-                (Number(avgScores._avg.qualification_score) || 0) * 10
-              ) / 10,
           },
           charts: {
             time_series: timeSeries,

@@ -6,9 +6,8 @@ import type { CrudFilter, CrudSort, Pagination } from "@refinedev/core";
  * Convert Refine CrudFilter[] to FleetCore API query params.
  *
  * FleetCore API routes accept flat query params:
- *   - status, lead_stage, assigned_to, country_code  → "eq" filters
+ *   - status, assigned_to, country_code               → "eq" filters
  *   - search                                          → "contains" on email/company/name
- *   - min_score                                       → "gte" on qualification_score
  *   - min_{field}, max_{field}                        → "gte" / "lte" range filters
  *   - {field} with comma-separated values             → "in" filters
  */

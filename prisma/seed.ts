@@ -244,8 +244,6 @@ async function main() {
       current_software: "Custom Solution",
       message: "Looking for VTC management platform with driver payroll",
       status: "proposal_sent", // V6.3: qualified → proposal_sent
-      qualification_score: 75,
-      qualification_notes: "Strong interest, budget confirmed, decision maker",
       utm_source: "google",
       utm_medium: "cpc",
       utm_campaign: "vtc-france-2025",
@@ -267,9 +265,6 @@ async function main() {
       current_software: "Outdated System",
       message: "Enterprise fleet solution needed for 80 vehicles",
       status: "proposal_sent", // V6.3: qualified → proposal_sent
-      qualification_score: 90,
-      qualification_notes:
-        "Ready to sign, enterprise deal, needs multi-tenant support",
       qualified_date: new Date("2025-10-05"),
       utm_source: "referral",
       utm_medium: "partner",
@@ -1015,9 +1010,6 @@ async function main() {
         "lead_name",
         "company_name",
         "priority",
-        "fit_score",
-        "qualification_score",
-        "lead_stage",
         "fleet_size",
         "country_code",
         "lead_detail_url",

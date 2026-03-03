@@ -30,6 +30,7 @@ import {
   getStageMaxDays,
   OPPORTUNITY_STAGE_VALUES,
 } from "@/lib/config/opportunity-stages";
+import { OPPORTUNITY_STATUSES } from "@/lib/constants/crm/opportunity-status.constants";
 import type { Prisma } from "@prisma/client";
 import { requireCrmApiAuth } from "@/lib/auth/api-guard";
 import { AppError } from "@/lib/core/errors";
@@ -37,7 +38,7 @@ import { AppError } from "@/lib/core/errors";
 // Zod schema for updating an opportunity
 const UpdateOpportunitySchema = z.object({
   stage: z.enum(OPPORTUNITY_STAGE_VALUES).optional(),
-  status: z.enum(["open", "won", "lost", "on_hold", "cancelled"]).optional(),
+  status: z.enum(OPPORTUNITY_STATUSES).optional(),
   expected_value: z.number().min(0).optional().nullable(),
   probability_percent: z.number().min(0).max(100).optional().nullable(),
   currency: z.string().length(3).optional().nullable(),

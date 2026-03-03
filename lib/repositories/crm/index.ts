@@ -33,19 +33,6 @@ export type {
 } from "./quote.repository";
 
 export {
-  AgreementRepository,
-  AGREEMENT_SORT_FIELDS,
-  agreementRepository,
-} from "./agreement.repository";
-export type {
-  Agreement,
-  AgreementWithRelations,
-  AgreementCreateInput,
-  AgreementUpdateInput,
-  AgreementFilters,
-} from "./agreement.repository";
-
-export {
   CrmSettingsRepository,
   SETTINGS_SORT_FIELDS,
   SettingCategory,

@@ -11,15 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ToggleFilterButton } from "@/components/ui/toggle-filter-button";
 import {
   useFleetSizeOptions,
   DEFAULT_FLEET_SIZE_OPTIONS,
 } from "@/lib/hooks/useFleetSizeOptions";
-import { useLeadStages } from "@/lib/hooks/useLeadStages";
-import { LEAD_STAGE_VALUES } from "@/types/crm";
 
 import { SIDEBAR_FILTER_PARSERS } from "../hooks/use-leads-table";
 import { useSidebarFilterData } from "../hooks/use-sidebar-filter-data";
@@ -57,10 +54,6 @@ const BOOLEAN_FILTERS = [
     labelKey: "leads.table.columns.gdpr_consent",
   },
   {
-    key: "attendance_confirmed" as const,
-    labelKey: "leads.table.columns.attendance_confirmed",
-  },
-  {
     key: "wizard_completed" as const,
     labelKey: "leads.filters.fields.wizard_completed",
   },
@@ -81,56 +74,10 @@ function toggleArrayValue(
   return [...arr, value];
 }
 
-// ── Score Slider (local state for smooth drag, commits on release) ───────
-
-function ScoreSlider({
-  minValue,
-  maxValue,
-  onCommit,
-}: {
-  minValue: number | null;
-  maxValue: number | null;
-  onCommit: (min: number | null, max: number | null) => void;
-}) {
-  const [range, setRange] = React.useState<number[]>([
-    minValue ?? 0,
-    maxValue ?? 100,
-  ]);
-
-  // Sync URL → local when external value changes
-  const urlMin = minValue ?? 0;
-  const urlMax = maxValue ?? 100;
-  React.useEffect(() => {
-    setRange([urlMin, urlMax]);
-  }, [urlMin, urlMax]);
-
-  return (
-    <div className="space-y-2 px-0.5 pt-1">
-      <Slider
-        min={0}
-        max={100}
-        step={5}
-        value={range}
-        onValueChange={setRange}
-        onValueCommit={(v) => {
-          const mn = v[0] ?? 0;
-          const mx = v[1] ?? 100;
-          onCommit(mn === 0 ? null : mn, mx === 100 ? null : mx);
-        }}
-      />
-      <div className="text-muted-foreground flex justify-between text-[10px] tabular-nums">
-        <span>{range[0]}</span>
-        <span>{range[1]}</span>
-      </div>
-    </div>
-  );
-}
-
 // ── Component ────────────────────────────────────────────────────────────
 
 export function LeadsFilterSidebar() {
   const { t } = useTranslation("crm");
-  const { stages } = useLeadStages();
   const { options: fleetSizeOptions } = useFleetSizeOptions();
   const { countryCodes, platformCodes } = useSidebarFilterData();
 
@@ -209,21 +156,6 @@ export function LeadsFilterSidebar() {
     [setValues]
   );
 
-  const commitScoreRange = React.useCallback(
-    (
-      minField: keyof typeof SIDEBAR_FILTER_PARSERS,
-      maxField: keyof typeof SIDEBAR_FILTER_PARSERS,
-      min: number | null,
-      max: number | null
-    ) => {
-      void setValues({
-        [minField]: min,
-        [maxField]: max,
-      } as Parameters<typeof setValues>[0]);
-    },
-    [setValues]
-  );
-
   const setDateValue = React.useCallback(
     (field: keyof typeof SIDEBAR_FILTER_PARSERS, val: string | null) => {
       void setValues({
@@ -272,32 +204,7 @@ export function LeadsFilterSidebar() {
       {/* ── Scrollable filter list ──────────────────────────────────── */}
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-1 p-4">
-          {/* ── 1. Stage (open) ────────────────────────────────────── */}
-          <FilterCategory
-            title={t("leads.filters.fields.stage")}
-            activeCount={arrayCount("lead_stage")}
-          >
-            <div className="flex flex-wrap gap-1">
-              {(stages.length > 0
-                ? stages.map((s) => ({ value: s.value, label: s.label_en }))
-                : LEAD_STAGE_VALUES.map((v) => ({
-                    value: v,
-                    label: t(`leads.card.stage.${v}`, { defaultValue: v }),
-                  }))
-              ).map((opt) => (
-                <ToggleFilterButton
-                  key={opt.value}
-                  label={opt.label}
-                  active={isSelected("lead_stage", opt.value)}
-                  onClick={() => toggleMulti("lead_stage", opt.value)}
-                />
-              ))}
-            </div>
-          </FilterCategory>
-
-          <Separator className="opacity-50" />
-
-          {/* ── 2. Source (open) ────────────────────────────────────── */}
+          {/* ── 1. Source (open) ──────────────────────────────────── */}
           <FilterCategory
             title={t("leads.table.columns.source")}
             activeCount={arrayCount("source")}
@@ -343,31 +250,7 @@ export function LeadsFilterSidebar() {
 
           <Separator className="opacity-50" />
 
-          {/* ── 4. Qualification Score (open) ──────────────────────── */}
-          <FilterCategory
-            title={t("leads.filters.fields.qualification_score")}
-            activeCount={rangeActive(
-              "min_qualification_score",
-              "max_qualification_score"
-            )}
-          >
-            <ScoreSlider
-              minValue={values.min_qualification_score}
-              maxValue={values.max_qualification_score}
-              onCommit={(min, max) =>
-                commitScoreRange(
-                  "min_qualification_score",
-                  "max_qualification_score",
-                  min,
-                  max
-                )
-              }
-            />
-          </FilterCategory>
-
-          <Separator className="opacity-50" />
-
-          {/* ── 5. Quick Filters / Booleans (open) ─────────────────── */}
+          {/* ── 4. Quick Filters / Booleans (open) ─────────────────── */}
           <FilterCategory
             title={t("leads.filters.quick_filters")}
             activeCount={boolActiveCount}
@@ -438,49 +321,7 @@ export function LeadsFilterSidebar() {
 
           <Separator className="opacity-50" />
 
-          {/* ── 8. Fit Score (closed) ──────────────────────────────── */}
-          <FilterCategory
-            title={t("leads.filters.fields.fit_score")}
-            defaultOpen={false}
-            activeCount={rangeActive("min_fit_score", "max_fit_score")}
-          >
-            <ScoreSlider
-              minValue={values.min_fit_score}
-              maxValue={values.max_fit_score}
-              onCommit={(min, max) =>
-                commitScoreRange("min_fit_score", "max_fit_score", min, max)
-              }
-            />
-          </FilterCategory>
-
-          <Separator className="opacity-50" />
-
-          {/* ── 9. Engagement Score (closed) ───────────────────────── */}
-          <FilterCategory
-            title={t("leads.filters.fields.engagement_score")}
-            defaultOpen={false}
-            activeCount={rangeActive(
-              "min_engagement_score",
-              "max_engagement_score"
-            )}
-          >
-            <ScoreSlider
-              minValue={values.min_engagement_score}
-              maxValue={values.max_engagement_score}
-              onCommit={(min, max) =>
-                commitScoreRange(
-                  "min_engagement_score",
-                  "max_engagement_score",
-                  min,
-                  max
-                )
-              }
-            />
-          </FilterCategory>
-
-          <Separator className="opacity-50" />
-
-          {/* ── 10. Created Date (closed) ──────────────────────────── */}
+          {/* ── 8. Created Date (closed) ──────────────────────────── */}
           <FilterCategory
             title={t("leads.filters.fields.created_at")}
             defaultOpen={false}
@@ -559,48 +400,7 @@ export function LeadsFilterSidebar() {
 
           <Separator className="opacity-50" />
 
-          {/* ── 12. Booking Date (closed) ──────────────────────────── */}
-          <FilterCategory
-            title={t("leads.filters.fields.booking_date")}
-            defaultOpen={false}
-            activeCount={rangeActive(
-              "min_booking_slot_at",
-              "max_booking_slot_at"
-            )}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-muted-foreground mb-1 block text-[10px]">
-                  {t("leads.filters.from")}
-                </Label>
-                <Input
-                  type="date"
-                  className="h-7 text-xs"
-                  value={values.min_booking_slot_at ?? ""}
-                  onChange={(e) =>
-                    setDateValue("min_booking_slot_at", e.target.value || null)
-                  }
-                />
-              </div>
-              <div>
-                <Label className="text-muted-foreground mb-1 block text-[10px]">
-                  {t("leads.filters.to")}
-                </Label>
-                <Input
-                  type="date"
-                  className="h-7 text-xs"
-                  value={values.max_booking_slot_at ?? ""}
-                  onChange={(e) =>
-                    setDateValue("max_booking_slot_at", e.target.value || null)
-                  }
-                />
-              </div>
-            </div>
-          </FilterCategory>
-
-          <Separator className="opacity-50" />
-
-          {/* ── 13. Next Action Date (closed) ──────────────────────── */}
+          {/* ── 12. Next Action Date (closed) ──────────────────────── */}
           <FilterCategory
             title={t("leads.table.columns.next_action_date")}
             defaultOpen={false}
@@ -714,34 +514,6 @@ export function LeadsFilterSidebar() {
                   label={platform.charAt(0).toUpperCase() + platform.slice(1)}
                   active={isSelected("platforms_used", platform)}
                   onClick={() => toggleMulti("platforms_used", platform)}
-                />
-              ))}
-            </div>
-          </FilterCategory>
-
-          <Separator className="opacity-50" />
-
-          {/* ── 17. Industry (closed) ──────────────────────────────── */}
-          <FilterCategory
-            title={t("leads.table.columns.industry")}
-            defaultOpen={false}
-            activeCount={arrayCount("industry")}
-          >
-            <div className="flex flex-wrap gap-1">
-              {[
-                "transport",
-                "logistics",
-                "taxi",
-                "vtc",
-                "delivery",
-                "rental",
-                "other",
-              ].map((ind) => (
-                <ToggleFilterButton
-                  key={ind}
-                  label={ind.charAt(0).toUpperCase() + ind.slice(1)}
-                  active={isSelected("industry", ind)}
-                  onClick={() => toggleMulti("industry", ind)}
                 />
               ))}
             </div>

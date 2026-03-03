@@ -30,7 +30,6 @@ interface LeadSearchResult {
   company_name: string | null;
   country: { flag_emoji: string; country_name_en: string } | null;
   status: string;
-  qualification_score: number | null;
 }
 
 interface QuickSearchProps {
@@ -300,14 +299,6 @@ export function QuickSearch({ locale }: QuickSearchProps) {
                             <Phone className="h-3.5 w-3.5 text-gray-400" />
                             <span>{lead.phone}</span>
                           </a>
-                        )}
-
-                        {/* Score */}
-                        {lead.qualification_score !== null && (
-                          <span className="text-xs text-gray-500">
-                            {t("reports.search.score_label")}:{" "}
-                            {lead.qualification_score}
-                          </span>
                         )}
                       </div>
                     </div>

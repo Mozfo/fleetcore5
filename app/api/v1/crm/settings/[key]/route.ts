@@ -7,7 +7,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Context: This API manages individual CRM configuration settings.
- * Settings are identified by their unique key (e.g., "lead_stages").
+ * Settings are identified by their unique key (e.g., "opportunity_stages").
  *
  * Authentication flow:
  * 1. Auth guard validates: userId + FleetCore Admin org membership + settings:view/edit
@@ -41,15 +41,15 @@ import { AppError } from "@/lib/core/errors";
  * Response 500: Internal server error
  *
  * @example
- * GET /api/v1/crm/settings/lead_stages
+ * GET /api/v1/crm/settings/opportunity_stages
  *
  * Response 200: {
  *   "success": true,
  *   "data": {
  *     "id": "uuid",
- *     "setting_key": "lead_stages",
- *     "setting_value": { "stages": [...], "transitions": {...} },
- *     "category": "pipeline",
+ *     "setting_key": "opportunity_stages",
+ *     "setting_value": { "stages": [...], "rotting": {...} },
+ *     "category": "stages",
  *     "version": 3
  *   }
  * }
@@ -164,9 +164,9 @@ export async function GET(
  * - If setting doesn't exist, creates it (upsert behavior)
  *
  * @example
- * PUT /api/v1/crm/settings/lead_stages
+ * PUT /api/v1/crm/settings/opportunity_stages
  * Body: {
- *   "setting_value": { "stages": [...], "transitions": {...} }
+ *   "setting_value": { "stages": [...], "rotting": {...} }
  * }
  */
 export async function PUT(

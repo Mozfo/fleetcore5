@@ -5,7 +5,7 @@
  * avec fallback sur valeurs par défaut et cache SWR.
  *
  * @example
- * const { options, getLabel, getFitScoreWeight, isLoading } = useFleetSizeOptions();
+ * const { options, getLabel, isLoading } = useFleetSizeOptions();
  *
  * @see app/api/v1/crm/settings/[key]/route.ts
  */
@@ -103,7 +103,7 @@ export function useFleetSizeOptions() {
     fetcher,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 60000, // 1 minute cache
+      dedupingInterval: 300_000, // 5 minutes — admin setting, changes rarely
       revalidateOnReconnect: true,
       shouldRetryOnError: true,
       errorRetryCount: 2,
@@ -139,14 +139,6 @@ export function useFleetSizeOptions() {
   };
 
   /**
-   * Get fit score weight for a fleet size value (used in lead scoring)
-   */
-  const getFitScoreWeight = (value: string): number => {
-    const option = options.find((o) => o.value === value);
-    return option?.fit_score_weight || 0;
-  };
-
-  /**
    * Get option by value
    */
   const getOption = (value: string): FleetSizeOption | undefined => {
@@ -167,7 +159,6 @@ export function useFleetSizeOptions() {
 
     // Helpers
     getLabel,
-    getFitScoreWeight,
     getOption,
     getValues,
 

@@ -164,22 +164,12 @@ export class LeadService {
     // 4. Calculate statistics
     const stats = this.calculateStats(opportunities, quotes);
 
-    // 5. Build scoring object
-    const scoring = {
-      fit_score: lead.fit_score ? Number(lead.fit_score) : null,
-      engagement_score: lead.engagement_score
-        ? Number(lead.engagement_score)
-        : null,
-      qualification_score: lead.qualification_score,
-    };
-
     return {
       lead,
       currency,
       opportunities,
       quotes,
       timeline,
-      scoring,
       stats,
     };
   }

@@ -23,11 +23,7 @@ import {
 import { DataTableColumnHeader } from "@/components/ui/table/data-table-column-header";
 import type { SettingsTenantCountry } from "../types/tenant-country.types";
 
-function formatDate(value: unknown): string {
-  if (!value) return "\u2014";
-  const d = new Date(value as string);
-  return isNaN(d.getTime()) ? "\u2014" : d.toLocaleDateString();
-}
+import { formatDateCell as formatDate } from "@/lib/format";
 
 const TENANT_TYPE_VARIANT: Record<
   string,

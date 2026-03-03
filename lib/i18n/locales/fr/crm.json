@@ -66,7 +66,6 @@
     },
     "filters": {
       "status": "Statut",
-      "lead_stage": "Étape",
       "assigned_to": "Assigné à",
       "country": "Pays",
       "min_score": "Score Min",
@@ -98,14 +97,10 @@
         "status": "Statut",
         "stage": "Étape",
         "priority": "Priorité",
-        "qualification_score": "Score Qualification",
-        "fit_score": "Score Fit",
-        "engagement_score": "Score Engagement",
         "fleet_size": "Taille de flotte",
         "created_at": "Date création",
         "has_booking": "A une démo planifiée",
-        "wizard_completed": "Wizard complété",
-        "booking_date": "Date de démo"
+        "wizard_completed": "Wizard complété"
       },
       "from": "Du",
       "to": "Au",
@@ -145,9 +140,6 @@
         "urgent": "Urgente"
       },
       "stage": {
-        "top_of_funnel": "Découverte",
-        "marketing_qualified": "Qualifié Marketing",
-        "sales_qualified": "Qualifié Vente",
         "opportunity": "Opportunité",
         "indetermined": "Indéterminé"
       },
@@ -490,7 +482,6 @@
         "fleet_size": "Taille flotte",
         "country": "Pays",
         "score": "Score",
-        "fit_score": "Score Fit",
         "engagement": "Engagement",
         "stage": "Étape",
         "status": "Statut",
@@ -513,7 +504,6 @@
         "converted_date": "Date conversion",
         "updated_at": "Dernière MAJ",
         "message": "Message",
-        "qualification_notes": "Notes",
         "gdpr_consent": "RGPD",
         "consent_at": "Date consentement",
         "consent_ip": "IP consentement",
@@ -534,14 +524,10 @@
         "created_by": "Créé par",
         "updated_by": "Modifié par",
         "last_activity_at": "Dernière activité",
-        "provider_id": "ID Fournisseur",
         "stage_entered_at": "Entrée étape",
         "loss_reason_code": "Raison perte",
         "loss_reason_detail": "Détail perte",
         "competitor_name": "Concurrent",
-        "booking_slot_at": "Créneau réservé",
-        "booking_confirmed_at": "Réservation confirmée",
-        "booking_calcom_uid": "UID Cal.com",
         "platforms_used": "Plateformes",
         "wizard_completed": "Wizard terminé",
         "tenant_id": "ID Tenant",
@@ -550,11 +536,6 @@
         "email_verification_code": "Code vérification",
         "email_verification_expires_at": "Vérification expire",
         "email_verification_attempts": "Tentatives vérification",
-        "confirmation_token": "Token confirmation",
-        "attendance_confirmed": "Présence confirmée",
-        "attendance_confirmed_at": "Date présence",
-        "j1_reminder_sent_at": "Rappel J-1 envoyé",
-        "reschedule_token": "Token replanification",
         "detected_country_code": "Pays détecté",
         "ip_address": "Adresse IP",
         "language": "Langue",
@@ -702,9 +683,6 @@
         "utm_source": "UTM Source",
         "utm_medium": "UTM Medium",
         "utm_campaign": "UTM Campagne",
-        "fit_score": "Adéquation",
-        "engagement_score": "Engagement",
-        "qualification_score": "Qualification",
         "assigned_to": "Assigné à",
         "next_action": "Prochaine action",
         "created": "Créé",
@@ -834,9 +812,6 @@
       "error": "Échec de la qualification du lead",
       "cannot_qualify": "Ce lead est déjà à l'étape maximale de qualification. Utilisez Convertir pour créer une opportunité.",
       "stages": {
-        "top_of_funnel": "Haut du Funnel",
-        "marketing_qualified": "Marketing Qualifié (MQL)",
-        "sales_qualified": "Ventes Qualifié (SQL)",
         "opportunity": "Opportunité"
       },
       "criteria": {
@@ -859,31 +834,6 @@
       "demo": "Démo planifiée",
       "proposal": "Proposition",
       "finalized": "Finalisé"
-    },
-    "cpt": {
-      "title": "Qualification CPT",
-      "description": "Qualifier {{company}} avec le framework CPT (Défis, Priorité, Timing)",
-      "challenges": "Défis",
-      "challengesPlaceholder": "Décrivez les principaux défis rencontrés par le prospect...",
-      "challengesScore": "Intensité des défis",
-      "priority": "Priorité",
-      "priorityPlaceholder": "Quelle est l'urgence de la solution pour eux ?",
-      "priorityScore": "Niveau de priorité",
-      "timing": "Timing",
-      "timingPlaceholder": "Quand veulent-ils implémenter ?",
-      "timingScore": "Calendrier d'implémentation",
-      "submit": "Qualifier le Lead",
-      "scoreResult": "Score de Qualification",
-      "calculatedScore": "Score Calculé",
-      "scores": {
-        "high": "Élevé",
-        "medium": "Moyen",
-        "low": "Faible",
-        "hot": "Chaud (< 1 mois)",
-        "warm": "Tiède (1-3 mois)",
-        "cool": "Froid (3-6 mois)",
-        "cold": "Très froid (> 6 mois)"
-      }
     },
     "paymentLink": {
       "section": "Paiement",

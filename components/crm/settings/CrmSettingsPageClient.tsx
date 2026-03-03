@@ -158,7 +158,6 @@ export function CrmSettingsPageClient({
           {/* Tab Contents */}
           <TabsContent value="pipeline" className="mt-6 flex-1">
             <PipelineSettingsTab
-              leadStages={settings.leadStages}
               opportunityStages={settings.opportunityStages}
             />
           </TabsContent>

@@ -111,9 +111,6 @@ async function generateTemplates() {
       lead_name: "{{lead_name}}",
       company_name: "{{company_name}}",
       priority: "high",
-      fit_score: 0,
-      qualification_score: 0,
-      lead_stage: "{{lead_stage}}",
       fleet_size: "{{fleet_size}}",
       country_code: "{{country_code}}",
       lead_detail_url: "{{lead_detail_url}}",
@@ -126,9 +123,6 @@ async function generateTemplates() {
       lead_name: "{{lead_name}}",
       company_name: "{{company_name}}",
       priority: "high",
-      fit_score: 0,
-      qualification_score: 0,
-      lead_stage: "{{lead_stage}}",
       fleet_size: "{{fleet_size}}",
       country_code: "{{country_code}}",
       lead_detail_url: "{{lead_detail_url}}",
@@ -137,17 +131,15 @@ async function generateTemplates() {
   );
 
   // Replace numeric values with template variables in HTML
-  const salesRepAssignmentHTMLFinal = salesRepAssignmentHTML
-    .replace(/HIGH<!-- -->/g, "{{priority}}")
-    .replace(/0<!-- -->\/60/g, "{{fit_score}}/60")
-    .replace(/0<!-- -->\/100/g, "{{qualification_score}}/100");
+  const salesRepAssignmentHTMLFinal = salesRepAssignmentHTML.replace(
+    /HIGH<!-- -->/g,
+    "{{priority}}"
+  );
 
   // Replace numeric values with template variables in plain text
   const salesRepAssignmentTextFinal = salesRepAssignmentText
     .replace(/HIGH/g, "{{PRIORITY}}")
-    .replace(/high/g, "{{priority}}")
-    .replace(/0\/60/g, "{{fit_score}}/60")
-    .replace(/0\/100/g, "{{qualification_score}}/100");
+    .replace(/high/g, "{{priority}}");
 
   fs.writeFileSync(
     path.join(outputDir, "sales-rep-assignment.html"),

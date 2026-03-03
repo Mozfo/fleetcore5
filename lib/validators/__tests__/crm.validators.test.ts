@@ -9,7 +9,6 @@ import { describe, it, expect } from "vitest";
 import {
   LeadCreateSchema,
   LeadUpdateSchema,
-  LeadQualifySchema,
   LeadQuerySchema,
   OpportunityCreateSchema,
   OpportunityUpdateSchema,
@@ -107,28 +106,6 @@ describe("LeadUpdateSchema", () => {
     };
 
     expect(() => LeadUpdateSchema.parse(invalidUpdate)).toThrow();
-  });
-});
-
-describe("LeadQualifySchema", () => {
-  it("should validate lead qualification", () => {
-    const qualification = {
-      lead_stage: "sales_qualified",
-      qualification_score: 85,
-      qualification_notes: "Strong fit",
-    };
-
-    const result = LeadQualifySchema.parse(qualification);
-    expect(result.qualification_score).toBe(85);
-  });
-
-  it("should reject invalid qualification", () => {
-    const invalid = {
-      lead_stage: "invalid_stage",
-      qualification_score: 150, // Exceeds max
-    };
-
-    expect(() => LeadQualifySchema.parse(invalid)).toThrow();
   });
 });
 

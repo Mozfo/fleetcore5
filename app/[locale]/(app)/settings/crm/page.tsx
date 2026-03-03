@@ -2,7 +2,7 @@
  * CRM Settings Page - Configuration Center
  *
  * Server Component: fetches all settings from database
- * Tab navigation with 7 sections (Phase 1: Pipeline + Loss Reasons)
+ * Tab navigation with 7 sections (Phase 1: Opportunity Pipeline + Loss Reasons)
  *
  * URL: /[locale]/crm/settings
  *
@@ -26,14 +26,7 @@ interface CrmSettingsPageProps {
  * Cached for deduplication within request
  */
 const fetchCrmSettings = cache(async (): Promise<CrmSettingsData> => {
-  const [leadStages, opportunityStages, lossReasons] = await Promise.all([
-    db.crm_settings.findFirst({
-      where: {
-        setting_key: "lead_stages",
-        is_active: true,
-        deleted_at: null,
-      },
-    }),
+  const [opportunityStages, lossReasons] = await Promise.all([
     db.crm_settings.findFirst({
       where: {
         setting_key: "opportunity_stages",
@@ -51,15 +44,6 @@ const fetchCrmSettings = cache(async (): Promise<CrmSettingsData> => {
   ]);
 
   return {
-    leadStages: leadStages
-      ? {
-          id: leadStages.id,
-          setting_key: leadStages.setting_key,
-          setting_value: leadStages.setting_value as Record<string, unknown>,
-          version: leadStages.version,
-          updated_at: leadStages.updated_at?.toISOString() ?? null,
-        }
-      : null,
     opportunityStages: opportunityStages
       ? {
           id: opportunityStages.id,

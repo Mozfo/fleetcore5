@@ -32,11 +32,7 @@ import type { Option } from "@/types/data-table";
 import type { Lead, LeadStatusConfig } from "../types/lead.types";
 import {
   STATUS_COLOR_MAP,
-  STAGE_COLOR_MAP,
   PRIORITY_COLOR_MAP,
-  getScoreDotColor,
-  getScoreBarColor,
-  getScoreColor,
   isCallbackOverdue,
 } from "../lib/lead-insight";
 
@@ -44,11 +40,8 @@ type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-function formatDate(value: unknown): string {
-  if (!value) return "—";
-  const d = new Date(value as string);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
-}
+// Imported from lib/format.ts — see V2.3 unification
+import { formatDateCell as formatDate } from "@/lib/format";
 
 function formatBoolean(value: unknown, t: TranslationFn): string {
   if (value === true) return t("yes");
@@ -169,38 +162,19 @@ export function getLeadColumns(
       ),
       cell: ({ row }) => {
         const lead = row.original;
-        const dotColor = getScoreDotColor(lead.qualification_score);
-        const scoreTitle =
-          lead.qualification_score !== null &&
-          lead.qualification_score !== undefined
-            ? `${t("leads.table.columns.score")}: ${lead.qualification_score}/100`
-            : undefined;
         const code = lead.lead_code ?? "—";
         const href = localizedPath
           ? localizedPath(`/crm/leads/${lead.id}`)
           : undefined;
-        return (
-          <div className="flex items-center gap-1.5">
-            {href ? (
-              <Link
-                href={href}
-                className="text-primary font-mono font-medium hover:underline"
-              >
-                {code}
-              </Link>
-            ) : (
-              <span className="text-primary font-mono font-medium">{code}</span>
-            )}
-            {dotColor && (
-              <span
-                title={scoreTitle}
-                className={cn(
-                  "inline-block size-2 shrink-0 rounded-full",
-                  dotColor
-                )}
-              />
-            )}
-          </div>
+        return href ? (
+          <Link
+            href={href}
+            className="text-primary font-mono font-medium hover:underline"
+          >
+            {code}
+          </Link>
+        ) : (
+          <span className="text-primary font-mono font-medium">{code}</span>
         );
       },
       meta: { label: t("leads.table.columns.lead_account") },
@@ -285,30 +259,6 @@ export function getLeadColumns(
       size: 180,
     },
     {
-      id: "industry",
-      accessorKey: "industry",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.industry")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.industry") },
-      size: 140,
-    },
-    {
-      id: "company_size",
-      accessorKey: "company_size",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.company_size")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.company_size") },
-      size: 80,
-    },
-    {
       id: "fleet_size",
       accessorKey: "fleet_size",
       header: ({ column }) => (
@@ -350,18 +300,6 @@ export function getLeadColumns(
       },
       size: 200,
     },
-    {
-      id: "linkedin_url",
-      accessorKey: "linkedin_url",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.linkedin_url")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.linkedin_url") },
-      size: 200,
-    },
 
     // ── Location ──────────────────────────────────────────────────────
     {
@@ -399,7 +337,7 @@ export function getLeadColumns(
       size: 120,
     },
 
-    // ── Status & Stage ────────────────────────────────────────────────
+    // ── Status & Priority ─────────────────────────────────────────────
     {
       id: "status",
       accessorKey: "status",
@@ -433,36 +371,6 @@ export function getLeadColumns(
         options: statusOptions,
       },
       size: 150,
-    },
-    {
-      id: "lead_stage",
-      accessorKey: "lead_stage",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.stage")}
-        />
-      ),
-      cell: ({ row }) => {
-        const value = row.getValue<string | null>("lead_stage");
-        if (!value) return "—";
-        const colors = STAGE_COLOR_MAP[value];
-        const label = t(`leads.card.stage.${value}`, { defaultValue: value });
-        return (
-          <Badge
-            variant="outline"
-            className={cn(
-              "border-transparent",
-              colors?.bg ?? "bg-gray-100 dark:bg-gray-800",
-              colors?.text ?? "text-gray-600 dark:text-gray-400"
-            )}
-          >
-            {label}
-          </Badge>
-        );
-      },
-      meta: { label: t("leads.table.columns.stage") },
-      size: 160,
     },
     {
       id: "priority",
@@ -505,75 +413,6 @@ export function getLeadColumns(
         ],
       },
       size: 100,
-    },
-
-    // ── Scoring ───────────────────────────────────────────────────────
-    {
-      id: "fit_score",
-      accessorKey: "fit_score",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.fit_score")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.fit_score") },
-      size: 80,
-    },
-    {
-      id: "engagement_score",
-      accessorKey: "engagement_score",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.engagement")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.engagement") },
-      size: 80,
-    },
-    {
-      id: "qualification_score",
-      accessorKey: "qualification_score",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.score")}
-        />
-      ),
-      cell: ({ row }) => {
-        const score = row.original.qualification_score;
-        if (score === null || score === undefined) return "—";
-        const barColor = getScoreBarColor(score);
-        return (
-          <div className="flex items-center gap-2">
-            <div className="bg-muted h-2 w-16 overflow-hidden rounded-full">
-              <div
-                className={cn("h-full rounded-full", barColor)}
-                style={{ width: `${Math.min(score, 100)}%` }}
-              />
-            </div>
-            <span className={cn("text-xs font-medium", getScoreColor(score))}>
-              {score}
-            </span>
-          </div>
-        );
-      },
-      meta: { label: t("leads.table.columns.score") },
-      size: 120,
-    },
-    {
-      id: "scoring",
-      accessorKey: "scoring",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.scoring")}
-        />
-      ),
-      cell: ({ row }) => formatJson(row.original.scoring),
-      meta: { label: t("leads.table.columns.scoring") },
-      size: 120,
     },
 
     // ── Source & Attribution ───────────────────────────────────────────
@@ -652,20 +491,6 @@ export function getLeadColumns(
       meta: { label: t("leads.table.columns.message") },
       size: 200,
     },
-    {
-      id: "qualification_notes",
-      accessorKey: "qualification_notes",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.qualification_notes")}
-        />
-      ),
-      cell: ({ row }) => truncate(row.original.qualification_notes),
-      meta: { label: t("leads.table.columns.qualification_notes") },
-      size: 200,
-    },
-
     // ── Assignment ────────────────────────────────────────────────────
     {
       id: "assigned_to",
@@ -1128,61 +953,6 @@ export function getLeadColumns(
       ),
       meta: { label: t("leads.table.columns.email_verification_attempts") },
       size: 80,
-    },
-
-    // ── Attendance confirmation (V6.2.6) ──────────────────────────────
-    {
-      id: "confirmation_token",
-      accessorKey: "confirmation_token",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.confirmation_token")}
-        />
-      ),
-      meta: { label: t("leads.table.columns.confirmation_token") },
-      size: 160,
-    },
-    {
-      id: "attendance_confirmed",
-      accessorKey: "attendance_confirmed",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.attendance_confirmed")}
-        />
-      ),
-      cell: ({ row }) => formatBoolean(row.original.attendance_confirmed, t),
-      meta: { label: t("leads.table.columns.attendance_confirmed") },
-      size: 80,
-    },
-    {
-      id: "attendance_confirmed_at",
-      accessorKey: "attendance_confirmed_at",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.attendance_confirmed_at")}
-        />
-      ),
-      cell: ({ row }) => formatDate(row.original.attendance_confirmed_at),
-      meta: { label: t("leads.table.columns.attendance_confirmed_at") },
-      size: 150,
-    },
-
-    // ── J-1 reminder (V6.2.6) ─────────────────────────────────────────
-    {
-      id: "j1_reminder_sent_at",
-      accessorKey: "j1_reminder_sent_at",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("leads.table.columns.j1_reminder_sent_at")}
-        />
-      ),
-      cell: ({ row }) => formatDate(row.original.j1_reminder_sent_at),
-      meta: { label: t("leads.table.columns.j1_reminder_sent_at") },
-      size: 150,
     },
 
     // ── GeoIP detection (V6.4) ────────────────────────────────────────

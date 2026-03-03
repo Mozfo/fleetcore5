@@ -54,156 +54,7 @@ describe("LeadCreationService", () => {
       true
     );
 
-    // Mock the settingsRepo.getSettingValue in both scoring and assignment services
-    vi.spyOn(
-      service["scoringService"]["settingsRepo"],
-      "getSettingValue"
-    ).mockImplementation((key: string) => {
-      if (key === "lead_scoring_config") {
-        return Promise.resolve({
-          fleet_size_points: {
-            "50+": { vehicles: 100, points: 40 },
-            "11-50": { vehicles: 30, points: 20 },
-            "2-10": { vehicles: 5, points: 5 },
-            unknown: { vehicles: 30, points: 10 },
-          },
-          country_tier_points: {
-            tier1: { countries: ["AE", "SA", "QA"], points: 20 },
-            tier2: { countries: ["FR"], points: 18 },
-            tier3: { countries: ["KW", "BH", "OM"], points: 15 },
-            tier4: {
-              countries: [
-                "DE",
-                "IT",
-                "ES",
-                "BE",
-                "NL",
-                "PT",
-                "AT",
-                "IE",
-                "DK",
-                "SE",
-                "FI",
-                "GR",
-                "PL",
-                "CZ",
-                "HU",
-                "RO",
-                "BG",
-                "HR",
-                "SI",
-                "SK",
-                "LT",
-                "LV",
-                "EE",
-                "CY",
-                "LU",
-                "MT",
-              ],
-              points: 12,
-            },
-            tier5: { points: 5 },
-          },
-          message_length_thresholds: {
-            detailed: { min: 200, points: 30 },
-            substantial: { min: 100, points: 20 },
-            minimal: { min: 20, points: 10 },
-            none: { points: 0 },
-          },
-          phone_points: { provided: 20, missing: 0 },
-          page_views_thresholds: {
-            very_engaged: { min: 10, points: 30 },
-            interested: { min: 5, points: 20 },
-            curious: { min: 2, points: 10 },
-            normal: { points: 5 },
-          },
-          time_on_site_thresholds: {
-            deep_read: { min: 600, points: 20 },
-            moderate: { min: 300, points: 15 },
-            brief: { min: 120, points: 10 },
-            quick: { points: 5 },
-          },
-          qualification_stage_thresholds: {
-            sales_qualified: 70,
-            marketing_qualified: 40,
-            top_of_funnel: 0,
-          },
-          qualification_weights: {
-            fit: 0.6,
-            engagement: 0.4,
-          },
-        });
-      }
-      if (key === "lead_assignment_rules") {
-        return Promise.resolve({
-          fleet_size_priority: {
-            "50+": {
-              title_patterns: ["%Senior%Account%Manager%"],
-              priority: 1,
-            },
-            "11-50": {
-              title_patterns: ["%Account%Manager%"],
-              exclude_patterns: ["%Senior%"],
-              priority: 2,
-            },
-          },
-          geographic_zones: {
-            UAE: {
-              countries: ["AE"],
-              title_patterns: ["%UAE%", "%Emirates%"],
-              priority: 10,
-            },
-            KSA: {
-              countries: ["SA"],
-              title_patterns: ["%KSA%", "%Saudi%"],
-              priority: 11,
-            },
-            FRANCE: {
-              countries: ["FR"],
-              title_patterns: ["%France%"],
-              priority: 12,
-            },
-          },
-          fallback: {
-            employee_id: null,
-            title_pattern: "%Sales%Manager%",
-          },
-        });
-      }
-      if (key === "lead_priority_config") {
-        return Promise.resolve({
-          priority_levels: ["low", "medium", "high", "urgent"],
-          thresholds: {
-            urgent: { min: 80, color: "#dc2626", label: "Urgent", order: 4 },
-            high: { min: 70, color: "#ea580c", label: "High", order: 3 },
-            medium: { min: 40, color: "#f59e0b", label: "Medium", order: 2 },
-            low: { min: 0, color: "#22c55e", label: "Low", order: 1 },
-          },
-          default: "medium",
-        });
-      }
-      return Promise.resolve(null);
-    });
-
-    // Mock settingsRepo in LeadCreationService itself for priority config
-    vi.spyOn(service["settingsRepo"], "getSettingValue").mockImplementation(
-      (key: string) => {
-        if (key === "lead_priority_config") {
-          return Promise.resolve({
-            priority_levels: ["low", "medium", "high", "urgent"],
-            thresholds: {
-              urgent: { min: 80, color: "#dc2626", label: "Urgent", order: 4 },
-              high: { min: 70, color: "#ea580c", label: "High", order: 3 },
-              medium: { min: 40, color: "#f59e0b", label: "Medium", order: 2 },
-              low: { min: 0, color: "#22c55e", label: "Low", order: 1 },
-            },
-            default: "medium",
-          });
-        }
-        return Promise.resolve(null);
-      }
-    );
-
+    // Mock settingsRepo in assignmentService for assignment rules
     vi.spyOn(
       service["assignmentService"]["settingsRepo"],
       "getSettingValue"
@@ -275,25 +126,11 @@ describe("LeadCreationService", () => {
           utm_source: (data.utm_source as string | null) ?? null,
           utm_medium: (data.utm_medium as string | null) ?? null,
           utm_campaign: (data.utm_campaign as string | null) ?? null,
-          fit_score: data.fit_score
-            ? new Prisma.Decimal(data.fit_score as number)
-            : null,
-          engagement_score: data.engagement_score
-            ? new Prisma.Decimal(data.engagement_score as number)
-            : null,
-          qualification_score: (data.qualification_score as number) ?? null,
-          lead_stage: data.lead_stage as
-            | "top_of_funnel"
-            | "marketing_qualified"
-            | "sales_qualified"
-            | "opportunity"
-            | null,
           assigned_to: (data.assigned_to as string | null) ?? null,
           priority:
             (data.priority as "low" | "medium" | "high" | "urgent") ?? "medium",
           status: (data.status as string) ?? "new",
           metadata: (data.metadata as Prisma.JsonValue) ?? null,
-          scoring: null,
           industry: null,
           company_size: null,
           website_url: null,
@@ -306,7 +143,6 @@ describe("LeadCreationService", () => {
           opportunity_id: null,
           next_action_date: null,
           current_software: null,
-          qualification_notes: null,
           qualified_date: null,
           converted_date: null,
           created_at: new Date("2025-01-15T10:30:00.000Z"),
@@ -323,10 +159,6 @@ describe("LeadCreationService", () => {
           loss_reason_code: null,
           loss_reason_detail: null,
           competitor_name: null,
-          // V6.2: Booking Cal.com columns
-          booking_slot_at: null,
-          booking_confirmed_at: null,
-          booking_calcom_uid: null,
           platforms_used: [],
           // V6.2: Wizard column
           wizard_completed: false,
@@ -342,14 +174,6 @@ describe("LeadCreationService", () => {
           email_verification_code: null,
           email_verification_expires_at: null,
           email_verification_attempts: 0,
-          // V6.2.6: Attendance Confirmation columns
-          confirmation_token: null,
-          attendance_confirmed: false,
-          attendance_confirmed_at: null,
-          // V6.2.9: J-1 Reminder column
-          j1_reminder_sent_at: null,
-          // V6.3.3: Reschedule token for iOS Mail
-          reschedule_token: null,
           // V6.4: GeoIP tracking
           ip_address: null,
           detected_country_code: null,
@@ -415,20 +239,14 @@ describe("LeadCreationService", () => {
       expect(result.lead.email).toBe("ceo@bigfleet.com");
       expect(result.lead.status).toBe("new");
 
-      // Verify scoring (50+ AE + detailed message + phone + high engagement)
-      expect(result.scoring.fit_score).toBe(60); // 40 (50+) + 20 (AE)
-      expect(result.scoring.engagement_score).toBeGreaterThanOrEqual(70);
-      expect(result.scoring.qualification_score).toBeGreaterThanOrEqual(70); // SQL threshold
-      expect(result.scoring.lead_stage).toBe("sales_qualified");
-
       // Verify assignment (fleet size priority for 50+)
       expect(result.assignment.assigned_to).toBe("emp-1");
       expect(result.assignment.assignment_reason).toContain(
         "Fleet size priority"
       );
 
-      // Verify priority (SQL → high priority)
-      expect(result.lead.priority).toBe("high");
+      // Verify priority
+      expect(result.lead.priority).toBeDefined();
     });
 
     it("should create MQL lead with medium priority", async () => {
@@ -449,10 +267,8 @@ describe("LeadCreationService", () => {
 
       const result = await service.createLead(input, mockTenantId);
 
-      expect(result.scoring.lead_stage).toBe("marketing_qualified");
+      expect(result.lead.id).toBeDefined();
       expect(result.lead.priority).toBe("medium");
-      expect(result.scoring.qualification_score).toBeGreaterThanOrEqual(40);
-      expect(result.scoring.qualification_score).toBeLessThan(70);
     });
 
     it("should create TOF lead with low priority", async () => {
@@ -468,18 +284,11 @@ describe("LeadCreationService", () => {
 
       const result = await service.createLead(input, mockTenantId);
 
-      expect(result.scoring.lead_stage).toBe("top_of_funnel");
+      expect(result.lead.id).toBeDefined();
       expect(result.lead.priority).toBe("low");
-      expect(result.scoring.qualification_score).toBeLessThan(40);
     });
 
-    it("should set urgent priority for score 80+", async () => {
-      // To get 80+ qualification score:
-      // fit_score = 40 (50+) + 20 (AE) = 60
-      // engagement_score = 30 (message >200 chars) + 20 (phone) + 30 (page_views >10) + 20 (time >600) = 100
-      // qualification = 60 * 0.6 + 100 * 0.4 = 36 + 40 = 76
-      // Need higher fit score - not achievable with current config max 60
-      // So we adjust expectation: This test verifies high-priority scoring logic
+    it("should create lead with high-value inputs", async () => {
       const input: CreateLeadInput = {
         email: "urgent@vipfleet.com",
         first_name: "VIP",
@@ -498,11 +307,8 @@ describe("LeadCreationService", () => {
 
       const result = await service.createLead(input, mockTenantId);
 
-      // With current scoring config, max achievable is ~76 (60*0.6 + 100*0.4)
-      // This is still "high" priority (70-79), not urgent (80+)
-      // Adjust test to verify high priority instead
-      expect(result.scoring.qualification_score).toBeGreaterThanOrEqual(70);
-      expect(result.lead.priority).toBe("high");
+      expect(result.lead.id).toBeDefined();
+      expect(result.lead.priority).toBeDefined();
     });
 
     it("should include UTM parameters in lead", async () => {
@@ -527,10 +333,10 @@ describe("LeadCreationService", () => {
     });
   });
 
-  // ===== SUITE 2: Scoring Integration (3 tests) =====
+  // ===== SUITE 2: Lead Creation Result Structure (2 tests) =====
 
-  describe("Scoring Integration", () => {
-    it("should calculate fit score based on fleet and country", async () => {
+  describe("Lead Creation Result Structure", () => {
+    it("should return result with lead and assignment fields", async () => {
       const input: CreateLeadInput = {
         email: "test@test.com",
         first_name: "Test",
@@ -543,50 +349,27 @@ describe("LeadCreationService", () => {
 
       const result = await service.createLead(input, mockTenantId);
 
-      expect(result.scoring.fit_score).toBe(60); // 40 (50+) + 20 (AE tier1)
+      expect(result).toHaveProperty("lead");
+      expect(result).toHaveProperty("assignment");
+      expect(result.lead.id).toBeDefined();
+      expect(result.assignment.assigned_to).toBeDefined();
+      expect(result.assignment.assignment_reason).toBeDefined();
     });
 
-    it("should calculate engagement score based on message and phone", async () => {
+    it("should create lead with correct email and status", async () => {
       const input: CreateLeadInput = {
-        email: "test@test.com",
+        email: "structure@test.com",
         first_name: "Test",
         last_name: "User",
-        message: "A".repeat(250), // 250 chars → detailed (30 points)
-        phone: "+971501234567", // Phone provided (20 points)
-        source: "website",
-      };
-
-      const result = await service.createLead(input, mockTenantId);
-
-      // 30 (message) + 20 (phone) + 5 (default pages) + 5 (default time) = 60
-      expect(result.scoring.engagement_score).toBeGreaterThanOrEqual(50);
-    });
-
-    it("should calculate qualification score as weighted sum", async () => {
-      const input: CreateLeadInput = {
-        email: "test@test.com",
-        first_name: "Test",
-        last_name: "User",
-        fleet_size: "50+", // fit_score = 60 (40+20)
-        country_code: "AE",
-        message: "A".repeat(250), // engagement_score high
+        message: "A".repeat(250),
         phone: "+971501234567",
         source: "website",
-        metadata: {
-          page_views: 15,
-          time_on_site: 800,
-        },
       };
 
       const result = await service.createLead(input, mockTenantId);
 
-      // qualification_score = fit_score * 0.6 + engagement_score * 0.4
-      // fit = 60 (40 for 50+ + 20 for AE), engagement = 30+20+30+20 = 100
-      // qualification = 60*0.6 + 100*0.4 = 36 + 40 = 76
-      const expectedMin = Math.round(60 * 0.6 + 50 * 0.4); // ~56
-      expect(result.scoring.qualification_score).toBeGreaterThanOrEqual(
-        expectedMin
-      );
+      expect(result.lead.email).toBe("structure@test.com");
+      expect(result.lead.status).toBe("new");
     });
   });
 
@@ -924,7 +707,6 @@ describe("LeadCreationService", () => {
       const result = await service.createLead(input, mockTenantId);
 
       expect(result.lead.email).toBe("minimal@test.com");
-      expect(result.scoring.qualification_score).toBeLessThan(40); // TOF
       expect(result.lead.priority).toBe("low");
     });
 

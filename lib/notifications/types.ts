@@ -228,9 +228,6 @@ export interface SalesRepAssignmentPayload {
   lead_name: string;
   company_name: string;
   priority: "urgent" | "high" | "medium" | "low";
-  fit_score: number;
-  qualification_score: number;
-  lead_stage: string;
   fleet_size: string;
   country_code: string;
   lead_detail_url: string;

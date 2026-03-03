@@ -20,7 +20,7 @@ const ALPHABET =
  * Generate a short alphanumeric token for iOS Mail compatible URLs
  *
  * Used for:
- * - reschedule_token in crm_leads (short URL /r/{token})
+ * - Short URL tokens (e.g., waitlist)
  *
  * @param length - Token length (default: 6)
  * @returns Random alphanumeric token

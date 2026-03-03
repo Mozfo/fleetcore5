@@ -59,7 +59,6 @@ interface LeadStats {
       total: number;
       total_trend: number;
       by_status: Record<string, number>;
-      by_stage: Record<string, number>;
       cold_leads: number;
     };
     conversion: {
@@ -68,11 +67,6 @@ interface LeadStats {
       avg_days_to_qualification: number;
       qualified_this_period: number;
       converted_this_period: number;
-    };
-    quality: {
-      avg_fit_score: number;
-      avg_engagement_score: number;
-      avg_qualification_score: number;
     };
     charts: {
       time_series: Array<{ week: string; count: number }>;
@@ -515,82 +509,6 @@ function TrendChart({
 }
 
 // =============================================================================
-// QUALITY SCORES WIDGET
-// =============================================================================
-function QualityScores({
-  data,
-  isLoading,
-}: {
-  data: {
-    avg_fit_score: number;
-    avg_engagement_score: number;
-    avg_qualification_score: number;
-  };
-  isLoading?: boolean;
-}) {
-  const scores = [
-    {
-      label: "Fit Score",
-      value: data.avg_fit_score,
-      color: "bg-fc-primary-500",
-    },
-    {
-      label: "Engagement",
-      value: data.avg_engagement_score,
-      color: "bg-purple-500",
-    },
-    {
-      label: "Qualification",
-      value: data.avg_qualification_score,
-      color: "bg-fc-success-500",
-    },
-  ];
-
-  return (
-    <div className="rounded-fc-lg border-fc-border-light flex h-full flex-col border bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
-      <div className="mb-4">
-        <h3 className="text-fc-text-primary text-sm font-semibold dark:text-white">
-          Lead Quality
-        </h3>
-        <p className="text-fc-text-muted text-xs dark:text-gray-400">
-          Average scores across all leads
-        </p>
-      </div>
-
-      {isLoading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      ) : (
-        <div className="flex flex-1 flex-col justify-center gap-4">
-          {scores.map((score, i) => (
-            <div key={i}>
-              <div className="mb-1 flex items-center justify-between text-sm">
-                <span className="text-fc-text-secondary dark:text-gray-400">
-                  {score.label}
-                </span>
-                <span className="text-fc-text-primary font-semibold dark:text-white">
-                  {score.value.toFixed(1)}
-                </span>
-              </div>
-              <div className="bg-fc-neutral-50 h-2 w-full overflow-hidden rounded-full dark:bg-gray-800">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all",
-                    score.color
-                  )}
-                  style={{ width: `${Math.min(score.value * 10, 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// =============================================================================
 // QUICK ACTIONS WIDGET
 // =============================================================================
 function QuickActionsCard() {
@@ -682,8 +600,7 @@ export function DashboardGrid() {
       { i: "trend_chart", x: 0, y: 2, w: 8, h: 3 },
       { i: "quick_actions", x: 8, y: 2, w: 4, h: 3 },
       { i: "status_chart", x: 0, y: 5, w: 6, h: 3 },
-      { i: "sources_chart", x: 6, y: 5, w: 3, h: 3 },
-      { i: "quality_scores", x: 9, y: 5, w: 3, h: 3 },
+      { i: "sources_chart", x: 6, y: 5, w: 6, h: 3 },
     ],
     md: [
       { i: "my_leads", x: 0, y: 0, w: 5, h: 2 },
@@ -694,8 +611,7 @@ export function DashboardGrid() {
       { i: "trend_chart", x: 0, y: 6, w: 10, h: 3 },
       { i: "quick_actions", x: 0, y: 9, w: 5, h: 3 },
       { i: "status_chart", x: 5, y: 9, w: 5, h: 3 },
-      { i: "sources_chart", x: 0, y: 12, w: 5, h: 3 },
-      { i: "quality_scores", x: 5, y: 12, w: 5, h: 3 },
+      { i: "sources_chart", x: 0, y: 12, w: 10, h: 3 },
     ],
     sm: [
       { i: "my_leads", x: 0, y: 0, w: 6, h: 2 },
@@ -707,7 +623,6 @@ export function DashboardGrid() {
       { i: "quick_actions", x: 0, y: 9, w: 6, h: 3 },
       { i: "status_chart", x: 0, y: 12, w: 6, h: 3 },
       { i: "sources_chart", x: 0, y: 15, w: 6, h: 3 },
-      { i: "quality_scores", x: 0, y: 18, w: 6, h: 3 },
     ],
   };
 
@@ -830,18 +745,6 @@ export function DashboardGrid() {
       <div key="sources_chart">
         <SourcesChart
           data={stats?.charts.sources ?? []}
-          isLoading={isLoading}
-        />
-      </div>,
-      <div key="quality_scores">
-        <QualityScores
-          data={
-            stats?.quality ?? {
-              avg_fit_score: 0,
-              avg_engagement_score: 0,
-              avg_qualification_score: 0,
-            }
-          }
           isLoading={isLoading}
         />
       </div>,

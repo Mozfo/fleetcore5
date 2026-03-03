@@ -22,8 +22,6 @@ import {
   Loader2,
   User,
   ArrowLeft,
-  Target,
-  TrendingUp,
   Flag,
   Copy,
 } from "lucide-react";
@@ -73,14 +71,6 @@ function getCompanyInitials(companyName: string | null): string {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-}
-
-// Score badge color based on value
-function getScoreColor(score: number | null): string {
-  if (score === null) return "bg-muted text-muted-foreground";
-  if (score >= 70) return "bg-status-converted/20 text-status-converted";
-  if (score >= 40) return "bg-status-proposal/20 text-status-proposal";
-  return "bg-status-lost/20 text-status-lost";
 }
 
 // Priority badge color
@@ -274,7 +264,7 @@ export function LeadDetailHeader({
               )}
             </div>
 
-            {/* Badges Row: Status, Stage, Score, Priority */}
+            {/* Badges Row: Status, Priority */}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {/* Status Badge — centralized colors */}
               <span
@@ -284,25 +274,6 @@ export function LeadDetailHeader({
                 )}
               >
                 {t(`leads.status.${lead.status}`)}
-              </span>
-
-              {/* Stage Badge */}
-              {lead.lead_stage && (
-                <span className="bg-status-nurturing/20 text-status-nurturing inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium">
-                  <Target className="h-3 w-3" />
-                  {t(`leads.card.stage.${lead.lead_stage}`)}
-                </span>
-              )}
-
-              {/* Score Badge */}
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  getScoreColor(lead.qualification_score)
-                )}
-              >
-                <TrendingUp className="h-3 w-3" />
-                {t("leads.card.score")}: {lead.qualification_score ?? "—"}
               </span>
 
               {/* Priority Badge */}
@@ -391,28 +362,10 @@ export function LeadDetailHeader({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem
-                    onClick={onQualify}
-                    disabled={
-                      lead.lead_stage === "sales_qualified" ||
-                      lead.lead_stage === "opportunity"
-                    }
-                    className={cn(
-                      (lead.lead_stage === "sales_qualified" ||
-                        lead.lead_stage === "opportunity") &&
-                        "cursor-not-allowed opacity-50"
-                    )}
-                  >
+                  <DropdownMenuItem onClick={onQualify}>
                     {t("leads.drawer.actions.qualify")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={onConvert}
-                    disabled={lead.lead_stage !== "sales_qualified"}
-                    className={cn(
-                      lead.lead_stage !== "sales_qualified" &&
-                        "cursor-not-allowed opacity-50"
-                    )}
-                  >
+                  <DropdownMenuItem onClick={onConvert}>
                     {t("leads.drawer.actions.convert")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

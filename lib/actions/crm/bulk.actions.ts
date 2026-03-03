@@ -14,7 +14,8 @@ import { requireCrmAuth } from "@/lib/auth/server";
 import { z } from "zod";
 import { db } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import type { LeadStatus } from "@/types/crm";
+import { LEAD_STATUSES } from "@/lib/constants/crm/lead-status.constants";
+import type { LeadStatus } from "@/lib/constants/crm/lead-status.constants";
 
 // Schemas de validation
 const BulkAssignSchema = z.object({
@@ -22,21 +23,9 @@ const BulkAssignSchema = z.object({
   assigneeId: z.string().uuid("Invalid assignee ID"),
 });
 
-// V6.6: 10 statuts (added email_verified, callback_requested)
 const BulkStatusSchema = z.object({
   leadIds: z.array(z.string().uuid()).min(1, "At least one lead required"),
-  status: z.enum([
-    "new",
-    "email_verified",
-    "callback_requested",
-    "demo",
-    "proposal_sent",
-    "payment_pending",
-    "converted",
-    "lost",
-    "nurturing",
-    "disqualified",
-  ]),
+  status: z.enum(LEAD_STATUSES),
 });
 
 const BulkDeleteSchema = z.object({

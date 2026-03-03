@@ -27,9 +27,6 @@ interface SalesRepAssignmentProps {
   lead_name: string;
   company_name: string;
   priority: "urgent" | "high" | "medium" | "low";
-  fit_score: number;
-  qualification_score: number;
-  lead_stage: string;
   fleet_size: string;
   country_code: string;
   lead_detail_url: string;
@@ -41,9 +38,6 @@ export const SalesRepAssignment = ({
   lead_name = "Test Lead",
   company_name = "Test Company",
   priority = "high",
-  fit_score = 50,
-  qualification_score = 72,
-  lead_stage = "Sales Qualified",
   fleet_size = "101-200 vehicles",
   country_code = "US",
   lead_detail_url = "https://app.fleetcore.com/crm/leads/123",
@@ -113,10 +107,6 @@ export const SalesRepAssignment = ({
               <Text style={paragraph(textAlign)}>
                 • {t.fleetSize}: <strong>{fleet_size}</strong>
                 <br />• {t.country}: <strong>{country_code}</strong>
-                <br />• {t.qualificationScore}:{" "}
-                <strong>{qualification_score}/100</strong>
-                <br />• {t.fitScore}: <strong>{fit_score}/60</strong>
-                <br />• {t.stage}: <strong>{lead_stage}</strong>
               </Text>
             </div>
             <Section style={buttonContainer}>

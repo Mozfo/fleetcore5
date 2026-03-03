@@ -6,9 +6,10 @@ const prisma = new PrismaClient();
  * Seed CRM Settings
  *
  * Seeds the crm_settings table with:
- * - lead_stages (Phase 1.6)
  * - opportunity_stages (Phase 1.6)
  * - opportunity_loss_reasons (Phase 1.6)
+ *
+ * Note: lead_stages was removed in DETTE-V3 (migrated to V7 status workflow).
  *
  * Run: pnpm exec tsx scripts/seed-crm-settings.ts
  */
@@ -22,63 +23,6 @@ async function seedCrmSettings(): Promise<number> {
   const tenantId = hq.id;
 
   const settings = [
-    // ========================================================================
-    // Pipeline Settings
-    // ========================================================================
-    {
-      setting_key: "lead_stages",
-      category: "stages",
-      data_type: "object",
-      is_system: true,
-      description: "Lead pipeline stages configuration",
-      setting_value: {
-        stages: [
-          {
-            value: "top_of_funnel",
-            label_en: "Top of Funnel",
-            label_fr: "Haut du funnel",
-            color: "blue",
-            order: 1,
-            is_active: true,
-            auto_actions: ["assign_to_queue"],
-          },
-          {
-            value: "marketing_qualified",
-            label_en: "Marketing Qualified (MQL)",
-            label_fr: "Qualifié Marketing (MQL)",
-            color: "purple",
-            order: 2,
-            is_active: true,
-            auto_actions: ["calculate_score"],
-          },
-          {
-            value: "sales_qualified",
-            label_en: "Sales Qualified (SQL)",
-            label_fr: "Qualifié Ventes (SQL)",
-            color: "green",
-            order: 3,
-            is_active: true,
-            auto_actions: ["send_notification"],
-          },
-          {
-            value: "opportunity",
-            label_en: "Opportunity",
-            label_fr: "Opportunité",
-            color: "yellow",
-            order: 4,
-            is_active: true,
-            auto_actions: ["create_opportunity"],
-          },
-        ],
-        transitions: {
-          top_of_funnel: ["marketing_qualified"],
-          marketing_qualified: ["sales_qualified", "top_of_funnel"],
-          sales_qualified: ["opportunity", "marketing_qualified"],
-          opportunity: [],
-        },
-        default_stage: "top_of_funnel",
-      },
-    },
     {
       setting_key: "opportunity_stages",
       category: "stages",

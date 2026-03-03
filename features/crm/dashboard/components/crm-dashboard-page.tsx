@@ -11,7 +11,6 @@ import {
   TotalLeadsCard,
   ConversionRateCard,
   PipelineValueCard,
-  AvgScoreCard,
   TimeToConvertCard,
   LeadBySourceCard,
   SalesPipelineCard,
@@ -98,13 +97,8 @@ export function CrmDashboardPage() {
             />
           </div>
 
-          {/* Row 2: 2 KPI cards */}
+          {/* Row 2: KPI card */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <AvgScoreCard
-              avgQualificationScore={data.quality.avg_qualification_score}
-              avgFitScore={data.quality.avg_fit_score}
-              avgEngagementScore={data.quality.avg_engagement_score}
-            />
             <TimeToConvertCard
               avgDays={data.conversion.avg_days_to_qualification}
             />

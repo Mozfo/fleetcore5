@@ -330,13 +330,7 @@ export function LeadFormModal({
           city: null,
           // Status
           status: result.data.status,
-          lead_stage: result.data.lead_stage,
           priority: result.data.priority,
-          // Scoring
-          fit_score: result.data.fit_score,
-          engagement_score: result.data.engagement_score,
-          qualification_score: result.data.qualification_score,
-          scoring: null,
           // Source
           source: null,
           source_id: null,
@@ -345,7 +339,6 @@ export function LeadFormModal({
           utm_campaign: null,
           // Message
           message: data.message || null,
-          qualification_notes: null,
           // Assignment
           assigned_to: null, // Will be refreshed from server
           // GDPR

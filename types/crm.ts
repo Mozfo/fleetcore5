@@ -3,42 +3,16 @@
  * Tous les champs de la base de données sont inclus
  */
 
-// LeadStatus is now dynamic - configured via crm_settings (lead_status_workflow)
-// Default values for type hints only (actual statuses loaded from API)
+// Lead status values — single source of truth
+export { LEAD_STATUSES as LEAD_STATUS_VALUES } from "@/lib/constants/crm/lead-status.constants";
+
+// LeadStatus is wide (string) because API/DB data may contain any value.
+// For strict validation, use LEAD_STATUSES or leadStatusEnum from validators.
 export type LeadStatus = string;
 export type LeadStatusExtended = string;
 
-// Pre-defined status values for convenience (V6.6: 10 statuts)
-export const LEAD_STATUS_VALUES = [
-  "new",
-  "email_verified", // V6.6: Email vérifié (wizard step 2)
-  "callback_requested", // V6.6: Rappel demandé (wizard step 4 option)
-  "demo",
-  "proposal_sent",
-  "payment_pending",
-  "converted",
-  "lost",
-  "nurturing",
-  "disqualified",
-] as const;
-
 // Re-export LeadStatusConfig from hook for convenience
 export type { LeadStatusConfig } from "@/lib/hooks/useLeadStatuses";
-
-// LeadStage is now dynamic - configured via crm_settings
-// Default values for type hints only (actual stages loaded from API)
-export type LeadStage = string;
-
-// Pre-defined stage values for convenience (can be extended via settings)
-export const LEAD_STAGE_VALUES = [
-  "top_of_funnel",
-  "marketing_qualified",
-  "sales_qualified",
-  "opportunity",
-] as const;
-
-// Re-export LeadStageConfig from hook for convenience
-export type { LeadStageConfig } from "@/lib/hooks/useLeadStages";
 
 export type LeadPriority = "low" | "medium" | "high" | "urgent";
 export type LeadSource = "web" | "referral" | "event";
@@ -88,16 +62,9 @@ export interface Lead {
   } | null;
   city: string | null;
 
-  // Status & Stage
+  // Status
   status: LeadStatus;
-  lead_stage: LeadStage | null;
   priority: LeadPriority | string | null;
-
-  // Scoring
-  fit_score: number | null;
-  engagement_score: number | null;
-  qualification_score: number | null;
-  scoring: Record<string, unknown> | null; // JSONB scoring details
 
   // Source & Attribution
   source: LeadSource | string | null;
@@ -108,7 +75,6 @@ export interface Lead {
 
   // Message & Notes
   message: string | null;
-  qualification_notes: string | null;
 
   // Assignment
   assigned_to: {
@@ -159,11 +125,6 @@ export interface Lead {
   loss_reason_detail?: string | null;
   competitor_name?: string | null;
 
-  // Booking (V6.2: CAL.COM)
-  booking_slot_at?: string | null;
-  booking_confirmed_at?: string | null;
-  booking_calcom_uid?: string | null;
-
   // Wizard & Platforms (V6.2)
   platforms_used?: string[] | null;
   wizard_completed?: boolean | null;
@@ -179,17 +140,6 @@ export interface Lead {
   email_verification_code?: string | null;
   email_verification_expires_at?: string | null;
   email_verification_attempts?: number;
-
-  // Attendance confirmation (V6.2.6)
-  confirmation_token?: string | null;
-  attendance_confirmed?: boolean;
-  attendance_confirmed_at?: string | null;
-
-  // J-1 reminder (V6.2.6)
-  j1_reminder_sent_at?: string | null;
-
-  // Reschedule (V6.3.3)
-  reschedule_token?: string | null;
 
   // GeoIP detection (V6.4)
   detected_country_code?: string | null;
@@ -272,7 +222,6 @@ export interface KanbanPhaseColumn {
 
 export interface FilterState {
   status?: LeadStatus;
-  lead_stage?: LeadStage;
   assigned_to?: string;
   country_code?: string;
   min_score?: number;
@@ -297,14 +246,8 @@ export interface StatCard {
 // Default values for type hints only (actual statuses loaded from API)
 export type OpportunityStatus = string;
 
-// Pre-defined status values for convenience (can be extended via settings)
-export const OPPORTUNITY_STATUS_VALUES = [
-  "open",
-  "won",
-  "lost",
-  "on_hold",
-  "cancelled",
-] as const;
+// Re-export from single source of truth
+export { OPPORTUNITY_STATUSES as OPPORTUNITY_STATUS_VALUES } from "@/lib/constants/crm/opportunity-status.constants";
 
 // Re-export OpportunityStatusConfig from hook for convenience
 export type { OpportunityStatusConfig } from "@/lib/hooks/useOpportunityStatuses";

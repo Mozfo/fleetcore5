@@ -395,9 +395,6 @@ export const salesRepAssignmentTranslations = {
     priorityLead: "priority lead has been assigned to you:",
     fleetSize: "Fleet size",
     country: "Country",
-    qualificationScore: "Qualification score",
-    fitScore: "Fit score",
-    stage: "Stage",
     viewButton: "View Lead Details",
   },
   fr: {
@@ -406,9 +403,6 @@ export const salesRepAssignmentTranslations = {
     priorityLead: "vous a été assigné :",
     fleetSize: "Taille de flotte",
     country: "Pays",
-    qualificationScore: "Score de qualification",
-    fitScore: "Score d'adéquation",
-    stage: "Étape",
     viewButton: "Voir les détails du lead",
   },
   ar: {
@@ -417,9 +411,6 @@ export const salesRepAssignmentTranslations = {
     priorityLead: "لك:",
     fleetSize: "حجم الأسطول",
     country: "الدولة",
-    qualificationScore: "درجة التأهيل",
-    fitScore: "درجة الملاءمة",
-    stage: "المرحلة",
     viewButton: "عرض تفاصيل Lead",
   },
 } as const;

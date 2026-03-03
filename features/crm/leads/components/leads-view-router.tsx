@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, type ReactNode } from "react";
+import { Suspense, useCallback, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 import PageContainer from "@/components/layout/page-container";
 import { ViewToggle, type ViewMode } from "@/components/crm/leads/ViewToggle";
@@ -11,45 +12,63 @@ import { LeadsListPage } from "./leads-list-page";
 
 const VIEW_MODE_STORAGE_KEY = "crm_leads_view";
 
-export function LeadsViewRouter() {
+// ── Inner component (needs Suspense for useSearchParams) ────────────
+
+function LeadsViewRouterInner() {
   const { t } = useTranslation("crm");
-  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [total, setTotal] = useState<number | null>(null);
-  const [outcomeFilter, setOutcomeFilter] = useState<string | null>(null);
 
-  // Load viewMode from localStorage on mount (SSR-safe)
-  useEffect(() => {
+  // View mode: URL param → localStorage fallback → default kanban
+  const viewParam = searchParams.get("view");
+  let viewMode: ViewMode = "kanban";
+  if (viewParam === "table") {
+    viewMode = "table";
+  } else if (!viewParam) {
     try {
-      const saved = localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-      if (saved === "kanban" || saved === "table") {
-        setViewMode(saved);
+      const saved =
+        typeof window !== "undefined"
+          ? localStorage.getItem(VIEW_MODE_STORAGE_KEY)
+          : null;
+      if (saved === "table") viewMode = "table";
+    } catch {
+      // localStorage not available
+    }
+  }
+
+  // Manual view switch (toggle button) — uses replace (no history entry)
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode) => {
+      try {
+        localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+      } catch {
+        // localStorage not available
       }
-    } catch {
-      // localStorage not available
-    }
-  }, []);
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("status"); // Clear outcome filter on manual toggle
+      if (mode === "table") {
+        params.set("view", "table");
+      } else {
+        params.delete("view");
+      }
+      const qs = params.toString();
+      router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
 
-  // Manual view switch (toggle button) — clears outcome filter
-  const handleViewModeChange = useCallback((mode: ViewMode) => {
-    setViewMode(mode);
-    setOutcomeFilter(null);
-    try {
-      localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
-    } catch {
-      // localStorage not available
-    }
-  }, []);
-
-  // Outcome click (Nurturing/Disqualified badge) — sets filter + switches to table
-  const handleOutcomeClick = useCallback((status: string) => {
-    setOutcomeFilter(status);
-    setViewMode("table");
-    try {
-      localStorage.setItem(VIEW_MODE_STORAGE_KEY, "table");
-    } catch {
-      // localStorage not available
-    }
-  }, []);
+  // Outcome click — navigates with view=table&status=xxx (creates history entry)
+  const handleOutcomeClick = useCallback(
+    (status: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("view", "table");
+      params.set("status", status);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
 
   if (viewMode === "kanban") {
     return (
@@ -88,10 +107,17 @@ export function LeadsViewRouter() {
         <ViewToggle value={viewMode} onChange={handleViewModeChange} />
       }
     >
-      <LeadsListPage
-        onTotalChange={setTotal}
-        initialStatusFilter={outcomeFilter}
-      />
+      <LeadsListPage onTotalChange={setTotal} />
     </PageContainer>
+  );
+}
+
+// ── Exported wrapper with Suspense for useSearchParams ──────────────
+
+export function LeadsViewRouter() {
+  return (
+    <Suspense>
+      <LeadsViewRouterInner />
+    </Suspense>
   );
 }

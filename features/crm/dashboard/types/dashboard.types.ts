@@ -3,7 +3,6 @@ export interface DashboardData {
     total: number;
     total_trend: number;
     by_status: Record<string, number>;
-    by_stage: Record<string, number>;
     cold_leads: number;
     cold_threshold_months: number;
   };
@@ -16,11 +15,6 @@ export interface DashboardData {
     qualified_previous_period: number;
     converted_this_period: number;
     converted_previous_period: number;
-  };
-  quality: {
-    avg_fit_score: number;
-    avg_engagement_score: number;
-    avg_qualification_score: number;
   };
   charts: {
     time_series: Array<{ week: string; count: number }>;
@@ -57,12 +51,6 @@ export interface ConversionRateCardProps {
 export interface PipelineValueCardProps {
   activeLeads: number;
   byStatus: Record<string, number>;
-}
-
-export interface AvgScoreCardProps {
-  avgQualificationScore: number;
-  avgFitScore: number;
-  avgEngagementScore: number;
 }
 
 export interface TimeToConvertCardProps {

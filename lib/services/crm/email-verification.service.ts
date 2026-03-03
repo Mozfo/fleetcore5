@@ -484,7 +484,6 @@ export class EmailVerificationService {
           data: {
             email: email.toLowerCase(),
             status: "new",
-            lead_stage: "top_of_funnel", // V6.4: Set initial stage
             source: "website", // Web form (must match crm_leads_source_check constraint)
             // V6.4-3: Store homepage language for email notifications
             language: locale,
@@ -586,6 +585,7 @@ export class EmailVerificationService {
         },
         select: {
           id: true,
+          status: true,
           email_verified: true,
           email_verification_code: true,
           email_verification_expires_at: true,
@@ -676,6 +676,8 @@ export class EmailVerificationService {
       }
 
       // 7. Success - mark as verified and clear code
+      // Also transition status from "new" → "email_verified" (V7 pipeline)
+      // Only promote — never downgrade if lead already has an advanced status
       await this.prisma.crm_leads.update({
         where: { id: lead.id },
         data: {
@@ -683,12 +685,18 @@ export class EmailVerificationService {
           email_verification_code: null,
           email_verification_expires_at: null,
           email_verification_attempts: 0,
+          ...(lead.status === "new" && { status: "email_verified" }),
           updated_at: new Date(),
         },
       });
 
       logger.info(
-        { leadId: lead.id, email },
+        {
+          leadId: lead.id,
+          email,
+          statusTransition:
+            lead.status === "new" ? "new → email_verified" : "unchanged",
+        },
         "[EmailVerification] Email verified successfully"
       );
 

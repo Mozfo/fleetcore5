@@ -13,21 +13,17 @@ import { useFleetSizeOptions } from "@/lib/hooks/useFleetSizeOptions";
 import {
   Mail,
   Building2,
-  BarChart3,
   User,
   Shield,
   MessageSquare,
   MapPin,
   Megaphone,
-  FileText,
   Copy,
   Phone,
   ExternalLink,
-  Linkedin,
   Clock,
 } from "lucide-react";
 import { LeadTimeline } from "./LeadTimeline";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,9 +31,8 @@ import { Select } from "@/components/ui/select-native";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Lead } from "@/types/crm";
-import { ScoreBreakdown } from "./ScoreBreakdown";
-import { ScoreGauge } from "./ScoreGauge";
 import type { LucideIcon } from "lucide-react";
+import { InfoRow } from "@/components/crm/shared/InfoRow";
 
 // Animation variants
 const cardVariants = {
@@ -75,73 +70,6 @@ function Card({ icon: Icon, title, children, className }: CardProps) {
       </div>
       <div className="space-y-4">{children}</div>
     </motion.div>
-  );
-}
-
-interface InfoRowProps {
-  label: string;
-  value: string | null | undefined;
-  actions?: Array<{
-    icon: LucideIcon;
-    label: string;
-    href?: string;
-    onClick?: () => void;
-  }>;
-  emptyText?: string;
-}
-
-function InfoRow({ label, value, actions, emptyText = "—" }: InfoRowProps) {
-  const displayValue = value || emptyText;
-  const isEmpty = !value;
-
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-        <p
-          className={cn(
-            "truncate text-sm font-medium text-gray-900 dark:text-white",
-            isEmpty && "text-gray-400 italic dark:text-gray-500"
-          )}
-        >
-          {displayValue}
-        </p>
-      </div>
-      {actions && actions.length > 0 && (
-        <div className="flex items-center gap-1">
-          {actions.map((action, i) => {
-            const ActionIcon = action.icon;
-            if (action.href) {
-              return (
-                <Button
-                  key={i}
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
-                  asChild
-                >
-                  <a href={action.href} title={action.label}>
-                    <ActionIcon className="h-4 w-4" />
-                  </a>
-                </Button>
-              );
-            }
-            return (
-              <Button
-                key={i}
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
-                onClick={action.onClick}
-                title={action.label}
-              >
-                <ActionIcon className="h-4 w-4" />
-              </Button>
-            );
-          })}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -427,18 +355,6 @@ export function LeadDetailCards({
               label={t("leads.drawer.fields.company_name")}
               value={lead.company_name}
             />
-            {lead.industry && (
-              <InfoRow
-                label={t("leads.drawer.fields.industry")}
-                value={lead.industry}
-              />
-            )}
-            {lead.company_size && (
-              <InfoRow
-                label={t("leads.drawer.fields.company_size")}
-                value={`${lead.company_size} ${t("leads.drawer.fields.employees")}`}
-              />
-            )}
             <InfoRow
               label={t("leads.drawer.fields.fleet_size")}
               value={lead.fleet_size}
@@ -465,78 +381,8 @@ export function LeadDetailCards({
                 ]}
               />
             )}
-            {lead.linkedin_url && (
-              <InfoRow
-                label={t("leads.drawer.fields.linkedin")}
-                value={lead.linkedin_url}
-                actions={[
-                  {
-                    icon: Linkedin,
-                    label: t("leads.drawer.actions.open"),
-                    href: lead.linkedin_url.startsWith("http")
-                      ? lead.linkedin_url
-                      : `https://${lead.linkedin_url}`,
-                  },
-                ]}
-              />
-            )}
           </>
         )}
-      </Card>
-
-      {/* Scoring Card - Premium visualization with breakdowns */}
-      <Card
-        icon={BarChart3}
-        title={t("leads.drawer.sections.scoring")}
-        className="xl:col-span-2"
-      >
-        <div className="grid gap-6 sm:grid-cols-2">
-          {/* Left: Score Gauges */}
-          <div className="flex items-center justify-center gap-4">
-            <ScoreGauge
-              score={lead.fit_score}
-              maxScore={60}
-              size="sm"
-              label={t("leads.scores.fit")}
-            />
-            <ScoreGauge
-              score={lead.engagement_score}
-              maxScore={100}
-              size="sm"
-              label={t("leads.scores.engagement")}
-            />
-            <ScoreGauge
-              score={lead.qualification_score}
-              maxScore={100}
-              size="md"
-              label={t("leads.scores.qualification")}
-            />
-          </div>
-
-          {/* Right: Score Breakdowns */}
-          <div className="space-y-4">
-            <ScoreBreakdown
-              type="fit"
-              score={lead.fit_score}
-              lead={lead}
-              showDetails
-            />
-            <ScoreBreakdown
-              type="engagement"
-              score={lead.engagement_score}
-              lead={lead}
-              showDetails
-            />
-            <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
-              <ScoreBreakdown
-                type="qualification"
-                score={lead.qualification_score}
-                lead={lead}
-                showDetails
-              />
-            </div>
-          </div>
-        </div>
       </Card>
 
       {/* Assignment Card */}
@@ -706,19 +552,6 @@ export function LeadDetailCards({
           </p>
         )}
       </Card>
-
-      {/* Notes Card - Only show if we have notes */}
-      {lead.qualification_notes && (
-        <Card
-          icon={FileText}
-          title={t("leads.drawer.sections.notes")}
-          className="md:col-span-2 xl:col-span-2 2xl:col-span-2"
-        >
-          <p className="text-sm whitespace-pre-wrap text-gray-600 dark:text-gray-300">
-            {lead.qualification_notes}
-          </p>
-        </Card>
-      )}
 
       {/* Timeline Card */}
       <Card

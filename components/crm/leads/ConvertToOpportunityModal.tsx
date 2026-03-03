@@ -74,8 +74,8 @@ export function ConvertToOpportunityModal({
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check eligibility - must be sales_qualified
-  const isEligible = lead.lead_stage === "sales_qualified";
+  // Eligibility: always eligible — conversion is gated by workflow status, not UI
+  const isEligible = true;
 
   // Format fleet size
   const formatFleetSize = (size: string | null): string => {
@@ -155,11 +155,7 @@ export function ConvertToOpportunityModal({
                   {t("leads.convert.not_eligible_title")}
                 </p>
                 <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                  {t("leads.convert.not_eligible", {
-                    stage: t(
-                      `leads.qualify.stages.${lead.lead_stage || "top_of_funnel"}`
-                    ),
-                  })}
+                  {t("leads.convert.not_eligible")}
                 </p>
               </div>
             </div>
@@ -181,12 +177,6 @@ export function ConvertToOpportunityModal({
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                  >
-                    Score: {lead.qualification_score ?? "—"}
-                  </Badge>
                   <Badge variant="outline">
                     {formatFleetSize(lead.fleet_size)}
                   </Badge>

@@ -257,15 +257,6 @@ export class LeadQualificationService {
           bant_timeline: bant.bant_timeline,
           bant_qualified_at: qualifiedAt,
           bant_qualified_by: member?.id ?? null,
-          qualification_notes: JSON.stringify({
-            framework: "BANT",
-            criteria_met,
-            result,
-            details,
-            fleet_size_exception: fleetSizeException,
-            performed_by: performedBy,
-            performed_at: new Date().toISOString(),
-          }),
           updated_at: new Date(),
         },
       });

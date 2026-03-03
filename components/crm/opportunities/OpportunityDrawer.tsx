@@ -64,6 +64,7 @@ import {
 } from "@/lib/actions/crm/opportunity.actions";
 import type { Opportunity } from "@/types/crm";
 import type { LucideIcon } from "lucide-react";
+import { InfoRow } from "@/components/crm/shared/InfoRow";
 import type { UpdateOpportunityData } from "@/lib/actions/crm/opportunity.actions";
 
 interface OpportunityDrawerProps {
@@ -148,81 +149,6 @@ function DrawerSection({
       </div>
       <Separator className="mt-4" />
     </motion.div>
-  );
-}
-
-interface InfoRowProps {
-  label: string;
-  value: string | number | null | undefined;
-  actions?: Array<{
-    icon: LucideIcon;
-    label: string;
-    href?: string;
-    onClick?: () => void;
-  }>;
-  emptyText?: string;
-  className?: string;
-}
-
-function InfoRow({
-  label,
-  value,
-  actions,
-  emptyText = "—",
-  className,
-}: InfoRowProps) {
-  const displayValue =
-    value !== null && value !== undefined ? String(value) : emptyText;
-  const isEmpty = value === null || value === undefined || value === "";
-
-  return (
-    <div className={cn("flex items-center justify-between gap-4", className)}>
-      <div className="min-w-0 flex-1">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p
-          className={cn(
-            "truncate text-sm font-medium",
-            isEmpty && "text-muted-foreground italic"
-          )}
-        >
-          {displayValue}
-        </p>
-      </div>
-      {actions && actions.length > 0 && (
-        <div className="flex items-center gap-1">
-          {actions.map((action, i) => {
-            const ActionIcon = action.icon;
-            if (action.href) {
-              return (
-                <Button
-                  key={i}
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
-                  asChild
-                >
-                  <a href={action.href} title={action.label}>
-                    <ActionIcon className="h-4 w-4" />
-                  </a>
-                </Button>
-              );
-            }
-            return (
-              <Button
-                key={i}
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
-                onClick={action.onClick}
-                title={action.label}
-              >
-                <ActionIcon className="h-4 w-4" />
-              </Button>
-            );
-          })}
-        </div>
-      )}
-    </div>
   );
 }
 

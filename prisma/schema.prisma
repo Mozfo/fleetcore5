@@ -1751,8 +1751,6 @@ model crm_leads {
   fleet_size                       String?               @db.VarChar(50)
   current_software                 String?               @db.VarChar(255)
   assigned_to                      String?               @db.Uuid
-  qualification_score              Int?
-  qualification_notes              String?
   qualified_date                   DateTime?             @db.Timestamptz(6)
   converted_date                   DateTime?             @db.Timestamptz(6)
   utm_source                       String?               @db.VarChar(255)
@@ -1773,10 +1771,6 @@ model crm_leads {
   website_url                      String?
   linkedin_url                     String?
   city                             String?
-  lead_stage                       lead_stage?
-  fit_score                        Decimal?              @db.Decimal(5, 2)
-  engagement_score                 Decimal?              @db.Decimal(5, 2)
-  scoring                          Json?
   gdpr_consent                     Boolean?
   consent_at                       DateTime?             @db.Timestamptz(6)
   source_id                        String?               @db.Uuid
@@ -1786,14 +1780,9 @@ model crm_leads {
   consent_ip                       String?               @db.VarChar(45)
   last_activity_at                 DateTime?             @db.Timestamptz(6)
   // V5: Colonnes CLOSING (kept: used in status workflow)
-  stage_entered_at                 DateTime?             @default(now()) @db.Timestamptz(6)
   loss_reason_code                 String?               @db.VarChar(50)
   loss_reason_detail               String?
   competitor_name                  String?               @db.VarChar(100)
-  // V6.2: Colonnes BOOKING CAL.COM
-  booking_slot_at                  DateTime?             @db.Timestamptz(6)
-  booking_confirmed_at             DateTime?             @db.Timestamptz(6)
-  booking_calcom_uid               String?               @db.VarChar(100)
   platforms_used                   String[]
   // V6.2: Colonne WIZARD
   wizard_completed                 Boolean?              @default(false)
@@ -1810,13 +1799,6 @@ model crm_leads {
   email_verification_code          String?               @db.VarChar(255)
   email_verification_expires_at    DateTime?             @db.Timestamptz(6)
   email_verification_attempts      Int                   @default(0)
-  // V6.2.6: Colonnes ATTENDANCE CONFIRMATION (J-1 Email Reminder)
-  confirmation_token               String?               @db.VarChar(255)
-  attendance_confirmed             Boolean               @default(false)
-  attendance_confirmed_at          DateTime?             @db.Timestamptz(6)
-  j1_reminder_sent_at              DateTime?             @db.Timestamptz(6)
-  // V6.3.3: Short token for iOS Mail compatible reschedule links
-  reschedule_token                 String?               @unique @db.VarChar(8)
   // V6.4: GeoIP detection (same pattern as crm_waitlist for spam detection)
   detected_country_code            String?               @db.VarChar(2)
   ip_address                       String?               @db.VarChar(45)
@@ -1870,24 +1852,16 @@ model crm_leads {
   @@index([status])
   @@index([assigned_to], map: "idx_crm_leads_assigned_to")
   @@index([country_code], map: "idx_crm_leads_country_code")
-  @@index([lead_stage], map: "idx_crm_leads_lead_stage")
   @@index([metadata], map: "idx_crm_leads_metadata", type: Gin)
-  @@index([qualification_score], map: "idx_crm_leads_qualification_score")
-  @@index([deleted_at, status, lead_stage], map: "idx_crm_leads_status_stage_deleted")
   @@index([updated_at], map: "idx_crm_leads_updated_at")
   @@index([last_activity_at], map: "idx_crm_leads_last_activity_at")
   // V5: Index closing (kept columns only)
-  @@index([stage_entered_at(sort: Desc)], map: "idx_crm_leads_stage_entered")
   @@index([loss_reason_code], map: "idx_crm_leads_loss_reason")
-  // V6.2: Index booking/wizard/tenant
-  @@index([booking_slot_at], map: "idx_crm_leads_booking_slot")
-  @@index([booking_calcom_uid], map: "idx_crm_leads_booking_calcom_uid")
+  // V6.2: Index wizard/tenant
   @@index([wizard_completed], map: "idx_crm_leads_wizard_completed")
   @@index([tenant_id], map: "idx_crm_leads_tenant")
   // V6.2.2: Index email verification
   @@index([email, email_verified], map: "idx_crm_leads_email_verification")
-  // V6.3.3: Index reschedule token for short URL lookups
-  @@index([reschedule_token], map: "idx_crm_leads_reschedule_token")
   // V6.6: Index callback & disqualification
   @@index([callback_requested, callback_requested_at], map: "idx_crm_leads_callback")
   @@index([disqualified_by], map: "idx_crm_leads_disqualified_by")
@@ -5615,13 +5589,6 @@ enum lead_priority {
   medium
   high
   urgent
-}
-
-enum lead_stage {
-  top_of_funnel
-  marketing_qualified
-  sales_qualified
-  opportunity
 }
 
 enum lead_status {

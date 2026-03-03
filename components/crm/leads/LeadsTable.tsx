@@ -314,12 +314,7 @@ export function LeadsTable({
       }
 
       // Score columns - handle null as -1 for proper sorting
-      const scoreColumns = [
-        "qualification_score",
-        "fit_score",
-        "engagement_score",
-        "company_size",
-      ];
+      const scoreColumns = ["company_size"];
       if (scoreColumns.includes(column)) {
         const value = lead[column as keyof Lead];
         return (value as number | null) ?? -1;
@@ -494,12 +489,6 @@ export function LeadsTable({
               <TableHead className="w-[100px]">
                 {t("leads.table.columns.country")}
               </TableHead>
-              <TableHead className="w-[100px]">
-                {t("leads.table.columns.score")}
-              </TableHead>
-              <TableHead className="w-[120px]">
-                {t("leads.table.columns.stage")}
-              </TableHead>
               <TableHead className="w-[140px]">
                 {t("leads.table.columns.assigned")}
               </TableHead>
@@ -513,7 +502,7 @@ export function LeadsTable({
           </TableHeader>
           <TableBody>
             {[...Array(5)].map((_, i) => (
-              <SkeletonRow key={i} columnCount={10} />
+              <SkeletonRow key={i} columnCount={8} />
             ))}
           </TableBody>
         </Table>
@@ -618,24 +607,6 @@ export function LeadsTable({
                     currentSort={currentSort}
                     onSort={handleSort}
                     className="w-[100px]"
-                  />
-                )}
-                {isVisible("qualification_score") && (
-                  <SortableTableHead
-                    column="qualification_score"
-                    label={t("leads.table.columns.score")}
-                    currentSort={currentSort}
-                    onSort={handleSort}
-                    className="w-[100px]"
-                  />
-                )}
-                {isVisible("lead_stage") && (
-                  <SortableTableHead
-                    column="lead_stage"
-                    label={t("leads.table.columns.stage")}
-                    currentSort={currentSort}
-                    onSort={handleSort}
-                    className="w-[120px]"
                   />
                 )}
                 {isVisible("assigned_to") && (

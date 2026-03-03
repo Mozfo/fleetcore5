@@ -12,6 +12,7 @@
  */
 
 import { z } from "zod";
+import { LEAD_STATUSES } from "@/lib/constants/crm/lead-status.constants";
 
 /**
  * Lead creation request validation for API v1
@@ -194,10 +195,6 @@ export type CreateLeadInput = z.infer<typeof CreateLeadSchema>;
  *     email: "ceo@bigfleet.ae",
  *     status: "new",
  *     priority: "high",
- *     fit_score: 60,
- *     engagement_score: 100,
- *     qualification_score: 76,
- *     lead_stage: "sales_qualified",
  *     assigned_to: "emp-uuid",
  *     assignment_reason: "Fleet size priority: 500+",
  *     created_at: "2025-01-15T10:30:00.000Z"
@@ -211,30 +208,8 @@ export const LeadCreationResponseSchema = z.object({
     id: z.string().uuid(),
     lead_code: z.string(),
     email: z.string().email(),
-    // V6.6: 10 statuts
-    status: z.enum([
-      "new",
-      "email_verified",
-      "callback_requested",
-      "demo",
-      "proposal_sent",
-      "payment_pending",
-      "converted",
-      "lost",
-      "nurturing",
-      "disqualified",
-    ]),
+    status: z.enum(LEAD_STATUSES),
     priority: z.enum(["low", "medium", "high", "urgent"]),
-
-    // Scoring info
-    fit_score: z.number().int().min(0).max(100),
-    engagement_score: z.number().int().min(0).max(100),
-    qualification_score: z.number().int().min(0).max(100),
-    lead_stage: z.enum([
-      "top_of_funnel",
-      "marketing_qualified",
-      "sales_qualified",
-    ]),
 
     // Assignment info
     assigned_to: z.string().uuid().nullable(),
@@ -288,7 +263,6 @@ const emptyToNull = <T>(val: T): T | null => (val === "" ? null : val);
  *
  * Fields NOT allowed to update:
  * - id, lead_code (immutable)
- * - fit_score, engagement_score, qualification_score (auto-calculated)
  * - created_at, created_by (audit trail)
  * - deleted_at, deleted_by (managed by DELETE endpoint)
  *
@@ -394,36 +368,9 @@ export const UpdateLeadSchema = z.object({
     z.string().max(5000, "Message too long").trim().nullable().optional()
   ),
 
-  // V6.6: 10 statuts
   status: z.preprocess(
     emptyToNull,
-    z
-      .enum([
-        "new",
-        "email_verified",
-        "callback_requested",
-        "demo",
-        "proposal_sent",
-        "payment_pending",
-        "converted",
-        "lost",
-        "nurturing",
-        "disqualified",
-      ])
-      .describe(
-        "Status must be: new, email_verified, callback_requested, demo, proposal_sent, payment_pending, converted, lost, nurturing, or disqualified."
-      )
-      .nullable()
-      .optional()
-  ),
-
-  lead_stage: z.preprocess(
-    emptyToNull,
-    z
-      .enum(["top_of_funnel", "marketing_qualified", "sales_qualified"])
-      .describe("Lead stage based on qualification score")
-      .nullable()
-      .optional()
+    z.enum(LEAD_STATUSES).nullable().optional()
   ),
 
   priority: z.preprocess(

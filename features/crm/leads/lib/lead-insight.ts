@@ -38,26 +38,6 @@ export const STATUS_COLOR_MAP: Record<string, { bg: string; text: string }> = {
   },
 };
 
-/** Tailwind class pairs for each lead_stage enum value. */
-export const STAGE_COLOR_MAP: Record<string, { bg: string; text: string }> = {
-  top_of_funnel: {
-    bg: "bg-slate-100 dark:bg-slate-800",
-    text: "text-slate-600 dark:text-slate-300",
-  },
-  marketing_qualified: {
-    bg: "bg-blue-100 dark:bg-blue-900",
-    text: "text-blue-700 dark:text-blue-300",
-  },
-  sales_qualified: {
-    bg: "bg-indigo-100 dark:bg-indigo-900",
-    text: "text-indigo-700 dark:text-indigo-300",
-  },
-  opportunity: {
-    bg: "bg-violet-100 dark:bg-violet-900",
-    text: "text-violet-700 dark:text-violet-300",
-  },
-};
-
 /** Tailwind class pairs for each priority value. */
 export const PRIORITY_COLOR_MAP: Record<string, { bg: string; text: string }> =
   {
@@ -78,36 +58,6 @@ export const PRIORITY_COLOR_MAP: Record<string, { bg: string; text: string }> =
       text: "text-red-700 dark:text-red-300",
     },
   };
-
-// ── Score helpers ─────────────────────────────────────────────────────────
-
-/** Return a Tailwind text color for a qualification score. */
-export function getScoreColor(score: number | null | undefined): string | null {
-  if (score === null || score === undefined) return null;
-  if (score >= 80) return "text-green-600";
-  if (score >= 50) return "text-yellow-600";
-  return "text-red-500";
-}
-
-/** Return a Tailwind bg color for a score progress bar. */
-export function getScoreBarColor(
-  score: number | null | undefined
-): string | null {
-  if (score === null || score === undefined) return null;
-  if (score >= 80) return "bg-green-500";
-  if (score >= 50) return "bg-yellow-500";
-  return "bg-red-500";
-}
-
-/** Return a Tailwind bg color for the score pastille (dot). */
-export function getScoreDotColor(
-  score: number | null | undefined
-): string | null {
-  if (score === null || score === undefined) return null;
-  if (score >= 80) return "bg-green-500";
-  if (score >= 50) return "bg-yellow-500";
-  return "bg-red-500";
-}
 
 // ── Row indicator (border-left) ──────────────────────────────────────────
 
@@ -133,16 +83,7 @@ export function computeRowIndicator(lead: Lead): string {
     }
   }
 
-  // 2. Hot lead (score >= 80) → GREEN
-  if (
-    lead.qualification_score !== null &&
-    lead.qualification_score !== undefined &&
-    lead.qualification_score >= 80
-  ) {
-    return "border-l-4 border-l-green-500";
-  }
-
-  // 5. Inactive > 14 days → ORANGE
+  // 2. Inactive > 14 days → ORANGE
   if (lead.last_activity_at && isActive) {
     const days = Math.floor(
       (now.getTime() - new Date(lead.last_activity_at).getTime()) / 86_400_000
@@ -159,12 +100,7 @@ export function computeRowIndicator(lead: Lead): string {
 // ── Insight engine ────────────────────────────────────────────────────────
 
 /** Lucide icon name for each insight rule. */
-export type InsightIcon =
-  | "CalendarX"
-  | "Flame"
-  | "Snowflake"
-  | "Clock"
-  | "UserPlus";
+export type InsightIcon = "CalendarX" | "Clock" | "UserPlus";
 
 export interface LeadInsight {
   /** i18n key suffix (under leads.table.insight.*) */
@@ -212,29 +148,7 @@ export function computeAllLeadInsights(lead: Lead): LeadInsight[] {
     }
   }
 
-  // 2. Hot lead
-  if (
-    lead.qualification_score !== null &&
-    lead.qualification_score !== undefined &&
-    lead.qualification_score >= 80
-  ) {
-    insights.push({ key: "lead_hot", color: "text-green-600", icon: "Flame" });
-  }
-
-  // 5. Cold lead
-  if (
-    lead.qualification_score !== null &&
-    lead.qualification_score !== undefined &&
-    lead.qualification_score <= 30
-  ) {
-    insights.push({
-      key: "lead_cold",
-      color: "text-muted-foreground",
-      icon: "Snowflake",
-    });
-  }
-
-  // 6. Inactive
+  // 2. Inactive
   if (lead.last_activity_at && isActive) {
     const lastActivity = new Date(lead.last_activity_at);
     const days = daysBetween(lastActivity, now);

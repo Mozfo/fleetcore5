@@ -192,9 +192,6 @@ describe("SalesRepAssignment Template", () => {
     lead_name: "John Doe",
     company_name: "Acme Corp",
     priority: "high" as const,
-    fit_score: 85,
-    qualification_score: 90,
-    lead_stage: "Qualified",
     fleet_size: "75",
     country_code: "US",
     lead_detail_url: "https://app.fleetcore.com/leads/123",
@@ -215,14 +212,6 @@ describe("SalesRepAssignment Template", () => {
     );
     // Priority should be displayed somewhere in the template
     expect(html.toLowerCase()).toContain("high");
-  });
-
-  it("shows scores", async () => {
-    const html = await render(
-      SalesRepAssignment({ ...defaultProps, locale: "en" })
-    );
-    expect(html).toContain("85");
-    expect(html).toContain("90");
   });
 });
 

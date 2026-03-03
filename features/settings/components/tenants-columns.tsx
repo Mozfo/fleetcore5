@@ -26,11 +26,7 @@ import {
 import { DataTableColumnHeader } from "@/components/ui/table/data-table-column-header";
 import type { SettingsTenant } from "../types/tenant.types";
 
-function formatDate(value: unknown): string {
-  if (!value) return "\u2014";
-  const d = new Date(value as string);
-  return isNaN(d.getTime()) ? "\u2014" : d.toLocaleDateString();
-}
+import { formatDateCell as formatDate } from "@/lib/format";
 
 /** Convert ISO 3166-1 alpha-2 country code to flag emoji */
 function countryFlag(code: string): string {

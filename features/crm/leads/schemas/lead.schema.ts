@@ -14,10 +14,8 @@ export {
 // Public form validators
 export {
   LeadCreateSchema,
-  LeadQualifySchema,
   LeadQuerySchema,
   type LeadCreateInput,
-  type LeadQualifyInput,
   type LeadQueryInput,
 } from "@/lib/validators/crm.validators";
 

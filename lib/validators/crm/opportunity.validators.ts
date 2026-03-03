@@ -10,7 +10,7 @@
 
 import { z } from "zod";
 import { OPPORTUNITY_STAGE_VALUES } from "@/lib/config/opportunity-stages";
-import { OPPORTUNITY_STATUS_VALUES } from "@/types/crm";
+import { OPPORTUNITY_STATUSES } from "@/lib/constants/crm/opportunity-status.constants";
 
 /**
  * Schema for creating a new opportunity
@@ -39,7 +39,7 @@ export const CreateOpportunitySchema = z.object({
 
   // Optional with defaults
   stage: z.enum(OPPORTUNITY_STAGE_VALUES).default("qualification"),
-  status: z.enum(OPPORTUNITY_STATUS_VALUES).default("open"),
+  status: z.enum(OPPORTUNITY_STATUSES).default("open"),
   currency: z
     .string()
     .length(3, "Currency must be 3-letter code")
@@ -67,7 +67,7 @@ export type CreateOpportunityInput = z.infer<typeof CreateOpportunitySchema>;
  */
 export const UpdateOpportunitySchema = z.object({
   stage: z.enum(OPPORTUNITY_STAGE_VALUES).optional(),
-  status: z.enum(OPPORTUNITY_STATUS_VALUES).optional(),
+  status: z.enum(OPPORTUNITY_STATUSES).optional(),
   expected_value: z.number().positive().max(100000000).optional(),
   probability_percent: z.number().min(0).max(100).optional(),
   currency: z.string().length(3).optional(),

@@ -162,6 +162,9 @@ export function useLeadsKanban() {
     filters,
     sorters: [{ field: "created_at", order: "desc" }],
     meta: { select: kanbanFields },
+    queryOptions: {
+      refetchInterval: 60_000, // Auto-refresh every 60s — new leads arrive continuously
+    },
   });
 
   const leads = React.useMemo(() => result.data ?? [], [result.data]);
