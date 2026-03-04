@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 import PageContainer from "@/components/layout/page-container";
-import { ViewToggle, type ViewMode } from "@/components/crm/leads/ViewToggle";
+import { ViewToggle, type ViewMode } from "./ViewToggle";
 
 import { LeadsKanbanPage } from "./leads-kanban-page";
 import { LeadsListPage } from "./leads-list-page";

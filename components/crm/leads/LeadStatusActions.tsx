@@ -34,7 +34,7 @@ import { updateLeadStatusAction } from "@/lib/actions/crm/lead.actions";
 import { createActivityAction } from "@/lib/actions/crm/activities.actions";
 import { getStatusSectionBg } from "@/lib/utils/status-colors";
 import { getStatusConfig } from "@/lib/config/pipeline-status";
-import { getBantCriteriaMet } from "./LeadBantSection";
+import { getBantCriteriaMet } from "@/lib/constants/crm/bant.constants";
 import type { Lead } from "@/types/crm";
 
 // ── Action definitions (V7) ──────────────────────────────────────────

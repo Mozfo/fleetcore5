@@ -17,7 +17,7 @@ import type {
 } from "@/lib/config/filter-config";
 import type { LeadStatus } from "@/types/crm";
 import type { SavedView, SavedViewConfig } from "@/lib/types/views";
-import type { ViewMode } from "./ViewToggle";
+import type { ViewMode } from "@/features/crm/leads/components/ViewToggle";
 
 export interface LeadsFilters {
   status?: LeadStatus | "all";

@@ -64,22 +64,6 @@ import type { Lead } from "@/types/crm";
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-/**
- * Compute number of qualifying BANT criteria met on a lead.
- * Exported for use in LeadStatusActions (Schedule Demo visibility).
- */
-export function getBantCriteriaMet(lead: Lead): number {
-  return BANT_DIMENSIONS.reduce((count, dim) => {
-    const fieldMap: Record<string, string | null | undefined> = {
-      budget: lead.bant_budget,
-      authority: lead.bant_authority,
-      need: lead.bant_need,
-      timeline: lead.bant_timeline,
-    };
-    return count + (isQualifying(dim.options, fieldMap[dim.key]) ? 1 : 0);
-  }, 0);
-}
-
 function formatDate(dateValue: string | Date | null | undefined): string {
   if (!dateValue) return "";
   const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;

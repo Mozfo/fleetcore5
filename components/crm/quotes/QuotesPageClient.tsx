@@ -22,7 +22,10 @@ import {
   DollarSign,
 } from "lucide-react";
 import { FCPageHeader, FCStatCard } from "@/components/fc";
-import { ViewToggle, type ViewMode } from "../leads/ViewToggle";
+import {
+  ViewToggle,
+  type ViewMode,
+} from "@/features/crm/leads/components/ViewToggle";
 import { Button } from "@/components/ui/button";
 import { QuotesFilterBar } from "./QuotesFilterBar";
 import { QuotesKanbanBoard } from "./QuotesKanbanBoard";

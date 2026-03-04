@@ -14,7 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Item as KanbanItem } from "@/components/ui/kanban";
 import { cn } from "@/lib/utils";
-import { LeadContextMenu } from "@/components/crm/leads/LeadContextMenu";
+import { LeadContextMenu } from "./LeadContextMenu";
 import type { Lead, LeadStatus } from "../types/lead.types";
 
 // ── Utilities ───────────────────────────────────────────────────────

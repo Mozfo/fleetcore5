@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BulkActionsBar } from "@/components/crm/leads/BulkActionsBar";
+import { BulkActionsBar } from "./BulkActionsBar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

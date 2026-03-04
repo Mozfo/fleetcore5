@@ -41,11 +41,11 @@ import {
   MessageSection,
   TimelineSection,
 } from "./LeadDrawerSections";
-import { InlineActivityForm } from "./InlineActivityForm";
-import { DeleteLeadModal } from "./DeleteLeadModal";
-import { DisqualifyLeadModal } from "./DisqualifyLeadModal";
+import { InlineActivityForm } from "@/components/crm/leads/InlineActivityForm";
+import { DeleteLeadModal } from "@/components/crm/leads/DeleteLeadModal";
+import { DisqualifyLeadModal } from "@/components/crm/leads/DisqualifyLeadModal";
 import { LeadBantSection } from "./LeadBantSection";
-import { LeadStatusActions } from "./LeadStatusActions";
+import { LeadStatusActions } from "@/components/crm/leads/LeadStatusActions";
 import { drawerContainerVariants } from "@/lib/animations/drawer-variants";
 import {
   updateLeadAction,

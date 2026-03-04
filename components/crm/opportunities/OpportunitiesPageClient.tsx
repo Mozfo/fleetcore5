@@ -24,7 +24,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FCPageHeader, FCStatCard } from "@/components/fc";
-import { ViewToggle, type ViewMode } from "../leads/ViewToggle";
+import {
+  ViewToggle,
+  type ViewMode,
+} from "@/features/crm/leads/components/ViewToggle";
 import { OpportunitiesFilterBar } from "./OpportunitiesFilterBar";
 import { KanbanBoard } from "./KanbanBoard";
 import { OpportunitiesTable } from "./OpportunitiesTable";

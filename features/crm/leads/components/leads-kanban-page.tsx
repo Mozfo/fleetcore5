@@ -13,11 +13,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { LeadDrawer } from "@/components/crm/leads/LeadDrawer";
-import { DragCompleteProfileDialog } from "@/components/crm/leads/drag-dialogs/DragCompleteProfileDialog";
-import { DragQualifyDialog } from "@/components/crm/leads/drag-dialogs/DragQualifyDialog";
-import { DragNurturingDialog } from "@/components/crm/leads/drag-dialogs/DragNurturingDialog";
-import { DragDisqualifyDialog } from "@/components/crm/leads/drag-dialogs/DragDisqualifyDialog";
+import { LeadDrawer } from "./drawer/LeadDrawer";
+import { DragCompleteProfileDialog } from "./drag-dialogs/DragCompleteProfileDialog";
+import { DragQualifyDialog } from "./drag-dialogs/DragQualifyDialog";
+import { DragNurturingDialog } from "./drag-dialogs/DragNurturingDialog";
+import { DragDisqualifyDialog } from "./drag-dialogs/DragDisqualifyDialog";
 import { useTablePreferences } from "@/hooks/use-table-preferences";
 import { useSalesOwners } from "@/lib/hooks/useSalesOwners";
 

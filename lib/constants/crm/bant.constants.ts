@@ -86,3 +86,24 @@ export function findLabel(
   if (!value) return null;
   return options.find((o) => o.value === value)?.label ?? value;
 }
+
+/**
+ * Compute number of qualifying BANT criteria met on a lead.
+ * Used by LeadBantSection and LeadStatusActions (Schedule Demo visibility).
+ */
+export function getBantCriteriaMet(bant: {
+  bant_budget?: string | null;
+  bant_authority?: string | null;
+  bant_need?: string | null;
+  bant_timeline?: string | null;
+}): number {
+  return BANT_DIMENSIONS.reduce((count, dim) => {
+    const fieldMap: Record<string, string | null | undefined> = {
+      budget: bant.bant_budget,
+      authority: bant.bant_authority,
+      need: bant.bant_need,
+      timeline: bant.bant_timeline,
+    };
+    return count + (isQualifying(dim.options, fieldMap[dim.key]) ? 1 : 0);
+  }, 0);
+}

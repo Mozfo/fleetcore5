@@ -37,7 +37,7 @@ import { useFleetSizeOptions } from "@/lib/hooks/useFleetSizeOptions";
 import type { Lead } from "@/types/crm";
 import type { LucideIcon } from "lucide-react";
 import { InfoRow } from "@/components/crm/shared/InfoRow";
-import { LeadTimeline } from "./LeadTimeline";
+import { LeadTimeline } from "@/components/crm/leads/LeadTimeline";
 
 // ============================================================================
 // SHARED COMPONENTS
