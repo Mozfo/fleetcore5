@@ -77,6 +77,12 @@ export const MODULES: ModuleConfig[] = [
         permission: "crm:view",
       },
       {
+        key: "leads_detail",
+        labelKey: "modules.crm_leads_detail",
+        href: "/crm/leads/detail",
+        permission: "crm:view",
+      },
+      {
         key: "opportunities",
         labelKey: "modules.crm_opportunities",
         href: "/crm/opportunities",
@@ -86,12 +92,6 @@ export const MODULES: ModuleConfig[] = [
         key: "quotes",
         labelKey: "modules.crm_quotes",
         href: "/crm/quotes",
-        permission: "crm:view",
-      },
-      {
-        key: "browser",
-        labelKey: "modules.crm_browser",
-        href: "/crm/leads/browser",
         permission: "crm:view",
       },
       {

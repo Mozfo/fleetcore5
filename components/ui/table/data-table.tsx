@@ -30,6 +30,8 @@ interface DataTableProps<TData> extends React.ComponentProps<"div"> {
   renderExpandedRow?: (row: Row<TData>) => React.ReactNode;
   /** Optional per-row className (e.g. border-left indicator). */
   getRowClassName?: (row: Row<TData>) => string | undefined;
+  /** Optional row click handler. Ignored on select/expand/actions columns. */
+  onRowClick?: (row: Row<TData>) => void;
 }
 
 const densityCellClasses: Record<TableDensity, string> = {
@@ -51,6 +53,7 @@ export function DataTable<TData>({
   density = "normal",
   renderExpandedRow,
   getRowClassName,
+  onRowClick,
 }: DataTableProps<TData>) {
   const { t } = useTranslation("common");
 
@@ -124,8 +127,27 @@ export function DataTable<TData>({
         data-state={row.getIsSelected() && "selected"}
         className={cn(
           row.getIsPinned() && "bg-muted/50",
+          onRowClick && "cursor-pointer",
           getRowClassName?.(row)
         )}
+        onClick={
+          onRowClick
+            ? (e) => {
+                const target = e.target as HTMLElement;
+                const cell = target.closest("td");
+                if (!cell) return;
+                const cellIndex = cell.cellIndex;
+                const columnId = row.getVisibleCells()[cellIndex]?.column.id;
+                if (
+                  columnId === "select" ||
+                  columnId === "expand" ||
+                  columnId === "actions"
+                )
+                  return;
+                onRowClick(row);
+              }
+            : undefined
+        }
       >
         {row.getVisibleCells().map((cell) => {
           const pinStyles = getCommonPinningStyles({

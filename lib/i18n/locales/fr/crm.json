@@ -3,10 +3,36 @@
     "leads_pipeline": "Pipeline de leads",
     "opportunities_pipeline": "Pipeline d'opportunités",
     "quotes_pipeline": "Offres",
-    "leads_browser": "Recherche Leads",
-    "leads_detail": "Vue Détaillée",
+    "leads_detail": "Détail Leads",
     "leads_detail_tooltip": "Cliquez d'abord sur un lead pour activer ce lien",
     "leads_reports": "Rapports Leads"
+  },
+  "leads_detail": {
+    "title": "Détail des Leads",
+    "description": "Vue manager — Superviser et auditer tous les leads",
+    "kpi": {
+      "total_leads": "Total Leads",
+      "conversion_rate": "Taux de conversion",
+      "active_leads": "Leads actifs",
+      "avg_qualification_days": "Temps moyen de qualification"
+    },
+    "columns": {
+      "bant_score": "BANT",
+      "days_in_status": "Jours dans le statut"
+    },
+    "group_by": {
+      "label": "Grouper par",
+      "none": "Aucun",
+      "status": "Statut",
+      "priority": "Priorité",
+      "assigned_to": "Assigné à",
+      "country": "Pays"
+    },
+    "actions": {
+      "assign": "Assigner",
+      "disqualify": "Disqualifier",
+      "view_profile": "Voir la fiche"
+    }
   },
   "dashboard": {
     "title": "Tableau de bord CRM",

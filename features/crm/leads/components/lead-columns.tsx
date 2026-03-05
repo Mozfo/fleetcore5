@@ -15,7 +15,6 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -74,9 +73,10 @@ function truncate(value: unknown, max = 80): string {
 export function getLeadColumns(
   t: TranslationFn,
   statuses: LeadStatusConfig[],
+  onView?: (leadId: string) => void,
   onEdit?: (leadId: string) => void,
   onDelete?: (leadId: string) => void,
-  localizedPath?: (path: string) => string
+  _localizedPath?: (path: string) => string
 ): ColumnDef<Lead>[] {
   const statusOptions: Option[] = statuses.map((s) => ({
     label: s.label_en,
@@ -163,16 +163,14 @@ export function getLeadColumns(
       cell: ({ row }) => {
         const lead = row.original;
         const code = lead.lead_code ?? "—";
-        const href = localizedPath
-          ? localizedPath(`/crm/leads/${lead.id}`)
-          : undefined;
-        return href ? (
-          <Link
-            href={href}
+        return onView ? (
+          <button
+            type="button"
+            onClick={() => onView(lead.id)}
             className="text-primary font-mono font-medium hover:underline"
           >
             {code}
-          </Link>
+          </button>
         ) : (
           <span className="text-primary font-mono font-medium">{code}</span>
         );
@@ -1167,13 +1165,11 @@ export function getLeadColumns(
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/crm/leads/${lead.id}`}>
-                  <Eye className="mr-2 size-4" />
-                  {t("leads.actions.view")}
-                </Link>
+              <DropdownMenuItem onClick={() => onView?.(lead.id)}>
+                <Eye className="mr-2 size-4" />
+                {t("leads.actions.view")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit?.(lead.id)}>
+              <DropdownMenuItem onClick={() => onView?.(lead.id)}>
                 <Pencil className="mr-2 size-4" />
                 {t("leads.actions.edit")}
               </DropdownMenuItem>

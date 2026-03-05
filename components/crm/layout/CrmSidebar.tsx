@@ -19,9 +19,9 @@ import {
   Car,
   Users,
   ChevronDown,
+  ClipboardList,
   LayoutGrid,
   BarChart3,
-  Search,
   Target,
   FileText,
 } from "lucide-react";
@@ -77,15 +77,18 @@ export function CrmSidebar({ locale }: CrmSidebarProps) {
 
   // Link hrefs
   const leadsPipelineHref = `/${locale}/crm/leads`;
+  const leadsDetailHref = `/${locale}/crm/leads/detail`;
   const opportunitiesPipelineHref = `/${locale}/crm/opportunities`;
   const quotesPipelineHref = `/${locale}/crm/quotes`;
-  const browserHref = `/${locale}/crm/leads/browser`;
   const reportsHref = `/${locale}/crm/leads/reports`;
 
   const isActiveLink = (id: string) => {
     if (id === "leads-pipeline") {
       // Leads Pipeline is active only on /crm/leads (kanban page)
       return pathname === `/${locale}/crm/leads`;
+    }
+    if (id === "leads-detail") {
+      return pathname.startsWith(`/${locale}/crm/leads/detail`);
     }
     if (id === "opportunities-pipeline") {
       // Opportunities Pipeline is active on /crm/opportunities
@@ -94,10 +97,6 @@ export function CrmSidebar({ locale }: CrmSidebarProps) {
     if (id === "quotes-pipeline") {
       // Quotes Pipeline is active on /crm/quotes
       return pathname.startsWith(`/${locale}/crm/quotes`);
-    }
-    if (id === "leads-browser") {
-      // Browser is active on /crm/leads/browser
-      return pathname === `/${locale}/crm/leads/browser`;
     }
     if (id === "leads-reports") {
       // Reports is active when on /crm/leads/reports OR individual lead detail
@@ -166,6 +165,21 @@ export function CrmSidebar({ locale }: CrmSidebarProps) {
                 <span>{t("sidebar.leads_pipeline")}</span>
               </Link>
 
+              {/* Lead Detail (Manager View) */}
+              <Link
+                href={leadsDetailHref}
+                prefetch={true}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                  isActiveLink("leads-detail")
+                    ? "bg-blue-100 font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                )}
+              >
+                <ClipboardList className="h-4 w-4" />
+                <span>{t("sidebar.leads_detail")}</span>
+              </Link>
+
               {/* Opportunities Pipeline */}
               <Link
                 href={opportunitiesPipelineHref}
@@ -194,21 +208,6 @@ export function CrmSidebar({ locale }: CrmSidebarProps) {
               >
                 <FileText className="h-4 w-4" />
                 <span>{t("sidebar.quotes_pipeline")}</span>
-              </Link>
-
-              {/* Leads Browser - Search and detail split view */}
-              <Link
-                href={browserHref}
-                prefetch={true}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                  isActiveLink("leads-browser")
-                    ? "bg-blue-100 font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                )}
-              >
-                <Search className="h-4 w-4" />
-                <span>{t("sidebar.leads_browser")}</span>
               </Link>
 
               {/* Leads Reports - BI dashboard for managers */}

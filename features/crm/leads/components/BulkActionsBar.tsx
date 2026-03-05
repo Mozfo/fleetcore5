@@ -16,9 +16,9 @@ import { Separator } from "@/components/ui/separator";
 interface BulkActionsBarProps {
   selectedCount: number;
   onAssign: () => void;
-  onChangeStatus: () => void;
+  onChangeStatus?: () => void;
   onExport: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   onClearSelection: () => void;
 }
 
@@ -64,17 +64,19 @@ export function BulkActionsBar({
             </Button>
 
             {/* Change status action */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onChangeStatus}
-              className="gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {t("leads.bulk_actions.status")}
-              </span>
-            </Button>
+            {onChangeStatus && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onChangeStatus}
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {t("leads.bulk_actions.status")}
+                </span>
+              </Button>
+            )}
 
             {/* Export action */}
             <Button
@@ -89,20 +91,23 @@ export function BulkActionsBar({
               </span>
             </Button>
 
-            <Separator orientation="vertical" className="mx-1 h-6" />
-
-            {/* Delete action - destructive */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              className="text-destructive hover:text-destructive gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {t("leads.bulk_actions.delete")}
-              </span>
-            </Button>
+            {/* Delete action - destructive (hidden when not provided) */}
+            {onDelete && (
+              <>
+                <Separator orientation="vertical" className="mx-1 h-6" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onDelete}
+                  className="text-destructive hover:text-destructive gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {t("leads.bulk_actions.delete")}
+                  </span>
+                </Button>
+              </>
+            )}
 
             {/* Clear selection */}
             <Button

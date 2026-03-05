@@ -3,10 +3,36 @@
     "leads_pipeline": "Leads Pipeline",
     "opportunities_pipeline": "Opportunity Pipeline",
     "quotes_pipeline": "Quotes",
-    "leads_browser": "Leads Browser",
-    "leads_detail": "Leads Detail View",
+    "leads_detail": "Lead Detail",
     "leads_detail_tooltip": "Click on a lead first to enable this link",
     "leads_reports": "Leads Reports"
+  },
+  "leads_detail": {
+    "title": "Lead Detail",
+    "description": "Manager view — Supervise and audit all leads",
+    "kpi": {
+      "total_leads": "Total Leads",
+      "conversion_rate": "Conversion Rate",
+      "active_leads": "Active Leads",
+      "avg_qualification_days": "Avg. Qualification Time"
+    },
+    "columns": {
+      "bant_score": "BANT",
+      "days_in_status": "Days in Status"
+    },
+    "group_by": {
+      "label": "Group by",
+      "none": "None",
+      "status": "Status",
+      "priority": "Priority",
+      "assigned_to": "Assigned To",
+      "country": "Country"
+    },
+    "actions": {
+      "assign": "Assign",
+      "disqualify": "Disqualify",
+      "view_profile": "View Profile"
+    }
   },
   "dashboard": {
     "title": "CRM Dashboard",

@@ -134,7 +134,8 @@ export async function GET(
                 role: assignedEmployee.role,
               }
             : null,
-          source: lead.crm_lead_sources
+          source: lead.source,
+          source_detail: lead.crm_lead_sources
             ? {
                 id: lead.crm_lead_sources.id,
                 name_translations: lead.crm_lead_sources.name_translations,
@@ -142,6 +143,21 @@ export async function GET(
                   lead.crm_lead_sources.description_translations,
               }
             : null,
+          // Company
+          industry: lead.industry,
+          company_size: lead.company_size,
+          current_software: lead.current_software,
+          website_url: lead.website_url,
+          linkedin_url: lead.linkedin_url,
+          city: lead.city,
+          platforms_used: lead.platforms_used,
+          whatsapp_number: lead.whatsapp_number,
+          // Source & Attribution
+          source_id: lead.source_id,
+          utm_source: lead.utm_source,
+          utm_medium: lead.utm_medium,
+          utm_campaign: lead.utm_campaign,
+          wizard_completed: lead.wizard_completed,
           // BANT qualification (V7)
           bant_budget: lead.bant_budget,
           bant_authority: lead.bant_authority,
@@ -149,15 +165,64 @@ export async function GET(
           bant_timeline: lead.bant_timeline,
           bant_qualified_at: lead.bant_qualified_at?.toISOString() || null,
           bant_qualified_by: lead.bant_qualified_by,
+          // Content
           message: lead.message,
           metadata: lead.metadata as Record<string, unknown> | null,
+          // GDPR
           gdpr_consent: lead.gdpr_consent,
           consent_ip: lead.consent_ip,
           consent_at: lead.consent_at?.toISOString() || null,
+          // Email verification
+          email_verified: lead.email_verified,
+          email_verification_attempts: lead.email_verification_attempts,
+          // GeoIP
+          detected_country_code: lead.detected_country_code,
+          language: lead.language,
+          // Assignment
+          assigned_to_id: lead.assigned_to,
+          next_action_date: lead.next_action_date?.toISOString() || null,
+          last_activity_at: lead.last_activity_at?.toISOString() || null,
+          // Callback
+          callback_requested: lead.callback_requested,
+          callback_requested_at:
+            lead.callback_requested_at?.toISOString() || null,
+          callback_completed_at:
+            lead.callback_completed_at?.toISOString() || null,
+          callback_notes: lead.callback_notes,
+          // Disqualification
+          disqualified_at: lead.disqualified_at?.toISOString() || null,
+          disqualification_reason: lead.disqualification_reason,
+          disqualification_comment: lead.disqualification_comment,
+          disqualified_by: lead.disqualified_by,
+          // Recovery
+          recovery_notification_sent_at:
+            lead.recovery_notification_sent_at?.toISOString() || null,
+          recovery_notification_clicked_at:
+            lead.recovery_notification_clicked_at?.toISOString() || null,
+          // Loss / Closing
+          loss_reason_code: lead.loss_reason_code,
+          loss_reason_detail: lead.loss_reason_detail,
+          competitor_name: lead.competitor_name,
+          // Conversion / Payment
+          opportunity_id: lead.opportunity_id,
+          converted_at: lead.converted_at?.toISOString() || null,
+          stripe_checkout_session_id: lead.stripe_checkout_session_id,
+          stripe_payment_link_url: lead.stripe_payment_link_url,
+          payment_link_created_at:
+            lead.payment_link_created_at?.toISOString() || null,
+          payment_link_expires_at:
+            lead.payment_link_expires_at?.toISOString() || null,
+          // Dates
           created_at: lead.created_at.toISOString(),
           updated_at: lead.updated_at?.toISOString() || null,
           qualified_date: lead.qualified_date?.toISOString() || null,
           converted_date: lead.converted_date?.toISOString() || null,
+          // Audit
+          created_by: lead.created_by,
+          updated_by: lead.updated_by,
+          deleted_at: lead.deleted_at?.toISOString() || null,
+          deleted_by: lead.deleted_by,
+          deletion_reason: lead.deletion_reason,
         },
       },
       { status: 200 }
@@ -377,7 +442,8 @@ export async function PATCH(
               }
             : null,
           assigned_to_id: updatedLead.assigned_to,
-          source: updatedLead.crm_lead_sources
+          source: updatedLead.source,
+          source_detail: updatedLead.crm_lead_sources
             ? {
                 id: updatedLead.crm_lead_sources.id,
                 name_translations:

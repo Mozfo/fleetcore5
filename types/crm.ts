@@ -145,6 +145,9 @@ export interface Lead {
   detected_country_code?: string | null;
   ip_address?: string | null;
 
+  // WhatsApp (V6.4)
+  whatsapp_number?: string | null;
+
   // Language (V6.4-3)
   language?: string;
 

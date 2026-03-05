@@ -47,10 +47,16 @@ export function LeadsKanbanPage({ onOutcomeClick }: LeadsKanbanPageProps) {
   const invalidate = useInvalidate();
 
   // Table preferences (sidebar persistence)
+  // Always start with true to avoid hydration mismatch (localStorage unavailable on server)
   const { preferences, save: savePreferences } = useTablePreferences("leads");
-  const [sidebarOpen, setSidebarOpen] = React.useState(
-    preferences.sidebarOpen ?? true
-  );
+  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+
+  // Sync from localStorage after mount
+  React.useEffect(() => {
+    if (preferences.sidebarOpen === false) {
+      setSidebarOpen(false);
+    }
+  }, [preferences.sidebarOpen]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [drawerState, setDrawerState] = React.useState<DrawerState | null>(

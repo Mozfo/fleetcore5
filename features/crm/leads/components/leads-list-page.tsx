@@ -47,6 +47,7 @@ import { DataTableSkeleton } from "@/components/ui/table/data-table-skeleton";
 import { DataTableToolbar } from "@/components/ui/table/data-table-toolbar";
 import { useLeadStatuses } from "@/lib/hooks/useLeadStatuses";
 import { useLocalizedPath } from "@/lib/hooks/useLocalizedPath";
+import { useSalesOwners } from "@/lib/hooks/useSalesOwners";
 import { cn } from "@/lib/utils";
 import { exportTableToCSV, exportTableToExcel } from "@/lib/utils/table-export";
 import { useTablePreferences } from "@/hooks/use-table-preferences";
@@ -54,10 +55,11 @@ import { useTablePreferences } from "@/hooks/use-table-preferences";
 import { getLeadColumns } from "./lead-columns";
 import { LeadExpandedRow } from "./lead-expanded-row";
 import { LeadsCreateDialog } from "./leads-create-dialog";
-import { LeadsEditDrawer } from "./leads-edit-drawer";
+import { LeadDrawer } from "./drawer/LeadDrawer";
 import { LeadsFilterSidebar } from "./leads-filter-sidebar";
 import { useLeadsTable } from "../hooks/use-leads-table";
 import { computeRowIndicator } from "../lib/lead-insight";
+import type { Lead } from "../types/lead.types";
 
 interface LeadsListPageProps {
   onTotalChange?: (total: number) => void;
@@ -71,8 +73,9 @@ export function LeadsListPage({
   const { t } = useTranslation("crm");
   const { localizedPath } = useLocalizedPath();
   const { statuses, isLoading: statusesLoading } = useLeadStatuses();
+  const { owners } = useSalesOwners();
   const [createOpen, setCreateOpen] = React.useState(false);
-  const [editLeadId, setEditLeadId] = React.useState<string | null>(null);
+  const [viewLeadId, setViewLeadId] = React.useState<string | null>(null);
   const [deleteLeadId, setDeleteLeadId] = React.useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
 
@@ -128,11 +131,11 @@ export function LeadsListPage({
       getLeadColumns(
         t,
         statuses,
-        (id) => setEditLeadId(id),
-        (id) => setDeleteLeadId(id),
-        localizedPath
+        (id) => setViewLeadId(id),
+        undefined, // onEdit — drawer handles editing
+        (id) => setDeleteLeadId(id)
       ),
-    [t, statuses, localizedPath]
+    [t, statuses]
   );
 
   const { table, isLoading, isError, total } = useLeadsTable({
@@ -140,6 +143,15 @@ export function LeadsListPage({
     savedColumnVisibility: preferences.columnVisibility,
     initialStatusFilter,
   });
+
+  // Derive viewLead from viewLeadId + table rows (LeadDrawer re-fetches via useOne anyway)
+  const viewLead = React.useMemo(() => {
+    if (!viewLeadId) return null;
+    const row = table
+      .getRowModel()
+      .rows.find((r) => r.original.id === viewLeadId);
+    return (row?.original as Lead) ?? ({ id: viewLeadId } as Lead);
+  }, [viewLeadId, table]);
 
   React.useEffect(() => {
     onTotalChange?.(total);
@@ -604,12 +616,16 @@ export function LeadsListPage({
           </AlertDialog>
 
           <LeadsCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
-          <LeadsEditDrawer
-            open={editLeadId !== null}
-            onOpenChange={(open) => {
-              if (!open) setEditLeadId(null);
-            }}
-            leadId={editLeadId}
+          <LeadDrawer
+            lead={viewLead}
+            isOpen={viewLead !== null}
+            onClose={() => setViewLeadId(null)}
+            onOpenFullPage={(id) =>
+              localizedPath
+                ? window.open(localizedPath(`/crm/leads/${id}`), "_blank")
+                : undefined
+            }
+            owners={owners}
           />
         </DataTable>
       </div>

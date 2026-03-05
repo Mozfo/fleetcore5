@@ -3,10 +3,36 @@
     "leads_pipeline": "خط أنابيب العملاء المحتملين",
     "opportunities_pipeline": "خط أنابيب الفرص",
     "quotes_pipeline": "عروض الأسعار",
-    "leads_browser": "متصفح العملاء المحتملين",
-    "leads_detail": "تفاصيل العميل المحتمل",
+    "leads_detail": "تفاصيل العملاء المحتملين",
     "leads_detail_tooltip": "انقر على عميل محتمل أولاً لتفعيل هذا الرابط",
     "leads_reports": "تقارير العملاء المحتملين"
+  },
+  "leads_detail": {
+    "title": "تفاصيل العملاء المحتملين",
+    "description": "عرض المدير — الإشراف على جميع العملاء المحتملين",
+    "kpi": {
+      "total_leads": "إجمالي العملاء",
+      "conversion_rate": "معدل التحويل",
+      "active_leads": "العملاء النشطون",
+      "avg_qualification_days": "متوسط وقت التأهيل"
+    },
+    "columns": {
+      "bant_score": "BANT",
+      "days_in_status": "أيام في الحالة"
+    },
+    "group_by": {
+      "label": "تجميع حسب",
+      "none": "بدون",
+      "status": "الحالة",
+      "priority": "الأولوية",
+      "assigned_to": "مسؤول",
+      "country": "البلد"
+    },
+    "actions": {
+      "assign": "تعيين",
+      "disqualify": "استبعاد",
+      "view_profile": "عرض الملف"
+    }
   },
   "leads": {
     "title": "خط أنابيب العملاء المحتملين",

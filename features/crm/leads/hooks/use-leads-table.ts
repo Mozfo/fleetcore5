@@ -18,7 +18,13 @@ import { getSortingStateParser } from "@/lib/parsers";
 import type { Lead } from "../types/lead.types";
 
 /** Column IDs that are UI-only (no DB field). */
-const NON_FIELD_COLUMNS = new Set(["select", "expand", "actions"]);
+const NON_FIELD_COLUMNS = new Set([
+  "select",
+  "expand",
+  "actions",
+  "bant_score",
+  "days_in_status",
+]);
 
 /** Columns hidden by default — only the 22 CEO-selected columns are visible. */
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
@@ -165,6 +171,8 @@ interface UseLeadsTableProps {
   savedColumnVisibility?: VisibilityState;
   /** Pre-applied status filter (from Kanban outcome click). */
   initialStatusFilter?: string | null;
+  /** Extra DB fields to always fetch (for computed columns like bant_score). */
+  extraFields?: string[];
 }
 
 /**
@@ -178,6 +186,7 @@ export function useLeadsTable({
   initialPageSize = 20,
   savedColumnVisibility,
   initialStatusFilter,
+  extraFields,
 }: UseLeadsTableProps) {
   // ── Read URL state for Refine data fetching ───────────────────────────
   const [page] = useQueryState("page", parseAsInteger.withDefault(1));
@@ -296,8 +305,12 @@ export function useLeadsTable({
       if (!key || NON_FIELD_COLUMNS.has(key)) continue;
       if (vis[key] !== false) fields.add(key);
     }
+    // Extra DB fields needed by computed columns (e.g. BANT fields for bant_score)
+    if (extraFields) {
+      for (const f of extraFields) fields.add(f);
+    }
     return Array.from(fields);
-  }, [columns, savedColumnVisibility]);
+  }, [columns, savedColumnVisibility, extraFields]);
 
   // ── Refine data fetching ──────────────────────────────────────────────
   const { query, result } = useList<Lead>({
